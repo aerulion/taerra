@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta content="#000000" name="theme-color">
+    <meta content="Live map of the server world" name="description">
+    <title>Taerra</title>
+    <link href="favicon.ico" rel="icon" sizes="32x32">
+    <link href="images/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="images/apple-touch-icon.png" rel="apple-touch-icon">
+    <link href="manifest.json" rel="manifest">
+    <!-- The server makes og:image absolute when web.public-url is set, as most link previews need. -->
+    <meta content="website" property="og:type">
+    <meta content="Taerra" property="og:site_name">
+    <meta content="Taerra" property="og:title">
+    <meta content="Live map of the server world" property="og:description">
+    <meta content="images/og.png" property="og:image">
+    <meta content="1200" property="og:image:width">
+    <meta content="630" property="og:image:height">
+    <meta content="Taerra" property="og:image:alt">
+    <meta content="summary_large_image" name="twitter:card">
+    <link href="vendor/leaflet/leaflet.css" rel="stylesheet">
+    <link as="font" crossorigin href="fonts/QuinqueFive-Regular.ttf" rel="preload" type="font/ttf">
+    <link as="font" crossorigin href="fonts/SchibstedGrotesk.ttf" rel="preload" type="font/ttf">
+    <link href="css/style.css" rel="stylesheet">
+    <script defer src="vendor/leaflet/leaflet.js"></script>
+    <script src="js/app.js" type="module"></script>
+</head>
+<body>
+<!--
+The gray map style: brightness mapped onto the panel's stone colors, from stone-900 to #8c8d90, which also
+keeps the contrast low. Where blue clearly outweighs red and green, as on water, a faint slate blue stays.
+-->
+<svg aria-hidden="true" height="0" style="position: absolute" width="0">
+    <filter color-interpolation-filters="sRGB" id="stone-gray">
+        <feColorMatrix in="SourceGraphic" result="luma"
+                       values=".2126 .7152 .0722 0 0  .2126 .7152 .0722 0 0  .2126 .7152 .0722 0 0  0 0 0 1 0"/>
+        <feComponentTransfer in="luma" result="stone">
+            <feFuncR intercept=".118" slope=".431" type="linear"/>
+            <feFuncG intercept=".118" slope=".435" type="linear"/>
+            <feFuncB intercept=".122" slope=".443" type="linear"/>
+        </feComponentTransfer>
+        <feColorMatrix in="SourceGraphic" result="blueness"
+                       values="0 0 0 0 .27  0 0 0 0 .36  0 0 0 0 .5  -.5 -.5 1 0 0"/>
+        <feComponentTransfer in="blueness" result="water">
+            <feFuncA intercept="-.45" slope="1.5" type="linear"/>
+        </feComponentTransfer>
+        <feComposite in="water" in2="stone" operator="over"/>
+    </filter>
+</svg>
+<header class="topbar">
+    <a class="brand" href="https://aerulion.net/taerra/" target="_blank">
+        <img alt="" class="brand__icon" src="images/icon.svg">
+        Taerra
+    </a>
+    <nav aria-label="Worlds" class="worlds" data-i18n-label="worlds" id="world-list"></nav>
+    <div aria-label="Worlds" class="world-menu" data-i18n-label="worlds" id="world-menu" popover></div>
+    <div class="status" id="connection-status">
+        <span class="status__dot" data-state="connecting"></span>
+        <span id="status-text" role="status"></span>
+        <span aria-hidden="true" id="status-retry"></span>
+    </div>
+    <select aria-label="Language" class="language" data-i18n-label="language" id="language-select"></select>
+    <button aria-label="Account" class="account-button" data-i18n-label="account.title" id="account-button"
+            popovertarget="account-menu" type="button">
+        <svg aria-hidden="true" class="account-button__icon" shape-rendering="crispEdges" viewBox="0 0 8 8">
+            <path d="M2 0h4v4H2zM0 5h8v3H0z" fill="currentColor"/>
+        </svg>
+        <img alt="" class="account-button__head" hidden id="account-head">
+    </button>
+    <div class="account-menu" id="account-menu" popover>
+        <div hidden id="account-out">
+            <p class="account-menu__title" data-i18n="account.login">Log in</p>
+            <p class="account-menu__error" data-i18n="account.invalid" hidden id="login-error" role="alert">That
+                login link was already used or has expired. Run /taerra login for a new one.</p>
+            <p class="account-menu__text" data-i18n="account.hint">Run /taerra login in game and click the link it
+                sends you.</p>
+        </div>
+        <div hidden id="account-in">
+            <p class="account-menu__title"><span data-i18n="account.as">Logged in as</span> <b id="account-name"></b>
+            </p>
+            <button data-i18n="account.logout" id="logout-button" type="button">Log out</button>
+        </div>
+    </div>
+</header>
+
+<main class="stage">
+    <div aria-label="Map" data-i18n-label="map.label" data-style="color" id="map" role="region"></div>
+
+    <aside class="panel" id="panel">
+        <button aria-controls="panel-body" aria-expanded="true" aria-keyshortcuts="P"
+                aria-label="Show or hide the side panel"
+                class="panel__toggle"
+                data-i18n-label="panel.toggle" id="panel-toggle" type="button"></button>
+
+        <div class="panel__body" id="panel-body">
+            <section class="panel__section">
+                <h2 data-i18n="view.title">View</h2>
+                <div aria-label="View" class="segmented" data-i18n-label="view.title" id="view-mode-buttons"
+                     role="group">
+                    <button aria-keyshortcuts="T" aria-pressed="true" class="btn" data-i18n="view.top" data-view="top"
+                            type="button">Top-down
+                    </button>
+                    <button aria-keyshortcuts="I" aria-pressed="false" class="btn" data-i18n="view.iso" data-view="iso"
+                            type="button">Isometric
+                    </button>
+                </div>
+                <div class="rotation" hidden id="rotation-controls">
+                    <button aria-keyshortcuts="Shift+R" aria-label="Rotate counter-clockwise" class="btn"
+                            data-i18n-label="view.rotateLeft"
+                            data-turn="1" type="button">↺
+                    </button>
+                    <output id="rotation-readout"></output>
+                    <button aria-keyshortcuts="R" aria-label="Rotate clockwise" class="btn"
+                            data-i18n-label="view.rotateRight" data-turn="-1"
+                            type="button">↻
+                    </button>
+                </div>
+                <button class="btn btn--primary" data-i18n="view.spawn" id="world-spawn-button" type="button">Go to
+                    spawn
+                </button>
+            </section>
+
+            <section class="panel__section">
+                <h2 data-i18n="style.title">Map colors</h2>
+                <!-- G clicks the group itself, which switches to the other style. -->
+                <div aria-keyshortcuts="G" aria-label="Map colors" class="segmented" data-i18n-label="style.title"
+                     id="map-style-buttons" role="group">
+                    <button aria-pressed="true" class="btn" data-i18n="style.color" data-style="color" type="button">
+                        Color
+                    </button>
+                    <button aria-pressed="false" class="btn" data-i18n="style.gray" data-style="gray" type="button">
+                        Gray
+                    </button>
+                </div>
+            </section>
+
+            <section class="panel__section" hidden id="layer-section">
+                <h2 data-i18n="layers.title">Layers</h2>
+                <ul class="layers" id="layer-list"></ul>
+            </section>
+
+            <section class="panel__section" hidden id="render-section">
+                <h2><span id="render-title"></span> <span class="badge" id="render-percent">0%</span></h2>
+                <p class="render-what" id="render-what"></p>
+                <div aria-hidden="true" class="progress">
+                    <div class="progress__fill" id="render-bar"></div>
+                </div>
+                <p class="muted" id="render-detail">—</p>
+            </section>
+
+            <section class="panel__section">
+                <h2><span data-i18n="players.title">Players</span> <span class="badge" id="player-count">0</span></h2>
+                <div aria-label="Players to list" class="segmented segmented--small" data-i18n-label="players.scope"
+                     hidden id="player-scope" role="group">
+                    <button aria-pressed="true" class="btn" data-i18n="players.here" data-scope="here" type="button">
+                        This world
+                    </button>
+                    <button aria-pressed="false" class="btn" data-i18n="players.all" data-scope="all" type="button">
+                        All worlds
+                    </button>
+                </div>
+                <ul class="players" id="player-list"></ul>
+                <p class="muted" data-i18n="players.empty" id="player-empty">No players visible</p>
+            </section>
+
+            <details class="panel__section shortcuts">
+                <summary><h2 data-i18n="keys.title">Keyboard shortcuts</h2></summary>
+                <dl class="shortcuts__list">
+                    <dt><kbd>T</kbd></dt>
+                    <dd data-i18n="view.top">Top-down</dd>
+                    <dt><kbd>I</kbd></dt>
+                    <dd data-i18n="view.iso">Isometric</dd>
+                    <dt><kbd>R</kbd></dt>
+                    <dd data-i18n="view.rotateRight">Rotate clockwise</dd>
+                    <dt><kbd>Shift</kbd><kbd>R</kbd></dt>
+                    <dd data-i18n="view.rotateLeft">Rotate counter-clockwise</dd>
+                    <dt><kbd>G</kbd></dt>
+                    <dd data-i18n="style.cycle">Switch map colors</dd>
+                    <dt><kbd>P</kbd></dt>
+                    <dd data-i18n="panel.toggle">Show or hide the side panel</dd>
+                </dl>
+            </details>
+        </div>
+    </aside>
+    <!-- Hidden before the first paint, so small screens never see it slide away. Mirrors applyPanelHash in app.js. -->
+    <script>
+        {
+            const shown = new URLSearchParams(location.hash.slice(1)).get('panel');
+            if (shown ? shown === 'hidden' : matchMedia('(max-width: 720px)').matches) {
+                document.getElementById('panel').classList.add('is-collapsed');
+                document.getElementById('panel-toggle').setAttribute('aria-expanded', 'false');
+            }
+        }
+    </script>
+
+    <div aria-label="Actions for this place" class="context-menu" data-i18n-label="menu.label" hidden id="context-menu"
+         role="menu">
+        <p class="context-menu__title" id="context-menu-title"></p>
+        <button data-action="coordinates" data-i18n="menu.coordinates" role="menuitem" type="button">Copy coordinates
+        </button>
+        <button data-action="teleport" data-i18n="menu.teleport" hidden role="menuitem" type="button">Teleport here
+        </button>
+        <button data-action="waypoint" data-i18n="menu.waypoint" hidden role="menuitem" type="button">Add waypoint
+            here
+        </button>
+        <button data-action="link" data-i18n="menu.link" role="menuitem" type="button">Copy link to this place</button>
+        <button data-action="center" data-i18n="menu.center" role="menuitem" type="button">Center map here</button>
+    </div>
+
+    <!-- Shown while a waypoint waits for its new spot. -->
+    <div class="placing" hidden id="placing">
+        <span id="placing-text" role="status"></span>
+        <button class="placing__cancel" data-i18n="waypoint.cancel" id="placing-cancel" type="button">Cancel</button>
+    </div>
+
+    <!-- Follows the pointer, so it is of no use to screen readers. -->
+    <div aria-hidden="true" class="hud">
+        <span>X <b id="coord-x">0</b></span>
+        <span>Y <b id="coord-y">—</b></span>
+        <span>Z <b id="coord-z">0</b></span>
+    </div>
+
+</main>
+
+<dialog aria-labelledby="waypoint-title" class="editor" id="waypoint-editor">
+    <form class="editor__form" id="waypoint-form" novalidate>
+        <header class="editor__header">
+            <span class="editor__preview" id="waypoint-preview"></span>
+            <div>
+                <h2 class="editor__title" id="waypoint-title"></h2>
+                <p class="editor__where" id="waypoint-where"></p>
+            </div>
+        </header>
+
+        <div class="editor__section">
+            <label class="editor__label" data-i18n="waypoint.name" for="waypoint-name">Name</label>
+            <input autocomplete="off" class="editor__input" id="waypoint-name" maxlength="32" spellcheck="false"
+                   type="text">
+        </div>
+
+        <fieldset class="editor__section">
+            <legend class="editor__label" data-i18n="waypoint.group">Group</legend>
+            <div class="chips" id="waypoint-groups"></div>
+            <div class="editor__new-group" hidden id="waypoint-new-group">
+                <input aria-label="Group name" autocomplete="off" class="editor__input"
+                       data-i18n-label="waypoint.groupName"
+                       id="waypoint-group-name" maxlength="32" placeholder="Group name"
+                       spellcheck="false" type="text">
+                <label class="editor__check" hidden id="waypoint-private-option">
+                    <input aria-describedby="waypoint-private-hint" id="waypoint-private" type="checkbox">
+                    <span class="editor__check-text">
+                        <span class="editor__check-title" data-i18n="waypoint.privateTitle" id="waypoint-private-title">Private
+                            group</span>
+                        <span class="editor__hint" data-i18n="waypoint.privateHint" id="waypoint-private-hint">Only
+                            players with permission see it</span>
+                    </span>
+                </label>
+            </div>
+        </fieldset>
+
+        <fieldset class="editor__section">
+            <legend class="editor__label" data-i18n="waypoint.color">Color</legend>
+            <div class="swatches" id="waypoint-swatches"></div>
+            <div aria-label="Saturation and brightness" class="picker" data-i18n-label="waypoint.shade"
+                 id="waypoint-shade" role="slider" tabindex="0">
+                <span class="picker__thumb" id="waypoint-shade-thumb"></span>
+            </div>
+            <input aria-label="Hue" class="hue" data-i18n-label="waypoint.hue" id="waypoint-hue" max="359" min="0"
+                   type="range">
+            <label class="hex">
+                <span aria-hidden="true">#</span>
+                <input aria-label="Hex color" autocomplete="off" data-i18n-label="waypoint.hex" id="waypoint-hex"
+                       maxlength="6" spellcheck="false" type="text">
+            </label>
+        </fieldset>
+
+        <p class="editor__error" hidden id="waypoint-error" role="alert"></p>
+
+        <footer class="editor__actions">
+            <button class="btn btn--danger" data-i18n="waypoint.delete" id="waypoint-delete" type="button">Delete
+            </button>
+            <button class="btn" data-i18n="waypoint.cancel" id="waypoint-cancel" type="button">Cancel</button>
+            <button class="btn btn--primary" data-i18n="waypoint.save" type="submit">Save</button>
+        </footer>
+    </form>
+</dialog>
+</body>
+</html>

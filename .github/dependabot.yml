@@ -1,0 +1,57 @@
+version: 2
+
+# Grouped and weekly: every pull request runs the full userdev and loom Gradle build.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:00"
+      timezone: UTC
+    commit-message:
+      prefix: ":arrow_up: deps:"
+    labels:
+      - dependencies
+      - github-actions
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:00"
+      timezone: UTC
+    commit-message:
+      prefix: ":arrow_up: deps:"
+    labels:
+      - dependencies
+      - gradle
+    groups:
+      gradle:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: pip
+    directory: /tools/mcdata
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:00"
+      timezone: UTC
+    commit-message:
+      prefix: ":arrow_up: deps:"
+    labels:
+      - dependencies
+      - python
+    groups:
+      mcdata:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5

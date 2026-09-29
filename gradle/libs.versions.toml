@@ -1,0 +1,47 @@
+[versions]
+java = "25"
+paper = "26.2.build.129-stable"
+adventure = "5.2.0"
+annotations = "26.1.0"
+caffeine = "3.3.0"
+javalin = "7.2.3"
+jackson = "2.22.3"
+junit = "6.1.3"
+spotless = "8.10.2"
+google-java-format = "1.36.1"
+ktfmt = "0.64"
+worldguard = "7.0.19"
+worldedit = "7.4.4"
+chunky = "1.5.4"
+chunkyborder = "1.2.33"
+minecraft = "26.2"
+fabric-loader = "0.19.5"
+fabric-api = "0.161.0+26.2"
+
+[libraries]
+paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "annotations" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+javalin-core = { module = "io.javalin:javalin", version.ref = "javalin" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+worldguard-core = { module = "com.sk89q.worldguard:worldguard-core", version.ref = "worldguard" }
+worldguard-libs = { module = "com.sk89q.worldguard.worldguard-libs:core", version.ref = "worldguard" }
+worldedit-core = { module = "com.sk89q.worldedit:worldedit-core", version.ref = "worldedit" }
+worldedit-bukkit = { module = "com.sk89q.worldedit:worldedit-bukkit", version.ref = "worldedit" }
+chunky-common = { module = "org.popcraft:chunky-common", version.ref = "chunky" }
+chunkyborder-common = { module = "org.popcraft:chunkyborder-common", version.ref = "chunkyborder" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+spotless-gradle = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
+minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
+fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
+fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
+google-java-format = { module = "com.google.googlejavaformat:google-java-format", version.ref = "google-java-format" }
+
+[plugins]
+paperweight-userdev = { id = "io.papermc.paperweight.userdev", version = "2.0.0-beta.23" }
+plugin-yml-paper = { id = "de.eldoria.plugin-yml.paper", version = "0.9.0" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+fabric-loom = { id = "net.fabricmc.fabric-loom", version = "1.18.2" }
+run-paper = { id = "xyz.jpenilla.run-paper", version = "3.1.0" }

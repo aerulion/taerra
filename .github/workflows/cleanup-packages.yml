@@ -1,0 +1,89 @@
+name: 🧹 Cleanup Packages
+
+on:
+  workflow_call:
+    inputs:
+      keep-latest:
+        description: Number of latest versions to keep
+        required: false
+        type: number
+        default: 10
+      package-name:
+        description: Name of the package to cleanup
+        required: true
+        type: string
+
+jobs:
+  cleanup:
+    name: 🗑️ Remove old packages
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: 📦 Cleanup old package versions
+        uses: actions/github-script@v9
+        env:
+          PACKAGE_NAME: ${{ inputs.package-name }}
+          KEEP_LATEST: ${{ inputs.keep-latest }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const packageName = process.env.PACKAGE_NAME;
+            // A user-owned repository's packages live under /users, an organisation's under /orgs.
+            const scope = context.payload.repository.owner.type === 'Organization' ? 'orgs/{owner}' : 'users/{owner}';
+            const keepLatest = Number(process.env.KEEP_LATEST);
+
+            if (!Number.isInteger(keepLatest) || keepLatest < 1) {
+              core.setFailed(`keep-latest must be a positive integer, got "${process.env.KEEP_LATEST}".`);
+              return;
+            }
+
+            const versions = await github.paginate(
+              `GET /${scope}/packages/{package_type}/{package_name}/versions`, {
+                owner: context.repo.owner,
+                package_type: 'maven',
+                package_name: packageName,
+                per_page: 100
+              });
+
+            // Releases are "<build>-<commit>"; PR and local versions cannot match, so they are never deleted here.
+            const releasePattern = /^\d+-[0-9a-f]{7,}$/;
+            const releaseVersions = versions.filter(version => releasePattern.test(version.name));
+
+            console.log(`Found ${releaseVersions.length} release versions out of ${versions.length} total`);
+
+            // Nothing matching means the version format moved and this filter was left behind.
+            if (versions.length > 0 && releaseVersions.length === 0) {
+              core.setFailed(
+                `None of the ${versions.length} published versions look like a release. ` +
+                `Does ${releasePattern} still match the version format?`);
+              return;
+            }
+
+            const sortedReleases = releaseVersions.sort((a, b) =>
+              new Date(b.created_at) - new Date(a.created_at)
+            );
+
+            const versionsToDelete = sortedReleases.slice(keepLatest);
+
+            console.log(`Keeping ${Math.min(keepLatest, sortedReleases.length)} most recent releases`);
+            console.log(`Deleting ${versionsToDelete.length} old release versions:`,
+              versionsToDelete.map(v => v.name));
+
+            for (const version of versionsToDelete) {
+              try {
+                await github.request(
+                  `DELETE /${scope}/packages/{package_type}/{package_name}/versions/{package_version_id}`, {
+                    owner: context.repo.owner,
+                    package_type: 'maven',
+                    package_name: packageName,
+                    package_version_id: version.id
+                  });
+                console.log(`Deleted old release: ${version.name}`);
+              } catch (error) {
+                core.warning(`Failed to delete version ${version.name}: ${error.message}`);
+              }
+            }
+
+            console.log('Package cleanup completed');

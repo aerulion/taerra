@@ -1,0 +1,201 @@
+name: ✅ Pull Request
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened, labeled, unlabeled, edited ]
+
+permissions:
+  contents: read
+
+concurrency:
+  # A retitled pull request must not cancel the validation run it is sitting on, so metadata-only
+  # events queue under their own group and only ever cancel each other.
+  group: pr-${{ github.event.pull_request.number }}${{ github.event.action == 'edited' && '-title' || '' }}
+  cancel-in-progress: true
+
+env:
+  API_COORDINATES: net.aerulion:taerra-api
+
+jobs:
+  changes:
+    name: 🔍 Detect changed parts
+    timeout-minutes: 10
+    # Label churn that is not about deploying stands the workflow down, and so does an edit, which
+    # changes no file and is only of interest to the message check.
+    if: >-
+      github.event.action != 'edited'
+      && ((github.event.action != 'labeled' && github.event.action != 'unlabeled')
+      || github.event.label.name == 'deploy')
+    runs-on: ubuntu-latest
+    outputs:
+      plugin: ${{ steps.detect.outputs.plugin }}
+      mod: ${{ steps.detect.outputs.mod }}
+      any: ${{ steps.detect.outputs.any }}
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 🔍 Classify the changed files
+        id: detect
+        uses: ./.github/actions/classify-changes
+        with:
+          base: ${{ github.event.pull_request.base.sha }}
+
+  commit-messages:
+    name: 📝 Check commit messages
+    timeout-minutes: 10
+    # The same stand-down as above, except that an edit is exactly what this job has to re-check.
+    if: >-
+      (github.event.action != 'labeled' && github.event.action != 'unlabeled')
+      || github.event.label.name == 'deploy'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 📝 Check every commit message
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          message="$(mktemp)"
+          failed=0
+          checked=0
+          while IFS=$'\t' read -r sha author; do
+            if [ -z "${sha}" ] || [ "${author}" = 'dependabot[bot]' ]; then
+              continue
+            fi
+            checked=$((checked + 1))
+            git log -1 --format=%B "${sha}" > "${message}"
+            if ! ./.githooks/commit-msg "${message}"; then
+              echo "::error::${sha} has a malformed commit message."
+              failed=$((failed + 1))
+            fi
+          done < <(git log --no-merges --format='%H%x09%an' "${BASE}..HEAD")
+          echo "Checked ${checked} commit messages, ${failed} malformed."
+          if [ "${failed}" -gt 0 ]; then
+            exit 1
+          fi
+
+      # A squash merge writes the pull request title as the subject whenever the branch carries more
+      # than one commit, so the title has to satisfy the hook even though it is not a commit message.
+      # GitHub appends " (#<number>)" to it, which the hook's subject pattern accepts.
+      - name: 📝 Check the pull request title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          message="$(mktemp)"
+          printf '%s\n' "${TITLE}" > "${message}"
+          if ! ./.githooks/commit-msg "${message}"; then
+            echo "::error::The pull request title is malformed, and a squash merge would land it as the commit subject."
+            exit 1
+          fi
+
+  build:
+    name: 🛡️ Validation
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ github.event.pull_request.head.sha }}
+      build-number: ${{ github.run_number }}
+      pr-number: ${{ github.event.pull_request.number }}
+      publish: >-
+        ${{ needs.changes.outputs.plugin == 'true'
+        && contains(github.event.pull_request.labels.*.name, 'deploy') }}
+      upload-jars: ${{ contains(github.event.pull_request.labels.*.name, 'deploy') }}
+
+  comment:
+    name: 💬 Update PR comment
+    timeout-minutes: 5
+    needs: [ changes, build ]
+    if: >-
+      always() && needs.changes.result == 'success' && needs.changes.outputs.any == 'true'
+      && contains(github.event.pull_request.labels.*.name, 'deploy')
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: 💬 Write deployment comment
+        uses: actions/github-script@v9
+        env:
+          API_PUBLISHED: ${{ needs.build.outputs.published }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          VERSION: ${{ needs.build.outputs.version }}
+          PLUGIN_CHANGED: ${{ needs.changes.outputs.plugin }}
+          MOD_CHANGED: ${{ needs.changes.outputs.mod }}
+        with:
+          script: |
+            const marker = '🚀 **PR Snapshot deployed!**';
+            const sections = [];
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}#artifacts`;
+
+            if (process.env.BUILD_RESULT === 'failure') {
+              sections.push(':x: Build failed.');
+            } else if (process.env.BUILD_RESULT === 'success') {
+              if (process.env.PLUGIN_CHANGED === 'true') {
+                sections.push(`### 📦 Plugin\n[plugin-jars](${run}), version \`${process.env.VERSION}\`.`);
+              }
+              if (process.env.API_PUBLISHED === 'true') {
+                sections.push([
+                  '### 🧩 API',
+                  '```kotlin',
+                  `compileOnly("${process.env.API_COORDINATES}:${process.env.VERSION}")`,
+                  '```'
+                ].join('\n'));
+              }
+              if (process.env.MOD_CHANGED === 'true') {
+                sections.push(`### 🗺️ Mod\n[mod-jars](${run}), version \`${process.env.VERSION}\`.`);
+              }
+            }
+
+            if (sections.length === 0) {
+              console.log('Nothing was deployed, leaving the comment alone.');
+              return;
+            }
+
+            const body = [
+              marker,
+              '',
+              sections.join('\n\n'),
+              '',
+              `_Commit: \`${context.payload.pull_request.head.sha.substring(0, 7)}\` · updated ${new Date().toISOString()}_`
+            ].join('\n');
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number
+            });
+
+            const existing = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body
+              });
+            }

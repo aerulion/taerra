@@ -1,0 +1,60 @@
+# Taerra Configuration
+# Every setting can be changed in game with /taerra config <setting> <value>.
+
+# Web server settings
+web:
+  # Port for the web interface
+  port: 8100
+  # Bind address (0.0.0.0 for all interfaces, 127.0.0.1 for localhost only)
+  host: "0.0.0.0"
+  # Address players open the map at, like https://map.example.com. /taerra login then sends a link
+  # that logs the browser in; left empty, the link points at this machine and only works here.
+  # Link previews in chat apps also need it to show the map's image.
+  public-url: ""
+
+# Rendering settings
+rendering:
+  # Number of threads for tile rendering (0 = half the CPU cores, leaving at least two free for the server)
+  render-threads: 0
+  # How many live-update render jobs may start per second, each up to 16 neighboring tiles
+  # (0 = unlimited). Full renders started with /taerra render are not limited by this.
+  max-tiles-per-second: 10
+  # How often world changes are rendered, in seconds. Every change is recorded, player edits and natural
+  # activity alike, so the map is always brought up to date; it just is not redrawn the moment something moves.
+  # A tile changed many times in between is rendered once. 0 = render changes immediately.
+  update-interval: 900
+
+# Cache settings
+cache:
+  # Maximum number of tiles to keep in memory (affects RAM usage)
+  # Most tiles take 256 KB decoded, so 500 tiles is up to ~130 MB
+  max-tiles: 500
+  # How many chunks of sampled block data to keep in memory for the isometric view. Each is around 19 KB,
+  # so the default is roughly 160 MB. A render reads each chunk once per stage when its area fits in here,
+  # and more often when it does not: raising it speeds up renders of large areas for the memory it costs.
+  max-chunks: 8192
+
+# Worlds to render, by dimension key. None by default: enable them in game with
+# /taerra config world <world> enable
+worlds: [ ]
+
+# Worlds only logged-in viewers with taerra.web.world.<world> see, the colon swapped for a dot:
+# minecraft:the_end needs taerra.web.world.minecraft.the_end. Players log in with /taerra login.
+# Set in game with /taerra config world <world> private
+private-worlds: [ ]
+
+# Markers other plugins draw on the map
+markers:
+  # Layers only logged-in viewers with taerra.web.layer.<layer> see, like taerra.web.layer.worldguard.
+  # Set in game with /taerra config layer <layer> private
+  private-layers: [ ]
+  worldguard:
+    # Show WorldGuard regions as a layer viewers can switch on (needs WorldGuard installed)
+    enabled: true
+    # Whether the layer is on for viewers who have not toggled it themselves
+    shown-by-default: false
+  worldborder:
+    # Show the vanilla world border and ChunkyBorder borders (if ChunkyBorder is installed) as a layer
+    enabled: true
+    # Whether the layer is on for viewers who have not toggled it themselves
+    shown-by-default: true

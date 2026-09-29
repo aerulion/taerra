@@ -1,0 +1,120 @@
+name: 🧹 PR Cleanup
+
+on:
+  pull_request:
+    types: [ closed, unlabeled ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-cleanup-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+env:
+  PACKAGE_NAME: net.aerulion.taerra-api
+
+jobs:
+  cleanup:
+    name: 🗑️ Remove PR artifacts
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
+    if: >-
+      (github.event.action == 'closed'
+        && contains(github.event.pull_request.labels.*.name, 'deploy'))
+      || (github.event.action == 'unlabeled' && github.event.label.name == 'deploy')
+    steps:
+      - name: 📦 Delete PR artifacts and update comment
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const packageName = process.env.PACKAGE_NAME;
+            // A user-owned repository's packages live under /users, an organisation's under /orgs.
+            const scope = context.payload.repository.owner.type === 'Organization' ? 'orgs/{owner}' : 'users/{owner}';
+
+            console.log(`Cleaning up artifacts for PR #${prNumber}`);
+
+            const deletedVersions = [];
+
+            try {
+              const versions = await github.paginate(
+                `GET /${scope}/packages/{package_type}/{package_name}/versions`, {
+                  owner: context.repo.owner,
+                  package_type: 'maven',
+                  package_name: packageName,
+                  per_page: 100
+                });
+
+              // Follows the version format in settings.gradle.kts.
+              const prPattern = `pr${prNumber}-`;
+              const versionsToDelete = versions.filter(version =>
+                version.name.startsWith(prPattern)
+              );
+
+              console.log(`Found ${versionsToDelete.length} versions to delete:`,
+                versionsToDelete.map(v => v.name));
+
+              for (const version of versionsToDelete) {
+                try {
+                  await github.request(
+                    `DELETE /${scope}/packages/{package_type}/{package_name}/versions/{package_version_id}`, {
+                      owner: context.repo.owner,
+                      package_type: 'maven',
+                      package_name: packageName,
+                      package_version_id: version.id
+                    });
+                  console.log(`Deleted version: ${version.name}`);
+                  deletedVersions.push(version.name);
+                } catch (error) {
+                  console.error(`Failed to delete version ${version.name}:`, error.message);
+                }
+              }
+
+              console.log(`Package cleanup completed for PR #${prNumber}`);
+            } catch (error) {
+              console.error('Package cleanup failed:', error.message);
+              throw error;
+            }
+
+            // Update or delete the deployment comment
+            try {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+              });
+
+              const deploymentComment = comments.find(comment =>
+                comment.body.includes('🚀 **PR Snapshot deployed!**') &&
+                comment.user.type === 'Bot'
+              );
+
+              if (deploymentComment) {
+                if (deletedVersions.length > 0) {
+                  const updatedBody = `${deploymentComment.body}\n\n---\n⚠️ **Artifacts Cleaned Up**\nThe following versions have been deleted:\n${deletedVersions.map(v => `- \`${v}\``).join('\n')}`;
+
+                  await github.rest.issues.updateComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: deploymentComment.id,
+                    body: updatedBody
+                  });
+                  console.log('Updated deployment comment with cleanup info');
+                } else {
+                  await github.rest.issues.deleteComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: deploymentComment.id
+                  });
+                  console.log('Deleted deployment comment (no artifacts found)');
+                }
+              }
+            } catch (commentError) {
+              console.error('Failed to update/delete comment:', commentError.message);
+            }

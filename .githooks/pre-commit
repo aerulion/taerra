@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#
+# Formats the sources with spotless and re-stages every file that was already staged, so a commit is always
+# google-java-format clean without a manual spotlessApply.
+
+set -euo pipefail
+
+./gradlew -q spotlessApply
+# --diff-filter=d leaves out the staged deletions: git add cannot take a path that no longer
+# exists, and under set -e that failure would abort every commit that removes a file.
+git diff --cached --name-only -z --diff-filter=d | xargs -0 -r git add --

@@ -1,0 +1,222 @@
+name: 🚀 Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Release every stream, even one with nothing new since its last release.
+        type: boolean
+        default: false
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  changes:
+    name: 🔍 Detect changed parts
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      plugin: ${{ steps.detect.outputs.plugin }}
+      mod: ${{ steps.detect.outputs.mod }}
+      any: ${{ steps.detect.outputs.any }}
+    steps:
+      # Streams are diffed against their own release tags.
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      # Not against the push: a pending run can be cancelled, and its 'before' commit is then lost.
+      - name: 🔍 Classify the changed files
+        id: detect
+        uses: ./.github/actions/classify-changes
+        with:
+          base: ${{ github.event.before }}
+          release-tags: 'true'
+          # Empty on a push.
+          force: ${{ inputs.force || 'false' }}
+
+  build:
+    name: 🛡️ Validation
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build.yml
+    with:
+      build-number: ${{ github.run_number }}
+      publish: ${{ needs.changes.outputs.plugin == 'true' }}
+      upload-jars: true
+
+  release-plugin:
+    name: 📦 Release plugin
+    timeout-minutes: 15
+    needs: [ changes, build ]
+    if: needs.changes.outputs.plugin == 'true'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ needs.build.outputs.version }}
+      download: ${{ steps.download.outputs.url }}
+    steps:
+      # Sparse tree, but full history: the release notes are built from the commit log.
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: ⬇️ Download the built jars
+        uses: actions/download-artifact@v8
+        with:
+          name: plugin-jars
+          path: ./generated/
+
+      - name: 📦 Create GitHub release
+        uses: ./.github/actions/github-release
+        with:
+          tag: build-${{ github.run_number }}
+          prefix: build-
+          title: build-${{ github.run_number }} (${{ needs.build.outputs.version }})
+          files: |
+            ./generated/plugin/build/libs/*.jar
+            ./generated/api/build/libs/*.jar
+
+      - name: 🔗 Resolve plugin jar download link
+        id: download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: build-${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          URL=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" \
+            --jq '[.assets[] | select(.name | test("^taerra-[0-9].*\\.jar$"))][0].browser_download_url')
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+          echo "Plugin jar: ${URL}"
+
+  release-mod:
+    name: 🗺️ Release mod
+    timeout-minutes: 15
+    needs: [ changes, build ]
+    if: needs.changes.outputs.mod == 'true'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ needs.build.outputs.version }}
+      download: ${{ steps.download.outputs.url }}
+    steps:
+      # Sparse tree, but full history: the release notes are built from the commit log.
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: ⬇️ Download the built jar
+        uses: actions/download-artifact@v8
+        with:
+          name: mod-jars
+          path: ./generated/
+
+      - name: 📦 Create GitHub release
+        uses: ./.github/actions/github-release
+        with:
+          tag: mod-${{ github.run_number }}
+          prefix: mod-
+          title: mod-${{ github.run_number }} (${{ needs.build.outputs.version }})
+          files: ./generated/*.jar
+
+      - name: 🔗 Resolve mod jar download link
+        id: download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: mod-${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          URL=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" \
+            --jq '[.assets[] | select(.name | test("^taerra-fabric-[0-9].*\\.jar$"))][0].browser_download_url')
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+          echo "Mod jar: ${URL}"
+
+  notify-plugin:
+    name: 💬 Notify Discord (plugin)
+    needs: release-plugin
+    uses: ./.github/workflows/notify-discord.yml
+    with:
+      message: "## :rocket: A new plugin version has been released.\n### Version: `${{ needs.release-plugin.outputs.version }}`\n:inbox_tray: [Download plugin](${{ needs.release-plugin.outputs.download }})\nThe jar still has to be swapped on the server and the server restarted."
+      release-tag: build-${{ github.run_number }}
+    secrets:
+      WEBHOOK_ID: ${{ secrets.DISCORD_WEBHOOK_ID }}
+      WEBHOOK_TOKEN: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+
+  notify-mod:
+    name: 💬 Notify Discord (mod)
+    needs: release-mod
+    uses: ./.github/workflows/notify-discord.yml
+    with:
+      message: "## :world_map: A new mod version has been released.\n### Version: `${{ needs.release-mod.outputs.version }}`\n:inbox_tray: [Download mod](${{ needs.release-mod.outputs.download }})"
+      release-tag: mod-${{ github.run_number }}
+    secrets:
+      WEBHOOK_ID: ${{ secrets.DISCORD_WEBHOOK_ID }}
+      WEBHOOK_TOKEN: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+
+  notify-failure:
+    name: 💬 Notify Discord on failure
+    # Not the notify jobs: a Discord outage cannot be reported through Discord.
+    needs: [ changes, build, release-plugin, release-mod ]
+    if: failure()
+    uses: ./.github/workflows/notify-discord.yml
+    with:
+      message: "## :x: The release failed.\nCommit: `${{ github.sha }}`\n:mag: [Open the workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+    secrets:
+      WEBHOOK_ID: ${{ secrets.DISCORD_WEBHOOK_ID }}
+      WEBHOOK_TOKEN: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+
+  cleanup-packages:
+    name: 🧹 Cleanup old packages
+    needs: release-plugin
+    uses: ./.github/workflows/cleanup-packages.yml
+    with:
+      keep-latest: 10
+      package-name: net.aerulion.taerra-api
+    permissions:
+      packages: write
+
+  cleanup-plugin-releases:
+    name: 🧹 Cleanup old plugin releases
+    needs: release-plugin
+    uses: ./.github/workflows/cleanup-releases.yml
+    with:
+      keep-latest: 10
+      tag-prefix: build-
+    permissions:
+      contents: write
+
+  cleanup-mod-releases:
+    name: 🧹 Cleanup old mod releases
+    needs: release-mod
+    uses: ./.github/workflows/cleanup-releases.yml
+    with:
+      keep-latest: 10
+      tag-prefix: mod-
+    permissions:
+      contents: write

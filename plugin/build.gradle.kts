@@ -1,0 +1,108 @@
+import net.minecrell.pluginyml.paper.PaperPluginDescription
+
+plugins {
+    id("taerra.java-conventions")
+    alias(libs.plugins.paperweight.userdev)
+    alias(libs.plugins.plugin.yml.paper)
+    alias(libs.plugins.run.paper)
+}
+
+base {
+    archivesName = "taerra"
+}
+
+val runtimeLibraries =
+    listOf<Provider<MinimalExternalModuleDependency>>(
+        libs.caffeine,
+        libs.javalin.core,
+        libs.jackson.databind,
+    )
+
+val bundled =
+    configurations.create("bundled") {
+        isCanBeConsumed = false
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named("taerra-plugin-bundle"))
+        }
+    }
+
+dependencies {
+    paperweight.paperDevBundle(libs.versions.paper.get())
+    implementation(project(":api"))
+    bundled(project(":api"))
+    compileOnly(libs.jetbrains.annotations)
+    runtimeLibraries.forEach { implementation(it) }
+
+    compileOnly(libs.worldguard.core) { isTransitive = false }
+    compileOnly(libs.worldguard.libs) { isTransitive = false }
+    compileOnly(libs.worldedit.core) { isTransitive = false }
+    compileOnly(libs.worldedit.bukkit) { isTransitive = false }
+    compileOnly(libs.chunky.common) { isTransitive = false }
+    compileOnly(libs.chunkyborder.common) { isTransitive = false }
+}
+
+val writeLibraries =
+    tasks.register<WriteProperties>("writeLibraries") {
+        destinationFile =
+            layout.buildDirectory.file("generated/libraries/taerra-libraries.properties")
+        property(
+            "libraries",
+            runtimeLibraries
+                .map { library -> library.map { "${it.module}:${it.version}" }.get() }
+                .joinToString(","),
+        )
+    }
+
+tasks {
+    processResources {
+        from(writeLibraries)
+    }
+
+    jar {
+        from(bundled)
+    }
+
+    runDevBundleServer {
+        runDirectory = rootProject.layout.projectDirectory.dir("run")
+        args("-wworld-${libs.versions.paper.get().substringBefore(".build").replace(".", "-")}")
+        downloadPlugins {
+            modrinth("voidworld", "AhbiFdlx")
+            modrinth("chunky", "MdY6JATr")
+            modrinth("chunkyborder", "asaBBItO")
+            url(
+                "https://ci.enginehub.org/repository/download/bt10/30195:id/worldedit-bukkit-7.4.6-SNAPSHOT-dist.jar?branch=version/7.4.x&guest=1"
+            )
+            url(
+                "https://ci.enginehub.org/repository/download/bt11/30192:id/worldguard-bukkit-7.0.20-SNAPSHOT-dist.jar?branch=version/7.0.x&guest=1"
+            )
+            url("https://download.luckperms.net/1672/bukkit/loader/LuckPerms-Bukkit-5.5.85.jar")
+        }
+    }
+}
+
+paper {
+    name = "Taerra"
+    main = "net.aerulion.taerra.bootstrap.Taerra"
+    loader = "net.aerulion.taerra.bootstrap.TaerraLoader"
+    version = project.version.toString()
+    author = "aerulion"
+    apiVersion = libs.versions.paper.get().substringBefore(".build")
+    foliaSupported = false
+    serverDependencies {
+        register("WorldGuard") {
+            required = false
+            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+            joinClasspath = true
+        }
+        register("Chunky") {
+            required = false
+            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+            joinClasspath = true
+        }
+        register("ChunkyBorder") {
+            required = false
+            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+            joinClasspath = true
+        }
+    }
+}

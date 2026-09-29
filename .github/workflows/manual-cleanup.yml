@@ -1,0 +1,45 @@
+name: 🧹 Manual Cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      keep-latest:
+        description: Number of latest versions to keep per stream
+        required: false
+        type: number
+        default: 10
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manual-cleanup
+  cancel-in-progress: false
+
+jobs:
+  packages:
+    name: 🗑️ Old packages
+    uses: ./.github/workflows/cleanup-packages.yml
+    with:
+      keep-latest: ${{ inputs.keep-latest }}
+      package-name: net.aerulion.taerra-api
+    permissions:
+      packages: write
+
+  plugin-releases:
+    name: 🗑️ Old plugin releases
+    uses: ./.github/workflows/cleanup-releases.yml
+    with:
+      keep-latest: ${{ inputs.keep-latest }}
+      tag-prefix: build-
+    permissions:
+      contents: write
+
+  mod-releases:
+    name: 🗑️ Old mod releases
+    uses: ./.github/workflows/cleanup-releases.yml
+    with:
+      keep-latest: ${{ inputs.keep-latest }}
+      tag-prefix: mod-
+    permissions:
+      contents: write

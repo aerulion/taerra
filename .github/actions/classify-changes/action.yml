@@ -1,0 +1,134 @@
+name: Classify changed files
+description: >-
+  Splits a diff into the two release streams. mod/ is the mod, shared build files are both, anything else is the
+  plugin.
+
+inputs:
+  base:
+    description: >-
+      The commit to diff against, and the fallback when 'release-tags' finds no tag. A stream with no usable base
+      is reported as changed.
+    required: false
+    default: ''
+  release-tags:
+    description: Diff each stream against its own newest release tag instead of 'base'. Requires fetched tags.
+    required: false
+    default: 'false'
+  force:
+    description: Report every stream as changed without looking at the diff at all.
+    required: false
+    default: 'false'
+
+outputs:
+  plugin:
+    description: Whether the plugin or its API changed.
+    value: ${{ steps.detect.outputs.plugin }}
+  mod:
+    description: Whether the mod changed.
+    value: ${{ steps.detect.outputs.mod }}
+  any:
+    description: Whether any stream changed.
+    value: ${{ steps.detect.outputs.any }}
+
+runs:
+  using: composite
+  steps:
+    - name: 🔍 Classify the changed files
+      id: detect
+      shell: bash
+      env:
+        BASE_SHA: ${{ inputs.base }}
+        RELEASE_TAGS: ${{ inputs.release-tags }}
+        FORCE: ${{ inputs.force }}
+      run: |
+        set -euo pipefail
+
+        require_boolean() {
+          if [ "$2" != 'true' ] && [ "$2" != 'false' ]; then
+            echo "::error::The '$1' input must be 'true' or 'false', got '$2'."
+            exit 1
+          fi
+        }
+        require_boolean release-tags "${RELEASE_TAGS}"
+        require_boolean force "${FORCE}"
+
+        # Ancestry, not tag dates: dates tie, and a tie picks the oldest. Kept identical to release-notes.sh.
+        last_released() {
+          local tag
+          tag="$(git describe --tags --abbrev=0 --match "$1" HEAD 2>/dev/null)" || return 1
+          if [ -z "${tag}" ]; then
+            return 1
+          fi
+          git rev-parse "${tag}^{commit}"
+        }
+
+        fallback=''
+        if [ -n "${BASE_SHA}" ] && git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+          fallback="${BASE_SHA}"
+        fi
+
+        base_for() {
+          local pattern="$1" commit
+          if [ "${RELEASE_TAGS}" = 'true' ] && commit="$(last_released "${pattern}")"; then
+            printf '%s' "${commit}"
+            return 0
+          fi
+          if [ -n "${fallback}" ]; then
+            printf '%s' "${fallback}"
+            return 0
+          fi
+          return 1
+        }
+
+        # Must stay in sync with release-notes.sh: the mod is mod/ plus the build files both sides compile with,
+        # anything else is the plugin.
+        stream_changed() {
+          local stream="$1" base="$2" file
+          while IFS= read -r file; do
+            case "${file}" in
+              '' | *.md) ;;
+              mod/*) if [ "${stream}" = 'mod' ]; then return 0; fi ;;
+              gradle/* | build-logic/* | settings.gradle.kts | build.gradle.kts | gradle.properties | gradlew | gradlew.bat)
+                return 0 ;;
+              *) if [ "${stream}" = 'plugin' ]; then return 0; fi ;;
+            esac
+          done < <(git diff --name-only "${base}...HEAD")
+          return 1
+        }
+
+        classify() {
+          local stream="$1" pattern="$2" base
+          if [ "${FORCE}" = 'true' ]; then
+            echo "${stream}: forced." >&2
+            printf 'true'
+            return 0
+          fi
+          if ! base="$(base_for "${pattern}")"; then
+            echo "${stream}: no usable base, treating it as changed." >&2
+            printf 'true'
+            return 0
+          fi
+          if stream_changed "${stream}" "${base}"; then
+            echo "${stream}: changed since $(git rev-parse --short=7 "${base}")." >&2
+            printf 'true'
+          else
+            echo "${stream}: unchanged since $(git rev-parse --short=7 "${base}")." >&2
+            printf 'false'
+          fi
+        }
+
+        plugin="$(classify plugin 'build-*')"
+        mod="$(classify mod 'mod-*')"
+
+        any=false
+        if [ "${plugin}" = true ] || [ "${mod}" = true ]; then
+          any=true
+        fi
+
+        {
+          echo "plugin=${plugin}"
+          echo "mod=${mod}"
+          echo "any=${any}"
+        } >> "${GITHUB_OUTPUT}"
+
+        echo "plugin=${plugin} mod=${mod}"

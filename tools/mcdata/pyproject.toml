@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "taerra-mcdata"
+version = "0.1.0"
+description = "Generates Taerra block data from vanilla Minecraft assets"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=2.1,<3",
+  "Pillow>=11.0,<13"
+]
+
+[project.scripts]
+taerra-generate-block-data = "mcdata.generate:main"
+
+[tool.setuptools]
+packages = ["mcdata"]

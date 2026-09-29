@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+#
+# Rejects a commit message that is not "<gitmoji> <type>: <Subject>". Installed by settings.gradle.kts on every Gradle run.
+
+set -euo pipefail
+
+subject=''
+while IFS= read -r line; do
+  case "${line}" in
+    '#'* | '') continue ;;
+  esac
+  subject="${line}"
+  break
+done < "$1"
+
+# Messages git writes itself, and the rebase helpers.
+case "${subject}" in
+  'Merge '* | 'Revert "'* | 'Reapply '* | 'fixup! '* | 'squash! '* | 'amend! '*) exit 0 ;;
+esac
+
+emoji_for() {
+  case "$1" in
+    feat) printf ':sparkles:' ;;
+    fix) printf ':bug:' ;;
+    build) printf ':construction_worker:' ;;
+    ci) printf ':green_heart:' ;;
+    docs) printf ':memo:' ;;
+    refactor) printf ':recycle:' ;;
+    perf) printf ':zap:' ;;
+    test) printf ':white_check_mark:' ;;
+    revert) printf ':rewind:' ;;
+    deps) printf ':arrow_up:' ;;
+    chore) printf ':wrench:' ;;
+    *) return 1 ;;
+  esac
+}
+
+reject() {
+  cat >&2 <<MESSAGE
+Commit message rejected: $1
+
+  ${subject}
+
+Expected "<gitmoji> <type>: <Subject>", the subject starting with a capital letter:
+
+  :sparkles: feat: Add minimap overlay
+  :bug: fix(tiles): Correct seams between iso tiles
+  :construction_worker: build!: Drop Java 21 support
+
+  :sparkles:            feat      A new feature
+  :bug:                 fix       A bug fix
+  :construction_worker: build     Build system or external dependencies
+  :green_heart:         ci        CI configuration and scripts
+  :memo:                docs      Documentation only
+  :recycle:             refactor  Neither fixes a bug nor adds a feature
+  :zap:                 perf      Improves performance
+  :white_check_mark:    test      Adds or corrects tests
+  :rewind:              revert    Reverts a previous commit
+  :arrow_up:            deps      Dependency updates
+  :wrench:              chore     Anything else
+MESSAGE
+  exit 1
+}
+
+if [[ ! "${subject}" =~ ^(:[a-z_]+:)\ ([a-z]+)(\([^\)]*\))?(!)?:\ (.*)$ ]]; then
+  reject "it does not match the required format."
+fi
+
+emoji="${BASH_REMATCH[1]}"
+type="${BASH_REMATCH[2]}"
+summary="${BASH_REMATCH[5]}"
+
+if ! expected="$(emoji_for "${type}")"; then
+  reject "'${type}' is not one of the allowed types."
+fi
+if [ "${emoji}" != "${expected}" ]; then
+  reject "type '${type}' must carry ${expected}, not ${emoji}."
+fi
+if [[ ! "${summary}" =~ ^[A-Z] ]]; then
+  reject "the subject must start with a capital letter."
+fi

@@ -1,0 +1,22 @@
+Bundled web fonts for Taerra
+
+1) QuinqueFive
+   Author: GGBotNet
+   Source: https://ggbot.net
+   Files: QuinqueFive-Regular.ttf
+   License: SIL Open Font License 1.1
+
+These files are bundled for local, self-hosted use.
+Review the upstream license terms if redistributing outside this project.
+
+2) Schibsted Grotesk
+   Author: The Schibsted-Grotesk Project Authors
+   Source: https://github.com/schibsted/schibsted-grotesk
+   Files: SchibstedGrotesk.ttf (variable, wght 400-900)
+   License: SIL Open Font License 1.1
+
+3) Azeret Mono
+   Author: The Azeret Project Authors
+   Source: https://github.com/displaay/azeret
+   Files: AzeretMono.ttf (variable, wght 100-900)
+   License: SIL Open Font License 1.1

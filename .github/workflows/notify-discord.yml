@@ -1,0 +1,75 @@
+name: 💬 Notify Discord
+
+# A reusable workflow rather than a composite action: the notify jobs would otherwise each need a checkout.
+
+on:
+  workflow_call:
+    inputs:
+      message:
+        description: The message content. Discord caps this at 2000 characters, so anything longer is truncated.
+        required: true
+        type: string
+      release-tag:
+        description: >-
+          Optional tag of a GitHub release whose body is appended to the message as the changelog. The per-commit
+          links and author credits are stripped, and the whole message is truncated at Discord's 2000-character cap.
+        required: false
+        type: string
+      username:
+        description: The name the message is posted under.
+        required: false
+        type: string
+        default: Taerra
+    secrets:
+      WEBHOOK_ID:
+        description: The webhook ID.
+        required: true
+      WEBHOOK_TOKEN:
+        description: The webhook token.
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    name: 💬 Post to the webhook
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: 💬 Post to the webhook
+        env:
+          WEBHOOK_ID: ${{ secrets.WEBHOOK_ID }}
+          WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
+          USERNAME: ${{ inputs.username }}
+          MESSAGE: ${{ inputs.message }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release-tag }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${WEBHOOK_ID}" ] || [ -z "${WEBHOOK_TOKEN}" ]; then
+            echo "::error::The webhook ID and token must both be set."
+            exit 1
+          fi
+
+          if [ -n "${RELEASE_TAG}" ]; then
+            changelog="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" --jq '.body')"
+            # Compact form for Discord: the "by <author> in <commit-url>" tails are what blow the 2000-character
+            # cap, and the Contributors section at the end of the body already carries the credit.
+            changelog="$(sed -E 's/ by .* in https:\/\/[^[:space:]]+\/commit\/[0-9a-f]+$//' <<< "${changelog}")"
+            MESSAGE="${MESSAGE}"$'\n\n'"${changelog}"
+          fi
+
+          # Discord rejects content over 2000 characters rather than shortening it.
+          payload="$(jq -nc --arg content "${MESSAGE}" --arg username "${USERNAME}" \
+            '{content: $content[0:2000], username: $username}')"
+
+          curl --silent --show-error --fail-with-body \
+            --retry 3 --retry-connrefused --max-time 30 \
+            --header 'Content-Type: application/json' \
+            --user-agent 'Taerra-Release-Pipeline' \
+            --data "${payload}" \
+            "https://discord.com/api/webhooks/${WEBHOOK_ID}/${WEBHOOK_TOKEN}"
+
+          echo "Notification sent."

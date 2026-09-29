@@ -1,0 +1,140 @@
+name: 🏗️ Build
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: The commit to build. Empty builds the caller's ref.
+        required: false
+        type: string
+        default: ''
+      build-number:
+        description: The build number the version is derived from.
+        required: false
+        type: string
+        default: ''
+      pr-number:
+        description: The pull request number, for a snapshot version.
+        required: false
+        type: string
+        default: ''
+      publish:
+        description: Publish the API to GitHub Packages. The caller must grant packages:write.
+        required: false
+        type: boolean
+        default: false
+      upload-jars:
+        description: Upload the plugin and mod jars as the plugin-jars and mod-jars workflow artifacts.
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      version:
+        description: The version this build resolved to.
+        value: ${{ jobs.build.outputs.version }}
+      published:
+        description: Whether this build published to GitHub Packages.
+        value: ${{ jobs.build.outputs.published }}
+
+env:
+  JAVA_VERSION: 25
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  build:
+    name: 🔍 Build and test
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      published: ${{ inputs.publish }}
+    env:
+      TAERRA_BUILD_NUMBER: ${{ inputs.build-number }}
+      TAERRA_PR_NUMBER: ${{ inputs.pr-number }}
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: ☕ Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v6
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+
+      - name: 🐘 Setup Gradle
+        uses: gradle/actions/setup-gradle@v6.3.0
+
+      - name: 🔖 Resolve build version
+        id: version
+        run: |
+          VERSION=$(./gradlew -q printVersion)
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Building version ${VERSION}"
+
+      - name: 🏗️ Build and test
+        run: ./gradlew build
+
+      # A separate invocation, so nothing is published before every test has passed. It reuses the build above.
+      - name: 📦 Publish the API
+        if: ${{ inputs.publish }}
+        env:
+          ORG_GRADLE_PROJECT_GitHubPackagesUsername: ${{ github.actor }}
+          ORG_GRADLE_PROJECT_GitHubPackagesPassword: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew :api:publish
+
+      - name: 📤 Upload the plugin jars
+        if: ${{ inputs.upload-jars }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: plugin-jars
+          path: |
+            plugin/build/libs/*.jar
+            api/build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: 📤 Upload the mod jar
+        if: ${{ inputs.upload-jars }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: mod-jars
+          path: mod/build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: 📤 Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: "*/build/reports/tests/"
+
+  mcdata:
+    name: 🐍 Test mcdata
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/mcdata
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: 🐍 Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: tools/mcdata/pyproject.toml
+
+      - name: 📦 Install mcdata
+        run: pip install .
+
+      - name: 🧪 Run the tests
+        run: python -m unittest discover -s tests

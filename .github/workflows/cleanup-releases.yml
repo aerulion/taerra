@@ -1,0 +1,73 @@
+name: 🧹 Cleanup old releases
+
+on:
+  workflow_call:
+    inputs:
+      tag-prefix:
+        description: Only releases whose tag starts with this are considered.
+        required: true
+        type: string
+      keep-latest:
+        description: How many of the most recent releases of this stream to keep.
+        required: true
+        type: number
+
+jobs:
+  cleanup:
+    name: 🗑️ Delete old ${{ inputs.tag-prefix }} releases
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 🗑️ Delete old releases and their tags
+        uses: actions/github-script@v9
+        env:
+          TAG_PREFIX: ${{ inputs.tag-prefix }}
+          KEEP_LATEST: ${{ inputs.keep-latest }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tagPrefix = process.env.TAG_PREFIX;
+            const keepLatest = Number(process.env.KEEP_LATEST);
+
+            if (!tagPrefix) {
+              core.setFailed('Refusing to run without a tag prefix: both streams share one release list.');
+              return;
+            }
+            if (!Number.isInteger(keepLatest) || keepLatest < 1) {
+              core.setFailed(`keep-latest must be a positive integer, got "${process.env.KEEP_LATEST}".`);
+              return;
+            }
+
+            const releases = await github.paginate(github.rest.repos.listReleases, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+
+            // Sorted explicitly: both streams share one release list, so a surprise order deletes the wrong one.
+            const owned = releases
+              .filter(release => release.tag_name.startsWith(tagPrefix))
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            const obsolete = owned.slice(keepLatest);
+
+            console.log(`Found ${owned.length} "${tagPrefix}" releases, keeping ${owned.length - obsolete.length}`);
+
+            for (const release of obsolete) {
+              try {
+                await github.rest.repos.deleteRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: release.id
+                });
+                await github.rest.git.deleteRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `tags/${release.tag_name}`
+                });
+                console.log(`Deleted ${release.tag_name}`);
+              } catch (error) {
+                core.warning(`Failed to delete ${release.tag_name}: ${error.message}`);
+              }
+            }

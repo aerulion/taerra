@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "taerra",
+  "version": "${version}",
+  "name": "Taerra",
+  "description": "In-game viewer and minimap for the Taerra server map.",
+  "authors": [ "aerulion" ],
+  "contact": {
+    "sources": "https://github.com/aerulion/taerra"
+  },
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "client": [ "net.aerulion.taerra.mod.TaerraClient" ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "fabric-api": "*",
+    "minecraft": "~${minecraft}",
+    "java": ">=25"
+  }
+}

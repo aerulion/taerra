@@ -1,0 +1,1762 @@
+@font-face {
+    font-family: "QuinqueFive";
+    font-weight: 700;
+    font-display: swap;
+    ascent-override: 80%;
+    descent-override: 20%;
+    line-gap-override: 0%;
+    src: url("../fonts/QuinqueFive-Regular.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Schibsted Grotesk";
+    font-weight: 400 900;
+    font-display: swap;
+    src: url("../fonts/SchibstedGrotesk.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Azeret Mono";
+    font-weight: 100 900;
+    font-display: swap;
+    src: url("../fonts/AzeretMono.ttf") format("truetype");
+}
+
+:root {
+    color-scheme: dark;
+    --font-display: "QuinqueFive", system-ui, sans-serif;
+    --font-body: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Azeret Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    --black: #000;
+    --stone-900: #1e1e1f;
+    --stone-800: #262627;
+    --stone-700: #313233;
+    --stone-600: #48494a;
+    --stone-500: #58585a;
+    --stone-200: #a0a1a4;
+    --stone-100: #d0d1d4;
+    --white: #fff;
+
+    --green: #3c8527;
+    --green-hi: #52a535;
+    --green-lo: #1d4d13;
+    --gold: #ffcf3f;
+    --red: #e34a4a;
+
+    --topbar-h: 56px;
+    --panel-w: 300px;
+    --gap: 16px;
+    --edge: 2px solid var(--stone-900);
+    --slab-shadow: inset 0 2px rgb(255 255 255 / .08), 0 8px 24px rgb(0 0 0 / .5);
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    display: grid;
+    grid-template-rows: var(--topbar-h) 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
+    background: var(--black);
+    color: var(--white);
+    font: 15px/1.4 var(--font-body);
+    -webkit-font-smoothing: antialiased;
+}
+
+button {
+    font: inherit;
+    color: inherit;
+}
+
+:focus-visible {
+    outline: 2px solid var(--white);
+    outline-offset: 2px;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 0 var(--gap);
+    background: var(--black);
+    border-bottom: 1px solid var(--stone-700);
+    z-index: 1100;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+    color: var(--white);
+    font: 700 10px/1 var(--font-display);
+    letter-spacing: .02em;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.brand__icon {
+    width: 28px;
+    height: 28px;
+}
+
+/* Takes the bar's leftover width whatever it holds, so fitWorlds can measure the tabs against it. */
+.worlds {
+    display: flex;
+    flex: 1 1 0;
+    align-self: stretch;
+    gap: 4px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.worlds.is-compact .world-tab:not(.world-switch),
+.worlds:not(.is-compact) .world-switch {
+    display: none;
+}
+
+.worlds:not(:has(button)) {
+    align-items: center;
+    color: var(--stone-200);
+    font-size: 13px;
+}
+
+.world-tab {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    flex: none;
+    min-width: 120px;
+    padding: 0 20px;
+    background: none;
+    border: 0;
+    color: var(--stone-100);
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.world-tab__env {
+    color: var(--stone-200);
+    font: 700 7.5px/1 var(--font-display);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.world-tab__name {
+    font-weight: 700;
+}
+
+.world-tab__name,
+.layer__name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.private-icon {
+    display: inline-flex;
+    flex: none;
+    color: var(--gold);
+}
+
+.world-tab::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 4px;
+    background: transparent;
+}
+
+.world-tab:hover {
+    background: var(--stone-800);
+}
+
+.world-tab:hover::after {
+    background: var(--stone-500);
+}
+
+.world-tab[aria-current="true"],
+.world-switch {
+    background: var(--stone-700);
+    box-shadow: inset 2px 2px rgb(255 255 255 / .08);
+    color: var(--white);
+}
+
+.world-tab[aria-current="true"] .world-tab__env,
+.world-switch .world-tab__env {
+    color: var(--stone-100);
+}
+
+.world-tab[aria-current="true"]::after,
+.world-switch::after {
+    background: var(--green-hi);
+    box-shadow: inset 0 -2px var(--green);
+}
+
+/* The current world's tab, standing in for all of them. */
+.world-switch {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+    min-width: 0;
+}
+
+.world-switch:hover {
+    background: var(--stone-600);
+}
+
+.world-switch__label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.world-switch__chevron {
+    flex: none;
+    color: var(--stone-200);
+}
+
+.world-menu {
+    inset: var(--topbar-h) auto auto var(--switch-left, var(--gap));
+    width: 260px;
+    max-height: calc(100dvh - var(--topbar-h) - var(--gap));
+    margin: 0;
+    padding: 6px;
+    overflow-y: auto;
+    background: var(--stone-700);
+    border: var(--edge);
+    box-shadow: var(--slab-shadow);
+    color: var(--white);
+}
+
+.world-menu__group + .world-menu__group {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 2px solid var(--stone-900);
+}
+
+.world-menu__env {
+    padding: 8px 8px 6px;
+    color: var(--stone-200);
+    font: 700 7.5px/1 var(--font-display);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.world-menu__item {
+    display: flex;
+    width: 100%;
+    padding: 10px 8px;
+    background: none;
+    border: 0;
+    color: var(--stone-100);
+    text-align: left;
+    cursor: pointer;
+}
+
+.world-menu__item:hover,
+.world-menu__item:focus-visible {
+    background: var(--stone-600);
+    color: var(--white);
+    outline: none;
+}
+
+.world-menu__item[aria-current="true"] {
+    background: var(--stone-800);
+    box-shadow: inset 4px 0 var(--green-hi);
+    color: var(--white);
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex: none;
+    color: var(--stone-100);
+    font-size: 13px;
+}
+
+.status__dot {
+    width: 10px;
+    height: 10px;
+    background: var(--gold);
+    box-shadow: 0 0 0 2px var(--stone-900);
+}
+
+.status__dot[data-state="connected"] {
+    background: var(--green-hi);
+}
+
+.status__dot[data-state="disconnected"] {
+    background: var(--red);
+}
+
+.status__dot[data-state="connecting"] {
+    animation: blink 1s steps(2, jump-none) infinite;
+}
+
+@keyframes blink {
+    50% {
+        opacity: .3;
+    }
+}
+
+.language {
+    flex: none;
+    padding: 4px 6px;
+    background: var(--stone-900);
+    border: 1px solid var(--stone-600);
+    color: var(--stone-100);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.account-button {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    padding: 1px;
+    background: var(--stone-900);
+    border: 1px solid var(--stone-600);
+    color: var(--stone-200);
+    cursor: pointer;
+}
+
+.account-button:hover {
+    border-color: var(--stone-200);
+    color: var(--white);
+}
+
+.account-button__icon {
+    width: 16px;
+    height: 16px;
+}
+
+.account-button:has(.account-button__head:not([hidden])) .account-button__icon {
+    display: none;
+}
+
+/* Three screen pixels per skin pixel, so the face stays crisp. */
+.account-button__head {
+    width: 24px;
+    height: 24px;
+    image-rendering: pixelated;
+}
+
+/* A popover lives in the top layer, so it is placed against the viewport, under the button. */
+.account-menu {
+    inset: calc(var(--topbar-h) - 4px) var(--gap) auto auto;
+    width: 260px;
+    margin: 0;
+    padding: 6px;
+    background: var(--stone-700);
+    border: var(--edge);
+    box-shadow: var(--slab-shadow);
+    color: var(--white);
+}
+
+.account-menu__title {
+    padding: 6px 8px 8px;
+    border-bottom: 2px solid var(--stone-900);
+    margin-bottom: 4px;
+    color: var(--stone-100);
+    font: 600 12px/1.3 var(--font-mono);
+}
+
+.account-menu__title b {
+    color: var(--white);
+}
+
+.account-menu__text,
+.account-menu__error {
+    padding: 4px 8px 6px;
+    color: var(--stone-100);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.account-menu__error {
+    color: var(--red);
+}
+
+.account-menu button {
+    width: 100%;
+    padding: 8px;
+    background: none;
+    border: 0;
+    color: var(--white);
+    font: 600 13px var(--font-body);
+    text-align: left;
+    cursor: pointer;
+}
+
+.account-menu button:hover,
+.account-menu button:focus-visible {
+    background: var(--stone-600);
+    outline: none;
+}
+
+.stage {
+    position: relative;
+    min-height: 0;
+}
+
+#map {
+    position: absolute;
+    inset: 0;
+}
+
+.leaflet-container {
+    --void: #0b0b0c;
+    background: var(--void);
+    font: inherit;
+}
+
+#map[data-environment="NETHER"] {
+    --void: #170909;
+}
+
+#map[data-environment="THE_END"] {
+    --void: #0f0b17;
+}
+
+.leaflet-tile-pane {
+    transition: filter .2s ease;
+}
+
+#map[data-style="gray"] .leaflet-tile-pane {
+    filter: url("#stone-gray");
+}
+
+/* WebKit (Safari, and every browser on iOS) skips SVG filters on Leaflet's GPU-composited tiles. Built-in filters give
+   the same ramp from stone-900 to #8c8d90, only without the water tint. */
+@supports (font: -apple-system-body) {
+    #map[data-style="gray"] .leaflet-tile-pane {
+        filter: grayscale(1) brightness(.565) contrast(.764);
+    }
+}
+
+.leaflet-tile {
+    background: linear-gradient(45deg, var(--hatch) 25%, transparent 25% 50%, var(--hatch) 50% 75%, transparent 75%) 0 0 / 16px 16px;
+    --hatch: rgb(255 255 255 / .03);
+    image-rendering: pixelated;
+}
+
+.leaflet-bar,
+.leaflet-touch .leaflet-bar {
+    border: var(--edge);
+    border-radius: 0;
+    box-shadow: 0 4px 12px rgb(0 0 0 / .4);
+}
+
+.leaflet-bar a,
+.leaflet-touch .leaflet-bar a {
+    width: 40px;
+    height: 40px;
+    line-height: 38px;
+    background: var(--stone-600);
+    border: 0;
+    border-radius: 0 !important;
+    color: var(--white);
+    font: 700 15px/38px var(--font-display);
+    box-shadow: inset 2px 2px rgb(255 255 255 / .15), inset 0 -4px var(--stone-700);
+}
+
+.leaflet-bar a + a {
+    border-top: var(--edge);
+}
+
+.leaflet-bar a:hover {
+    background: var(--stone-500);
+    color: var(--white);
+}
+
+.leaflet-bar a.leaflet-disabled {
+    background: var(--stone-700);
+    color: var(--stone-500);
+}
+
+.shortcuts {
+    display: block;
+}
+
+.shortcuts summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.shortcuts summary::-webkit-details-marker {
+    display: none;
+}
+
+.shortcuts summary h2::after {
+    content: "+";
+    color: var(--stone-200);
+}
+
+.shortcuts[open] summary h2::after {
+    content: "−";
+}
+
+.shortcuts__list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 6px 12px;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.shortcuts__list dt {
+    display: flex;
+    gap: 4px;
+}
+
+.shortcuts__list dd {
+    color: var(--stone-100);
+}
+
+kbd {
+    min-width: 26px;
+    padding: 4px 6px 7px;
+    background: var(--stone-100);
+    border: var(--edge);
+    color: var(--stone-900);
+    font: 600 12px/1 var(--font-mono);
+    text-align: center;
+    box-shadow: inset 0 -3px #b1b2b5, inset 2px 2px rgb(255 255 255 / .6);
+}
+
+.compass {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    background: var(--stone-800);
+    border: var(--edge);
+    box-shadow: inset 2px 2px rgb(0 0 0 / .4), 0 4px 12px rgb(0 0 0 / .4);
+    padding: 0;
+}
+
+.compass:enabled {
+    cursor: pointer;
+}
+
+.compass:enabled:hover {
+    background: var(--stone-700);
+}
+
+.compass:enabled:active {
+    box-shadow: inset 2px 4px rgb(0 0 0 / .5), 0 4px 12px rgb(0 0 0 / .4);
+}
+
+.compass__needle {
+    shape-rendering: crispEdges;
+    filter: drop-shadow(1px 1px 0 rgb(0 0 0 / .5));
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+    background: var(--stone-700);
+    color: var(--white);
+    border-radius: 0;
+    box-shadow: 0 4px 16px rgb(0 0 0 / .5);
+}
+
+.leaflet-popup-content-wrapper {
+    border: var(--edge);
+}
+
+.leaflet-popup-content {
+    margin: 10px 14px;
+    line-height: 1.5;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+    top: 10px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 5 5' shape-rendering='crispEdges'%3E%3Cpath fill='%238c8d90' d='M0 0h1v1h-1zM4 0h1v1h-1zM1 1h1v1h-1zM3 1h1v1h-1zM2 2h1v1h-1zM1 3h1v1h-1zM3 3h1v1h-1zM0 4h1v1h-1zM4 4h1v1h-1z'/%3E%3C/svg%3E") center / 10px no-repeat;
+    font-size: 0;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus-visible {
+    background: var(--stone-600) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 5 5' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M0 0h1v1h-1zM4 0h1v1h-1zM1 1h1v1h-1zM3 1h1v1h-1zM2 2h1v1h-1zM1 3h1v1h-1zM3 3h1v1h-1zM0 4h1v1h-1zM4 4h1v1h-1z'/%3E%3C/svg%3E") center / 10px no-repeat;
+    outline: none;
+}
+
+.panel {
+    position: absolute;
+    top: var(--gap);
+    left: var(--gap);
+    bottom: var(--gap);
+    width: var(--panel-w);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+    transition: transform .2s ease;
+}
+
+.panel > * {
+    pointer-events: auto;
+}
+
+.panel.is-collapsed {
+    transform: translateX(calc(-100% - var(--gap)));
+}
+
+.panel__toggle {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    width: 28px;
+    height: 48px;
+    background: var(--stone-700);
+    border: var(--edge);
+    border-left: 0;
+    cursor: pointer;
+    transition: transform .2s ease;
+}
+
+.panel__toggle::before {
+    content: "◀";
+    font-size: 12px;
+}
+
+.panel.is-collapsed .panel__toggle {
+    border: var(--edge);
+    transform: translateX(var(--gap));
+}
+
+.panel.is-collapsed .panel__toggle::before {
+    content: "▶";
+}
+
+.panel__body {
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    overflow-y: auto;
+    background: var(--stone-700);
+    border: var(--edge);
+    box-shadow: var(--slab-shadow);
+    scrollbar-width: thin;
+    scrollbar-color: var(--stone-500) transparent;
+}
+
+.panel__section {
+    display: grid;
+    gap: 10px;
+    padding: var(--gap);
+}
+
+.panel__section + .panel__section {
+    border-top: 2px solid var(--stone-900);
+    box-shadow: inset 0 2px rgb(255 255 255 / .06);
+}
+
+.panel h2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font: 700 10px/1.2 var(--font-display);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.badge {
+    min-width: 28px;
+    padding: 3px 6px;
+    background: var(--stone-900);
+    color: var(--stone-100);
+    font: 600 12px/1 var(--font-mono);
+    text-align: center;
+}
+
+.muted {
+    color: var(--stone-200);
+    font-size: 13px;
+}
+
+.btn {
+    min-height: 40px;
+    padding: 0 14px 4px;
+    background: var(--stone-100);
+    border: var(--edge);
+    color: var(--stone-900);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: inset 0 -4px #b1b2b5, inset 2px 2px rgb(255 255 255 / .6);
+}
+
+.btn:hover {
+    background: var(--white);
+}
+
+.btn:active,
+.btn[aria-pressed="true"] {
+    padding-bottom: 0;
+    box-shadow: inset 0 4px rgb(0 0 0 / .15);
+}
+
+.btn--primary {
+    background: var(--green);
+    color: var(--white);
+    box-shadow: inset 0 -4px var(--green-lo), inset 2px 2px rgb(255 255 255 / .2);
+}
+
+.btn--primary:hover {
+    background: var(--green-hi);
+}
+
+.segmented {
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+}
+
+.segmented .btn + .btn {
+    border-left: 0;
+}
+
+.segmented .btn[aria-pressed="true"] {
+    background: var(--green);
+    color: var(--white);
+    box-shadow: inset 0 4px var(--green-lo);
+}
+
+.segmented--small .btn {
+    min-height: 32px;
+    padding: 0 10px 3px;
+    font-size: 12px;
+    box-shadow: inset 0 -3px #b1b2b5, inset 2px 2px rgb(255 255 255 / .6);
+}
+
+.segmented--small .btn[aria-pressed="true"] {
+    padding-bottom: 0;
+    box-shadow: inset 0 3px var(--green-lo);
+}
+
+.rotation {
+    display: grid;
+    grid-template-columns: 48px 1fr 48px;
+}
+
+.rotation output {
+    display: grid;
+    place-items: center;
+    background: var(--stone-900);
+    font: 600 14px var(--font-mono);
+    text-transform: capitalize;
+}
+
+.render-what {
+    color: var(--white);
+    font-weight: 600;
+}
+
+.progress {
+    overflow: hidden;
+    height: 12px;
+    background: var(--stone-900);
+    border: var(--edge);
+}
+
+.progress__fill {
+    width: 0;
+    height: 100%;
+    background: var(--green-hi);
+    box-shadow: inset 0 -3px var(--green);
+    transition: width .3s ease;
+}
+
+.progress.is-indeterminate .progress__fill {
+    width: 25%;
+    transition: none;
+    animation: progress-slide 1.6s steps(16) infinite;
+}
+
+@keyframes progress-slide {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(400%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .progress.is-indeterminate .progress__fill {
+        width: 100%;
+        animation: none;
+    }
+}
+
+.players {
+    display: grid;
+    gap: 4px;
+    padding: 0;
+    list-style: none;
+}
+
+.player {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    align-items: center;
+    column-gap: 10px;
+    width: 100%;
+    padding: 6px 8px;
+    background: var(--stone-800);
+    border: 0;
+    text-align: left;
+    cursor: pointer;
+}
+
+.player:hover {
+    background: var(--stone-600);
+}
+
+.player img {
+    grid-row: span 2;
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+    background: var(--stone-900);
+    border: 2px solid var(--player-color, var(--stone-900));
+}
+
+.player__name {
+    grid-column: 2;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player__details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    grid-column: 2;
+}
+
+.player__coords {
+    white-space: nowrap;
+    color: var(--stone-200);
+    font: 12px var(--font-mono);
+}
+
+.player-marker__body {
+    position: relative;
+    width: 28px;
+    height: 28px;
+}
+
+.player-marker img {
+    position: relative;
+    display: block;
+    width: 28px;
+    height: 28px;
+    image-rendering: pixelated;
+    border: 2px solid var(--player-color, var(--white));
+    box-shadow: 0 2px 0 1px rgb(0 0 0 / .5);
+}
+
+.player-marker__facing {
+    position: absolute;
+    inset: -10px;
+    color: var(--player-color, var(--white));
+    pointer-events: none;
+}
+
+.player-marker__facing svg {
+    display: block;
+    shape-rendering: crispEdges;
+}
+
+.player-marker__corner,
+.player-marker__facing.is-diagonal .player-marker__edge {
+    display: none;
+}
+
+.player-marker__facing.is-diagonal .player-marker__corner {
+    display: inline;
+}
+
+.player-marker__body.is-hidden,
+.player.is-hidden img {
+    opacity: .55;
+}
+
+.player-marker__body.is-hidden img,
+.player.is-hidden img {
+    border-style: dashed;
+}
+
+.player__tag {
+    flex: none;
+    padding: 2px 4px;
+    background: var(--stone-900);
+    color: var(--stone-200);
+    font: 700 7.5px/1 var(--font-display);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+/* Someone on another world: faded like the map they're not on, with the world they are on. */
+.player.is-elsewhere {
+    background: var(--stone-900);
+    box-shadow: inset 0 0 0 2px var(--stone-800);
+}
+
+.player.is-elsewhere:hover {
+    background: var(--stone-700);
+}
+
+.player.is-elsewhere img {
+    filter: grayscale(.6);
+    opacity: .7;
+}
+
+.player.is-elsewhere .player__name {
+    color: var(--stone-100);
+}
+
+.player.is-elsewhere .player__details {
+    grid-column: 2 / 4;
+}
+
+.player__world {
+    grid-area: 1 / 3 / 2 / 4;
+    justify-self: end;
+    max-width: 120px;
+    overflow: hidden;
+    padding: 3px 4px;
+    background: var(--stone-800);
+    box-shadow: inset 0 -2px var(--stone-700);
+    color: var(--stone-100);
+    font: 700 7.5px/1 var(--font-display);
+    letter-spacing: .06em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.player-marker.is-followed img {
+    outline: 2px solid var(--white);
+}
+
+.player[aria-pressed="true"] {
+    background: var(--green-lo);
+    box-shadow: inset 4px 0 var(--green-hi);
+}
+
+.player[aria-pressed="true"]::after {
+    content: attr(data-following-label);
+    grid-area: 1 / 3 / 3 / 4;
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.layers {
+    display: grid;
+    gap: 4px;
+    padding: 0;
+    list-style: none;
+}
+
+.layer {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    background: var(--stone-800);
+    cursor: pointer;
+}
+
+.layer:hover {
+    background: var(--stone-600);
+}
+
+.layer__name {
+    font-weight: 700;
+}
+
+.layer input {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    background: var(--stone-900);
+    border: var(--edge);
+    box-shadow: inset 2px 2px rgb(0 0 0 / .4);
+    cursor: pointer;
+}
+
+.layer input:checked {
+    background: var(--green-hi) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M5 1h1v1h1v1H6v1H5v1H4v1H2V5H1V4H0V3h2v1h1V3h1V2h1z'/%3E%3C/svg%3E") center / 10px no-repeat;
+    box-shadow: inset 0 -2px var(--green);
+}
+
+.waypoint-icon {
+    background: none;
+    border: 0;
+}
+
+.waypoint {
+    position: relative;
+    width: 18px;
+    height: 22px;
+}
+
+.waypoint__pin {
+    display: block;
+    filter: drop-shadow(0 2px 0 rgb(0 0 0 / .45));
+    shape-rendering: crispEdges;
+    transition: translate .12s steps(2);
+}
+
+.waypoint-icon:hover .waypoint__pin {
+    translate: 0 -2px;
+}
+
+.waypoint__label,
+.leaflet-tooltip.marker-tooltip {
+    padding: 3px 5px;
+    background: rgb(0 0 0 / .6);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--white);
+    font: 700 7.5px/1 var(--font-display);
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+
+.waypoint__label {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    translate: -50% 0;
+    pointer-events: none;
+}
+
+.waypoint__label.is-hidden {
+    visibility: hidden;
+}
+
+.waypoint-icon:hover .waypoint__label {
+    visibility: visible;
+}
+
+.marker-popup--player {
+    --marker: var(--green-hi);
+}
+
+.leaflet-tooltip.marker-tooltip::before {
+    display: none;
+}
+
+.region-flag-icon {
+    background: none;
+    border: 0;
+}
+
+.region-flag {
+    display: block;
+    translate: 0 -100%;
+    padding: 4px 6px;
+    background: var(--marker);
+    box-shadow: 0 0 0 2px rgb(0 0 0 / .5), inset 0 2px rgb(255 255 255 / .25), inset 0 -2px rgb(0 0 0 / .2);
+    color: var(--white);
+    font: 700 7.5px/1 var(--font-display);
+    letter-spacing: .04em;
+    text-shadow: 1px 1px 0 rgb(0 0 0 / .55);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.marker-popup-frame .leaflet-popup-content {
+    margin: 0;
+}
+
+.marker-popup {
+    display: grid;
+    gap: 6px;
+    min-width: 180px;
+    padding: 10px 14px 12px;
+    border-top: 4px solid var(--marker);
+}
+
+.marker-popup__layer,
+.marker-popup__title {
+    margin-right: 24px;
+}
+
+.marker-popup__layer {
+    color: var(--stone-200);
+    font: 700 7.5px/1 var(--font-display);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.marker-popup__facts {
+    color: var(--stone-100);
+    font: 12px/1.2 var(--font-mono);
+}
+
+.marker-popup__title {
+    font: 700 10px/1.2 var(--font-display);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.marker-popup__details {
+    display: grid;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 2px solid var(--stone-900);
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    font-size: 13px;
+}
+
+.marker-popup__details dt {
+    color: var(--stone-200);
+}
+
+.marker-popup__details dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.context-menu {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1100;
+    display: grid;
+    min-width: 220px;
+    padding: 6px;
+    background: var(--stone-700);
+    border: var(--edge);
+    box-shadow: var(--slab-shadow);
+}
+
+.context-menu__title {
+    padding: 6px 8px 8px;
+    border-bottom: 2px solid var(--stone-900);
+    margin-bottom: 4px;
+    color: var(--stone-100);
+    font: 600 12px/1 var(--font-mono);
+}
+
+.context-menu button {
+    padding: 8px;
+    background: none;
+    border: 0;
+    color: var(--white);
+    font: 600 13px var(--font-body);
+    text-align: left;
+    cursor: pointer;
+}
+
+.context-menu button:hover,
+.context-menu button:focus-visible {
+    background: var(--stone-600);
+    outline: none;
+}
+
+.context-menu button.is-done {
+    color: var(--green-hi);
+}
+
+.context-menu button.is-failed {
+    color: var(--red);
+}
+
+.hud {
+    position: absolute;
+    right: var(--gap);
+    bottom: var(--gap);
+    z-index: 1000;
+    display: flex;
+    gap: 12px;
+    padding: 8px 10px;
+    background: var(--stone-700);
+    border: var(--edge);
+    box-shadow: var(--slab-shadow);
+    color: var(--stone-200);
+    font: 700 7.5px/1 var(--font-display);
+    pointer-events: none;
+}
+
+.hud span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hud b {
+    min-width: 6ch;
+    padding: 4px 6px;
+    background: var(--stone-900);
+    color: var(--white);
+    font: 600 12px/1 var(--font-mono);
+    text-align: right;
+}
+
+@media (hover: none) {
+    .hud,
+    .shortcuts {
+        display: none;
+    }
+}
+
+@media (max-width: 720px) {
+    .topbar {
+        gap: 12px;
+    }
+
+    .brand {
+        font-size: 0;
+    }
+
+    .world-tab {
+        min-width: 0;
+        padding: 0 12px;
+    }
+
+    .world-menu {
+        left: var(--gap);
+        right: var(--gap);
+        width: auto;
+    }
+
+    #status-text,
+    #status-retry {
+        display: none;
+    }
+
+    .panel {
+        top: auto;
+        right: var(--gap);
+        width: auto;
+        max-height: 50%;
+    }
+
+    .panel.is-collapsed {
+        transform: translateY(calc(100% + var(--gap)));
+    }
+
+    .panel__toggle {
+        top: auto;
+        bottom: 100%;
+        left: 0;
+        width: 48px;
+        height: 28px;
+        border: var(--edge);
+        border-bottom: 0;
+    }
+
+    .panel__toggle::before {
+        content: "▼";
+    }
+
+    .panel.is-collapsed .panel__toggle {
+        transform: translateY(calc(-1 * var(--gap)));
+    }
+
+    .panel.is-collapsed .panel__toggle::before {
+        content: "▲";
+    }
+
+    .hud {
+        top: var(--gap);
+        right: auto;
+        bottom: auto;
+        left: var(--gap);
+    }
+}
+
+/* Rows like the right-click menu's, the text lined up with the popup's own. */
+.marker-popup__actions {
+    display: grid;
+    gap: 2px;
+    margin: 4px -8px 0;
+    padding-top: 6px;
+    border-top: 2px solid var(--stone-900);
+}
+
+.marker-popup__action {
+    padding: 7px 8px;
+    background: none;
+    border: 0;
+    color: var(--white);
+    font: 600 13px var(--font-body);
+    text-align: left;
+    cursor: pointer;
+}
+
+.marker-popup__action:hover,
+.marker-popup__action:focus-visible {
+    background: var(--stone-600);
+    outline: none;
+}
+
+.marker-popup__action.is-done {
+    color: var(--green-hi);
+}
+
+.marker-popup__action.is-failed {
+    color: var(--red);
+}
+
+/* Waypoint editor: a header, then sections of a label and its controls, all on one rhythm. */
+
+.editor {
+    width: min(340px, 100vw - 2 * var(--gap));
+    max-height: calc(100dvh - 2 * var(--gap));
+    /* The page resets every margin, and a modal dialog centers itself with auto margins. */
+    margin: auto;
+    padding: 0;
+    background: var(--stone-700);
+    border: var(--edge);
+    box-shadow: var(--slab-shadow);
+    color: var(--white);
+}
+
+.editor::backdrop {
+    background: rgb(0 0 0 / .55);
+}
+
+.editor__form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px;
+}
+
+.editor__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--stone-900);
+}
+
+.editor__preview {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    background: var(--stone-900);
+    box-shadow: inset 2px 2px rgb(0 0 0 / .4);
+    color: var(--waypoint);
+}
+
+.editor__preview svg {
+    shape-rendering: crispEdges;
+    filter: drop-shadow(0 2px 0 rgb(0 0 0 / .45));
+}
+
+.editor__title {
+    font: 700 10px/1.2 var(--font-display);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.editor__where {
+    margin-top: 6px;
+    color: var(--stone-200);
+    font: 12px var(--font-mono);
+}
+
+.editor__section {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+/* A floated legend is an ordinary grid item, so it spaces like every other label. */
+.editor__section > legend {
+    float: left;
+    width: 100%;
+}
+
+.editor__label {
+    padding: 0;
+    color: var(--stone-200);
+    font: 700 7.5px/1 var(--font-display);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.editor__input,
+.hex {
+    min-height: 36px;
+    padding: 0 10px;
+    background: var(--stone-900);
+    border: var(--edge);
+    box-shadow: inset 2px 2px rgb(0 0 0 / .4);
+    color: var(--white);
+    font: 600 14px var(--font-body);
+}
+
+.editor__input::placeholder {
+    color: var(--stone-500);
+}
+
+.editor__input:focus-visible,
+.hex:focus-within {
+    outline: 2px solid var(--white);
+    outline-offset: -2px;
+}
+
+/* The new group's settings sit in a well under the chips, so they read as part of that choice. */
+.editor__new-group {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+    background: var(--stone-800);
+    border: var(--edge);
+    box-shadow: inset 0 2px rgb(0 0 0 / .25);
+}
+
+.editor__check {
+    display: grid;
+    grid-template-columns: 18px 1fr;
+    align-items: start;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.editor__check input {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    background: var(--stone-900);
+    border: var(--edge);
+    box-shadow: inset 2px 2px rgb(0 0 0 / .4);
+    cursor: pointer;
+}
+
+.editor__check input:checked {
+    background: var(--gold) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpath fill='%231e1e1f' d='M5 1h1v1h1v1H6v1H5v1H4v1H2V5H1V4H0V3h2v1h1V3h1V2h1z'/%3E%3C/svg%3E") center / 10px no-repeat;
+}
+
+.editor__check input:focus-visible {
+    outline: 2px solid var(--white);
+    outline-offset: 1px;
+}
+
+.editor__check-text {
+    display: grid;
+    gap: 4px;
+}
+
+.editor__check-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 18px;
+}
+
+.editor__hint {
+    color: var(--stone-200);
+    font-size: 12px;
+    line-height: 1.3;
+}
+
+.editor__error {
+    margin-top: -4px;
+    color: var(--red);
+    font-size: 13px;
+}
+
+.editor__actions {
+    display: flex;
+    gap: 8px;
+    padding-top: 14px;
+    border-top: 2px solid var(--stone-900);
+}
+
+.editor__actions .btn {
+    padding: 0 10px 4px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.editor__actions .btn--danger {
+    margin-right: auto;
+}
+
+.btn--danger {
+    background: var(--stone-600);
+    color: var(--white);
+    box-shadow: inset 0 -4px var(--stone-900), inset 2px 2px rgb(255 255 255 / .1);
+}
+
+.btn--danger:hover,
+.btn--danger.is-armed {
+    background: var(--red);
+    box-shadow: inset 0 -4px #8f2a2a, inset 2px 2px rgb(255 255 255 / .2);
+}
+
+/* Group chips: one pick, wrapping as groups pile up. */
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.chip input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.chip__label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 10px;
+    background: var(--stone-800);
+    border: var(--edge);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.chip:hover .chip__label {
+    background: var(--stone-600);
+}
+
+.chip input:checked + .chip__label {
+    background: var(--green-lo);
+    box-shadow: inset 0 -3px var(--green-hi);
+}
+
+.chip input:focus-visible + .chip__label {
+    outline: 2px solid var(--white);
+    outline-offset: -2px;
+}
+
+/* Making a group is an action, not a group: dashed until chosen. */
+.chip--new .chip__label {
+    background: none;
+    border: 2px dashed var(--stone-500);
+    color: var(--stone-100);
+}
+
+.chip--new input:checked + .chip__label {
+    border-style: solid;
+    border-color: var(--stone-900);
+    color: var(--white);
+}
+
+/* Placing a waypoint: a crosshair on the map and a banner saying what the next click does. */
+
+.stage:has(.placing:not([hidden])) .leaflet-container {
+    cursor: crosshair;
+}
+
+.placing {
+    position: absolute;
+    top: var(--gap);
+    left: 50%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: calc(100% - 2 * var(--gap));
+    padding: 6px 6px 6px 12px;
+    translate: -50% 0;
+    background: var(--stone-700);
+    border: var(--edge);
+    box-shadow: var(--slab-shadow);
+    font-size: 13px;
+}
+
+.placing.is-failed #placing-text {
+    color: var(--red);
+}
+
+.placing__cancel {
+    flex: none;
+    padding: 6px 10px;
+    background: var(--stone-600);
+    border: var(--edge);
+    color: var(--white);
+    font: 600 13px var(--font-body);
+    cursor: pointer;
+}
+
+.placing__cancel:hover,
+.placing__cancel:focus-visible {
+    background: var(--stone-500);
+    outline: none;
+}
+
+/* Color picker: dye swatches, a shade field and a hue slider, all square and pixel-edged. */
+
+.swatches {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+}
+
+.swatch {
+    position: relative;
+    aspect-ratio: 1;
+    background: var(--swatch);
+    border: var(--edge);
+    box-shadow: inset 2px 2px rgb(255 255 255 / .25), inset -2px -2px rgb(0 0 0 / .25);
+    cursor: pointer;
+}
+
+.swatch input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.swatch:hover {
+    translate: 0 -2px;
+}
+
+.swatch:has(input:checked) {
+    outline: 2px solid var(--white);
+    outline-offset: 1px;
+}
+
+.swatch:has(input:focus-visible) {
+    outline: 2px dashed var(--white);
+    outline-offset: 1px;
+}
+
+.picker {
+    position: relative;
+    height: 120px;
+    margin-top: 4px;
+    background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, var(--hue));
+    border: var(--edge);
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.picker:focus-visible {
+    outline: 2px solid var(--white);
+    outline-offset: 1px;
+}
+
+.picker__thumb {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    translate: -50% -50%;
+    background: var(--waypoint);
+    border: 2px solid var(--white);
+    box-shadow: 0 0 0 2px var(--stone-900);
+    pointer-events: none;
+}
+
+.hue {
+    appearance: none;
+    width: 100%;
+    height: 16px;
+    margin: 0;
+    background: linear-gradient(to right, #f00, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00);
+    border: var(--edge);
+    cursor: pointer;
+}
+
+.hue::-webkit-slider-thumb {
+    appearance: none;
+    width: 8px;
+    height: 20px;
+    background: var(--white);
+    border: 2px solid var(--stone-900);
+}
+
+.hue::-moz-range-thumb {
+    width: 4px;
+    height: 16px;
+    background: var(--white);
+    border: 2px solid var(--stone-900);
+    border-radius: 0;
+}
+
+.hue:focus-visible {
+    outline: 2px solid var(--white);
+    outline-offset: 1px;
+}
+
+.hex {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font: 600 14px var(--font-mono);
+}
+
+.hex span {
+    color: var(--stone-200);
+}
+
+.hex input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    outline: none;
+    color: var(--white);
+    font: inherit;
+    text-transform: lowercase;
+}
+
+.hex::after {
+    content: "";
+    width: 18px;
+    height: 18px;
+    background: var(--waypoint);
+    border: var(--edge);
+}
