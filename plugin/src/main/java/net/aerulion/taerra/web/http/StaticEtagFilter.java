@@ -62,7 +62,7 @@ final class StaticEtagFilter extends HttpFilter {
     chain.doFilter(
         new HttpServletRequestWrapper(request) {
           @Override
-          public String getHeader(final String name) {
+          public @Nullable String getHeader(final String name) {
             return IF_NONE_MATCH.equalsIgnoreCase(name) ? null : super.getHeader(name);
           }
 

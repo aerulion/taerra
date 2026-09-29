@@ -1,3 +1,6 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.util.UUID
 import net.minecrell.pluginyml.paper.PaperPluginDescription
 
 plugins {
@@ -65,6 +68,31 @@ tasks {
     runDevBundleServer {
         runDirectory = rootProject.layout.projectDirectory.dir("run")
         args("-wworld-${libs.versions.paper.get().substringBefore(".build").replace(".", "-")}")
+        // runDev's client has no Microsoft account behind it.
+        if (gradle.startParameter.taskNames.any { it.removePrefix(":") == "runDev" }) {
+            args("-o", "false")
+            // Ops the player runDev's client joins as, so waypoints, teleport and config work.
+            val ops = rootProject.layout.projectDirectory.file("run/ops.json").asFile
+            doFirst {
+                val player = "TaerraDev"
+                val uuid = UUID.nameUUIDFromBytes("OfflinePlayer:$player".toByteArray()).toString()
+                @Suppress("UNCHECKED_CAST")
+                val entries =
+                    if (ops.exists()) JsonSlurper().parse(ops) as List<Map<String, Any>>
+                    else emptyList()
+                if (entries.none { it["uuid"] == uuid }) {
+                    val op =
+                        mapOf(
+                            "uuid" to uuid,
+                            "name" to player,
+                            "level" to 4,
+                            "bypassesPlayerLimit" to false,
+                        )
+                    ops.parentFile.mkdirs()
+                    ops.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(entries + op)))
+                }
+            }
+        }
         downloadPlugins {
             modrinth("voidworld", "AhbiFdlx")
             modrinth("chunky", "MdY6JATr")

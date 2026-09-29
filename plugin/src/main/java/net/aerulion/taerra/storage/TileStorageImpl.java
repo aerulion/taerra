@@ -37,15 +37,6 @@ public final class TileStorageImpl implements TileStorage {
     this.encodedTiles = Caffeine.newBuilder().maximumSize(Math.max(64, maxEncodedTiles)).build();
   }
 
-  private static @NotNull String computeETag(final byte @NotNull [] data) {
-    long hash = 0xcbf29ce484222325L;
-    for (final byte value : data) {
-      hash ^= value & 0xFF;
-      hash *= 0x100000001b3L;
-    }
-    return "\"" + Integer.toHexString(data.length) + '-' + Long.toHexString(hash) + '"';
-  }
-
   private static @NotNull String sanitizeWorldName(final @NotNull String worldName) {
     return worldName.replaceAll("[^a-zA-Z0-9_-]", "_");
   }
@@ -110,7 +101,7 @@ public final class TileStorageImpl implements TileStorage {
   public boolean saveTile(final @NotNull TileCoordinate coord, final @NotNull BufferedImage image)
       throws IOException {
     final byte @NotNull [] encoded = ImageUtils.encodePNG(image);
-    final @NotNull EncodedTile tile = new EncodedTile(encoded, computeETag(encoded));
+    final @NotNull EncodedTile tile = new EncodedTile(encoded, EncodedTile.eTagOf(encoded));
     if (readEncodedTile(coord).map(stored -> stored.eTag().equals(tile.eTag())).orElse(false)) {
       try {
         Files.setLastModifiedTime(
@@ -202,7 +193,7 @@ public final class TileStorageImpl implements TileStorage {
 
     try {
       final byte @NotNull [] data = Files.readAllBytes(file.toPath());
-      final @NotNull EncodedTile encodedTile = new EncodedTile(data, computeETag(data));
+      final @NotNull EncodedTile encodedTile = new EncodedTile(data, EncodedTile.eTagOf(data));
       this.encodedTiles.put(coord, encodedTile);
       return Optional.of(encodedTile);
     } catch (final IOException e) {

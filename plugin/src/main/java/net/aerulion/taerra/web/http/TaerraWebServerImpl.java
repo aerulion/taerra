@@ -38,6 +38,7 @@ import net.aerulion.taerra.storage.EncodedTile;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.util.HexColors;
 import net.aerulion.taerra.waypoint.Waypoints;
+import net.aerulion.taerra.web.auth.ModHandshake;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.auth.WebSessions;
 import net.aerulion.taerra.web.marker.MarkerPayloadSerializer;
@@ -69,6 +70,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private final @NotNull MarkerRegistryInternal markers;
   private final @NotNull PlayerPositionBroadcaster players;
   private final @NotNull WebSessions sessions;
+  private final @NotNull ModHandshake modHandshake;
   private final @NotNull Waypoints waypoints;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private final @NotNull PlayerAvatars avatars = new PlayerAvatars();
@@ -88,6 +90,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       final @NotNull MarkerRegistryInternal markers,
       final @NotNull PlayerPositionBroadcaster players,
       final @NotNull WebSessions sessions,
+      final @NotNull ModHandshake modHandshake,
       final @NotNull Waypoints waypoints) {
     super();
     this.plugin = plugin;
@@ -98,6 +101,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     this.markers = markers;
     this.players = players;
     this.sessions = sessions;
+    this.modHandshake = modHandshake;
     this.waypoints = waypoints;
   }
 
@@ -158,9 +162,13 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       ctx.status(404).result("Pick buffer not found");
       return;
     }
-    ctx.header("Cache-Control", "no-cache")
-        .contentType("application/octet-stream")
-        .result(pick.get());
+    final @NotNull String eTag = EncodedTile.eTagOf(pick.get());
+    ctx.header("Cache-Control", "no-cache").header("ETag", eTag);
+    if (eTag.equals(ctx.header("If-None-Match"))) {
+      ctx.status(304);
+      return;
+    }
+    ctx.contentType("application/octet-stream").result(pick.get());
   }
 
   private static boolean insideBorder(final @NotNull World world, final int x, final int z) {
@@ -469,11 +477,13 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       ctx.status(400).result("Invalid teleport");
       return;
     }
-    ctx.future(() -> teleport(uuid, request).thenAccept(status -> ctx.status(status)));
+    // The mod shows its own toast; the chat line is for the browser.
+    final boolean announce = !this.modHandshake.isMod(ctx.cookie(WebSessions.COOKIE));
+    ctx.future(() -> teleport(uuid, request, announce).thenAccept(status -> ctx.status(status)));
   }
 
   private @NotNull CompletableFuture<Integer> teleport(
-      final @NotNull UUID uuid, final @NotNull TeleportRequest request) {
+      final @NotNull UUID uuid, final @NotNull TeleportRequest request, final boolean announce) {
     final @NotNull CompletableFuture<Integer> result = new CompletableFuture<>();
     Bukkit.getScheduler()
         .runTask(
@@ -505,7 +515,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                                   PlayerTeleportEvent.TeleportCause.PLUGIN)
                               .thenApply(
                                   teleported -> {
-                                    if (teleported) {
+                                    if (teleported && announce) {
                                       player.sendMessage(
                                           Messages.webTeleport(
                                               x + " " + y + " " + z, WorldKeys.id(world)));

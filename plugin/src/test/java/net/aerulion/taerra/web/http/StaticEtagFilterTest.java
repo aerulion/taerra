@@ -7,12 +7,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class StaticEtagFilterTest {
 
-  private static String tag(final @NotNull String content) throws IOException {
+  private static @Nullable String tag(final @NotNull String content) throws IOException {
     return StaticEtagFilter.hash(
         new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
   }

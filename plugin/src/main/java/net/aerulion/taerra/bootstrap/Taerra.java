@@ -52,6 +52,7 @@ import net.aerulion.taerra.storage.TileStorageImpl;
 import net.aerulion.taerra.util.Throwables;
 import net.aerulion.taerra.waypoint.Waypoints;
 import net.aerulion.taerra.waypoint.WaypointsImpl;
+import net.aerulion.taerra.web.auth.ModHandshake;
 import net.aerulion.taerra.web.auth.WebGrants;
 import net.aerulion.taerra.web.auth.WebSessions;
 import net.aerulion.taerra.web.http.TaerraWebServer;
@@ -190,6 +191,8 @@ public final class Taerra extends JavaPlugin {
           new MapWebSocketHandlerImpl(this, configuration, webSessions);
       webSessions.onChange(webSocketHandler::revalidate);
       WebGrants.start(this, configuration, webSessions);
+      final @NotNull ModHandshake modHandshake = new ModHandshake(this, configuration, webSessions);
+      modHandshake.start();
       final @NotNull TileUpdateBroadcaster tileUpdateBroadcaster =
           new TileUpdateBroadcasterImpl(this, webSocketHandler);
       this.tileUpdateBroadcaster = tileUpdateBroadcaster;
@@ -226,6 +229,7 @@ public final class Taerra extends JavaPlugin {
               markers,
               playerBroadcaster,
               webSessions,
+              modHandshake,
               waypoints);
       this.webServer = webServer;
       webServer.start();

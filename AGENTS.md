@@ -20,6 +20,9 @@ It is a public plugin: nothing in it may be specific to one server network.
 **Rendering is server side only.** The mod is a viewer: it draws the tiles the plugin serves and talks to the same
 `/api/...` routes as the web map in `plugin/src/main/resources/web/`. Never render, or share rendering code, on the
 client. A change to a route or its JSON lands together with the web map and mod changes it needs, in one commit.
+The mod learns the web map's address and session from the plugin's `taerra:web` join message (`ModHandshake`), which
+carries a protocol number: bump `ModHandshake.PROTOCOL` and the mod's `TaerraClient.PROTOCOL` together whenever a
+route, its JSON or that message changes in a way an older mod would misread.
 
 The look is fixed product identity: full-block cubes, one colour per face, lighting hardcoded in
 `rendering/style/Lighting.java`. No style options or toggles; change the constants.
@@ -35,6 +38,7 @@ layers and teleport. Extend that model; don't add external authentication.
 ./gradlew :plugin:test [--tests "WebSessionsTest"]
 ./gradlew :plugin:runDevBundleServer         # local Paper dev server in ./run (downloads WorldEdit/WorldGuard/Chunky/LuckPerms)
 ./gradlew :mod:runClient                     # Minecraft client with the mod
+./gradlew runDev                             # both: server in offline mode, client joins it as TaerraDev
 ./gradlew -q printVersion
 ```
 

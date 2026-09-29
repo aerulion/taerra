@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import net.aerulion.taerra.config.TaerraConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -38,7 +39,7 @@ class WebSessionsTest {
     final @NotNull WebSessions sessions = sessions();
     final @NotNull String code = sessions.createCode(PLAYER, "Steve", SKIN);
 
-    final WebSessions.Login login = sessions.redeem(code);
+    final WebSessions.@Nullable Login login = sessions.redeem(code);
     assertNotNull(login);
     assertNull(sessions.redeem(code));
     assertNull(sessions.redeem("guessed"));
@@ -46,7 +47,7 @@ class WebSessionsTest {
 
     final @NotNull WebSessions restarted = sessions();
     restarted.load();
-    final WebSessions.Session session = restarted.session(login.token());
+    final WebSessions.@Nullable Session session = restarted.session(login.token());
     assertNotNull(session);
     assertEquals(PLAYER, session.uuid());
     assertEquals("Steve", session.name());
@@ -62,9 +63,11 @@ class WebSessionsTest {
     final @NotNull WebSessions sessions = sessions();
     final @NotNull AtomicInteger ends = new AtomicInteger();
     sessions.onChange(ends::incrementAndGet);
-    final WebSessions.Login first = sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN));
-    final WebSessions.Login second = sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN));
-    final WebSessions.Login other =
+    final WebSessions.@Nullable Login first =
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN));
+    final WebSessions.@Nullable Login second =
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN));
+    final WebSessions.@Nullable Login other =
         sessions.redeem(sessions.createCode(UUID.randomUUID(), "Alex", null));
     assertNotNull(first);
     assertNotNull(second);
@@ -93,7 +96,7 @@ class WebSessionsTest {
     sessions.grant(PLAYER, Set.of("taerra.web.world.minecraft.the_end"));
     assertEquals(1, changes.get());
 
-    final WebSessions.Login login = sessions.redeem(code);
+    final WebSessions.@Nullable Login login = sessions.redeem(code);
     assertNotNull(login);
     assertEquals(Viewer.ANONYMOUS, sessions.viewer(null));
     assertEquals(Viewer.ANONYMOUS, sessions.viewer("guessed"));

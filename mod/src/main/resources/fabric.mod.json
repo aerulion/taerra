@@ -11,12 +11,16 @@
   "license": "All-Rights-Reserved",
   "environment": "client",
   "entrypoints": {
-    "client": [ "net.aerulion.taerra.mod.TaerraClient" ]
+    "client": [ "net.aerulion.taerra.mod.TaerraClient" ],
+    "modmenu": [ "net.aerulion.taerra.mod.compat.ModMenuIntegration" ]
   },
   "depends": {
     "fabricloader": ">=0.19.5",
     "fabric-api": "*",
     "minecraft": "~${minecraft}",
     "java": ">=25"
+  },
+  "suggests": {
+    "modmenu": "*"
   }
 }

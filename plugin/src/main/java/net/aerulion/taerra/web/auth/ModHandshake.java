@@ -1,0 +1,114 @@
+package net.aerulion.taerra.web.auth;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import net.aerulion.taerra.config.TaerraConfig;
+import net.aerulion.taerra.permission.TaerraPermission;
+import net.aerulion.taerra.web.player.PlayerAvatars;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRegisterChannelEvent;
+import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * Tells the Taerra mod where the web map is and logs it in as the player, the same session {@code
+ * /taerra login} hands out, ended again when the player quits.
+ */
+public final class ModHandshake implements Listener {
+
+  public static final @NotNull String CHANNEL = "taerra:web";
+
+  /**
+   * What the mod may expect of this message and of the routes and JSON it reads. Bump it with any
+   * change an older mod would misread; the mod's {@code TaerraClient.PROTOCOL} must match.
+   */
+  public static final int PROTOCOL = 1;
+
+  private final @NotNull Plugin plugin;
+  private final @NotNull TaerraConfig config;
+  private final @NotNull WebSessions sessions;
+  private final @NotNull ObjectMapper mapper = new ObjectMapper();
+  private final @NotNull Map<UUID, String> tokens = new ConcurrentHashMap<>();
+
+  public ModHandshake(
+      final @NotNull Plugin plugin,
+      final @NotNull TaerraConfig config,
+      final @NotNull WebSessions sessions) {
+    super();
+    this.plugin = plugin;
+    this.config = config;
+    this.sessions = sessions;
+  }
+
+  public void start() {
+    this.plugin.getServer().getMessenger().registerOutgoingPluginChannel(this.plugin, CHANNEL);
+    this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
+  }
+
+  @EventHandler
+  public void onRegister(final @NotNull PlayerRegisterChannelEvent event) {
+    if (CHANNEL.equals(event.getChannel())) {
+      send(event.getPlayer());
+    }
+  }
+
+  // The client may have registered the channel before the player joined.
+  @EventHandler
+  public void onJoin(final @NotNull PlayerJoinEvent event) {
+    if (event.getPlayer().getListeningPluginChannels().contains(CHANNEL)) {
+      send(event.getPlayer());
+    }
+  }
+
+  @EventHandler
+  public void onQuit(final @NotNull PlayerQuitEvent event) {
+    this.sessions.end(this.tokens.remove(event.getPlayer().getUniqueId()));
+  }
+
+  /** Whether {@code token} is a session this handshake handed to the mod. */
+  public boolean isMod(final @Nullable String token) {
+    return token != null && this.tokens.containsValue(token);
+  }
+
+  private void send(final @NotNull Player player) {
+    final @NotNull Map<String, Object> hello = new HashMap<>();
+    hello.put("protocol", PROTOCOL);
+    hello.put(
+        "url",
+        this.plugin.getConfig().getString("web.public-url", "").strip().replaceAll("/+$", ""));
+    hello.put("port", this.plugin.getConfig().getInt("web.port", 8100));
+    final @Nullable String token = token(player);
+    if (token != null) {
+      hello.put("token", token);
+    }
+    try {
+      player.sendPluginMessage(this.plugin, CHANNEL, this.mapper.writeValueAsBytes(hello));
+    } catch (final JsonProcessingException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  private @Nullable String token(final @NotNull Player player) {
+    if (!TaerraPermission.COMMAND_LOGIN.check(player)) {
+      return null;
+    }
+    return this.tokens.computeIfAbsent(
+        player.getUniqueId(),
+        uuid -> {
+          this.sessions.grant(uuid, WebGrants.of(player, this.config));
+          final WebSessions.@Nullable Login login =
+              this.sessions.redeem(
+                  this.sessions.createCode(uuid, player.getName(), PlayerAvatars.skin(player)));
+          return login == null ? null : login.token();
+        });
+  }
+}

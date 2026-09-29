@@ -39,6 +39,7 @@ the lot, then runs the full build, so what it leaves behind is what the pipeline
 | `preCommit`                  | Format everything, then build and test                         |
 | `:plugin:runDevBundleServer` | Paper in `run/`, with WorldEdit, WorldGuard, Chunky, LuckPerms |
 | `:mod:runClient`             | A Minecraft client with the mod loaded                         |
+| `runDev`                     | Both at once: offline-mode server, client joins as `TaerraDev` |
 | `installGitHooks`            | Point git at `.githooks` (any build does this)                 |
 
 ## Versions

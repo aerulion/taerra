@@ -66,6 +66,14 @@ tasks {
         )
     }
 
+    // The two run in parallel (org.gradle.parallel); the plugin and mod scripts switch the server
+    // to offline mode and point the client at it when this task is requested.
+    register("runDev") {
+        group = "taerra"
+        description = "Starts the dev server and a client that joins it."
+        dependsOn(":plugin:runDevBundleServer", ":mod:runClient")
+    }
+
     register("printVersion") {
         description = "Prints the version this build publishes under."
         group = "help"
