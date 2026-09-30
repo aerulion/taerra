@@ -1,7 +1,5 @@
 name: 💬 Notify Discord
 
-# A reusable workflow rather than a composite action: the notify jobs would otherwise each need a checkout.
-
 on:
   workflow_call:
     inputs:
@@ -55,13 +53,10 @@ jobs:
 
           if [ -n "${RELEASE_TAG}" ]; then
             changelog="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" --jq '.body')"
-            # Compact form for Discord: the "by <author> in <commit-url>" tails are what blow the 2000-character
-            # cap, and the Contributors section at the end of the body already carries the credit.
             changelog="$(sed -E 's/ by .* in https:\/\/[^[:space:]]+\/commit\/[0-9a-f]+$//' <<< "${changelog}")"
             MESSAGE="${MESSAGE}"$'\n\n'"${changelog}"
           fi
 
-          # Discord rejects content over 2000 characters rather than shortening it.
           payload="$(jq -nc --arg content "${MESSAGE}" --arg username "${USERNAME}" \
             '{content: $content[0:2000], username: $username}')"
 

@@ -4,7 +4,6 @@ import java.lang.reflect.Proxy;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-/** Plugins that only have a name and an identity, to own layers in tests. */
 public final class TestPlugins {
 
   private TestPlugins() {

@@ -52,7 +52,6 @@ runs:
         require_boolean release-tags "${RELEASE_TAGS}"
         require_boolean force "${FORCE}"
 
-        # Ancestry, not tag dates: dates tie, and a tie picks the oldest. Kept identical to release-notes.sh.
         last_released() {
           local tag
           tag="$(git describe --tags --abbrev=0 --match "$1" HEAD 2>/dev/null)" || return 1
@@ -80,8 +79,6 @@ runs:
           return 1
         }
 
-        # Must stay in sync with release-notes.sh: the mod is mod/ plus the build files both sides compile with,
-        # anything else is the plugin.
         stream_changed() {
           local stream="$1" base="$2" file
           while IFS= read -r file; do

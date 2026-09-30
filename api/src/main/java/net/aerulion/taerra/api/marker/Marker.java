@@ -11,11 +11,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Something drawn on the map, placed on a {@link MarkerLayer}. Markers are immutable: the {@code
- * with…} methods return a changed copy. Worlds are given by key, so a marker may name a world that
- * is not loaded.
- */
 @ApiStatus.NonExtendable
 public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
 
@@ -34,7 +29,6 @@ public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
     return new PointMarkerImpl(id, world, position, label, Map.of(), DEFAULT_COLOR);
   }
 
-  /** A line through at least two points. */
   static @NotNull LineMarker line(
       final @NotNull String id,
       final @NotNull NamespacedKey world,
@@ -64,7 +58,6 @@ public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
         DEFAULT_COLOR);
   }
 
-  /** An area with at least three corners, from {@code minY} up to {@code maxY}. */
   static @NotNull AreaMarker polygon(
       final @NotNull String id,
       final @NotNull NamespacedKey world,
@@ -76,18 +69,15 @@ public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
         id, world, outline, minY, maxY, false, label, Map.of(), DEFAULT_COLOR);
   }
 
-  /** Unique within its layer; setting a marker with the same id replaces it. */
   @NotNull
   String id();
 
   @NotNull
   NamespacedKey world();
 
-  /** Shown on hover and beside pins, or {@code null} for none. */
   @Nullable
   String label();
 
-  /** Extra rows shown when the marker is clicked, in order. */
   @NotNull
   Map<String, String> details();
 

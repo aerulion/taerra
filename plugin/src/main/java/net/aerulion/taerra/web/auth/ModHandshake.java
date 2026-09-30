@@ -19,18 +19,10 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Tells the Taerra mod where the web map is and logs it in as the player, the same session {@code
- * /taerra login} hands out, ended again when the player quits.
- */
 public final class ModHandshake implements Listener {
 
   public static final @NotNull String CHANNEL = "taerra:web";
 
-  /**
-   * What the mod may expect of this message and of the routes and JSON it reads. Bump it with any
-   * change an older mod would misread; the mod's {@code TaerraClient.PROTOCOL} must match.
-   */
   public static final int PROTOCOL = 1;
 
   private final @NotNull Plugin plugin;
@@ -61,7 +53,6 @@ public final class ModHandshake implements Listener {
     }
   }
 
-  // The client may have registered the channel before the player joined.
   @EventHandler
   public void onJoin(final @NotNull PlayerJoinEvent event) {
     if (event.getPlayer().getListeningPluginChannels().contains(CHANNEL)) {
@@ -74,7 +65,6 @@ public final class ModHandshake implements Listener {
     this.sessions.end(this.tokens.remove(event.getPlayer().getUniqueId()));
   }
 
-  /** Whether {@code token} is a session this handshake handed to the mod. */
   public boolean isMod(final @Nullable String token) {
     return token != null && this.tokens.containsValue(token);
   }
@@ -104,7 +94,6 @@ public final class ModHandshake implements Listener {
     return this.tokens.computeIfAbsent(
         player.getUniqueId(),
         uuid -> {
-          // Opened before the grant: saving drops grants of players without a session.
           final @NotNull String token =
               this.sessions.open(uuid, player.getName(), PlayerAvatars.skin(player));
           this.sessions.grant(uuid, WebGrants.of(player, this.config));

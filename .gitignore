@@ -1,26 +1,21 @@
-# Gradle
 .gradle/
 .kotlin/
 build/
 
-# Dev server (runDevBundleServer)
 run/
 
-# IntelliJ IDEA
 .idea/
 *.iml
 *.ipr
 *.iws
 out/
 
-# Eclipse / VS Code (Buildship, Java language server)
 .classpath
 .project
 .settings/
 bin/
 .vscode/
 
-# Python (tools/mcdata)
 __pycache__/
 *.py[cod]
 .venv/
@@ -28,10 +23,8 @@ __pycache__/
 tools/mcdata/.cache/
 tools/mcdata/last_report.json
 
-# Logs
 *.log
 logs/
 
-# OS
 .DS_Store
 Thumbs.db

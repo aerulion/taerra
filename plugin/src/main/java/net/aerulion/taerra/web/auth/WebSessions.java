@@ -38,7 +38,6 @@ public final class WebSessions {
   private final @NotNull Map<String, Session> codes = new HashMap<>();
   private final @NotNull Map<String, Session> sessions = new HashMap<>();
   private final @NotNull Map<UUID, Set<String>> grants = new HashMap<>();
-  // Keys of sessions that live only as long as this run, never written to sessions.yml.
   private final @NotNull Set<String> unsaved = new HashSet<>();
   private @NotNull Runnable onChange = () -> {};
 
@@ -125,10 +124,6 @@ public final class WebSessions {
     return new Login(token, session);
   }
 
-  /**
-   * Opens a session without a login code that is never written to disk, for the mod: it ends when
-   * the player quits, and a crash must not leave it valid.
-   */
   public synchronized @NotNull String open(
       final @NotNull UUID uuid, final @NotNull String name, final @Nullable String skin) {
     final @NotNull String token = token();

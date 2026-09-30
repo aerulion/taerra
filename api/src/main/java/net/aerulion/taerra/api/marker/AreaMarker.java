@@ -7,14 +7,9 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * A region: an outline on the ground, extruded from {@link #minY()} to {@link #maxY()}. Made with
- * {@link Marker#cuboid} or {@link Marker#polygon}.
- */
 @ApiStatus.NonExtendable
 public sealed interface AreaMarker extends Marker permits AreaMarkerImpl {
 
-  /** The corners in order, copies. Only x and z count. */
   @NotNull
   List<Vector> outline();
 
@@ -22,10 +17,8 @@ public sealed interface AreaMarker extends Marker permits AreaMarkerImpl {
 
   double maxY();
 
-  /** Whether only the outline is drawn, without a fill. */
   boolean hollow();
 
-  /** This area with only its outline drawn. */
   @NotNull
   AreaMarker hollowed();
 

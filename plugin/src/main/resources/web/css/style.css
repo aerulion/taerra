@@ -112,7 +112,6 @@ button {
     height: 28px;
 }
 
-/* web.name, beside the brand, which always stays. */
 .server-name {
     flex: 0 1 auto;
     min-width: 0;
@@ -126,7 +125,6 @@ button {
     white-space: nowrap;
 }
 
-/* Takes the bar's leftover width whatever it holds, so fitWorlds can measure the tabs against it. */
 .worlds {
     display: flex;
     flex: 1 1 0;
@@ -222,7 +220,6 @@ button {
     box-shadow: inset 0 -2px var(--green);
 }
 
-/* The current world's tab, standing in for all of them. */
 .world-switch {
     flex-direction: row;
     align-items: center;
@@ -371,14 +368,12 @@ button {
     display: none;
 }
 
-/* Three screen pixels per skin pixel, so the face stays crisp. */
 .account-button__head {
     width: 24px;
     height: 24px;
     image-rendering: pixelated;
 }
 
-/* A popover lives in the top layer, so it is placed against the viewport, under the button. */
 .account-menu {
     inset: calc(var(--topbar-h) - 4px) var(--gap) auto auto;
     width: 260px;
@@ -463,8 +458,6 @@ button {
     filter: url("#stone-gray");
 }
 
-/* WebKit (Safari, and every browser on iOS) skips SVG filters on Leaflet's GPU-composited tiles. Built-in filters give
-   the same ramp from stone-900 to #8c8d90, only without the water tint. */
 @supports (font: -apple-system-body) {
     #map[data-style="gray"] .leaflet-tile-pane {
         filter: grayscale(1) brightness(.565) contrast(.764);
@@ -941,7 +934,6 @@ kbd {
     text-transform: uppercase;
 }
 
-/* Someone on another world: faded like the map they're not on, with the world they are on. */
 .player.is-elsewhere {
     background: var(--stone-900);
     box-shadow: inset 0 0 0 2px var(--stone-800);
@@ -1325,7 +1317,6 @@ kbd {
     }
 }
 
-/* Rows like the right-click menu's, the text lined up with the popup's own. */
 .marker-popup__actions {
     display: grid;
     gap: 2px;
@@ -1358,12 +1349,9 @@ kbd {
     color: var(--red);
 }
 
-/* Waypoint editor: a header, then sections of a label and its controls, all on one rhythm. */
-
 .editor {
     width: min(340px, 100vw - 2 * var(--gap));
     max-height: calc(100dvh - 2 * var(--gap));
-    /* The page resets every margin, and a modal dialog centers itself with auto margins. */
     margin: auto;
     padding: 0;
     background: var(--stone-700);
@@ -1428,7 +1416,6 @@ kbd {
     border: 0;
 }
 
-/* A floated legend is an ordinary grid item, so it spaces like every other label. */
 .editor__section > legend {
     float: left;
     width: 100%;
@@ -1463,7 +1450,6 @@ kbd {
     outline-offset: -2px;
 }
 
-/* The new group's settings sit in a well under the chips, so they read as part of that choice. */
 .editor__new-group {
     display: grid;
     gap: 12px;
@@ -1556,8 +1542,6 @@ kbd {
     box-shadow: inset 0 -4px #8f2a2a, inset 2px 2px rgb(255 255 255 / .2);
 }
 
-/* Group chips: one pick, wrapping as groups pile up. */
-
 .chips {
     display: flex;
     flex-wrap: wrap;
@@ -1597,7 +1581,6 @@ kbd {
     outline-offset: -2px;
 }
 
-/* Making a group is an action, not a group: dashed until chosen. */
 .chip--new .chip__label {
     background: none;
     border: 2px dashed var(--stone-500);
@@ -1609,8 +1592,6 @@ kbd {
     border-color: var(--stone-900);
     color: var(--white);
 }
-
-/* Placing a waypoint: a crosshair on the map and a banner saying what the next click does. */
 
 .stage:has(.placing:not([hidden])) .leaflet-container {
     cursor: crosshair;
@@ -1652,8 +1633,6 @@ kbd {
     background: var(--stone-500);
     outline: none;
 }
-
-/* Color picker: dye swatches, a shade field and a hue slider, all square and pixel-edged. */
 
 .swatches {
     display: grid;

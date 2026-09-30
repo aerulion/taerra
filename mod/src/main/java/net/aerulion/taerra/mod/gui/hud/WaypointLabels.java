@@ -26,7 +26,6 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Waypoint labels drawn in the world like text displays: depth tested, so blocks hide them. */
 public final class WaypointLabels implements LevelRenderEvents.CollectSubmits {
 
   private static final float PIXEL = 0.025f;
@@ -84,7 +83,6 @@ public final class WaypointLabels implements LevelRenderEvents.CollectSubmits {
       return;
     }
     final @NotNull CameraRenderState camera = context.levelState().cameraRenderState;
-    // Labels fade into the fog with the terrain, so they end where it does.
     final double reach = camera.fogData.renderDistanceEnd;
     final @NotNull Font font = Minecraft.getInstance().font;
     final @NotNull PoseStack pose = context.poseStack();
@@ -107,14 +105,11 @@ public final class WaypointLabels implements LevelRenderEvents.CollectSubmits {
         if (distance < CLOSE || distance > reach) {
           continue;
         }
-        // Beyond STEADY blocks the label keeps its size on screen instead of shrinking away.
         final float scale = (float) (PIXEL * Math.max(distance, STEADY) / STEADY);
         pose.pushPose();
         pose.translate(offset);
         pose.mulPose(camera.orientation);
         pose.scale(scale, -scale, scale);
-        // The label stands on the waypoint, so growing with distance lifts it instead of sinking
-        // it.
         submit(context, pose, font, text(marker, distance), -font.lineHeight, true);
         pose.scale(ICON, ICON, ICON);
         submit(

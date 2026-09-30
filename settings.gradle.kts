@@ -31,8 +31,6 @@ val pullRequestNumber =
 val commitHash = git("rev-parse", "--short=7", "HEAD") ?: "unknown"
 val workingTreeDirty = !git("status", "--porcelain").isNullOrEmpty()
 
-// Only a release starts with a number, so PR and local builds always sort below one. The package
-// cleanup workflows match these shapes.
 val taerraVersion =
     when {
         pullRequestNumber != null -> "pr$pullRequestNumber-${buildNumber ?: "0"}-$commitHash"

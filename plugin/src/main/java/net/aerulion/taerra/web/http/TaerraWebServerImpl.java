@@ -210,10 +210,6 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
         .replace("'", "&#39;");
   }
 
-  /**
-   * The index page with {@code web.name} filled in. The Taerra brand in the header is part of the
-   * template and stays whatever the name.
-   */
   static @NotNull String indexPage(
       final @NotNull String template, final @NotNull String name, final @NotNull String publicUrl) {
     @NotNull String html = template;
@@ -259,7 +255,6 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                     .replaceAll("/+$", "")));
   }
 
-  // Served under /api/ so StaticEtagFilter never answers for it with the template's ETag.
   private void handleManifestRequest(final @NotNull Context ctx) {
     final @NotNull ObjectNode manifest = this.manifest.deepCopy();
     final @NotNull String name = serverName();
@@ -542,7 +537,6 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       ctx.status(400).result("Invalid teleport");
       return;
     }
-    // The mod shows its own toast; the chat line is for the browser.
     final boolean announce = !this.modHandshake.isMod(ctx.cookie(WebSessions.COOKIE));
     ctx.future(() -> teleport(uuid, request, announce).thenAccept(status -> ctx.status(status)));
   }
@@ -661,8 +655,6 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 result.complete(400);
                 return;
               }
-              // Paper completes the chunk future on the main thread, so the checks below and the
-              // add cannot interleave with another request's.
               standingY(world, request.x(), request.y(), request.z())
                   .thenAccept(
                       y -> {

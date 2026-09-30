@@ -1,5 +1,3 @@
-"""Model resolution tests covering the blockstate and geometry rules, without needing an asset tree."""
-
 import unittest
 
 from mcdata import models
@@ -16,7 +14,6 @@ class VariantSelectionTest(unittest.TestCase):
         self.assertEqual(["stage7"], [p.model_ref for p in models.canonical_model_refs(blockstate)])
 
     def test_face_keyed_variants_are_unioned(self):
-        # A mushroom block describes a cube as one model per face; any single variant is a flat sheet.
         blockstate = {"variants": {"north=true": {"model": "face"}, "up=true": {"model": "face", "x": 270}}}
         placements = models.canonical_model_refs(blockstate)
         self.assertEqual(2, len(placements))
@@ -57,7 +54,6 @@ class TextureValueTest(unittest.TestCase):
         self.assertEqual("block/stone", models._texture_value("block/stone"))
 
     def test_object_texture_uses_sprite(self):
-        # Recent versions wrap some textures in an object, as glass does with force_translucent.
         self.assertEqual("block/glass", models._texture_value({"force_translucent": True, "sprite": "block/glass"}))
 
     def test_unknown_texture_shape_is_ignored(self):

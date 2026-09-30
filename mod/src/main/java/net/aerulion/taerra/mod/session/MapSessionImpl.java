@@ -73,7 +73,6 @@ public final class MapSessionImpl implements MapSession {
       protocol = json.has("protocol") ? json.get("protocol").getAsInt() : 0;
       base = protocol == this.protocol ? baseUrl(json) : "";
     } catch (final RuntimeException e) {
-      // Any server may send on taerra:web; a message that is not ours must not break the game.
       LOGGER.warn("Taerra: ignoring a malformed handshake: {}", e.toString());
       return;
     }

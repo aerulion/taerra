@@ -1,19 +1,12 @@
 #!/usr/bin/env bash
-#
-# release-notes.sh <tag-prefix> <tag>
-#
-# Renders one stream's release notes from the commit log, on stdout. Needs GH_TOKEN, GITHUB_REPOSITORY,
-# GITHUB_SERVER_URL and a checkout with history and tags.
 
 set -euo pipefail
 
 prefix="${1:?a tag prefix is required}"
 tag="${2:?a tag is required}"
 
-# The pathspecs below are relative.
 cd "$(git rev-parse --show-toplevel)"
 
-# Must stay in sync with .github/actions/classify-changes.
 case "${prefix}" in
   build-) paths=( '.' ':(exclude)mod' ':(exclude)*.md' ) ;;
   mod-) paths=( 'mod' 'gradle' 'build-logic' 'settings.gradle.kts' 'build.gradle.kts' 'gradle.properties' 'gradlew' 'gradlew.bat' ':(exclude)*.md' ) ;;
@@ -23,7 +16,6 @@ case "${prefix}" in
     ;;
 esac
 
-# Ancestry, not tag dates: dates tie, and a tie picks the oldest. --exclude so a re-run is not its own base.
 previous="$(git describe --tags --abbrev=0 --match "${prefix}*" --exclude "${tag}" HEAD 2>/dev/null || true)"
 previous_commit=''
 if [ -n "${previous}" ]; then
@@ -39,7 +31,6 @@ changelog_link() {
   fi
 }
 
-# The first release of a stream would otherwise enumerate the whole history, merged subhistories included.
 if [ -z "${previous_commit}" ]; then
   printf 'First tracked release of this stream.\n\n'
   changelog_link
@@ -49,7 +40,6 @@ fi
 head_commit="$(git rev-parse HEAD)"
 commits="$(git log --no-merges --format='%H%x09%an%x09%s' "${previous_commit}..HEAD" -- "${paths[@]}")"
 
-# A release body is capped at 125,000 characters.
 maximum=300
 total="$(grep -c . <<< "${commits}" || true)"
 omitted=0
@@ -58,7 +48,6 @@ if [ "${total}" -gt "${maximum}" ]; then
   commits="$(head -n "${maximum}" <<< "${commits}")"
 fi
 
-# Credit by GitHub handle; a commit the compare cannot reach falls back to the git author name.
 logins="$(gh api --paginate \
   "repos/${GITHUB_REPOSITORY}/compare/${previous_commit}...${head_commit}" \
   --jq '.commits[] | [.sha, (.author.login // "")] | @tsv' 2>/dev/null || true)"
@@ -69,7 +58,6 @@ login_for() {
   printf '%s' "${line#*	}"
 }
 
-# ':sparkles: feat(scope)!: Added a thing' -> ':sparkles:', 'feat', 'Added a thing'.
 emoji=''
 type=''
 summary=''
@@ -87,7 +75,6 @@ parse_subject() {
   fi
 }
 
-# The closed set of types the commit-msg hook allows; anything else lands under "other".
 section_of() {
   case "$1" in
     feat | fix | perf | refactor | docs | test | build | ci | deps | chore | revert) printf '%s' "$1" ;;

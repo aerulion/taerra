@@ -185,7 +185,6 @@ public final class ConfigSubCommand implements TaerraSubCommand {
       final @NotNull CommandContext<CommandSourceStack> context,
       final @NotNull String key,
       final @NotNull Object given) {
-    // A greedy string cannot be empty, so "" clears it.
     final @NotNull Object value = "\"\"".equals(given) ? "" : given;
     this.plugin.getConfig().set(key, value);
     this.plugin.saveConfig();

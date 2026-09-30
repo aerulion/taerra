@@ -30,7 +30,6 @@ jobs:
       mod: ${{ steps.detect.outputs.mod }}
       any: ${{ steps.detect.outputs.any }}
     steps:
-      # Streams are diffed against their own release tags.
       - name: 📥 Checkout repository
         uses: actions/checkout@v7
         with:
@@ -38,14 +37,12 @@ jobs:
           fetch-tags: true
           persist-credentials: false
 
-      # Not against the push: a pending run can be cancelled, and its 'before' commit is then lost.
       - name: 🔍 Classify the changed files
         id: detect
         uses: ./.github/actions/classify-changes
         with:
           base: ${{ github.event.before }}
           release-tags: 'true'
-          # Empty on a push.
           force: ${{ inputs.force || 'false' }}
 
   build:
@@ -73,7 +70,6 @@ jobs:
       version: ${{ needs.build.outputs.version }}
       download: ${{ steps.download.outputs.url }}
     steps:
-      # Sparse tree, but full history: the release notes are built from the commit log.
       - name: 📥 Checkout repository
         uses: actions/checkout@v7
         with:
@@ -122,7 +118,6 @@ jobs:
       version: ${{ needs.build.outputs.version }}
       download: ${{ steps.download.outputs.url }}
     steps:
-      # Sparse tree, but full history: the release notes are built from the commit log.
       - name: 📥 Checkout repository
         uses: actions/checkout@v7
         with:
@@ -181,7 +176,6 @@ jobs:
 
   notify-failure:
     name: 💬 Notify Discord on failure
-    # Not the notify jobs: a Discord outage cannot be reported through Discord.
     needs: [ changes, build, release-plugin, release-mod ]
     if: failure()
     uses: ./.github/workflows/notify-discord.yml

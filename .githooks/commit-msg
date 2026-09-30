@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# Rejects a commit message that is not "<gitmoji> <type>: <Subject>". Installed by settings.gradle.kts on every Gradle run.
 
 set -euo pipefail
 
@@ -13,7 +11,6 @@ while IFS= read -r line; do
   break
 done < "$1"
 
-# Messages git writes itself, and the rebase helpers.
 case "${subject}" in
   'Merge '* | 'Revert "'* | 'Reapply '* | 'fixup! '* | 'squash! '* | 'amend! '*) exit 0 ;;
 esac

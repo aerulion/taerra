@@ -1,5 +1,3 @@
-"""Tests for the parts of generation that do not need an asset tree."""
-
 import unittest
 
 from mcdata import generate, models
@@ -16,8 +14,6 @@ class ConstantTintTest(unittest.TestCase):
         self.assertEqual("#804000", generate.apply_tint("FF8000", (0x80, 0x80, 0x00)))
 
     def test_redstone_wire_is_tinted_rather_than_left_white(self):
-        # Its texture is grayscale and the game tints it by power level, which a map has no notion of. Without the
-        # baked tint a redstone line renders white.
         tint = models.CONSTANT_TINTS["minecraft:redstone_wire"]
         self.assertEqual("#4B0000", generate.apply_tint("#FEFEFE", tint))
 

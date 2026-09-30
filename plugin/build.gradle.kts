@@ -68,10 +68,8 @@ tasks {
     runDevBundleServer {
         runDirectory = rootProject.layout.projectDirectory.dir("run")
         args("-wworld-${libs.versions.paper.get().substringBefore(".build").replace(".", "-")}")
-        // runDev's client has no Microsoft account behind it.
         if (gradle.startParameter.taskNames.any { it.removePrefix(":") == "runDev" }) {
             args("-o", "false")
-            // Ops the player runDev's client joins as, so waypoints, teleport and config work.
             val ops = rootProject.layout.projectDirectory.file("run/ops.json").asFile
             doFirst {
                 val player = "TaerraDev"

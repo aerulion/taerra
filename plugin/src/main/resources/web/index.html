@@ -10,12 +10,10 @@
     <link href="images/favicon.svg" rel="icon" type="image/svg+xml">
     <link href="images/apple-touch-icon.png" rel="apple-touch-icon">
     <link href="api/manifest.json" rel="manifest">
-    <!-- The server makes og:image absolute when web.public-url is set, as most link previews need. -->
     <meta content="website" property="og:type">
     <meta content="Taerra" property="og:site_name">
     <meta content="Taerra" property="og:title">
     <meta content="Live map of the server world" property="og:description">
-    <!-- The server puts web.name into the title, og:title, og:image:alt and #server-name. -->
     <meta content="images/og.png" property="og:image">
     <meta content="1200" property="og:image:width">
     <meta content="630" property="og:image:height">
@@ -29,10 +27,6 @@
     <script src="js/app.js" type="module"></script>
 </head>
 <body>
-<!--
-The gray map style: brightness mapped onto the panel's stone colors, from stone-900 to #8c8d90, which also
-keeps the contrast low. Where blue clearly outweighs red and green, as on water, a faint slate blue stays.
--->
 <svg aria-hidden="true" height="0" style="position: absolute" width="0">
     <filter color-interpolation-filters="sRGB" id="stone-gray">
         <feColorMatrix in="SourceGraphic" result="luma"
@@ -126,7 +120,6 @@ keeps the contrast low. Where blue clearly outweighs red and green, as on water,
 
             <section class="panel__section">
                 <h2 data-i18n="style.title">Map colors</h2>
-                <!-- G clicks the group itself, which switches to the other style. -->
                 <div aria-keyshortcuts="G" aria-label="Map colors" class="segmented" data-i18n-label="style.title"
                      id="map-style-buttons" role="group">
                     <button aria-pressed="true" class="btn" data-i18n="style.color" data-style="color" type="button">
@@ -186,7 +179,6 @@ keeps the contrast low. Where blue clearly outweighs red and green, as on water,
             </details>
         </div>
     </aside>
-    <!-- Hidden before the first paint, so small screens never see it slide away. Mirrors applyPanelHash in app.js. -->
     <script>
         {
             const shown = new URLSearchParams(location.hash.slice(1)).get('panel');
@@ -211,13 +203,11 @@ keeps the contrast low. Where blue clearly outweighs red and green, as on water,
         <button data-action="center" data-i18n="menu.center" role="menuitem" type="button">Center map here</button>
     </div>
 
-    <!-- Shown while a waypoint waits for its new spot. -->
     <div class="placing" hidden id="placing">
         <span id="placing-text" role="status"></span>
         <button class="placing__cancel" data-i18n="waypoint.cancel" id="placing-cancel" type="button">Cancel</button>
     </div>
 
-    <!-- Follows the pointer, so it is of no use to screen readers. -->
     <div aria-hidden="true" class="hud">
         <span>X <b id="coord-x">0</b></span>
         <span>Y <b id="coord-y">—</b></span>

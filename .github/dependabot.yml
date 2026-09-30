@@ -1,6 +1,5 @@
 version: 2
 
-# Grouped and weekly: every pull request runs the full userdev and loom Gradle build.
 updates:
   - package-ecosystem: github-actions
     directory: /

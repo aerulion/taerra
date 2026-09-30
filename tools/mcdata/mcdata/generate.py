@@ -1,10 +1,3 @@
-"""Generates Taerra block data from a vanilla asset tree.
-
-Emits one entry per block with the color of its top face, the color of its side face, its shape class and whether
-either face is biome tinted. The side color is what the isometric renderer needs and what a top-down map never had
-to care about: darkening the top color would render a grass block as green dirt.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -67,15 +60,9 @@ def build_block_data(tree: AssetTree, config: Config) -> tuple[dict, dict]:
         if resolved is None:
             resolved = models.ResolvedModel(block_id=block_id, model_ref="")
 
-        # Shape is measured on the rotated union of every placement, but color is sampled from the first
-        # placement as authored: rotating an element moves its geometry while its face keys stay put, so the two
-        # must not share one element list.
         shape_class, fraction = shape.classify(block_id, merged_elements, config.full_threshold)
         stats[shape_class] += 1
         if shape_class == "none":
-            # Written out rather than skipped, so that a block missing from the data means one the generator has
-            # never seen rather than one it deliberately had nothing to say about. The plugin renders an unknown
-            # block as a debug-colored cube, which is the wrong answer for a barrier.
             entries[block_id] = {"shape": shape_class, "occupancy": round(fraction, 4)}
             continue
 
@@ -92,12 +79,9 @@ def build_block_data(tree: AssetTree, config: Config) -> tuple[dict, dict]:
             warnings.append(f"{block_id}: no usable top texture")
         if side_color is None:
             stats["missing_side"] += 1
-        # A block with only one usable face reuses it for the other rather than falling back to the debug color.
         top_color = top_color or side_color or FALLBACK_COLOR
         side_color = side_color or top_color
 
-        # A constant tint is multiplied in here and the face stops being reported as tinted, because there is
-        # nothing left for the renderer to do with it.
         constant_tint = models.CONSTANT_TINTS.get(block_id)
         if constant_tint is not None:
             top_color = apply_tint(top_color, constant_tint)
@@ -122,7 +106,6 @@ def build_block_data(tree: AssetTree, config: Config) -> tuple[dict, dict]:
 
 
 def apply_tint(hex_color: str, tint: tuple[int, int, int]) -> str:
-    """Multiplies a color by a tint, the way the client multiplies a tinted texture by its tint color."""
     value = hex_color.lstrip("#")
     channels = (int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16))
     return "#" + "".join(f"{(channel * factor) // 255:02X}" for channel, factor in zip(channels, tint))

@@ -1,10 +1,3 @@
-"""Dominant-color extraction in OKLab space via weighted mean shift.
-
-Ported unchanged in behavior from the previous texture-only generator: the clustering itself was sound, only its
-input was hand-curated. Operating in OKLab keeps perceptual distances meaningful, and taking the dominant cluster
-rather than a mean keeps outlines, highlights and stray pixels from dragging the result.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -127,7 +120,6 @@ def dominant_color_hex(
     max_seeds: int = DEFAULT_MAX_SEEDS,
     max_iterations: int = DEFAULT_MAX_ITERATIONS,
 ) -> str | None:
-    """Returns the dominant color of an RGBA pixel array, or None when nothing is opaque enough."""
     flat = rgba.reshape(-1, 4)
     alpha = flat[:, 3]
     mask = alpha >= alpha_threshold

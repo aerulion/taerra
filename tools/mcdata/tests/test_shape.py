@@ -1,10 +1,3 @@
-"""Shape classification tests.
-
-These exercise the geometry rules directly and need no asset tree, so they run anywhere. The cases are the ones
-that actually broke during development: raw volume alone cannot separate a crop from a hopper, and several solid
-blocks are authored as hollow shells.
-"""
-
 import unittest
 
 from mcdata import shape
@@ -33,7 +26,6 @@ class OccupancyTest(unittest.TestCase):
         self.assertEqual(0.5, shape.occupied_fraction(SLAB))
 
     def test_crossed_sheets_occupy_no_solid_volume(self):
-        # Crops and flowers are sheets. Counting them by raw volume puts mature wheat above a hopper.
         self.assertEqual(0.0, shape.occupied_fraction(CROSS))
 
     def test_crossed_sheets_are_still_visible(self):
@@ -41,7 +33,6 @@ class OccupancyTest(unittest.TestCase):
         self.assertTrue(visible)
 
     def test_hollow_shell_counts_as_solid(self):
-        # Powder snow is a 0.002 thick box; only the sealed interior makes it read as a full block.
         self.assertEqual(1.0, shape.occupied_fraction(SHELL))
 
     def test_empty_model_is_not_visible(self):

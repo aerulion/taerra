@@ -77,7 +77,6 @@ jobs:
       - name: 🏗️ Build and test
         run: ./gradlew build
 
-      # A separate invocation, so nothing is published before every test has passed. It reuses the build above.
       - name: 📦 Publish the API
         if: ${{ inputs.publish }}
         env:

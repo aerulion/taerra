@@ -8,8 +8,6 @@ permissions:
   contents: read
 
 concurrency:
-  # A retitled pull request must not cancel the validation run it is sitting on, so metadata-only
-  # events queue under their own group and only ever cancel each other.
   group: pr-${{ github.event.pull_request.number }}${{ github.event.action == 'edited' && '-title' || '' }}
   cancel-in-progress: true
 
@@ -20,8 +18,6 @@ jobs:
   changes:
     name: 🔍 Detect changed parts
     timeout-minutes: 10
-    # Label churn that is not about deploying stands the workflow down, and so does an edit, which
-    # changes no file and is only of interest to the message check.
     if: >-
       github.event.action != 'edited'
       && ((github.event.action != 'labeled' && github.event.action != 'unlabeled')
@@ -48,7 +44,6 @@ jobs:
   commit-messages:
     name: 📝 Check commit messages
     timeout-minutes: 10
-    # The same stand-down as above, except that an edit is exactly what this job has to re-check.
     if: >-
       (github.event.action != 'labeled' && github.event.action != 'unlabeled')
       || github.event.label.name == 'deploy'
@@ -85,9 +80,6 @@ jobs:
             exit 1
           fi
 
-      # A squash merge writes the pull request title as the subject whenever the branch carries more
-      # than one commit, so the title has to satisfy the hook even though it is not a commit message.
-      # GitHub appends " (#<number>)" to it, which the hook's subject pattern accepts.
       - name: 📝 Check the pull request title
         env:
           TITLE: ${{ github.event.pull_request.title }}

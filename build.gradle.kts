@@ -2,14 +2,12 @@ plugins {
     base
     id("taerra.java-conventions") apply false
     alias(libs.plugins.spotless)
-    // Declared here so paperweight and loom share one classloader.
     alias(libs.plugins.paperweight.userdev) apply false
     alias(libs.plugins.fabric.loom) apply false
 }
 
 repositories { mavenCentral() }
 
-// The Java sources are formatted per module by taerra.java-conventions.
 spotless {
     kotlinGradle {
         target("**/*.gradle.kts")
@@ -17,7 +15,6 @@ spotless {
         ktfmt(libs.versions.ktfmt.get()).kotlinlangStyle()
     }
     json {
-        // block_data.json is written by tools/mcdata, which formats it itself.
         target("plugin/src/main/resources/web/**/*.json", "mod/src/main/resources/**/*.json")
         jackson().version(libs.versions.jackson.get()).feature("INDENT_OUTPUT", true)
         endWithNewline()
@@ -66,8 +63,6 @@ tasks {
         )
     }
 
-    // The two run in parallel (org.gradle.parallel); the plugin and mod scripts switch the server
-    // to offline mode and point the client at it when this task is requested.
     register("runDev") {
         group = "taerra"
         description = "Starts the dev server and a client that joins it."
@@ -82,7 +77,6 @@ tasks {
     }
 }
 
-// Any build installs the hooks.
 val installGitHooks = tasks.named("installGitHooks")
 
 subprojects { tasks.withType<JavaCompile>().configureEach { dependsOn(installGitHooks) } }

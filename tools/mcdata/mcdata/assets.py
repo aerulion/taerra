@@ -1,10 +1,3 @@
-"""Access to a vanilla ``assets/`` tree.
-
-Assets come from the Corpium/minecraft-assets repository, which archives the extracted client jar on one
-``version/<id>`` branch per Minecraft version. A blobless sparse checkout of the three directories this tool reads is
-about 30 MB, against roughly 40 MB for the client jar, and it re-fetches incrementally.
-"""
-
 from __future__ import annotations
 
 import json
@@ -25,7 +18,7 @@ SPARSE_PATHS = (
 
 
 class AssetError(RuntimeError):
-    """Raised when the asset tree is missing or unusable."""
+    pass
 
 
 def _run(command: list[str], cwd: Path | None = None) -> None:
@@ -35,7 +28,6 @@ def _run(command: list[str], cwd: Path | None = None) -> None:
 
 
 def provision(version: str, cache_dir: Path, repository: str = DEFAULT_REPOSITORY) -> Path:
-    """Ensures a sparse checkout of ``version/<version>`` exists in the cache and returns its root."""
     branch = f"version/{version}"
     checkout = cache_dir / version
     if (checkout / ".git").is_dir():
@@ -59,13 +51,10 @@ def provision(version: str, cache_dir: Path, repository: str = DEFAULT_REPOSITOR
 
 @dataclass(frozen=True)
 class AssetTree:
-    """A resolved ``assets/minecraft`` directory."""
-
     root: Path
 
     @staticmethod
     def locate(path: Path) -> "AssetTree":
-        """Accepts a repository root, an ``assets`` dir or an ``assets/minecraft`` dir and normalizes it."""
         for candidate in (path / "assets" / "minecraft", path / "minecraft", path):
             if (candidate / "blockstates").is_dir() and (candidate / "models").is_dir():
                 return AssetTree(candidate)
@@ -88,7 +77,6 @@ class AssetTree:
 
     @lru_cache(maxsize=2048)
     def texture(self, texture_ref: str) -> np.ndarray | None:
-        """Loads a texture as RGBA, cropped to its first frame when animated."""
         relative = f"textures/{strip_namespace(texture_ref)}.png"
         target = self.root / relative
         if not target.is_file():
@@ -96,12 +84,10 @@ class AssetTree:
         with Image.open(target) as image:
             rgba = np.asarray(image.convert("RGBA"), dtype=np.uint8)
         height, width = rgba.shape[0], rgba.shape[1]
-        # Animated textures are a vertical strip of square frames; only the first frame is representative.
         if height > width and width > 0 and height % width == 0:
             rgba = rgba[:width]
         return rgba
 
 
 def strip_namespace(reference: str) -> str:
-    """``minecraft:block/stone`` and ``block/stone`` both become ``block/stone``."""
     return reference.split(":", 1)[-1]
