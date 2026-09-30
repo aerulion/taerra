@@ -38,7 +38,7 @@ public final class TaerraClient implements ClientModInitializer {
   private MapView screenView;
 
   public static @NotNull Settings settings() {
-    return Objects.requireNonNull(settings, "Taerra is not initialized");
+    return Objects.requireNonNull(settings, "TAERRA is not initialized");
   }
 
   @Override

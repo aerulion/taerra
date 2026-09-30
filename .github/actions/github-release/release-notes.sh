@@ -2,13 +2,20 @@
 
 set -euo pipefail
 
+# Usage: release-notes.sh <prefix> <tag> [previous]
+# Writes the notes for HEAD since [previous], a tag or commit, or else since the newest <prefix> tag HEAD descends from.
+# With AUDIENCE=players only features, fixes and performance are listed, without any link into the repository: the
+# notes Modrinth and Discord show, while the repository is private.
+
 prefix="${1:?a tag prefix is required}"
 tag="${2:?a tag is required}"
+previous="${3:-}"
+audience="${AUDIENCE:-contributors}"
 
 cd "$(git rev-parse --show-toplevel)"
 
 case "${prefix}" in
-  build-) paths=( '.' ':(exclude)mod' ':(exclude)*.md' ) ;;
+  build-) paths=( '.' ':(exclude)mod' ':(exclude)branding' ':(exclude)*.md' ) ;;
   mod-) paths=( 'mod' 'gradle' 'build-logic' 'settings.gradle.kts' 'build.gradle.kts' 'gradle.properties' 'gradlew' 'gradlew.bat' ':(exclude)*.md' ) ;;
   *)
     echo "::error::Unknown tag prefix '${prefix}'." >&2
@@ -16,13 +23,18 @@ case "${prefix}" in
     ;;
 esac
 
-previous="$(git describe --tags --abbrev=0 --match "${prefix}*" --exclude "${tag}" HEAD 2>/dev/null || true)"
+if [ -z "${previous}" ]; then
+  previous="$(git describe --tags --abbrev=0 --match "${prefix}*" --exclude "${tag}" HEAD 2>/dev/null || true)"
+fi
 previous_commit=''
 if [ -n "${previous}" ]; then
   previous_commit="$(git rev-parse "${previous}^{commit}")"
 fi
 
 changelog_link() {
+  if [ "${audience}" = 'players' ]; then
+    return
+  fi
   if [ -n "${previous}" ]; then
     printf '**Full Changelog**: %s/%s/compare/%s...%s\n' \
       "${GITHUB_SERVER_URL}" "${GITHUB_REPOSITORY}" "${previous}" "${tag}"
@@ -58,16 +70,13 @@ login_for() {
   printf '%s' "${line#*	}"
 }
 
-emoji=''
 type=''
 summary=''
 parse_subject() {
-  emoji=''
   type=''
   summary="$1"
-  if [[ "${summary}" =~ ^(:[a-z0-9_+-]+:)[[:space:]]+(.*)$ ]]; then
-    emoji="${BASH_REMATCH[1]}"
-    summary="${BASH_REMATCH[2]}"
+  if [[ "${summary}" =~ ^:[a-z0-9_+-]+:[[:space:]]+(.*)$ ]]; then
+    summary="${BASH_REMATCH[1]}"
   fi
   if [[ "${summary}" =~ ^([a-z]+)(\([^\)]*\))?!?:[[:space:]]+(.*)$ ]]; then
     type="${BASH_REMATCH[1]}"
@@ -84,18 +93,18 @@ section_of() {
 
 heading_of() {
   case "$1" in
-    feat) printf ':sparkles: Features' ;;
-    fix) printf ':bug: Fixes' ;;
-    perf) printf ':zap: Performance' ;;
-    refactor) printf ':recycle: Refactoring' ;;
-    docs) printf ':memo: Documentation' ;;
-    test) printf ':white_check_mark: Tests' ;;
-    build) printf ':construction_worker: Build' ;;
-    ci) printf ':green_heart: CI' ;;
-    deps) printf ':arrow_up: Dependencies' ;;
-    chore) printf ':wrench: Chores' ;;
-    revert) printf ':rewind: Reverts' ;;
-    *) printf ':package: Other' ;;
+    feat) printf '✨ Features' ;;
+    fix) printf '🐛 Fixes' ;;
+    perf) printf '⚡ Performance' ;;
+    refactor) printf '♻️ Refactoring' ;;
+    docs) printf '📝 Documentation' ;;
+    test) printf '✅ Tests' ;;
+    build) printf '👷 Build' ;;
+    ci) printf '💚 CI' ;;
+    deps) printf '⬆️ Dependencies' ;;
+    chore) printf '🔧 Chores' ;;
+    revert) printf '⏪ Reverts' ;;
+    *) printf '📦 Other' ;;
   esac
 }
 
@@ -114,20 +123,31 @@ while IFS=$'\t' read -r sha name subject; do
   else
     credit="${name}"
   fi
-  line="* "
-  if [ -n "${emoji}" ]; then
-    line="${line}${emoji} "
+  # Unicode, not the commit's shortcode: Modrinth and Discord embeds show shortcodes as text. The heading carries it.
+  line="* ${summary}"
+  if [ "${audience}" != 'players' ]; then
+    line="${line} by ${credit} in ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${sha}"
   fi
-  line="${line}${summary} by ${credit} in ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${sha}"
   entries="${entries}$(section_of "${type}")	${line}"$'\n'
   credits="${credits}${credit}"$'\n'
 done <<< "${commits}"
 
+sections='feat fix perf refactor docs test build ci deps chore revert other'
+if [ "${audience}" = 'players' ]; then
+  sections='feat fix perf'
+  if ! grep -qE '^(feat|fix|perf)	' <<< "${entries}"; then
+    count=0
+    printf 'Internal improvements only.\n\n'
+  fi
+fi
+
 if [ "${count}" -eq 0 ]; then
-  printf 'No changes to this part of the repository.\n\n'
+  if [ "${audience}" != 'players' ]; then
+    printf 'No changes to this part of the repository.\n\n'
+  fi
 else
   printf '## What'"'"'s Changed\n'
-  for section in feat fix perf refactor docs test build ci deps chore revert other; do
+  for section in ${sections}; do
     body="$(grep "^${section}	" <<< "${entries}" | cut -f2- || true)"
     if [ -n "${body}" ]; then
       printf '\n### %s\n%s\n' "$(heading_of "${section}")" "${body}"
@@ -140,7 +160,7 @@ else
 
   contributors="$(grep -v '^$' <<< "${credits}" | sort -u | sed 's/^/* /')"
   if [ -n "${contributors}" ]; then
-    printf '\n### :busts_in_silhouette: Contributors\n%s\n' "${contributors}"
+    printf '\n### 👥 Contributors\n%s\n' "${contributors}"
   fi
   printf '\n'
 fi

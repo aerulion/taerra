@@ -45,12 +45,12 @@ publishing {
             artifactId = "taerra-api"
             from(components["java"])
             pom {
-                name = "Taerra API"
-                description = "API for adding markers and layers to the Taerra web map."
+                name = "TAERRA API"
+                description = "API for adding markers and layers to the TAERRA web map."
                 url = "https://github.com/aerulion/taerra"
                 licenses {
                     license {
-                        name = "Taerra Source Code License"
+                        name = "TAERRA License"
                         url = "https://github.com/aerulion/taerra/blob/main/LICENSE.md"
                     }
                 }

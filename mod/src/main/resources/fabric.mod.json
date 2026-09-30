@@ -2,13 +2,14 @@
   "schemaVersion": 1,
   "id": "taerra",
   "version": "${version}",
-  "name": "Taerra",
-  "description": "In-game viewer and minimap for the Taerra server map.",
+  "name": "TAERRA",
+  "description": "In-game viewer and minimap for the TAERRA server map.",
   "authors": [ "aerulion" ],
   "contact": {
-    "sources": "https://github.com/aerulion/taerra"
+    "homepage": "https://modrinth.com/project/taerra"
   },
-  "license": "All-Rights-Reserved",
+  "icon": "assets/taerra/icon.png",
+  "license": "LicenseRef-TAERRA-License",
   "environment": "client",
   "entrypoints": {
     "client": [ "net.aerulion.taerra.mod.TaerraClient" ],

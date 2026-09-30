@@ -41,7 +41,7 @@ public final class SettingsImpl implements Settings {
           settings.setMinimapZoom(settings.minimapZoom);
         }
       } catch (final IOException | JsonParseException e) {
-        LOGGER.warn("Taerra: could not read {}, using the defaults: {}", file, e.toString());
+        LOGGER.warn("TAERRA: could not read {}, using the defaults: {}", file, e.toString());
       }
     }
     settings.file = file;
@@ -138,7 +138,7 @@ public final class SettingsImpl implements Settings {
       Files.writeString(this.file, json);
       this.saved = json;
     } catch (final IOException e) {
-      LOGGER.warn("Taerra: could not save {}: {}", this.file, e.toString());
+      LOGGER.warn("TAERRA: could not save {}: {}", this.file, e.toString());
     }
   }
 }

@@ -4,7 +4,7 @@ Guidance for AI coding agents in this repository. `CLAUDE.md` is a symlink to th
 
 ## Project
 
-Taerra is a live web map for Paper servers (Java 25, Paper 26.2 via `paperweight-userdev`, Mojang mappings, NMS
+TAERRA is a live web map for Paper servers (Java 25, Paper 26.2 via `paperweight-userdev`, Mojang mappings, NMS
 allowed) and a Fabric mod that shows the same map in game. Gradle multi-module build, versions in
 `gradle/libs.versions.toml`, shared Java setup in `build-logic` (`taerra.java-conventions`).
 
@@ -14,6 +14,7 @@ allowed) and a Fabric mod that shows the same map in game. Gradle multi-module b
 | `api/`         | Marker and layer API for other plugins, published as `net.aerulion:taerra-api`, bundled into the plugin jar |
 | `mod/`         | Fabric client mod (Loom): map screen and minimap                                       |
 | `tools/mcdata` | Python generator for `plugin/src/main/resources/block_data.json`                      |
+| `branding/`    | Brand images (store icons, headers, gallery) rendered from the logo and dev server tiles |
 
 It is a public plugin: nothing in it may be specific to one server network.
 
@@ -67,7 +68,7 @@ misses the userdev CI cache.
 
 `release.yml` runs on every push to `main`. `.github/actions/classify-changes` splits the push into two streams:
 `mod/` is the mod, shared build files (`gradle/`, `build-logic/`, root `*.gradle.kts`, `gradle.properties`, wrapper)
-are both, anything else is the plugin. `build.yml` runs once, then:
+are both, `branding/` and Markdown are neither, anything else is the plugin. `build.yml` runs once, then:
 
 - plugin: tag `build-<n>`, plugin and API jars attached, API published to GitHub Packages
 - mod: tag `mod-<n>`, mod jar attached
@@ -85,7 +86,14 @@ Both streams share one release list, so `cleanup-releases.yml` refuses to run wi
 `pr-cleanup.yml` matches the `pr<n>-` prefix; both follow the version format in `settings.gradle.kts`. The package API
 calls pick `/users/...` or `/orgs/...` from the repository owner type.
 
-Discord notifications need the `DISCORD_WEBHOOK_ID` and `DISCORD_WEBHOOK_TOKEN` secrets.
+`modrinth.yml` is the only way to Modrinth: run by hand with a `build-<n>`/`mod-<n>` tag, it uploads that GitHub
+release's jar, never a rebuild, as a Paper or Fabric version of the one project, slug `taerra` (`MODRINTH_TOKEN` secret). Its changelog is `release-notes.sh` with `AUDIENCE=players` since the commit in the
+newest Modrinth version number of that loader.
+
+The Discord channel is public and the repository private, so only `modrinth.yml` posts there, and nothing public
+(Discord, Modrinth notes, the mod and plugin metadata, the web map) links into the repository: the public link is the
+Modrinth page. Messages are embeds through `notify-discord.yml`, which blocks mentions. Discord needs the
+`DISCORD_WEBHOOK_ID` and `DISCORD_WEBHOOK_TOKEN` secrets.
 
 ## Pull requests
 

@@ -362,7 +362,7 @@ public final class WebMapImpl implements WebMap {
     this.loadingConfig = false;
     if (config == null) {
       if (!this.unreachable) {
-        LOGGER.warn("Taerra: the web map at {} did not answer: {}", base(), failure);
+        LOGGER.warn("TAERRA: the web map at {} did not answer: {}", base(), failure);
         Toasts.show(
             Component.translatable("taerra.unreachable"),
             Component.translatable("taerra.unreachable.detail", base()));
@@ -518,7 +518,7 @@ public final class WebMapImpl implements WebMap {
               try {
                 receive(JsonParser.parseString(message).getAsJsonObject());
               } catch (final RuntimeException e) {
-                LOGGER.warn("Taerra: unreadable socket message: {}", e.toString());
+                LOGGER.warn("TAERRA: unreadable socket message: {}", e.toString());
               }
             });
       }

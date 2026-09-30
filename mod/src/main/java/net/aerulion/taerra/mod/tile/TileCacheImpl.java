@@ -54,7 +54,7 @@ public final class TileCacheImpl implements TileCache {
       }
       return image;
     } catch (final IOException e) {
-      LOGGER.warn("Taerra: unreadable tile {}: {}", key, e.toString());
+      LOGGER.warn("TAERRA: unreadable tile {}: {}", key, e.toString());
       return null;
     }
   }
@@ -223,7 +223,7 @@ public final class TileCacheImpl implements TileCache {
       final @NotNull NativeImage image,
       final boolean gray) {
     releaseTexture(tile);
-    tile.texture = Texture.upload("Taerra tile " + key, image);
+    tile.texture = Texture.upload("TAERRA tile " + key, image);
     tile.gray = gray;
     this.textures++;
   }

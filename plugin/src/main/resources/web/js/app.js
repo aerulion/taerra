@@ -6,7 +6,7 @@ import {playerManager} from './players.js';
 import {waypointEditor} from './waypoints.js';
 import {wsManager} from './websocket.js';
 
-const SERVER_NAME = document.getElementById('server-name').textContent || 'Taerra';
+const SERVER_NAME = document.getElementById('server-name').textContent || 'TAERRA';
 
 const $ = (id) => document.getElementById(id);
 

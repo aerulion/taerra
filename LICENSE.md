@@ -1,145 +1,103 @@
-# Taerra Source Code License
+# TAERRA License
 
-Copyright © 2026 Taerra Contributors.
+Copyright © 2026 aerulion and the TAERRA contributors. All rights reserved, except as granted below.
 
-All rights reserved.
+TAERRA is closed source. This license lets you use it freely, commercially included. It does not let you copy, change
+or redistribute it.
 
-## 1. Scope
+## 1. Definitions
 
-This license applies to the source code, documentation, assets and other materials contained in the Taerra project,
-unless a file or component explicitly states otherwise.
+- **TAERRA** means the TAERRA server plugin, the TAERRA Fabric mod, the TAERRA API (`taerra-api`), the web map they
+  serve, and their documentation, images and other assets, in the form the TAERRA project publishes them.
+- **Official channels** means TAERRA's Modrinth project, <https://modrinth.com/project/taerra>, and any other place the
+  TAERRA project itself publishes TAERRA.
+- **You** means the person or organisation using TAERRA.
 
-The Taerra source code is publicly visible. Being able to read it does not make it open source.
+## 2. What you may do
 
-## 2. Ownership
+Free of charge, worldwide and without asking, you may:
 
-Each contributor retains copyright in the original work they create and contribute to the Taerra project, unless a
-separate written agreement states otherwise.
+- download TAERRA from the official channels;
+- install and run the plugin on any number of Minecraft servers, including commercial servers, networks, and servers
+  that charge players or accept payments or donations;
+- install and run the mod on any number of Minecraft clients;
+- let anyone use the web map your servers serve, publicly or privately;
+- configure TAERRA through the settings, commands and permissions it provides;
+- keep copies of TAERRA on your own machines and deploy them to the servers you operate;
+- show TAERRA, its web map and anything rendered with it in screenshots, videos, streams, websites and other media,
+  monetised ones included;
+- have modpacks, launchers, hosting panels and similar tools install TAERRA for their users, as long as they download it
+  from an official channel at install time rather than distributing a copy of it, as Modrinth modpacks do.
 
-The original Taerra project and its existing code remain the property of their respective copyright holders.
+TAERRA claims no rights in the maps it renders of your worlds. Use them as you like.
 
-The list of contributors and the project's version-control history may be used to document authorship and contribution
-history.
+## 3. The API
 
-## 3. Permission granted to Taerra Contributors
+You may develop plugins and other software that use the TAERRA API, and use, sell and distribute that software under any
+license you choose, commercial and closed source included. Such software is not a derivative work of TAERRA under this
+license.
 
-Contributors who have been explicitly authorized to work on the Taerra project are granted permission to:
+Compile against the API, but do not ship it: the plugin provides the API at runtime, so your software must not bundle,
+shade or redistribute the API or any other part of TAERRA.
 
-- access and inspect the Taerra source code;
-- modify the source code;
-- create and submit contributions to the Taerra project;
-- use the code as part of the Taerra project and its official derivatives;
-- create private forks or working copies for the purpose of developing Taerra.
+## 4. What you may not do
 
-This permission is limited to the Taerra project and its development.
+Without prior written permission from the TAERRA project, you may not:
 
-## 4. Use of the plugin and the API
+- redistribute, re-upload or mirror TAERRA or any part of it, except as section 2 allows;
+- sell, rent, sublicense or otherwise charge for TAERRA itself. Charging for access to your server or its map is fine;
+- modify or patch TAERRA, create derivative works of it, or distribute modified versions;
+- decompile, disassemble or reverse engineer TAERRA, except to the extent applicable law permits it regardless of this
+  restriction;
+- remove or alter the copyright and license notices in TAERRA;
+- use the TAERRA name or logo in a way that suggests your project, server or product is TAERRA, is made by the TAERRA
+  project, or is endorsed by it. Saying that your server uses TAERRA is fine.
 
-Anyone may, free of charge, run the official Taerra plugin builds published by the Taerra project on any Minecraft
-server, including commercial servers and servers that charge players or accept payments.
+## 5. Ownership
 
-Anyone may use the Taerra API (`taerra-api`) to develop, use and distribute plugins and other software that integrate
-with Taerra, including commercial and closed-source software. Such software is not a derivative work of Taerra under
-this license and may be licensed as its authors choose, provided it does not include significant portions of the
-Taerra source code beyond what is needed to call the API.
+TAERRA is licensed, not sold. Copyright and all other rights in TAERRA remain with aerulion and the TAERRA contributors,
+each in their own work. This license grants only the rights it states.
 
-This section does not permit redistributing, selling or re-releasing the Taerra plugin or the Taerra source code
-itself, which remains subject to Section 5.
+Access to TAERRA's source code, where it is given, is for developing TAERRA and grants no further rights.
 
-## 5. Restrictions
+## 6. Contributions
 
-Without prior written permission from the relevant copyright holder or copyright holders, you may not:
+By submitting code or other material to the TAERRA project, a contributor confirms that they have the right to submit it,
+and that it is their own work or used in accordance with its license.
 
-- copy or reproduce significant portions of the Taerra source code for another project;
-- copy individual classes, systems, modules or other significant implementations into another project;
-- redistribute the Taerra source code or significant portions of it;
-- publish the Taerra source code or significant portions of it;
-- sell, license or otherwise distribute the Taerra source code or significant portions of it;
-- create or distribute a substantially similar derivative work based substantially on the Taerra source code.
+The contributor keeps their copyright and grants the TAERRA project and its maintainers a perpetual, worldwide,
+royalty-free, irrevocable, non-exclusive license to use, reproduce, modify, combine, sublicense and distribute the
+contribution as part of TAERRA, under this license or any later license TAERRA is published under.
 
-This includes copying code into another project merely because the other project has a different API, architecture or
-implementation preference.
+## 7. Third-party components
 
-## 6. Learning, inspiration and independent implementations
+TAERRA includes third-party software and fonts, such as Leaflet and the web map's fonts, and downloads libraries from
+Maven Central when the plugin first starts. These remain under their own licenses, listed alongside them, and nothing in
+this license restricts what those licenses allow.
 
-This license does not prevent anyone from learning from the general concepts, ideas, algorithms, architectural patterns
-or techniques used in Taerra.
+TAERRA is not an official Minecraft product. It is not approved by or associated with Mojang or Microsoft.
 
-Independent implementations are permitted.
+## 8. No warranty
 
-For example, a developer may:
+TAERRA is provided "as is", without warranties of any kind, express or implied, including fitness for a particular
+purpose and non-infringement, to the maximum extent permitted by applicable law.
 
-- understand how a system in Taerra works;
-- use the same general programming concept;
-- implement a similar feature independently;
-- use generally known algorithms or design patterns;
-- create their own implementation for another project.
+## 9. Limitation of liability
 
-However, independently reimplementing an idea does not grant permission to copy the original implementation.
-
-The distinction is simple:
-
-> You may learn from how Taerra works.
->
-> You may not copy Taerra code into another project without permission.
-
-## 7. Contributions
-
-By submitting code or other material to the Taerra project, a contributor confirms that:
-
-- they have the right to submit the contribution;
-- the contribution is their own work or is used in accordance with its applicable license;
-- they have not knowingly copied the contribution from a third party in violation of that party's rights or license
-  terms.
-
-By submitting a contribution, the contributor grants the Taerra project and its authorized maintainers a perpetual,
-worldwide, royalty-free, non-exclusive license to:
-
-- use the contribution;
-- reproduce the contribution;
-- modify the contribution;
-- combine the contribution with other works;
-- maintain and distribute the contribution as part of Taerra and its official derivatives.
-
-This permission is intended to ensure that the Taerra project can continue to use and maintain contributions even if
-a contributor later stops participating in the project.
-
-This clause does not transfer ownership of the contributor's copyright unless a separate written agreement explicitly
-does so.
-
-## 8. Third-party code
-
-This license does not override the license of third-party code, libraries, assets or other materials included in or used
-by the Taerra project.
-
-Third-party materials remain subject to their respective licenses.
-
-Where applicable, the relevant license and attribution information must be preserved.
-
-## 9. No warranty
-
-The Taerra source code is provided on an “as is” basis, without warranties of any kind, whether express or implied.
-
-The copyright holders and contributors are not liable for any damages or losses arising from the use of the source code,
-to the maximum extent permitted by applicable law.
+To the maximum extent permitted by applicable law, the TAERRA project and its contributors are not liable for any
+damages or losses arising from the use of TAERRA or the inability to use it, including lost data, lost profits and
+server downtime.
 
 ## 10. Termination
 
-Any permission granted under this license terminates automatically if you materially violate the terms of this license.
+Your rights under this license end automatically if you breach it. They are restored if you remedy the breach within 30
+days of becoming aware of it. Once they have ended, you must stop using TAERRA and delete your copies of it.
 
-Upon termination, you must stop using, copying and distributing the Taerra source code except where continued use is
-required by applicable law.
+## 11. Changes
 
-Contributions already submitted to the Taerra project remain licensed to the project under Section 7.
-
-## 11. Changes to this license
-
-The Taerra project may adopt a new version of this license for future versions of the project.
-
-Changes to the license do not retroactively change the terms under which previously submitted contributions were
-licensed unless the relevant copyright holders explicitly agree otherwise.
+The TAERRA project may publish future versions of TAERRA under a different license, an open-source one included. Each
+version you have obtained remains available to you under the license it was published with.
 
 ---
 
-For questions regarding permission to use Taerra source code outside the Taerra project, contact the relevant
-copyright holder, or the Taerra project maintainers.
+For questions and permission requests, contact the TAERRA project through its Modrinth page.

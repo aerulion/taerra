@@ -1,0 +1,475 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>TAERRA brand image</title>
+<style>
+    @font-face {
+        font-family: "QuinqueFive";
+        src: url("../plugin/src/main/resources/web/fonts/QuinqueFive-Regular.ttf") format("truetype");
+    }
+
+    @font-face {
+        font-family: "Schibsted Grotesk";
+        font-weight: 400 900;
+        src: url("../plugin/src/main/resources/web/fonts/SchibstedGrotesk.ttf") format("truetype");
+    }
+
+    :root {
+        --stone-900: #1e1e1f;
+        --stone-700: #313233;
+        --stone-200: #a0a1a4;
+        --stone-100: #d0d1d4;
+        --green: #3c8527;
+        --green-hi: #52a535;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+    }
+
+    html, body {
+        width: calc(100 * var(--w));
+        height: calc(100 * var(--h));
+        position: relative;
+        overflow: hidden;
+        background: #000;
+        color: #fff;
+        font-family: "Schibsted Grotesk", sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    canvas {
+        display: block;
+    }
+
+    .fill, .fill > canvas {
+        position: absolute;
+        inset: 0;
+    }
+
+    .blur > canvas {
+        filter: blur(calc(1.2 * var(--min))) saturate(1.15);
+        transform: scale(1.12);
+    }
+
+    .float > canvas {
+        filter: drop-shadow(0 28px 36px rgb(0 0 0 / .65));
+    }
+
+    /* The grass edge from og.png: a block top seen side on. */
+    /* The grass edge from og.png: a block top seen side on. */
+    .grass {
+        position: absolute;
+        inset: auto 0 0;
+        height: max(6px, calc(1.5 * var(--min)));
+        background: linear-gradient(var(--green-hi) 25%, var(--green) 25%);
+    }
+
+    .pixel {
+        font-family: "QuinqueFive";
+        line-height: 1;
+        text-transform: uppercase;
+    }
+
+    .lockup {
+        display: flex;
+        align-items: center;
+        gap: .42em;
+        letter-spacing: .02em;
+    }
+
+    .lockup img {
+        width: 1.6em;
+        height: 1.6em;
+    }
+
+    .tagline {
+        color: var(--stone-100);
+        font-weight: 500;
+        line-height: 1.35;
+        text-wrap: balance;
+    }
+
+    /* icon: the mark over the blurred world */
+    .icon {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+    }
+
+    .icon .fill {
+        background: rgb(0 0 0 / .45);
+    }
+
+    .icon img {
+        position: relative;
+        width: calc(78 * var(--min));
+        filter: drop-shadow(0 calc(2 * var(--min)) calc(3.5 * var(--min)) rgb(0 0 0 / .55));
+    }
+
+    /* banner: lockup on the left, the whole world on the right */
+    .banner .shade {
+        background: linear-gradient(90deg, rgb(0 0 0 / .9) 25%, rgb(0 0 0 / .45) 65%, rgb(0 0 0 / .3));
+    }
+
+    .banner .copy {
+        position: absolute;
+        left: min(calc(9 * var(--h)), calc(5 * var(--w)));
+        top: 50%;
+        transform: translateY(-50%);
+        width: 46%;
+        display: grid;
+        gap: calc(6 * var(--h));
+    }
+
+    .banner .lockup {
+        font-size: min(calc(13 * var(--h)), calc(4 * var(--w)));
+    }
+
+    .banner .tagline {
+        font-size: min(calc(6.2 * var(--h)), calc(1.8 * var(--w)));
+    }
+
+    .banner .world {
+        position: absolute;
+        right: 2%;
+        top: 6%;
+        bottom: 9%;
+        width: 50%;
+    }
+
+    /* card: centred lockup and tagline */
+    .card .shade {
+        background: radial-gradient(ellipse at center, rgb(0 0 0 / .55), rgb(0 0 0 / .85));
+    }
+
+    .card .copy {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: calc(7.5 * var(--min));
+        text-align: center;
+    }
+
+    .card .lockup {
+        flex-direction: column;
+        gap: calc(5.5 * var(--min));
+        font-size: calc(9.4 * var(--min));
+    }
+
+    .card .lockup img {
+        width: calc(28 * var(--min));
+        height: calc(28 * var(--min));
+    }
+
+    .card .tagline {
+        max-width: calc(70 * var(--w));
+        font-size: calc(4.7 * var(--min));
+    }
+
+    /* live-map: the web map's link preview, the same for every server, so drawn rather than any world */
+    .live-map .shade {
+        background: radial-gradient(ellipse 55% 60% at 50% 46%, rgb(0 0 0 / .92) 30%, rgb(0 0 0 / .35));
+    }
+
+    .live-map .copy {
+        gap: calc(5.4 * var(--min));
+    }
+
+    .live-map .kicker {
+        margin-top: calc(-1 * var(--min));
+        font-size: calc(3.2 * var(--min));
+        letter-spacing: .3em;
+    }
+
+    /* gallery: kicker and headline over a picture */
+    .gallery .shade {
+        background: linear-gradient(180deg, rgb(0 0 0 / .85), rgb(0 0 0 / .35) 30%, transparent 45%);
+    }
+
+    .gallery.dark {
+        background: radial-gradient(ellipse at 50% 60%, var(--stone-900), #000 75%);
+    }
+
+    .gallery .copy {
+        position: absolute;
+        left: calc(7.4 * var(--min));
+        top: calc(6.7 * var(--min));
+        display: grid;
+        gap: calc(1.7 * var(--min));
+        max-width: calc(60 * var(--w));
+    }
+
+    .kicker {
+        color: var(--green-hi);
+        font-size: calc(1.85 * var(--min));
+        letter-spacing: .06em;
+    }
+
+    .gallery h1 {
+        font-size: calc(5.9 * var(--min));
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -.015em;
+    }
+
+    .gallery .lockup {
+        position: absolute;
+        right: calc(7.4 * var(--min));
+        top: calc(7.4 * var(--min));
+        font-size: calc(1.85 * var(--min));
+    }
+
+    .gallery .stage {
+        position: absolute;
+        inset: calc(27.8 * var(--min)) calc(7.4 * var(--min)) calc(7.4 * var(--min));
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        gap: calc(3.7 * var(--min));
+    }
+
+    .gallery .stage figure {
+        align-self: center;
+        display: grid;
+        gap: calc(2.2 * var(--min));
+    }
+
+    .gallery .stage figure .fill {
+        aspect-ratio: 16 / 10;
+    }
+
+    .gallery .stage figcaption {
+        color: var(--stone-200);
+        font-size: calc(1.85 * var(--min));
+        text-align: center;
+    }
+
+    .gallery .stage .fill {
+        position: relative;
+    }
+
+    .gallery .stage .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: calc(1.1 * var(--min)) calc(3.7 * var(--min));
+    }
+</style>
+<body>
+<script type="module">
+    const params = new URLSearchParams(location.search);
+    const TILES = params.get('tiles');
+    const LOGO = '../plugin/src/main/resources/web/images/icon.svg';
+    const T = 256;
+
+    // Where each picture looks. Iso tiles are <world>/<rotation>/<level>/<x>/<y>.png, top-down ones
+    // <world>/<level>/<x>/<y>.png, level 0 is full detail. `fit` shows the whole world at that level, `at` centres
+    // on a point in tile units at that level and draws it `zoom` screen pixels per tile pixel.
+    const OVERWORLD = {world: 'minecraft_overworld', level: 3, fit: true};
+    const DETAIL = {world: 'minecraft_overworld', level: 0, at: [23, -2.3]};
+    const BACKDROP = {world: 'minecraft_overworld', level: 2, at: [-1, -2]};
+    const TOP_DOWN = {world: 'minecraft_overworld', view: 'top', level: 1, at: [2, 0]};
+
+    const lockup = `<div class="lockup pixel"><img src="${LOGO}" alt=""><span>TAERRA</span></div>`;
+    const TAGLINE = 'A live web map for Paper servers, and a Fabric mod that shows the same map in game.';
+
+    function canvas(w, h) {
+        return Object.assign(document.createElement('canvas'), {width: w, height: h});
+    }
+
+    function image(src) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = src;
+        });
+    }
+
+    function tileDir({world, view, rotation = 0, level}) {
+        return view === 'top' ? `${TILES}/tiles/${world}/${level}` : `${TILES}/tiles-iso/${world}/${rotation}/${level}`;
+    }
+
+    // Draws the tiles in [x0, x1) × [y0, y1) onto one canvas, with `shrink` only the span of those that exist.
+    async function stitch(dir, x0, y0, x1, y1, shrink = false) {
+        const jobs = [];
+        for (let x = x0; x < x1; x++) {
+            for (let y = y0; y < y1; y++) {
+                jobs.push(image(`${dir}/${x}/${y}.png`).then(img => img && {x, y, img}));
+            }
+        }
+        const found = (await Promise.all(jobs)).filter(Boolean);
+        if (shrink) {
+            [x0, x1] = [Math.min(...found.map(t => t.x)), Math.max(...found.map(t => t.x)) + 1];
+            [y0, y1] = [Math.min(...found.map(t => t.y)), Math.max(...found.map(t => t.y)) + 1];
+        }
+        const c = canvas((x1 - x0) * T, (y1 - y0) * T), g = c.getContext('2d');
+        for (const {x, y, img} of found) {
+            g.drawImage(img, (x - x0) * T, (y - y0) * T);
+        }
+        return c;
+    }
+
+    // Crops to the rendered part: tiles are transparent where the world ends.
+    function trim(c) {
+        const {data, width, height} = c.getContext('2d').getImageData(0, 0, c.width, c.height);
+        let x0 = width, y0 = height, x1 = 0, y1 = 0;
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (data[(y * width + x) * 4 + 3] > 8) {
+                    x0 = Math.min(x0, x);
+                    x1 = Math.max(x1, x + 1);
+                    y0 = Math.min(y0, y);
+                    y1 = Math.max(y1, y + 1);
+                }
+            }
+        }
+        const out = canvas(x1 - x0, y1 - y0);
+        out.getContext('2d').drawImage(c, -x0, -y0);
+        return out;
+    }
+
+    // Flat-shaded cubes on the grid the mark is cut from, in the web map's stone greys with one colour per face.
+    function cubes(w, h) {
+        const out = canvas(w, h), g = out.getContext('2d');
+        const a = Math.min(w, h) / 28.6, cx = w / 2, cy = -12 * a, n = Math.ceil((w + 2 * h) / a);
+        const height = (i, j) => Math.max(0, Math.round(
+            1.6 + 1.3 * Math.sin(i * .35) + 1.1 * Math.cos(j * .29 + i * .12) + .8 * Math.sin((i + j) * .21)));
+        const face = (colour, ...points) => {
+            g.fillStyle = colour;
+            g.beginPath();
+            points.forEach(([x, y]) => g.lineTo(x, y));
+            g.fill();
+        };
+        // Back to front, one diagonal at a time, over a square of the grid wide enough to reach every corner.
+        for (let row = -2 * n; row <= 2 * n; row++) {
+            for (let i = Math.max(-n, row - n); i <= Math.min(n, row + n); i++) {
+                const j = row - i, top = height(i, j), x = cx + (i - j) * a;
+                if (x < -a || x > w + a || cy + (i + j) * a / 2 - top * a > h || cy + (i + j + 4) * a / 2 < 0) {
+                    continue;
+                }
+                for (let k = 0; k <= top; k++) {
+                    const y = cy + (i + j) * a / 2 - k * a;
+                    face(k < top ? '#313233' : top > 3 ? '#58585a' : '#48494a',
+                        [x, y], [x + a, y + a / 2], [x, y + a], [x - a, y + a / 2]);
+                    face('#262627', [x - a, y + a / 2], [x, y + a], [x, y + 2 * a], [x - a, y + 1.5 * a]);
+                    face('#1e1e1f', [x + a, y + a / 2], [x, y + a], [x, y + 2 * a], [x + a, y + 1.5 * a]);
+                }
+            }
+        }
+        return out;
+    }
+
+    async function picture(spec, w, h) {
+        if (spec.cubes) {
+            return cubes(w, h);
+        }
+        const out = canvas(w, h), g = out.getContext('2d');
+        g.imageSmoothingQuality = 'high';
+        if (spec.fit) {
+            // ponytail: probes a fixed square of tiles, fine for worlds up to 32k blocks across
+            const r = (128 >> spec.level) + 1;
+            const plate = trim(await stitch(tileDir(spec), -r, -r, r, r, true));
+            const k = Math.min(w / plate.width, h / plate.height);
+            g.drawImage(plate, (w - plate.width * k) / 2, (h - plate.height * k) / 2, plate.width * k, plate.height * k);
+            return out;
+        }
+        const zoom = spec.zoom ?? 1, sw = w / zoom, sh = h / zoom;
+        const left = spec.at[0] * T - sw / 2, top = spec.at[1] * T - sh / 2;
+        const x0 = Math.floor(left / T), y0 = Math.floor(top / T);
+        const plate = await stitch(tileDir(spec), x0, y0, Math.ceil((left + sw) / T), Math.ceil((top + sh) / T));
+        g.imageSmoothingEnabled = zoom < 1;
+        g.drawImage(plate, left - x0 * T, top - y0 * T, sw, sh, 0, 0, w, h);
+        return out;
+    }
+
+    // Fills every element carrying a data-view with the picture named there, at the element's size.
+    async function paint(views) {
+        await Promise.all([...document.querySelectorAll('[data-view]')].map(async el => {
+            el.append(await picture(views[el.dataset.view], el.clientWidth, el.clientHeight));
+        }));
+    }
+
+    function gallery(kicker, title, stage, {dark = false} = {}) {
+        return `<div class="gallery fill ${dark ? 'dark' : ''}">
+            ${stage}
+            ${dark ? '' : '<div class="fill shade"></div>'}
+            <div class="copy"><div class="kicker pixel">${kicker}</div><h1>${title}</h1></div>
+            ${lockup}
+            <div class="grass"></div>
+        </div>`;
+    }
+
+    const rotations = [0, 1, 2, 3].map(rotation => ({...OVERWORLD, level: 4, rotation}));
+
+    const LAYOUTS = {
+        icon: [`<div class="icon">
+            <div class="fill blur" data-view="backdrop"></div><div class="fill"></div>
+            <img src="${LOGO}" alt="">
+        </div>`, {backdrop: {...BACKDROP, zoom: .5}}],
+
+        banner: [`<div class="banner fill">
+            <div class="fill blur" data-view="backdrop"></div>
+            <div class="fill shade"></div>
+            <div class="world float" data-view="world"></div>
+            <div class="copy">${lockup}<p class="tagline">${TAGLINE}</p></div>
+            <div class="grass"></div>
+        </div>`, {backdrop: BACKDROP, world: OVERWORLD}],
+
+        card: [`<div class="card fill">
+            <div class="fill blur" data-view="backdrop"></div>
+            <div class="fill shade"></div>
+            <div class="copy">${lockup}<p class="tagline">${TAGLINE}</p></div>
+            <div class="grass"></div>
+        </div>`, {backdrop: BACKDROP}],
+
+        'live-map': [`<div class="card live-map fill">
+            <div class="fill" data-view="cubes"></div>
+            <div class="fill shade"></div>
+            <div class="copy">${lockup}<div class="kicker pixel">Live map</div></div>
+            <div class="grass"></div>
+        </div>`, {cubes: {cubes: true}}],
+
+        'gallery-isometric': [gallery('Isometric', 'Your whole world at a glance',
+            '<div class="stage"><div class="fill float" data-view="world"></div></div>', {dark: true}),
+            {world: {...OVERWORLD, level: 2}}],
+
+        'gallery-detail': [gallery('Detail', 'Zoom in to every single block',
+            '<div class="fill" data-view="detail"></div>'), {detail: DETAIL}],
+
+        'gallery-top-down': [gallery('Top down', 'A classic flat map, one click away',
+            '<div class="fill" data-view="top"></div>'), {top: TOP_DOWN}],
+
+        'gallery-rotations': [gallery('Rotation', 'See it from all four sides',
+            `<div class="stage"><div class="grid">${rotations.map((_, i) => `<div class="fill float" data-view="r${i}"></div>`).join('')}</div></div>`,
+            {dark: true}), Object.fromEntries(rotations.map((spec, i) => [`r${i}`, spec]))],
+
+        'gallery-dimensions': [gallery('Dimensions', 'Overworld, Nether and End',
+            `<div class="stage">${['Overworld', 'Nether', 'End'].map(name => `<figure>
+                <div class="fill float" data-view="${name}"></div><figcaption class="pixel">${name}</figcaption>
+            </figure>`).join('')}</div>`, {dark: true}), {
+            Overworld: OVERWORLD,
+            Nether: {...OVERWORLD, world: 'minecraft_the_nether'},
+            End: {...OVERWORLD, world: 'minecraft_the_end'}
+        }]
+    };
+
+    // Headless Chrome lays the page out shorter than the screenshot it takes, so sizes come from the query rather than
+    // the viewport: --w, --h and --min stand in for vw, vh and vmin.
+    const width = +params.get('width'), height = +params.get('height');
+    for (const [name, value] of [['w', width], ['h', height], ['min', Math.min(width, height)]]) {
+        document.documentElement.style.setProperty(`--${name}`, `${value / 100}px`);
+    }
+    const [html, views] = LAYOUTS[params.get('layout')];
+    document.body.innerHTML = html;
+    await document.fonts.ready;
+    // QuinqueFive is drawn on a grid of a tenth of its size, anything in between blurs its pixels.
+    for (const el of document.querySelectorAll('.pixel')) {
+        el.style.fontSize = `${Math.max(10, Math.round(parseFloat(getComputedStyle(el).fontSize) / 10) * 10)}px`;
+    }
+    await paint(views);
+</script>

@@ -76,7 +76,7 @@ public final class WebClientImpl implements WebClient {
         .thenAccept(
             response -> {
               if (response.statusCode() != 200 && response.statusCode() != 204) {
-                LOGGER.warn("Taerra: {} answered {}", path, response.statusCode());
+                LOGGER.warn("TAERRA: {} answered {}", path, response.statusCode());
                 return;
               }
               final T value =
@@ -87,7 +87,7 @@ public final class WebClientImpl implements WebClient {
             })
         .exceptionally(
             error -> {
-              LOGGER.warn("Taerra: {} failed: {}", path, error.toString());
+              LOGGER.warn("TAERRA: {} failed: {}", path, error.toString());
               return null;
             });
   }

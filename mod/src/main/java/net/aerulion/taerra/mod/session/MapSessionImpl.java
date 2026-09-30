@@ -73,7 +73,7 @@ public final class MapSessionImpl implements MapSession {
       protocol = json.has("protocol") ? json.get("protocol").getAsInt() : 0;
       base = protocol == this.protocol ? baseUrl(json) : "";
     } catch (final RuntimeException e) {
-      LOGGER.warn("Taerra: ignoring a malformed handshake: {}", e.toString());
+      LOGGER.warn("TAERRA: ignoring a malformed handshake: {}", e.toString());
       return;
     }
     if (protocol != this.protocol) {

@@ -226,12 +226,12 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       return html;
     }
     final @NotNull String escaped = escapeHtml(name);
-    return html.replace("<title>Taerra</title>", "<title>" + escaped + "</title>")
+    return html.replace("<title>TAERRA</title>", "<title>" + escaped + "</title>")
         .replace(
-            "content=\"Taerra\" property=\"og:title\"",
+            "content=\"TAERRA\" property=\"og:title\"",
             "content=\"" + escaped + "\" property=\"og:title\"")
         .replace(
-            "content=\"Taerra\" property=\"og:image:alt\"",
+            "content=\"TAERRA\" property=\"og:image:alt\"",
             "content=\"" + escaped + "\" property=\"og:image:alt\"")
         .replace(
             "<span class=\"server-name\" hidden id=\"server-name\"></span>",

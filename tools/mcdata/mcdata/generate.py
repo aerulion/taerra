@@ -124,7 +124,7 @@ def write_json(path: Path, payload: object) -> None:
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generates Taerra block data (top color, side color, shape) from a vanilla asset tree."
+        description="Generates TAERRA block data (top color, side color, shape) from a vanilla asset tree."
     )
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--assets-dir", type=Path, help="Existing checkout of the minecraft-assets repository")

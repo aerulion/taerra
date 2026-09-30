@@ -3,21 +3,29 @@ name: 💬 Notify Discord
 on:
   workflow_call:
     inputs:
-      message:
-        description: The message content. Discord caps this at 2000 characters, so anything longer is truncated.
+      title:
+        description: The embed title.
         required: true
         type: string
-      release-tag:
+      description:
         description: >-
-          Optional tag of a GitHub release whose body is appended to the message as the changelog. The per-commit
-          links and author credits are stripped, and the whole message is truncated at Discord's 2000-character cap.
+          The embed text, Markdown. Headings become bold lines, since embeds do not render them, and anything past
+          Discord's 4096 characters is cut.
+        required: true
+        type: string
+      url:
+        description: Where the title links to.
+        required: false
+        type: string
+      icon:
+        description: URL of the avatar and thumbnail image. Left out, Discord shows its default avatar.
         required: false
         type: string
       username:
         description: The name the message is posted under.
         required: false
         type: string
-        default: Taerra
+        default: TAERRA
     secrets:
       WEBHOOK_ID:
         description: The webhook ID.
@@ -40,9 +48,10 @@ jobs:
           WEBHOOK_ID: ${{ secrets.WEBHOOK_ID }}
           WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
           USERNAME: ${{ inputs.username }}
-          MESSAGE: ${{ inputs.message }}
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release-tag }}
+          TITLE: ${{ inputs.title }}
+          DESCRIPTION: ${{ inputs.description }}
+          URL: ${{ inputs.url }}
+          ICON: ${{ inputs.icon }}
         run: |
           set -euo pipefail
 
@@ -51,14 +60,22 @@ jobs:
             exit 1
           fi
 
-          if [ -n "${RELEASE_TAG}" ]; then
-            changelog="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" --jq '.body')"
-            changelog="$(sed -E 's/ by .* in https:\/\/[^[:space:]]+\/commit\/[0-9a-f]+$//' <<< "${changelog}")"
-            MESSAGE="${MESSAGE}"$'\n\n'"${changelog}"
+          DESCRIPTION="$(sed -E 's/^#{1,6}[[:space:]]+(.*)$/**\1**/' <<< "${DESCRIPTION}")"
+          if [ "${#DESCRIPTION}" -gt 4096 ]; then
+            DESCRIPTION="${DESCRIPTION:0:4090}"$'\n…'
           fi
-
-          payload="$(jq -nc --arg content "${MESSAGE}" --arg username "${USERNAME}" \
-            '{content: $content[0:2000], username: $username}')"
+          # allowed_mentions stops an @everyone in a commit subject from pinging the whole server.
+          payload="$(jq -nc --arg username "${USERNAME}" --arg icon "${ICON}" --arg title "${TITLE}" \
+            --arg description "${DESCRIPTION}" --arg url "${URL}" '{
+              username: $username,
+              allowed_mentions: {parse: []},
+              embeds: [{
+                title: $title[0:256],
+                description: $description,
+                color: 5416245
+              } + (if $url == "" then {} else {url: $url} end)
+                + (if $icon == "" then {} else {thumbnail: {url: $icon}} end)]
+            } + (if $icon == "" then {} else {avatar_url: $icon} end)')"
 
           curl --silent --show-error --fail-with-body \
             --retry 3 --retry-connrefused --max-time 30 \

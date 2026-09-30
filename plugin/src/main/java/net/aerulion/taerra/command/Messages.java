@@ -150,7 +150,7 @@ public final class Messages {
 
   static @NotNull Component header(final @NotNull ComponentLike title) {
     return Component.text()
-        .append(Component.text("Taerra", BRAND, TextDecoration.BOLD))
+        .append(Component.text("TAERRA", BRAND, TextDecoration.BOLD))
         .append(SEPARATOR)
         .append(Component.text().color(VALUE).append(title))
         .build();

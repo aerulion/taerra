@@ -177,7 +177,7 @@ final class MarkerOverlay {
     this.jobs--;
     entry.rendering = false;
     if (error != null) {
-      LOGGER.warn("Taerra: could not draw markers for {}: {}", key, error.toString());
+      LOGGER.warn("TAERRA: could not draw markers for {}: {}", key, error.toString());
     }
     if (this.cache.get(key) != entry
         || this.scene == null
@@ -191,7 +191,7 @@ final class MarkerOverlay {
     release(entry);
     entry.version = scene.version();
     if (image != null) {
-      entry.texture = Texture.upload("Taerra markers " + key, image);
+      entry.texture = Texture.upload("TAERRA markers " + key, image);
       this.textures++;
     }
   }

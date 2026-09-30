@@ -1,4 +1,4 @@
-Bundled web fonts for Taerra
+Bundled web fonts for TAERRA
 
 1) QuinqueFive
    Author: GGBotNet

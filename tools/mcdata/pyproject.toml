@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "taerra-mcdata"
 version = "0.1.0"
-description = "Generates Taerra block data from vanilla Minecraft assets"
+description = "Generates TAERRA block data from vanilla Minecraft assets"
 requires-python = ">=3.11"
 dependencies = [
   "numpy>=2.1,<3",

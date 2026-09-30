@@ -12,7 +12,7 @@ public interface TaerraApi {
   static @NotNull TaerraApi get() {
     final @Nullable TaerraApi api = Bukkit.getServicesManager().load(TaerraApi.class);
     if (api == null) {
-      throw new IllegalStateException("Taerra is not enabled");
+      throw new IllegalStateException("TAERRA is not enabled");
     }
     return api;
   }

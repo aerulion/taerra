@@ -66,9 +66,6 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ needs.build.outputs.version }}
-      download: ${{ steps.download.outputs.url }}
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v7
@@ -94,18 +91,6 @@ jobs:
             ./generated/plugin/build/libs/*.jar
             ./generated/api/build/libs/*.jar
 
-      - name: 🔗 Resolve plugin jar download link
-        id: download
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: build-${{ github.run_number }}
-        run: |
-          set -euo pipefail
-          URL=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" \
-            --jq '[.assets[] | select(.name | test("^taerra-[0-9].*\\.jar$"))][0].browser_download_url')
-          echo "url=${URL}" >> "$GITHUB_OUTPUT"
-          echo "Plugin jar: ${URL}"
-
   release-mod:
     name: 🗺️ Release mod
     timeout-minutes: 15
@@ -114,9 +99,6 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ needs.build.outputs.version }}
-      download: ${{ steps.download.outputs.url }}
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v7
@@ -139,51 +121,6 @@ jobs:
           prefix: mod-
           title: mod-${{ github.run_number }} (${{ needs.build.outputs.version }})
           files: ./generated/*.jar
-
-      - name: 🔗 Resolve mod jar download link
-        id: download
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: mod-${{ github.run_number }}
-        run: |
-          set -euo pipefail
-          URL=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" \
-            --jq '[.assets[] | select(.name | test("^taerra-fabric-[0-9].*\\.jar$"))][0].browser_download_url')
-          echo "url=${URL}" >> "$GITHUB_OUTPUT"
-          echo "Mod jar: ${URL}"
-
-  notify-plugin:
-    name: 💬 Notify Discord (plugin)
-    needs: release-plugin
-    uses: ./.github/workflows/notify-discord.yml
-    with:
-      message: "## :rocket: A new plugin version has been released.\n### Version: `${{ needs.release-plugin.outputs.version }}`\n:inbox_tray: [Download plugin](${{ needs.release-plugin.outputs.download }})\nThe jar still has to be swapped on the server and the server restarted."
-      release-tag: build-${{ github.run_number }}
-    secrets:
-      WEBHOOK_ID: ${{ secrets.DISCORD_WEBHOOK_ID }}
-      WEBHOOK_TOKEN: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
-
-  notify-mod:
-    name: 💬 Notify Discord (mod)
-    needs: release-mod
-    uses: ./.github/workflows/notify-discord.yml
-    with:
-      message: "## :world_map: A new mod version has been released.\n### Version: `${{ needs.release-mod.outputs.version }}`\n:inbox_tray: [Download mod](${{ needs.release-mod.outputs.download }})"
-      release-tag: mod-${{ github.run_number }}
-    secrets:
-      WEBHOOK_ID: ${{ secrets.DISCORD_WEBHOOK_ID }}
-      WEBHOOK_TOKEN: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
-
-  notify-failure:
-    name: 💬 Notify Discord on failure
-    needs: [ changes, build, release-plugin, release-mod ]
-    if: failure()
-    uses: ./.github/workflows/notify-discord.yml
-    with:
-      message: "## :x: The release failed.\nCommit: `${{ github.sha }}`\n:mag: [Open the workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-    secrets:
-      WEBHOOK_ID: ${{ secrets.DISCORD_WEBHOOK_ID }}
-      WEBHOOK_TOKEN: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
 
   cleanup-packages:
     name: 🧹 Cleanup old packages

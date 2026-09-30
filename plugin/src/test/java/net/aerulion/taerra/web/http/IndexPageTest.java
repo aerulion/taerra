@@ -32,7 +32,7 @@ class IndexPageTest {
     assertTrue(html.contains("content=\"" + name + "\" property=\"og:image:alt\""));
     assertTrue(html.contains("id=\"server-name\">" + name + "</span>"));
     assertFalse(html.contains("<Jerry>"));
-    assertTrue(html.contains("class=\"brand\""), "the Taerra brand stays");
+    assertTrue(html.contains("class=\"brand\""), "the TAERRA brand stays");
   }
 
   @Test

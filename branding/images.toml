@@ -1,0 +1,84 @@
+# Every image generate.py renders, written to images/<file>. Add an entry for each site and size you need: every
+# layout scales to any size and aspect ratio.
+#
+# Layouts (defined in render.html):
+#   icon                the mark over the blurred world, for square avatars
+#   banner              lockup and tagline on the left, the whole world on the right, for wide headers
+#   card                lockup and tagline centred, for link previews
+#   live-map            lockup over drawn cubes, no world: the web map's preview, the same on every server
+#   gallery-isometric   the whole overworld
+#   gallery-detail      a close-up at full detail
+#   gallery-top-down    the top-down map
+#   gallery-rotations   the overworld from all four sides
+#   gallery-dimensions  overworld, nether and end side by side
+
+# Modrinth
+
+[[image]]
+file = "modrinth/icon.png"
+layout = "icon"
+size = [512, 512]
+
+[[image]]
+file = "modrinth/description-header.png"
+layout = "banner"
+size = [1920, 640]
+
+[[image]]
+file = "modrinth/gallery-1-isometric.png"
+layout = "gallery-isometric"
+size = [1920, 1080]
+
+[[image]]
+file = "modrinth/gallery-2-detail.png"
+layout = "gallery-detail"
+size = [1920, 1080]
+
+[[image]]
+file = "modrinth/gallery-3-top-down.png"
+layout = "gallery-top-down"
+size = [1920, 1080]
+
+[[image]]
+file = "modrinth/gallery-4-rotations.png"
+layout = "gallery-rotations"
+size = [1920, 1080]
+
+[[image]]
+file = "modrinth/gallery-5-dimensions.png"
+layout = "gallery-dimensions"
+size = [1920, 1080]
+
+# GitHub
+
+[[image]]
+file = "github/readme-header.png"
+layout = "banner"
+size = [1920, 480]
+
+[[image]]
+file = "github/social-preview.png"
+layout = "card"
+size = [1280, 640]
+
+# Hangar
+
+[[image]]
+file = "hangar/icon.png"
+layout = "icon"
+size = [512, 512]
+
+
+# The web map's link preview, shipped in the plugin jar
+
+[[image]]
+file = "../../plugin/src/main/resources/web/images/og.png"
+layout = "live-map"
+size = [1200, 630]
+
+# The mod's icon in Mod Menu, shipped in the mod jar
+
+[[image]]
+file = "../../mod/src/main/resources/assets/taerra/icon.png"
+layout = "icon"
+size = [256, 256]

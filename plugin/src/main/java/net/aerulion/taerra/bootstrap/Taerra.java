@@ -142,7 +142,7 @@ public final class Taerra extends JavaPlugin {
                   + builtFor
                   + " but the server runs "
                   + getServer().getMinecraftVersion()
-                  + ", download the matching Taerra build");
+                  + ", download the matching TAERRA build");
       getServer().getPluginManager().disablePlugin(this);
       return;
     }

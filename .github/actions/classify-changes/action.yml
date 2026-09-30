@@ -83,7 +83,7 @@ runs:
           local stream="$1" base="$2" file
           while IFS= read -r file; do
             case "${file}" in
-              '' | *.md) ;;
+              '' | *.md | branding/*) ;;
               mod/*) if [ "${stream}" = 'mod' ]; then return 0; fi ;;
               gradle/* | build-logic/* | settings.gradle.kts | build.gradle.kts | gradle.properties | gradlew | gradlew.bat)
                 return 0 ;;

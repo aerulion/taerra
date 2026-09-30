@@ -112,6 +112,8 @@ paper {
     loader = "net.aerulion.taerra.bootstrap.TaerraLoader"
     version = project.version.toString()
     author = "aerulion"
+    description = "A live isometric and top-down web map of your worlds."
+    website = "https://modrinth.com/project/taerra"
     apiVersion = libs.versions.paper.get().substringBefore(".build")
     foliaSupported = false
     serverDependencies {

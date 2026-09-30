@@ -53,6 +53,9 @@ tasks.withType<Test>().configureEach {
     }
 }
 
+// The repository is private, so the jars are where users find the license.
+tasks.named<Jar>("jar") { from(rootDir.resolve("LICENSE.md")) }
+
 tasks.withType<AbstractArchiveTask>().configureEach {
     isPreserveFileTimestamps = false
     isReproducibleFileOrder = true

@@ -1,0 +1,163 @@
+name: 🟢 Publish to Modrinth
+
+# Promotes a development build to a Modrinth release: the jar attached to its GitHub release, so what ships is exactly
+# what was tested. Plugin and mod are one Modrinth project, told apart by loader.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The build to publish, by its GitHub release tag, build-<n> for the plugin or mod-<n> for the mod.
+        required: true
+        type: string
+      channel:
+        description: The Modrinth release channel.
+        type: choice
+        options: [ release, beta, alpha ]
+        default: release
+      announce:
+        description: Announce it on Discord.
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: modrinth
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: 🟢 Publish to Modrinth
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    outputs:
+      title: ${{ steps.publish.outputs.title }}
+      url: ${{ steps.publish.outputs.url }}
+      description: ${{ steps.publish.outputs.description }}
+      icon: ${{ steps.publish.outputs.icon }}
+    steps:
+      - name: 📥 Checkout the build
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: 🟢 Upload the version
+        id: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          # The slug the mod, the plugin and the web map link to as well.
+          SLUG: taerra
+          TAG: ${{ inputs.tag }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${MODRINTH_TOKEN}" ]; then
+            echo "::error::Set the MODRINTH_TOKEN secret."
+            exit 1
+          fi
+
+          if [[ ! "${TAG}" =~ ^(build|mod)-[0-9]+$ ]]; then
+            echo "::error::'${TAG}' is not a build-<n> or mod-<n> tag."
+            exit 1
+          fi
+          case "${TAG}" in
+            build-*) prefix='build-' loader='paper' jar='^taerra-[0-9].*\.jar$' part='Paper' ;;
+            mod-*) prefix='mod-' loader='fabric' jar='^taerra-fabric-[0-9].*\.jar$' part='Fabric' ;;
+          esac
+
+          gh release download "${TAG}" --repo "${GITHUB_REPOSITORY}" --dir dist --pattern '*.jar'
+          file="$(find dist -maxdepth 1 -name '*.jar' -printf '%f\n' | grep -E "${jar}" | head -n 1 || true)"
+          if [ -z "${file}" ]; then
+            echo "::error::The ${TAG} release has no ${part} jar."
+            exit 1
+          fi
+          version="${file#taerra-}"
+          version="${version#fabric-}"
+          version="${version%.jar}"
+          minecraft="$(sed -nE 's/^minecraft = "([^"]+)"$/\1/p' gradle/libs.versions.toml)"
+
+          modrinth() {
+            curl --silent --show-error --fail-with-body --retry 3 --max-time 120 \
+              --user-agent "aerulion/taerra release pipeline (${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY})" \
+              --header "Authorization: ${MODRINTH_TOKEN}" "$@"
+          }
+          api='https://api.modrinth.com/v2'
+          project="$(modrinth "${api}/project/${SLUG}")"
+          id="$(jq -r '.id' <<< "${project}")"
+
+          # The notes cover everything since this loader's newest version on Modrinth, whose number ends in its commit.
+          previous="$(modrinth --get "${api}/project/${id}/version" --data-urlencode "loaders=[\"${loader}\"]" \
+            | jq -r 'max_by(.date_published).version_number // empty')"
+          if [ "${previous}" = "${version}" ]; then
+            echo "::error::${version} is already the newest ${part} version on Modrinth."
+            exit 1
+          fi
+          if [ -n "${previous}" ] && git cat-file -e "${previous##*-}^{commit}" 2>/dev/null; then
+            changelog="$(AUDIENCE=players .github/actions/github-release/release-notes.sh \
+              "${prefix}" "${TAG}" "${previous##*-}")"
+          else
+            changelog='The first release on Modrinth.'
+          fi
+
+          dependencies='[]'
+          if [ "${loader}" = 'fabric' ]; then
+            dependencies="$(jq -nc \
+              --arg api "$(modrinth "${api}/project/fabric-api" | jq -r '.id')" \
+              --arg menu "$(modrinth "${api}/project/modmenu" | jq -r '.id')" \
+              '[{project_id: $api, dependency_type: "required"}, {project_id: $menu, dependency_type: "optional"}]')"
+          fi
+
+          name="TAERRA ${TAG#*-} for ${part}"
+          jq -n --arg name "${name}" --arg version "${version}" --arg changelog "${changelog}" \
+            --argjson dependencies "${dependencies}" --arg minecraft "${minecraft}" --arg channel "${CHANNEL}" \
+            --arg loader "${loader}" --arg project "${id}" '{
+              name: $name,
+              version_number: $version,
+              changelog: $changelog,
+              dependencies: $dependencies,
+              game_versions: [$minecraft],
+              version_type: $channel,
+              loaders: [$loader],
+              featured: ($channel == "release"),
+              project_id: $project,
+              file_parts: ["file"],
+              primary_file: "file"
+            }' > data.json
+          uploaded="$(modrinth --form 'data=<data.json;type=application/json' --form "file=@dist/${file}" \
+            "${api}/version" | jq -r '.id')"
+          url="https://modrinth.com/project/${SLUG}/version/${uploaded}"
+          echo "Published ${name} (${version}, ${CHANNEL}): ${url}"
+
+          title="${name} is out"
+          if [ "${CHANNEL}" != 'release' ]; then
+            title="${name} (${CHANNEL})"
+          fi
+          delimiter="EOF-$(openssl rand -hex 8)"
+          {
+            echo "title=${title}"
+            echo "url=${url}"
+            echo "icon=$(jq -r '.icon_url // empty' <<< "${project}")"
+            echo "description<<${delimiter}"
+            printf '%s\n\n📥 [Download on Modrinth](%s)\n' "${changelog}" "${url}"
+            echo "${delimiter}"
+          } >> "$GITHUB_OUTPUT"
+
+  announce:
+    name: 💬 Announce on Discord
+    needs: publish
+    if: inputs.announce
+    uses: ./.github/workflows/notify-discord.yml
+    with:
+      title: ${{ needs.publish.outputs.title }}
+      url: ${{ needs.publish.outputs.url }}
+      description: ${{ needs.publish.outputs.description }}
+      icon: ${{ needs.publish.outputs.icon }}
+    secrets:
+      WEBHOOK_ID: ${{ secrets.DISCORD_WEBHOOK_ID }}
+      WEBHOOK_TOKEN: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}

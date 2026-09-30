@@ -1,7 +1,9 @@
 [![Release](https://github.com/aerulion/taerra/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/aerulion/taerra/actions/workflows/release.yml)
 [![Pull Request](https://github.com/aerulion/taerra/actions/workflows/pr.yml/badge.svg)](https://github.com/aerulion/taerra/actions/workflows/pr.yml)
 
-# Taerra
+![TAERRA](branding/images/github/readme-header.png)
+
+# TAERRA
 
 A live web map for Paper servers, and a Fabric mod that shows the same map in game.
 
@@ -11,6 +13,7 @@ A live web map for Paper servers, and a Fabric mod that shows the same map in ga
 | `api/`         | The API other plugins add markers and layers through        |
 | `mod/`         | The Fabric mod: map screen and minimap, a viewer only       |
 | `tools/mcdata` | Generates `block_data.json` from the vanilla assets         |
+| `branding/`    | Renders the logo and store images from the map tiles        |
 
 Rendering happens on the server and nowhere else. The mod draws the tiles the plugin serves and speaks the same HTTP
 API as the web map, which is why both live in one repository: a change to that API and every client of it belong in
@@ -65,14 +68,22 @@ Every push to `main` releases whichever parts it changed.
 | `mod/`             | mod jar                           | `mod-<n>`   |
 | shared build files | both                              | both        |
 
-The shared build files are `gradle/`, `build-logic/`, the root build scripts and the wrapper. Markdown is excluded
-everywhere. Anything outside `mod/` counts as the plugin, so a new top-level file releases a build rather than silently
+The shared build files are `gradle/`, `build-logic/`, the root build scripts and the wrapper. Markdown and `branding/` are
+excluded everywhere. Anything outside `mod/` counts as the plugin, so a new top-level file releases a build rather than silently
 not releasing one.
 
 Every release runs the whole Gradle build first, and the API is published in a second step, after every test has
-passed. Every release and every failure is announced on Discord; a plugin release still has to be swapped on the
-server by hand. The ten most recent releases per stream and the ten most recent API versions are kept.
-`manual-cleanup.yml` runs the same cleanup on demand.
+passed. The ten most recent releases per stream and the ten most recent API versions are kept. `manual-cleanup.yml` runs the same cleanup on demand.
+
+## Modrinth
+
+Plugin and mod are one Modrinth project, told apart by loader. Nothing reaches it on its own: run the
+**Publish to Modrinth** workflow with a build's tag (`build-<n>` or `mod-<n>`) and a channel, and it uploads that
+build's jar with the player-facing changes since the previous Modrinth version, then announces it on Discord. Only the
+ten most recent builds per stream still have a release to publish from.
+
+It needs the `MODRINTH_TOKEN` secret, a personal access token with the *Read projects* and *Create versions* scopes
+(the project is a draft until approved, so even reading it needs the token).
 
 ## Commit messages
 
