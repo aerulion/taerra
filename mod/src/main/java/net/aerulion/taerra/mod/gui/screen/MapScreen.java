@@ -101,7 +101,7 @@ public final class MapScreen extends Screen {
 
   public MapScreen(
       final @NotNull WebMap map, final @NotNull MapView view, final Settings settings) {
-    super(Component.translatable("taerra.map"));
+    super(title(map.config()));
     this.map = map;
     this.view = view;
     this.settings = settings;
@@ -251,6 +251,12 @@ public final class MapScreen extends Screen {
       return true;
     }
     return super.keyPressed(event);
+  }
+
+  private static @NotNull Component title(final @Nullable MapConfig config) {
+    return config == null || config.name() == null || config.name().isBlank()
+        ? Component.translatable("taerra.map")
+        : Component.translatable("taerra.map.named", config.name());
   }
 
   @Override

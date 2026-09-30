@@ -35,6 +35,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
     SETTINGS.put("web.port", IntegerArgumentType.integer(1, 65535));
     SETTINGS.put("web.host", StringArgumentType.word());
     SETTINGS.put("web.public-url", StringArgumentType.greedyString());
+    SETTINGS.put("web.name", StringArgumentType.greedyString());
     SETTINGS.put("rendering.render-threads", IntegerArgumentType.integer(0));
     SETTINGS.put("rendering.max-tiles-per-second", IntegerArgumentType.integer(0));
     SETTINGS.put("rendering.update-interval", IntegerArgumentType.integer(0));
@@ -183,7 +184,9 @@ public final class ConfigSubCommand implements TaerraSubCommand {
   private int set(
       final @NotNull CommandContext<CommandSourceStack> context,
       final @NotNull String key,
-      final @NotNull Object value) {
+      final @NotNull Object given) {
+    // A greedy string cannot be empty, so "" clears it.
+    final @NotNull Object value = "\"\"".equals(given) ? "" : given;
     this.plugin.getConfig().set(key, value);
     this.plugin.saveConfig();
     if (key.startsWith("web.")) {

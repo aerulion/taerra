@@ -136,6 +136,7 @@ public final class WebClientImpl implements WebClient {
   @Override
   public void close() {
     this.closed = true;
+    this.http.shutdownNow();
   }
 
   private HttpRequest.Builder request(final String path) {

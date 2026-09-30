@@ -213,6 +213,7 @@ public final class Taerra extends JavaPlugin {
       this.generatorService = generatorService;
 
       final @NotNull MarkerRegistryInternal markers = new MarkerRegistryImpl();
+      getServer().getPluginManager().registerEvents(markers, this);
       final @NotNull PlayerPositionBroadcaster playerBroadcaster =
           new PlayerPositionBroadcasterImpl(this, configuration, webSocketHandler, worldLimits);
       this.playerBroadcaster = playerBroadcaster;

@@ -58,6 +58,26 @@ class WebSessionsTest {
   }
 
   @Test
+  @DisplayName("a mod session works but never reaches the disk")
+  void modSessionStaysInMemory() {
+    final @NotNull WebSessions sessions = sessions();
+    final @NotNull String token = sessions.open(PLAYER, "Steve", SKIN);
+    assertNotNull(sessions.session(token));
+    assertFalse(Files.exists(this.folder.resolve("sessions.yml")), "opening writes nothing");
+
+    final WebSessions.@Nullable Login saved =
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN));
+    assertNotNull(saved);
+    final @NotNull WebSessions restarted = sessions();
+    restarted.load();
+    assertNull(restarted.session(token));
+    assertNotNull(restarted.session(saved.token()));
+
+    sessions.end(token);
+    assertNull(sessions.session(token));
+  }
+
+  @Test
   @DisplayName("logging out ends the session, logging out everywhere ends them all")
   void logout() {
     final @NotNull WebSessions sessions = sessions();

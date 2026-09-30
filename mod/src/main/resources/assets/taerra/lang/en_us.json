@@ -24,6 +24,7 @@
   "taerra.map.hidden": "Hidden from the map",
   "taerra.map.layers": "Layers",
   "taerra.map.loading": "Loading the map…",
+  "taerra.map.named": "%s · World Map",
   "taerra.map.players": "Players",
   "taerra.map.players.count": "Players (%s)",
   "taerra.map.reconnecting": "Reconnecting…",

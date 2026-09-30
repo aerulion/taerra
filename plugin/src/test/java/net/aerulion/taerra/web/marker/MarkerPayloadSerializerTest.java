@@ -4,13 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 import java.util.Map;
-import net.aerulion.taerra.api.marker.LineMarker;
 import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
-import net.aerulion.taerra.api.marker.PointMarker;
 import net.aerulion.taerra.marker.MarkerRegistryImpl;
+import net.aerulion.taerra.marker.TestPlugins;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
@@ -23,27 +23,20 @@ class MarkerPayloadSerializerTest {
   void filtersByWorld() {
     final @NotNull MarkerRegistry registry = new MarkerRegistryImpl();
     final @NotNull NamespacedKey overworld = NamespacedKey.minecraft("overworld");
+    final @NotNull Plugin taerra = TestPlugins.named("Taerra");
     registry
-        .layer("paths", "Paths", false)
+        .layer(taerra, "paths", "Paths", false)
         .set(
-            new LineMarker(
-                "road",
-                overworld,
-                List.of(new Vector(0, 64, 0), new Vector(10, 70, 5)),
-                true,
-                "Road",
-                Map.of("Built by", "Alex"),
-                Color.fromRGB(0x4FA3E0)));
+            Marker.line(
+                    "road", overworld, List.of(new Vector(0, 64, 0), new Vector(10, 70, 5)), "Road")
+                .smoothed()
+                .withDetails(Map.of("Built by", "Alex"))
+                .withColor(Color.fromRGB(0x4FA3E0)));
     registry
-        .layer("nether", "Nether")
+        .layer(taerra, "nether", "Nether")
         .set(
-            new PointMarker(
-                "portal",
-                NamespacedKey.minecraft("the_nether"),
-                new Vector(0, 64, 0),
-                null,
-                Map.of(),
-                Marker.DEFAULT_COLOR));
+            Marker.point(
+                "portal", NamespacedKey.minecraft("the_nether"), new Vector(0, 64, 0), null));
 
     final @NotNull List<Map<String, Object>> layers =
         MarkerPayloadSerializer.world(

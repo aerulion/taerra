@@ -1,37 +1,24 @@
 package net.aerulion.taerra.api.marker;
 
 import java.util.Map;
-import java.util.Objects;
 import org.bukkit.Color;
-import org.bukkit.NamespacedKey;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public record PointMarker(
-    @NotNull String id,
-    @NotNull NamespacedKey world,
-    @NotNull Vector position,
-    @Nullable String label,
-    @NotNull Map<String, String> details,
-    @NotNull Color color)
-    implements Marker {
+/** A single spot, drawn as a pin. Made with {@link Marker#point}. */
+@ApiStatus.NonExtendable
+public sealed interface PointMarker extends Marker permits PointMarkerImpl {
 
-  public PointMarker {
-    Objects.requireNonNull(id, "id");
-    Objects.requireNonNull(world, "world");
-    position = position.clone();
-    details = MarkerArguments.orderedCopy(details);
-    Objects.requireNonNull(color, "color");
-  }
+  /** Where the pin stands, a copy. */
+  @NotNull
+  Vector position();
 
   @Override
-  public @NotNull PointMarker withColor(final @NotNull Color color) {
-    return new PointMarker(this.id, this.world, this.position, this.label, this.details, color);
-  }
+  @NotNull
+  PointMarker withColor(@NotNull Color color);
 
   @Override
-  public @NotNull PointMarker withDetails(final @NotNull Map<String, String> details) {
-    return new PointMarker(this.id, this.world, this.position, this.label, details, this.color);
-  }
+  @NotNull
+  PointMarker withDetails(@NotNull Map<String, String> details);
 }

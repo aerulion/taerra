@@ -9,11 +9,13 @@ import java.util.function.Consumer;
 import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import org.bukkit.NamespacedKey;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 final class MarkerLayerImpl implements MarkerLayer {
 
+  private final @NotNull Plugin owner;
   private final @NotNull String id;
   private final @NotNull String label;
   private final boolean shownByDefault;
@@ -21,15 +23,22 @@ final class MarkerLayerImpl implements MarkerLayer {
   private final @NotNull Consumer<NamespacedKey> onChange;
 
   MarkerLayerImpl(
+      final @NotNull Plugin owner,
       final @NotNull String id,
       final @NotNull String label,
       final boolean shownByDefault,
       final @NotNull Consumer<NamespacedKey> onChange) {
     super();
+    this.owner = owner;
     this.id = id;
     this.label = label;
     this.shownByDefault = shownByDefault;
     this.onChange = onChange;
+  }
+
+  @Override
+  public @NotNull Plugin owner() {
+    return this.owner;
   }
 
   @Override

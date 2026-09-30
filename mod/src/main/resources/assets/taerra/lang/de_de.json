@@ -24,6 +24,7 @@
   "taerra.map.hidden": "Auf der Karte versteckt",
   "taerra.map.layers": "Ebenen",
   "taerra.map.loading": "Karte wird geladen…",
+  "taerra.map.named": "%s · Weltkarte",
   "taerra.map.players": "Spieler",
   "taerra.map.players.count": "Spieler (%s)",
   "taerra.map.reconnecting": "Verbinde neu…",

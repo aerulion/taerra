@@ -112,6 +112,20 @@ button {
     height: 28px;
 }
 
+/* web.name, beside the brand, which always stays. */
+.server-name {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 24ch;
+    padding-left: 24px;
+    border-left: 1px solid var(--stone-700);
+    overflow: hidden;
+    font-weight: 600;
+    line-height: 28px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* Takes the bar's leftover width whatever it holds, so fitWorlds can measure the tabs against it. */
 .worlds {
     display: flex;
@@ -1247,6 +1261,11 @@ kbd {
 
     .brand {
         font-size: 0;
+    }
+
+    .server-name {
+        max-width: 12ch;
+        padding-left: 12px;
     }
 
     .world-tab {

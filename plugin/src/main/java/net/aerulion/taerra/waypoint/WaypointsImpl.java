@@ -53,7 +53,7 @@ public final class WaypointsImpl implements Waypoints, Listener {
     super();
     this.plugin = plugin;
     this.registry = registry;
-    this.layer = registry.layer(LAYER, "Waypoints");
+    this.layer = registry.layer(plugin, LAYER, "Waypoints");
     this.file = new File(plugin.getDataFolder(), "waypoints.yml");
   }
 
@@ -86,13 +86,12 @@ public final class WaypointsImpl implements Waypoints, Listener {
       }
       layer(entry.get("group") instanceof final @NotNull String group ? group : null)
           .set(
-              new PointMarker(
-                  id(name),
-                  world,
-                  new Vector(x.doubleValue(), y.doubleValue(), z.doubleValue()),
-                  name,
-                  Map.of(),
-                  rgb.isPresent() ? Color.fromRGB(rgb.getAsInt()) : DEFAULT_COLOR));
+              Marker.point(
+                      id(name),
+                      world,
+                      new Vector(x.doubleValue(), y.doubleValue(), z.doubleValue()),
+                      name)
+                  .withColor(rgb.isPresent() ? Color.fromRGB(rgb.getAsInt()) : DEFAULT_COLOR));
     }
     Bukkit.getWorlds().forEach(this::placeSpawn);
   }
@@ -173,13 +172,13 @@ public final class WaypointsImpl implements Waypoints, Listener {
       }
     }
     target.set(
-        new PointMarker(
-            id(name),
-            location.getWorld().getKey(),
-            new Vector(location.getBlockX() + .5, location.getBlockY(), location.getBlockZ() + .5),
-            name,
-            Map.of(),
-            color));
+        Marker.point(
+                id(name),
+                location.getWorld().getKey(),
+                new Vector(
+                    location.getBlockX() + .5, location.getBlockY(), location.getBlockZ() + .5),
+                name)
+            .withColor(color));
   }
 
   private @Nullable String group(final @NotNull String name) {
@@ -195,7 +194,7 @@ public final class WaypointsImpl implements Waypoints, Listener {
     final @Nullable String id = Waypoints.groupLayerId(group);
     return id == null
         ? this.layer
-        : this.registry.layer(id, group.strip(), !this.hiddenGroups.contains(id));
+        : this.registry.layer(this.plugin, id, group.strip(), !this.hiddenGroups.contains(id));
   }
 
   private @NotNull List<MarkerLayer> layers() {
@@ -243,13 +242,12 @@ public final class WaypointsImpl implements Waypoints, Listener {
   private void placeSpawn(final @NotNull World world) {
     final @NotNull Location spawn = world.getSpawnLocation();
     this.layer.set(
-        new PointMarker(
-            SPAWN + WorldKeys.id(world),
-            world.getKey(),
-            new Vector(spawn.getBlockX() + .5, spawn.getBlockY(), spawn.getBlockZ() + .5),
-            "Spawn",
-            Map.of(),
-            SPAWN_COLOR));
+        Marker.point(
+                SPAWN + WorldKeys.id(world),
+                world.getKey(),
+                new Vector(spawn.getBlockX() + .5, spawn.getBlockY(), spawn.getBlockZ() + .5),
+                "Spawn")
+            .withColor(SPAWN_COLOR));
   }
 
   @EventHandler

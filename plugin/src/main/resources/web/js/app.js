@@ -6,6 +6,8 @@ import {playerManager} from './players.js';
 import {waypointEditor} from './waypoints.js';
 import {wsManager} from './websocket.js';
 
+const SERVER_NAME = document.getElementById('server-name').textContent || 'Taerra';
+
 const $ = (id) => document.getElementById(id);
 
 let worlds = [];
@@ -93,7 +95,7 @@ async function selectWorld(name) {
     }
     currentWorld = world;
     renderWorlds();
-    document.title = `${worldLabel(world)} · Taerra`;
+    document.title = `${worldLabel(world)} · ${SERVER_NAME}`;
 
     mapManager.setWorld(world);
     playerManager.setWorld(world.name);

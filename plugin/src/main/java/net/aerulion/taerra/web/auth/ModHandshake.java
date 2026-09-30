@@ -104,11 +104,11 @@ public final class ModHandshake implements Listener {
     return this.tokens.computeIfAbsent(
         player.getUniqueId(),
         uuid -> {
+          // Opened before the grant: saving drops grants of players without a session.
+          final @NotNull String token =
+              this.sessions.open(uuid, player.getName(), PlayerAvatars.skin(player));
           this.sessions.grant(uuid, WebGrants.of(player, this.config));
-          final WebSessions.@Nullable Login login =
-              this.sessions.redeem(
-                  this.sessions.createCode(uuid, player.getName(), PlayerAvatars.skin(player)));
-          return login == null ? null : login.token();
+          return token;
         });
   }
 }

@@ -42,7 +42,7 @@ public final class WorldGuardRegions {
       final @NotNull MarkerRegistry registry,
       final @NotNull TaerraConfig config) {
     final @NotNull MarkerLayer layer =
-        registry.layer("worldguard", "Regions", config.worldGuardShownByDefault());
+        registry.layer(plugin, "worldguard", "Regions", config.worldGuardShownByDefault());
     Bukkit.getScheduler()
         .runTaskTimerAsynchronously(
             plugin, () -> layer.setAll(regions(config)), 20L, SYNC_INTERVAL_TICKS);
@@ -90,7 +90,7 @@ public final class WorldGuardRegions {
                 .map((BlockVector2 point) -> new Vector(point.x() + .5, 0, point.z() + .5))
                 .toList();
 
-    return Marker.polygon(id, world, outline, min.y(), max.y() + 1, region.getId())
+    return Marker.polygon(id, world.getKey(), outline, min.y(), max.y() + 1, region.getId())
         .withColor(region.getOwners().size() + region.getMembers().size() > 0 ? CLAIMED : UNCLAIMED)
         .withDetails(details(region, profiles));
   }

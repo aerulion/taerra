@@ -9,12 +9,13 @@
     <link href="favicon.ico" rel="icon" sizes="32x32">
     <link href="images/favicon.svg" rel="icon" type="image/svg+xml">
     <link href="images/apple-touch-icon.png" rel="apple-touch-icon">
-    <link href="manifest.json" rel="manifest">
+    <link href="api/manifest.json" rel="manifest">
     <!-- The server makes og:image absolute when web.public-url is set, as most link previews need. -->
     <meta content="website" property="og:type">
     <meta content="Taerra" property="og:site_name">
     <meta content="Taerra" property="og:title">
     <meta content="Live map of the server world" property="og:description">
+    <!-- The server puts web.name into the title, og:title, og:image:alt and #server-name. -->
     <meta content="images/og.png" property="og:image">
     <meta content="1200" property="og:image:width">
     <meta content="630" property="og:image:height">
@@ -54,6 +55,7 @@ keeps the contrast low. Where blue clearly outweighs red and green, as on water,
         <img alt="" class="brand__icon" src="images/icon.svg">
         Taerra
     </a>
+    <span class="server-name" hidden id="server-name"></span>
     <nav aria-label="Worlds" class="worlds" data-i18n-label="worlds" id="world-list"></nav>
     <div aria-label="Worlds" class="world-menu" data-i18n-label="worlds" id="world-menu" popover></div>
     <div class="status" id="connection-status">

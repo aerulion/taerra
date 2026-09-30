@@ -44,7 +44,7 @@ public final class WorldBorders {
       final @NotNull MarkerRegistry registry,
       final @NotNull TaerraConfig config) {
     final @NotNull MarkerLayer layer =
-        registry.layer("worldborder", "World border", config.worldBordersShownByDefault());
+        registry.layer(plugin, "worldborder", "World border", config.worldBordersShownByDefault());
     Bukkit.getScheduler()
         .runTaskTimer(
             plugin, () -> layer.setAll(borders(config).values()), 20L, SYNC_INTERVAL_TICKS);
@@ -65,7 +65,7 @@ public final class WorldBorders {
             world,
             Marker.cuboid(
                     WorldKeys.id(world) + "/vanilla",
-                    world,
+                    world.getKey(),
                     new BoundingBox(
                         center.getX() - half,
                         world.getMinHeight(),
@@ -155,7 +155,7 @@ public final class WorldBorders {
       }
       return Marker.polygon(
               WorldKeys.id(world) + "/chunky",
-              world,
+              world.getKey(),
               outline,
               world.getMinHeight(),
               world.getMaxHeight(),

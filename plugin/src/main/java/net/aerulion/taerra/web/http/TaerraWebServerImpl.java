@@ -2,6 +2,8 @@ package net.aerulion.taerra.web.http;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.Cookie;
@@ -80,6 +82,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private volatile @NotNull List<Map<String, Object>> publishedWorlds = List.of();
   private volatile @Nullable String publishedWorldsJson;
   private @NotNull String indexHtml = "";
+  private @NotNull ObjectNode manifest = JsonNodeFactory.instance.objectNode();
 
   public TaerraWebServerImpl(
       final @NotNull Plugin plugin,
@@ -199,10 +202,21 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
         .result(this.players.players(viewer(ctx)));
   }
 
-  private void handleIndexRequest(final @NotNull Context ctx) {
-    final @NotNull String publicUrl =
-        this.plugin.getConfig().getString("web.public-url", "").strip().replaceAll("/+$", "");
-    @NotNull String html = this.indexHtml;
+  private static @NotNull String escapeHtml(final @NotNull String text) {
+    return text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("'", "&#39;");
+  }
+
+  /**
+   * The index page with {@code web.name} filled in. The Taerra brand in the header is part of the
+   * template and stays whatever the name.
+   */
+  static @NotNull String indexPage(
+      final @NotNull String template, final @NotNull String name, final @NotNull String publicUrl) {
+    @NotNull String html = template;
     if (!publicUrl.isEmpty()) {
       try {
         html =
@@ -212,12 +226,57 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       } catch (final IllegalArgumentException ignored) {
       }
     }
-    ctx.header("Cache-Control", "no-cache").html(html);
+    if (name.isEmpty()) {
+      return html;
+    }
+    final @NotNull String escaped = escapeHtml(name);
+    return html.replace("<title>Taerra</title>", "<title>" + escaped + "</title>")
+        .replace(
+            "content=\"Taerra\" property=\"og:title\"",
+            "content=\"" + escaped + "\" property=\"og:title\"")
+        .replace(
+            "content=\"Taerra\" property=\"og:image:alt\"",
+            "content=\"" + escaped + "\" property=\"og:image:alt\"")
+        .replace(
+            "<span class=\"server-name\" hidden id=\"server-name\"></span>",
+            "<span class=\"server-name\" id=\"server-name\">" + escaped + "</span>");
+  }
+
+  private @NotNull String serverName() {
+    return this.plugin.getConfig().getString("web.name", "").strip();
+  }
+
+  private void handleIndexRequest(final @NotNull Context ctx) {
+    ctx.header("Cache-Control", "no-cache")
+        .html(
+            indexPage(
+                this.indexHtml,
+                serverName(),
+                this.plugin
+                    .getConfig()
+                    .getString("web.public-url", "")
+                    .strip()
+                    .replaceAll("/+$", "")));
+  }
+
+  // Served under /api/ so StaticEtagFilter never answers for it with the template's ETag.
+  private void handleManifestRequest(final @NotNull Context ctx) {
+    final @NotNull ObjectNode manifest = this.manifest.deepCopy();
+    final @NotNull String name = serverName();
+    if (!name.isEmpty()) {
+      manifest.put("name", name).put("short_name", name);
+    }
+    ctx.header("Cache-Control", "no-cache")
+        .contentType("application/manifest+json")
+        .result(manifest.toString());
   }
 
   private void handleConfigRequest(final @NotNull Context ctx) {
+    final @NotNull String name = serverName();
     ctx.json(
         Map.of(
+            "name",
+            name,
             "tileSize",
             TileGeometry.TILE_SIZE,
             "maxZoom",
@@ -239,6 +298,11 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     try (final @Nullable InputStream index = this.plugin.getResource("web/index.html")) {
       if (index != null) {
         this.indexHtml = new String(index.readAllBytes(), StandardCharsets.UTF_8);
+      }
+      try (final @Nullable InputStream manifest = this.plugin.getResource("web/manifest.json")) {
+        if (manifest != null) {
+          this.manifest = (ObjectNode) this.mapper.readTree(manifest);
+        }
       }
       final @NotNull Javalin app =
           Javalin.create(
@@ -267,6 +331,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 config.routes.get("/", this::handleIndexRequest);
                 config.routes.get("/api/worlds", this::handleWorldsRequest);
                 config.routes.get("/api/config", this::handleConfigRequest);
+                config.routes.get("/api/manifest.json", this::handleManifestRequest);
                 config.routes.get(
                     "/api/iso/{world}/{rotation}/{zoom}/{x}/{y}.png", this::handleIsoTileRequest);
                 config.routes.get(
@@ -586,13 +651,6 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     }
     final boolean renamed =
         request.previous() == null || !request.previous().equalsIgnoreCase(name);
-    if (renamed && this.waypoints.names().stream().anyMatch(name::equalsIgnoreCase)) {
-      ctx.status(409).result("Name taken");
-      return;
-    }
-    final boolean newGroup =
-        groupId != null
-            && this.waypoints.groups().stream().noneMatch(known -> known.id().equals(groupId));
     final @NotNull CompletableFuture<Integer> result = new CompletableFuture<>();
     Bukkit.getScheduler()
         .runTask(
@@ -603,12 +661,23 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 result.complete(400);
                 return;
               }
-              if (newGroup && request.privateGroup() && viewer.canConfigure()) {
-                this.taerraConfig.setLayerPrivate(this.plugin, groupId, true);
-              }
+              // Paper completes the chunk future on the main thread, so the checks below and the
+              // add cannot interleave with another request's.
               standingY(world, request.x(), request.y(), request.z())
                   .thenAccept(
                       y -> {
+                        if (renamed
+                            && this.waypoints.names().stream().anyMatch(name::equalsIgnoreCase)) {
+                          result.complete(409);
+                          return;
+                        }
+                        if (groupId != null
+                            && request.privateGroup()
+                            && viewer.canConfigure()
+                            && this.waypoints.groups().stream()
+                                .noneMatch(known -> known.id().equals(groupId))) {
+                          this.taerraConfig.setLayerPrivate(this.plugin, groupId, true);
+                        }
                         if (renamed && request.previous() != null) {
                           this.waypoints.remove(request.previous());
                         }

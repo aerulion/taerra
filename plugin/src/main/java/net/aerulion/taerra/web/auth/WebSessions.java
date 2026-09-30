@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.Map;
 import java.util.Objects;
@@ -37,6 +38,8 @@ public final class WebSessions {
   private final @NotNull Map<String, Session> codes = new HashMap<>();
   private final @NotNull Map<String, Session> sessions = new HashMap<>();
   private final @NotNull Map<UUID, Set<String>> grants = new HashMap<>();
+  // Keys of sessions that live only as long as this run, never written to sessions.yml.
+  private final @NotNull Set<String> unsaved = new HashSet<>();
   private @NotNull Runnable onChange = () -> {};
 
   public WebSessions(final @NotNull File file, final @NotNull Logger logger) {
@@ -122,6 +125,21 @@ public final class WebSessions {
     return new Login(token, session);
   }
 
+  /**
+   * Opens a session without a login code that is never written to disk, for the mod: it ends when
+   * the player quits, and a crash must not leave it valid.
+   */
+  public synchronized @NotNull String open(
+      final @NotNull UUID uuid, final @NotNull String name, final @Nullable String skin) {
+    final @NotNull String token = token();
+    final @NotNull String key = hash(token);
+    this.sessions.put(
+        key,
+        new Session(uuid, name, skin, System.currentTimeMillis() + SESSION_LIFETIME.toMillis()));
+    this.unsaved.add(key);
+    return token;
+  }
+
   public synchronized @Nullable Session session(final @Nullable String token) {
     if (token == null) {
       return null;
@@ -158,8 +176,14 @@ public final class WebSessions {
   }
 
   public synchronized void end(final @Nullable String token) {
-    if (token != null && this.sessions.remove(hash(token)) != null) {
-      save();
+    if (token == null) {
+      return;
+    }
+    final @NotNull String key = hash(token);
+    if (this.sessions.remove(key) != null) {
+      if (!this.unsaved.remove(key)) {
+        save();
+      }
       this.onChange.run();
     }
   }
@@ -178,6 +202,7 @@ public final class WebSessions {
   private void save() {
     final long now = System.currentTimeMillis();
     this.sessions.values().removeIf(session -> session.expires() < now);
+    this.unsaved.retainAll(this.sessions.keySet());
     this.grants
         .keySet()
         .removeIf(
@@ -189,6 +214,9 @@ public final class WebSessions {
         (uuid, granted) -> yaml.set("grants." + uuid, granted.stream().sorted().toList()));
     this.sessions.forEach(
         (key, session) -> {
+          if (this.unsaved.contains(key)) {
+            return;
+          }
           yaml.set("sessions." + key + ".uuid", session.uuid().toString());
           yaml.set("sessions." + key + ".name", session.name());
           yaml.set("sessions." + key + ".skin", session.skin());

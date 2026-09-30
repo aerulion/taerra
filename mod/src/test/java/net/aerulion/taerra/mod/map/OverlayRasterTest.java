@@ -13,7 +13,8 @@ import org.junit.jupiter.api.Test;
 
 class OverlayRasterTest {
 
-  private static final MapConfig CONFIG = new MapConfig(64, 4, new MapConfig.Isometric(256, 4, 8));
+  private static final MapConfig CONFIG =
+      new MapConfig(64, 4, new MapConfig.Isometric(256, 4, 8), null);
   private static final Projection TOP_DOWN = Projection.topDown(CONFIG);
 
   private static @NotNull OverlayScene scene(final @NotNull Marker marker) {

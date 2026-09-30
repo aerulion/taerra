@@ -2,74 +2,38 @@ package net.aerulion.taerra.api.marker;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import org.bukkit.Color;
-import org.bukkit.NamespacedKey;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public record AreaMarker(
-    @NotNull String id,
-    @NotNull NamespacedKey world,
-    @NotNull List<Vector> outline,
-    double minY,
-    double maxY,
-    boolean hollow,
-    @Nullable String label,
-    @NotNull Map<String, String> details,
-    @NotNull Color color)
-    implements Marker {
+/**
+ * A region: an outline on the ground, extruded from {@link #minY()} to {@link #maxY()}. Made with
+ * {@link Marker#cuboid} or {@link Marker#polygon}.
+ */
+@ApiStatus.NonExtendable
+public sealed interface AreaMarker extends Marker permits AreaMarkerImpl {
 
-  public AreaMarker {
-    Objects.requireNonNull(id, "id");
-    Objects.requireNonNull(world, "world");
-    outline = MarkerArguments.copy(outline, 3, "An area");
-    if (maxY < minY) {
-      throw new IllegalArgumentException("maxY " + maxY + " is below minY " + minY);
-    }
-    details = MarkerArguments.orderedCopy(details);
-    Objects.requireNonNull(color, "color");
-  }
+  /** The corners in order, copies. Only x and z count. */
+  @NotNull
+  List<Vector> outline();
 
-  public @NotNull AreaMarker hollowed() {
-    return new AreaMarker(
-        this.id,
-        this.world,
-        this.outline,
-        this.minY,
-        this.maxY,
-        true,
-        this.label,
-        this.details,
-        this.color);
-  }
+  double minY();
+
+  double maxY();
+
+  /** Whether only the outline is drawn, without a fill. */
+  boolean hollow();
+
+  /** This area with only its outline drawn. */
+  @NotNull
+  AreaMarker hollowed();
 
   @Override
-  public @NotNull AreaMarker withColor(final @NotNull Color color) {
-    return new AreaMarker(
-        this.id,
-        this.world,
-        this.outline,
-        this.minY,
-        this.maxY,
-        this.hollow,
-        this.label,
-        this.details,
-        color);
-  }
+  @NotNull
+  AreaMarker withColor(@NotNull Color color);
 
   @Override
-  public @NotNull AreaMarker withDetails(final @NotNull Map<String, String> details) {
-    return new AreaMarker(
-        this.id,
-        this.world,
-        this.outline,
-        this.minY,
-        this.maxY,
-        this.hollow,
-        this.label,
-        details,
-        this.color);
-  }
+  @NotNull
+  AreaMarker withDetails(@NotNull Map<String, String> details);
 }

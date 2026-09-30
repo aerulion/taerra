@@ -8,6 +8,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import org.bukkit.NamespacedKey;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,9 +25,19 @@ public final class MarkerRegistryImpl implements MarkerRegistryInternal {
 
   @Override
   public synchronized @NotNull MarkerLayer layer(
-      final @NotNull String id, final @NotNull String label, final boolean shownByDefault) {
-    return this.layers.computeIfAbsent(
-        id, key -> new MarkerLayerImpl(key, label, shownByDefault, this.changedWorlds::add));
+      final @NotNull Plugin owner,
+      final @NotNull String id,
+      final @NotNull String label,
+      final boolean shownByDefault) {
+    final @NotNull MarkerLayer layer =
+        this.layers.computeIfAbsent(
+            id,
+            key -> new MarkerLayerImpl(owner, key, label, shownByDefault, this.changedWorlds::add));
+    if (!layer.owner().equals(owner)) {
+      throw new IllegalArgumentException(
+          "The layer " + id + " belongs to " + layer.owner().getName());
+    }
+    return layer;
   }
 
   @Override
@@ -45,6 +58,19 @@ public final class MarkerRegistryImpl implements MarkerRegistryInternal {
     }
     if (removed != null) {
       removed.clear();
+    }
+  }
+
+  @EventHandler
+  public void onPluginDisable(final @NotNull PluginDisableEvent event) {
+    removeLayers(event.getPlugin());
+  }
+
+  void removeLayers(final @NotNull Plugin owner) {
+    for (final @NotNull MarkerLayer layer : layers()) {
+      if (layer.owner().equals(owner)) {
+        removeLayer(layer.id());
+      }
     }
   }
 
