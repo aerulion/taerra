@@ -2,7 +2,7 @@
 
 **A live map of your Minecraft worlds, isometric or top-down, in the browser and in game.**
 
-TAERRA renders your server's worlds into a map anyone can open in a browser: every block drawn as a lit, shaded cube, seen from above or at an angle from all four sides. It keeps itself up to date as the world changes, shows who is online and where, and with the optional Fabric mod, players get the same map as a minimap and a full world map in game.
+TAERRA renders your server's worlds into a map anyone can open in a browser: every block is drawn as a lit, shaded cube, seen from above or at an angle from all four sides. It keeps itself up to date as the world changes, shows who is online and where, and with the optional Fabric mod, players get the same map as a minimap, and a full world map in game.
 
 Everything is rendered on the server. Visitors and players only download finished images, so the map is as fast on a phone as on a gaming PC.
 
@@ -21,30 +21,30 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 ### A map worth looking at
 
 - **Isometric and top-down views.** Switch any time. The isometric view turns in four directions, so nothing hides behind a mountain.
-- **Every block, one cube.** Lit, shaded and biome-tinted, from the whole world at a glance down to a single block.
+- **Every block, one cube.** Lit, shaded, and biome-tinted, from the whole world at a glance down to a single block.
 - **Light like a trailer.** A warm sun and a cool sky, so shadows turn blue-violet instead of muddy gray.
 - **Water you can see into.** Reefs glow turquoise, trenches fade to navy, and a sunken build shows through.
-- **Every dimension.** Overworld, Nether, End and custom worlds, each on its own map.
+- **Every dimension.** Overworld, Nether, End, and custom worlds, each on its own map.
 - **Color or gray.** Switch the map to gray when the markers on it matter more than the terrain.
 
 ### Live
 
-- **Players move live**, updated every second, with a player list and a follow mode that keeps someone in view, even across worlds.
+- **Players move live**, updated every second, with a player list, and a follow mode that keeps someone in view, even across worlds.
 - **The map updates itself.** Every change is recorded, built by players or grown by nature, and redrawn at an interval you choose, 15 minutes by default. A spot changed a hundred times is drawn once.
 - **Installable as an app** on phones and desktops, when the map is served over HTTPS.
 
 ### Made for servers
 
 - **Logins without passwords.** Players run `/taerra login` in game and click the link it sends. Their browser stays logged in for 30 days. The link works once, for five minutes, and players are told in game whenever a browser logs in as them. There are no accounts to create and no passwords to leak.
-- **Private worlds and layers.** Keep a world or a layer hidden from everyone except logged-in players with the right permission.
+- **Private worlds and layers.** Keep a world, or a layer hidden from everyone except logged-in players with the right permission.
 - **Teleport from the map.** Logged-in players with permission right-click the map to teleport there.
-- **Waypoints** in named groups and colors, on the web map, in the mod's world map and, if players want, as labels in the world itself.
-- **Privacy built in.** Players in spectator mode, invisible or vanished don't appear, and neither does anyone with `taerra.hide`. Staff with `taerra.web.see-hidden` still see them, marked as hidden. Players who turned off server listings in their client show as an anonymous gray dot. Player heads are served by your server, so viewing the map never reveals a visitor's address to Mojang.
-- **One jar.** No external database, no CDN and no web admin panel: everything is configured in game.
-- **Right-click any place** to copy its coordinates or a link straight to it.
-- **Limit the map** to a circle, square or rectangle, so it ends where your playable area does.
+- **Waypoints** in named groups and colors, on the web map, in the mod's world map, and, if players want, as labels in the world itself.
+- **Privacy built in.** Players in spectator mode, invisible or vanished, don't appear, and neither does anyone with `taerra.hide`. Staff with `taerra.web.see-hidden` still see them, marked as hidden. Players who turned off server listings in their client show as an anonymous gray dot. Player heads are served by your server, so viewing the map never reveals a visitor's address to Mojang.
+- **One jar.** No external database, no CDN, and no web admin panel: everything is configured in game.
+- **Right-click any place** to copy its coordinates, or a link straight to it.
+- **Limit the map** to a circle, square, or rectangle, so it ends where your playable area does.
 - **Export the map as images** with `/taerra render image`.
-- **English and German**, for the web map, the mod and the commands.
+- **English and German** in the web map, the mod, and every in-game message.
 
 ### Plays well with others
 
@@ -56,28 +56,27 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 ![Speed](https://assets.corpium.net/taerra/section-speed.png)
 
 - **A whole world in minutes.** A 6,000-block-radius world, about 560,000 chunks, renders in every view, top-down and all four isometric rotations, in **2 minutes 46 seconds** on an Intel Core Ultra 7 265 with 64 GB of RAM.
-- **Over 340× faster.** On the same machine, one of the most widely used map plugins needed more than 16 hours for the same world, and drew less.
 - **Easy on your server.** Live updates cost the main thread about 2 ms per tick, full renders nothing at all: rendering runs on its own threads, half your CPU cores by default, always leaving at least two to the game.
 - **Light on disk.** Tiles are stored as compact indexed PNGs and only rewritten when they actually changed.
 
 ![The mod](https://assets.corpium.net/taerra/section-mod.png)
 
-The optional Fabric mod brings the server's map into the game. Join a server running TAERRA and it connects by itself:
+The optional Fabric mod brings the server's map into the game. Join a server running TAERRA, and it connects by itself:
 
-- a **minimap** you can size, zoom, place on either side and turn with the player
-- a **full world map** with both views, all four rotations, layers, players, waypoints and teleporting
+- a **minimap** you can size, zoom, place on either side, and turn with the player
+- a **full world map** with both views, all four rotations, layers, players, waypoints, and teleporting
 - **waypoints in the world** as labels where they are
 
 It only works on servers running the TAERRA plugin, and it renders nothing itself: it draws the images the server already made. It needs Fabric API. Mod Menu is optional, for the settings screen.
 
 ![Getting started](https://assets.corpium.net/taerra/section-getting-started.png)
 
-1. **Install.** Put the plugin jar in `plugins/` and start the server. On its first start the plugin downloads its libraries from Maven Central, so the server needs internet access once.
+1. **Install.** Put the plugin jar in `plugins/` and start the server. On its first start, Paper's library loader downloads the libraries the plugin needs, so the server needs internet access once.
 2. **Choose your worlds.** None are on the map until you enable them: `/taerra config world minecraft:overworld enable`
 3. **Render.** `/taerra render full minecraft:overworld` draws the whole world. From then on, changes are drawn automatically. `/taerra status` shows the progress.
 4. **Open the map** at `http://<your-server>:8100`.
-5. **Make it public.** Put the map behind a reverse proxy with HTTPS, and set its address with `/taerra config web.public-url https://map.example.com`. Login links and link previews in chat apps use it.
-6. **Name it.** `/taerra config web.name "My Server"` shows your server's name in the map's header, page title and link previews.
+5. **Make it public.** Put the map behind a reverse proxy with HTTPS and set its address with `/taerra config web.public-url https://map.example.com`. Login links and link previews in chat apps use it.
+6. **Name it.** `/taerra config web.name "My Server"` shows your server's name in the map's header, page title, and link previews.
 
 Every setting can also be changed in game with `/taerra config`.
 
@@ -117,14 +116,14 @@ Every setting can also be changed in game with `/taerra config`.
 ![Requirements](https://assets.corpium.net/taerra/section-requirements.png)
 
 - **Plugin:** Paper 26.2 and Java 25. Spigot and Folia are not supported.
-- **Mod:** Fabric Loader, Fabric API and Minecraft 26.2, on a server running the TAERRA plugin.
+- **Mod:** Fabric Loader, Fabric API, and Minecraft 26.2, on a server running the TAERRA plugin.
 - **Updates:** when a new version of both comes out, update the plugin first. A mod newer than the server's plugin tells players to ask the server to update.
 
 Render threads and cache sizes are configurable, so you decide how much CPU and memory the map may use.
 
 ![More](https://assets.corpium.net/taerra/section-more.png)
 
-See TAERRA running on a real server at [map.corpium.net](https://map.corpium.net/), and if you are curious how it works under the hood, read the [technical deep dive](https://aerulion.net/taerra/). Questions, ideas and bug reports are welcome on [Discord](https://discord.gg/Az4mxFRGTv).
+See TAERRA running on a real server at [map.corpium.net](https://map.corpium.net/), and if you are curious how it works under the hood, read the [technical deep dive](https://aerulion.net/taerra/). Questions, ideas, and bug reports are welcome on [Discord](https://discord.gg/Az4mxFRGTv).
 
 TAERRA is free to use on any server, commercial ones included. It is closed source; the [license](https://assets.corpium.net/taerra/license.txt) has the details.
 
