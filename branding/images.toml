@@ -9,7 +9,7 @@
 #   featured            lockup, tagline and the whole world at gallery proportions: the featured gallery image
 #   section             a slim strip heading one section of a description, with these options:
 #                         title = "Features"   the heading
-#                         spot = "meadow"      where it looks: meadow, wide, bay, top-down, peaks, cherry, nether, end
+#                         spot = "meadow"      where it looks: meadow, village, wide, bay, top-down, peaks, cherry, nether, end
 #   gallery-isometric   the whole overworld
 #   gallery-detail      a close-up at full detail
 #   gallery-top-down    the top-down map
@@ -59,6 +59,13 @@ layout = "gallery-dimensions"
 size = [1920, 1080]
 
 # Modrinth description: one strip per section
+
+[[image]]
+file = "modrinth/section-early-access.png"
+layout = "section"
+size = [1600, 200]
+title = "Early access"
+spot = "village"
 
 [[image]]
 file = "modrinth/section-features.png"
