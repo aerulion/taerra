@@ -3,6 +3,8 @@ package net.aerulion.taerra.mod.gui.screen;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import net.aerulion.taerra.mod.gui.widget.ColorPicker;
 import net.aerulion.taerra.mod.gui.widget.DyeSwatches;
 import net.aerulion.taerra.mod.map.Place;
@@ -29,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 public final class WaypointScreen extends Screen {
 
   private static final int MAX_NAME = 32;
+  private static final Pattern NOT_NAME = Pattern.compile("[^\\p{L}\\p{N} _.,:'&()#!?+-]");
   private static final int WIDTH = 200;
   private static final String NEW_GROUP = "\u0000new";
 
@@ -47,6 +50,18 @@ public final class WaypointScreen extends Screen {
   private boolean saving;
   private boolean armed;
   private @Nullable EditBox hex;
+
+  private static void cleanName(final @NotNull EditBox box, final @NotNull Consumer<String> then) {
+    box.setResponder(
+        value -> {
+          final @NotNull String clean = NOT_NAME.matcher(value).replaceAll("");
+          if (clean.equals(value)) {
+            then.accept(value);
+          } else {
+            box.setValue(clean);
+          }
+        });
+  }
 
   public WaypointScreen(
       final Screen parent, final @NotNull WebMap map, final @NotNull Waypoint target) {
@@ -109,9 +124,9 @@ public final class WaypointScreen extends Screen {
         contents.addChild(
             new EditBox(this.font, WIDTH, 20, Component.translatable("taerra.waypoint.name")));
     name.setMaxLength(MAX_NAME);
+    cleanName(name, value -> this.name = value);
     name.setValue(this.name);
     name.setHint(Component.translatable("taerra.waypoint.name"));
-    name.setResponder(value -> this.name = value);
 
     final @NotNull LinearLayout colors = contents.addChild(LinearLayout.horizontal().spacing(4));
     colors.addChild(new DyeSwatches(() -> this.color, this::pickColor));
@@ -164,9 +179,9 @@ public final class WaypointScreen extends Screen {
               new EditBox(
                   this.font, WIDTH, 20, Component.translatable("taerra.waypoint.group_name")));
       groupName.setMaxLength(MAX_NAME);
+      cleanName(groupName, value -> this.newGroup = value);
       groupName.setValue(this.newGroup);
       groupName.setHint(Component.translatable("taerra.waypoint.group_name"));
-      groupName.setResponder(value -> this.newGroup = value);
       final @Nullable Account account = this.map.account();
       if (account != null && account.configure()) {
         contents.addChild(
