@@ -13,7 +13,7 @@ allowed) and a Fabric mod that shows the same map in game. Gradle multi-module b
 | `plugin/`      | Renders top-down and isometric tiles, serves the web map and its HTTP/WebSocket API (Javalin) |
 | `api/`         | Marker and layer API for other plugins, published as `net.aerulion:taerra-api`, bundled into the plugin jar |
 | `mod/`         | Fabric client mod (Loom): map screen and minimap                                       |
-| `tools/mcdata` | Python generator for `plugin/src/main/resources/block_data.json`                      |
+| `tools/mcdata` | Python generator for `plugin/src/main/resources/block_data.json` and `colormaps.json`  |
 | `branding/`    | Brand images (store icons, headers, gallery) rendered from the logo and dev server tiles |
 
 It is a public plugin: nothing in it may be specific to one server network.
@@ -44,9 +44,9 @@ layers and teleport. Extend that model; don't add external authentication.
 ```
 
 Spotless formats Java (google-java-format, per module), every `*.gradle.kts` (ktfmt kotlinlang style) and the JSON
-under `plugin/src/main/resources/web/` and `mod/src/main/resources/` (Jackson, root project). `block_data.json` is
-excluded: `tools/mcdata` writes it. The `pre-commit` hook runs `spotlessApply` and re-stages; CI runs `spotlessCheck`
-through `build`.
+under `plugin/src/main/resources/web/` and `mod/src/main/resources/` (Jackson, root project). `block_data.json` and
+`colormaps.json` are excluded: `tools/mcdata` writes them. The `pre-commit` hook runs `spotlessApply` and re-stages; CI
+runs `spotlessCheck` through `build`.
 
 Paperweight and Loom are both declared `apply false` in the root `plugins` block so they share one classloader; keep
 new Gradle plugins that either of them touches there too. The spotless plugin is applied to the root through the

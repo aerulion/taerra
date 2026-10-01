@@ -6,12 +6,12 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import models, oklab, shape
+from . import colormap, models, oklab, shape
 from .assets import AssetError, AssetTree, provision
 
 TOOL_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = TOOL_DIR.parent.parent
-DEFAULT_OUTPUT = PROJECT_ROOT / "src" / "main" / "resources" / "block_data.json"
+DEFAULT_OUTPUT = PROJECT_ROOT / "plugin" / "src" / "main" / "resources" / "block_data.json"
 DEFAULT_REPORT = TOOL_DIR / "last_report.json"
 DEFAULT_CACHE = TOOL_DIR / ".cache"
 FALLBACK_COLOR = "#FF00FF"
@@ -156,15 +156,19 @@ def main(argv: list[str] | None = None) -> int:
         root = config.assets_dir or provision(config.version, config.cache_dir)
         tree = AssetTree.locate(Path(root).resolve())
         entries, report = build_block_data(tree, config)
+        colormaps = colormap.build(tree)
     except AssetError as error:
         print(f"Error: {error}", file=sys.stderr)
         return 2
 
     write_json(config.output_path, entries)
+    colormap_path = config.output_path.with_name("colormaps.json")
+    write_json(colormap_path, colormaps)
     if config.report_path is not None:
         write_json(config.report_path, report)
 
     print(f"Generated {len(entries)} blocks -> {config.output_path}")
+    print(f"Fitted {len(colormaps)} colormaps -> {colormap_path}")
     print(f"  shapes: {report['stats']}")
     if report["warnings"]:
         print(f"  warnings: {len(report['warnings'])} (see report)", file=sys.stderr)

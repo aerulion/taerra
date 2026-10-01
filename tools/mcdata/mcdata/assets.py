@@ -14,6 +14,7 @@ SPARSE_PATHS = (
     "assets/minecraft/blockstates",
     "assets/minecraft/models",
     "assets/minecraft/textures/block",
+    "assets/minecraft/textures/colormap",
 )
 
 
@@ -32,6 +33,7 @@ def provision(version: str, cache_dir: Path, repository: str = DEFAULT_REPOSITOR
     checkout = cache_dir / version
     if (checkout / ".git").is_dir():
         _run(["git", "fetch", "--depth", "1", "origin", branch], cwd=checkout)
+        _run(["git", "sparse-checkout", "set", *SPARSE_PATHS], cwd=checkout)
         _run(["git", "checkout", "-f", "FETCH_HEAD"], cwd=checkout)
         return checkout
 

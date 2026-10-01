@@ -1,6 +1,7 @@
 # Block data generator
 
-Generates `src/main/resources/block_data.json` directly from vanilla Minecraft assets. No files are placed by hand.
+Generates `plugin/src/main/resources/block_data.json` and `colormaps.json` next to it directly from vanilla Minecraft
+assets. No files are placed by hand.
 
 Assets come from the [Corpium/minecraft-assets](https://github.com/Corpium/minecraft-assets) repository, which
 archives the extracted client jar on one `version/<id>` branch per Minecraft version.
@@ -30,6 +31,16 @@ One entry per block:
 A block the game never draws — a barrier, a light block, a structure void — has no model to measure, so its entry
 carries only `shape: "none"` and `occupancy`. It is written out rather than skipped so that a block *missing* from
 the data means one this tool has never seen, which the plugin renders as a debug-colored cube.
+
+### Biome colormaps
+
+Grass, foliage and dry foliage take their biome tint from three 256×256 colormaps in the client jar, which the server
+does not ship. Each is a smooth gradient, so `colormaps.json` carries a quadratic surface fitted to it rather than the
+image: six coefficients per channel, in the order 1, y, y², x, xy, x², where x is the column / 255 (1 − temperature)
+and y the row / 255 (1 − downfall × temperature). Only the triangle the game samples, y ≥ x, is fitted.
+
+The surface reproduces the images to within three levels of 255, about 0.3 on average. The plugin rebuilds the tables
+from it at startup and hands them to the game, so custom biomes are tinted correctly too.
 
 ### Why there is a separate side color
 
@@ -86,7 +97,7 @@ directories this tool reads, about 30 MB, and re-fetch incrementally.
 
 ```bash
 python -m mcdata.generate --version 26.2 \
-  --output ../../src/main/resources/block_data.json \
+  --output ../../plugin/src/main/resources/block_data.json \
   --full-threshold 0.25 \
   --bandwidth 0.055 \
   --alpha-threshold 16
