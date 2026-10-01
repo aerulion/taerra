@@ -11,12 +11,14 @@ import java.util.Locale;
 import java.util.OptionalInt;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.util.HexColors;
+import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.waypoint.Waypoints;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Color;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class WaypointSubCommand implements TaerraSubCommand {
 
@@ -88,11 +90,11 @@ public final class WaypointSubCommand implements TaerraSubCommand {
     return playerScope(
         context,
         player -> {
-          final @NotNull String name = StringArgumentType.getString(context, "name").strip();
+          final @Nullable String name = Names.of(StringArgumentType.getString(context, "name"));
           final @NotNull String colorText = StringArgumentType.getString(context, "color");
           final @NotNull OptionalInt rgb = HexColors.parseRgb(colorText);
-          if (name.isEmpty()) {
-            feedback(context, Messages.error("waypoint.no_name"));
+          if (name == null) {
+            feedback(context, Messages.error("waypoint.bad_name"));
             return SUCCESS;
           }
           if (rgb.isEmpty()) {

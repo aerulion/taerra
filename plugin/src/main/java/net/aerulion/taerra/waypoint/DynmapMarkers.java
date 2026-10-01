@@ -1,5 +1,6 @@
 package net.aerulion.taerra.waypoint;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import net.aerulion.taerra.util.Names;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,7 +17,6 @@ public final class DynmapMarkers {
 
   private static final @NotNull String DEFAULT_SET = "markers";
   private static final @NotNull String DYNMAP_SPAWN = "_spawn_";
-  private static final int MAX_NAME = 32;
   private static final int DEFAULT_COLOR = 0x4FA3E0;
   private static final int @NotNull [] ICON_DYES = {
     0xB02E26, 0xF9801D, 0xFED83D, 0x80C71F, 0x5E7C16, 0x169C9C,
@@ -53,7 +54,7 @@ public final class DynmapMarkers {
       final @Nullable String group =
           setId.equals(DEFAULT_SET)
               ? null
-              : truncate(text(set.getString("label"), setId), MAX_NAME);
+              : truncate(text(set.getString("label"), setId), Names.MAX_LENGTH);
       if (group != null && set.getBoolean("hide")) {
         hidden.add(group);
       }
@@ -101,8 +102,17 @@ public final class DynmapMarkers {
 
   private static @NotNull String text(
       final @Nullable String value, final @NotNull String fallback) {
-    final @NotNull String stripped = value == null ? "" : value.strip();
-    return stripped.isEmpty() ? fallback : stripped;
+    final @NotNull String cleaned = clean(value);
+    return !cleaned.isEmpty() ? cleaned : clean(fallback).isEmpty() ? "Waypoint" : clean(fallback);
+  }
+
+  static @NotNull String clean(final @Nullable String value) {
+    return value == null
+        ? ""
+        : Normalizer.normalize(value, Normalizer.Form.NFC)
+            .replaceAll("[^" + Names.CHARACTERS + "]+", " ")
+            .replaceAll(" {2,}", " ")
+            .strip();
   }
 
   static @NotNull String stripMarkup(final @NotNull String html) {
@@ -119,13 +129,13 @@ public final class DynmapMarkers {
 
   static @NotNull String unique(
       final @NotNull String label, final @NotNull Map<String, Integer> seen) {
-    final @NotNull String name = truncate(label, MAX_NAME);
+    final @NotNull String name = truncate(label, Names.MAX_LENGTH);
     final int count = seen.merge(name.toLowerCase(Locale.ROOT), 1, Integer::sum);
     if (count == 1) {
       return name;
     }
     final @NotNull String suffix = " " + count;
-    return truncate(name, MAX_NAME - suffix.length()).strip() + suffix;
+    return truncate(name, Names.MAX_LENGTH - suffix.length()).strip() + suffix;
   }
 
   private static @NotNull String truncate(final @NotNull String value, final int length) {

@@ -13,7 +13,7 @@ web:
   public-url: ""
   # The server's name, shown beside TAERRA in the web map's header, as its page title, in link
   # previews, when the map is installed as an app, and in the mod's map screen. Empty shows TAERRA
-  # alone; /taerra config web.name "" empties it.
+  # alone; /taerra config web.name "" empties it. Up to 32 letters, digits, spaces and - _ . , : ' & ( ) # ! ? +
   name: ""
 
 # Rendering settings

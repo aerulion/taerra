@@ -14,6 +14,9 @@ const DYES = [
 const DEFAULT_COLOR = '#3ab3da';
 const NEW_GROUP = '\u0000new';
 const SHADE_STEP = .02;
+const NOT_NAME = /[^\p{L}\p{N} _.,:'&()#!?+-]/gu;
+
+const cleanName = (text) => text.normalize('NFC').replace(NOT_NAME, '');
 
 function hsvToHex(h, s, v) {
     const channel = (n) => {
@@ -91,6 +94,14 @@ class WaypointEditor {
                 $('waypoint-group-name').focus();
             }
         });
+        for (const id of ['waypoint-name', 'waypoint-group-name']) {
+            $(id).addEventListener('input', (event) => {
+                const clean = cleanName(event.target.value);
+                if (clean !== event.target.value) {
+                    event.target.value = clean;
+                }
+            });
+        }
         $('waypoint-cancel').addEventListener('click', () => this.dialog.close());
         $('waypoint-delete').addEventListener('click', () => this.remove());
         $('waypoint-form').addEventListener('input', () => this.showError(null));
@@ -193,7 +204,7 @@ class WaypointEditor {
         this.target = {world, x, y, z, previous};
         $('waypoint-title').textContent = t(previous ? 'waypoint.edit' : 'waypoint.new');
         $('waypoint-where').textContent = `${x}, ${Number.isFinite(y) ? y : '—'}, ${z}`;
-        $('waypoint-name').value = name;
+        $('waypoint-name').value = cleanName(name);
         $('waypoint-delete').hidden = !previous;
         this.disarm();
         this.showError(null);

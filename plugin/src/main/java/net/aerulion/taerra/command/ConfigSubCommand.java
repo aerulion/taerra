@@ -18,6 +18,7 @@ import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.permission.TaerraPermission;
+import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.web.http.TaerraWebServer;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
@@ -26,6 +27,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class ConfigSubCommand implements TaerraSubCommand {
 
@@ -185,7 +187,15 @@ public final class ConfigSubCommand implements TaerraSubCommand {
       final @NotNull CommandContext<CommandSourceStack> context,
       final @NotNull String key,
       final @NotNull Object given) {
-    final @NotNull Object value = "\"\"".equals(given) ? "" : given;
+    @NotNull Object value = "\"\"".equals(given) ? "" : given;
+    if (key.equals("web.name") && !value.toString().isBlank()) {
+      final @Nullable String name = Names.of(value.toString());
+      if (name == null) {
+        feedback(context, Messages.error("config.bad_name"));
+        return SUCCESS;
+      }
+      value = name;
+    }
     this.plugin.getConfig().set(key, value);
     this.plugin.saveConfig();
     if (key.startsWith("web.")) {

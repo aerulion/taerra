@@ -39,6 +39,7 @@ import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
 import net.aerulion.taerra.storage.EncodedTile;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.util.HexColors;
+import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.waypoint.Waypoints;
 import net.aerulion.taerra.web.auth.ModHandshake;
 import net.aerulion.taerra.web.auth.Viewer;
@@ -62,7 +63,6 @@ import org.jetbrains.annotations.Nullable;
 public final class TaerraWebServerImpl implements TaerraWebServer {
 
   private static final int MAX_QUEUED_FRAMES = 64;
-  private static final int MAX_WAYPOINT_NAME = 32;
 
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig taerraConfig;
@@ -239,7 +239,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   }
 
   private @NotNull String serverName() {
-    return this.plugin.getConfig().getString("web.name", "").strip();
+    final @Nullable String name = Names.of(this.plugin.getConfig().getString("web.name", ""));
+    return name == null ? "" : name;
   }
 
   private void handleIndexRequest(final @NotNull Context ctx) {
@@ -349,6 +350,12 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
               });
 
       this.app = app;
+      if (!this.plugin.getConfig().getString("web.name", "").isBlank() && serverName().isEmpty()) {
+        this.plugin
+            .getLogger()
+            .warning(
+                "Ignoring web.name: names are up to 32 letters, digits, spaces and - _ . , : ' & ( ) # ! ? +");
+      }
       final @NotNull String host = this.plugin.getConfig().getString("web.host", "0.0.0.0");
       final int port = this.plugin.getConfig().getInt("web.port", 8100);
       app.start(host, port);
@@ -622,14 +629,12 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       ctx.status(400).result("Invalid waypoint");
       return;
     }
-    final @Nullable String name = request.name() == null ? null : request.name().strip();
-    final @Nullable String group =
-        request.group() == null || request.group().isBlank() ? null : request.group().strip();
+    final @Nullable String name = Names.of(request.name());
+    final boolean grouped = request.group() != null && !request.group().isBlank();
+    final @Nullable String group = grouped ? Names.of(request.group()) : null;
     final @NotNull OptionalInt color = HexColors.parseRgb(request.color());
     if (name == null
-        || name.isEmpty()
-        || name.length() > MAX_WAYPOINT_NAME
-        || (group != null && group.length() > MAX_WAYPOINT_NAME)
+        || (grouped && group == null)
         || color.isEmpty()
         || request.world() == null
         || request.x() == null

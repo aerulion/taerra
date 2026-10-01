@@ -15,6 +15,14 @@ import org.junit.jupiter.api.Test;
 
 class DynmapMarkersTest {
 
+  @Test
+  @DisplayName("imported labels lose characters waypoint names do not allow")
+  void cleansLabels() {
+    assertEquals("Shop Main St.", DynmapMarkers.clean("\uD83D\uDED2 Shop | Main St."));
+    assertEquals("", DynmapMarkers.clean("\u2605\u2605"));
+    assertEquals("", DynmapMarkers.clean(null));
+  }
+
   private static final @NotNull String MARKERS =
       """
       sets:
