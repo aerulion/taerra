@@ -28,4 +28,9 @@ size = [400, 400]
 The layouts are in `render.html`. Where each picture looks is set by the constants at the top of its script
 (`OVERWORLD`, `DETAIL`, `BACKDROP`, `TOP_DOWN`), in tile coordinates. Rerun with a filter to iterate on one image.
 
+`modrinth-description.md` is the Modrinth project description. Its images, and the license Modrinth links to, are hosted
+under <https://assets.corpium.net/taerra/>, each by its file name: upload `description-header.png`, every
+`section-*.png` and `license.txt` there after regenerating them. `license.txt` is `LICENSE.md` as plain text, written
+on every run, so edit the Markdown.
+
 Changes here never trigger a release.

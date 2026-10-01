@@ -6,6 +6,10 @@
 #   banner              lockup and tagline on the left, the whole world on the right, for wide headers
 #   card                lockup and tagline centred, for link previews
 #   live-map            lockup over drawn cubes, no world: the web map's preview, the same on every server
+#   featured            lockup, tagline and the whole world at gallery proportions: the featured gallery image
+#   section             a slim strip heading one section of a description, with these options:
+#                         title = "Features"   the heading
+#                         spot = "meadow"      where it looks: meadow, wide, bay, top-down, peaks, cherry, nether, end
 #   gallery-isometric   the whole overworld
 #   gallery-detail      a close-up at full detail
 #   gallery-top-down    the top-down map
@@ -23,6 +27,11 @@ size = [512, 512]
 file = "modrinth/description-header.png"
 layout = "banner"
 size = [1920, 640]
+
+[[image]]
+file = "modrinth/gallery-0-featured.png"
+layout = "featured"
+size = [1920, 1080]
 
 [[image]]
 file = "modrinth/gallery-1-isometric.png"
@@ -48,6 +57,64 @@ size = [1920, 1080]
 file = "modrinth/gallery-5-dimensions.png"
 layout = "gallery-dimensions"
 size = [1920, 1080]
+
+# Modrinth description: one strip per section
+
+[[image]]
+file = "modrinth/section-features.png"
+layout = "section"
+size = [1600, 200]
+title = "Features"
+spot = "meadow"
+
+[[image]]
+file = "modrinth/section-speed.png"
+layout = "section"
+size = [1600, 200]
+title = "Speed"
+spot = "wide"
+
+[[image]]
+file = "modrinth/section-mod.png"
+layout = "section"
+size = [1600, 200]
+title = "The mod"
+spot = "cherry"
+
+[[image]]
+file = "modrinth/section-getting-started.png"
+layout = "section"
+size = [1600, 200]
+title = "Getting started"
+spot = "bay"
+
+[[image]]
+file = "modrinth/section-commands.png"
+layout = "section"
+size = [1600, 200]
+title = "Commands"
+spot = "nether"
+
+[[image]]
+file = "modrinth/section-permissions.png"
+layout = "section"
+size = [1600, 200]
+title = "Permissions"
+spot = "end"
+
+[[image]]
+file = "modrinth/section-requirements.png"
+layout = "section"
+size = [1600, 200]
+title = "Requirements"
+spot = "peaks"
+
+[[image]]
+file = "modrinth/section-more.png"
+layout = "section"
+size = [1600, 200]
+title = "More"
+spot = "top-down"
 
 # GitHub
 

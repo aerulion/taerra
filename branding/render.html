@@ -4,6 +4,11 @@
 <style>
     @font-face {
         font-family: "QuinqueFive";
+        /* The web map's metrics: the capitals fill the em, a fifth of it below the baseline, so the line box is cut to
+           exactly them and centring it centres the letters. */
+        ascent-override: 80%;
+        descent-override: 20%;
+        line-gap-override: 0%;
         src: url("../plugin/src/main/resources/web/fonts/QuinqueFive-Regular.ttf") format("truetype");
     }
 
@@ -45,11 +50,6 @@
     .fill, .fill > canvas {
         position: absolute;
         inset: 0;
-    }
-
-    .blur > canvas {
-        filter: blur(calc(1.2 * var(--min))) saturate(1.15);
-        transform: scale(1.12);
     }
 
     .float > canvas {
@@ -139,6 +139,18 @@
         width: 50%;
     }
 
+    /* featured: the banner at gallery proportions, the world taking more of it */
+    .featured .copy {
+        width: 38%;
+    }
+
+    .featured .world {
+        right: 1%;
+        top: 8%;
+        bottom: 10%;
+        width: 55%;
+    }
+
     /* card: centred lockup and tagline */
     .card .shade {
         background: radial-gradient(ellipse at center, rgb(0 0 0 / .55), rgb(0 0 0 / .85));
@@ -168,6 +180,20 @@
     .card .tagline {
         max-width: calc(70 * var(--w));
         font-size: calc(4.7 * var(--min));
+    }
+
+    /* section: a slim strip heading one section of a description */
+    .section .shade {
+        background: linear-gradient(90deg, rgb(0 0 0 / .9), rgb(0 0 0 / .6) 30%, rgb(0 0 0 / .05) 70%);
+    }
+
+    .section .lockup {
+        position: absolute;
+        left: calc(18 * var(--h));
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: calc(17 * var(--h));
+        text-shadow: 0 0 calc(6 * var(--h)) rgb(0 0 0 / .6);
     }
 
     /* live-map: the web map's link preview, the same for every server, so drawn rather than any world */
@@ -274,6 +300,19 @@
     const BACKDROP = {world: 'minecraft_overworld', level: 2, at: [-1, -2]};
     const TOP_DOWN = {world: 'minecraft_overworld', view: 'top', level: 1, at: [2, 0]};
 
+    // Places a section image can show, picked with `spot` in images.toml.
+    const SPOTS = {
+        meadow: DETAIL,
+        wide: {world: 'minecraft_overworld', level: 3, at: [0, -.6]},
+        bay: BACKDROP,
+        'top-down': TOP_DOWN,
+        peaks: {world: 'minecraft_overworld', level: 1, at: [13, 1.5]},
+        cherry: {world: 'minecraft_overworld', level: 1, at: [20, 0]},
+        nether: {world: 'minecraft_the_nether', level: 1, at: [0, 0]},
+        end: {world: 'minecraft_the_end', level: 1, at: [-1.6, -.4]},
+    };
+
+    const escape = text => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
     const lockup = `<div class="lockup pixel"><img src="${LOGO}" alt=""><span>TAERRA</span></div>`;
     const TAGLINE = 'A live web map for Paper servers, and a Fabric mod that shows the same map in game.';
 
@@ -387,10 +426,21 @@
         return out;
     }
 
+    // Blurs on the canvas, not with CSS: headless Chrome only applies CSS filters inside its viewport, which is shorter
+    // than the screenshot. Drawn oversized, so the edges do not fade.
+    function blur(c) {
+        const out = canvas(c.width, c.height), g = out.getContext('2d');
+        const radius = Math.min(c.width, c.height) * .012 + 6, m = radius * 3;
+        g.filter = `blur(${radius}px) saturate(1.15)`;
+        g.drawImage(c, -m, -m, c.width + 2 * m, c.height + 2 * m);
+        return out;
+    }
+
     // Fills every element carrying a data-view with the picture named there, at the element's size.
     async function paint(views) {
         await Promise.all([...document.querySelectorAll('[data-view]')].map(async el => {
-            el.append(await picture(views[el.dataset.view], el.clientWidth, el.clientHeight));
+            const c = await picture(views[el.dataset.view], el.clientWidth, el.clientHeight);
+            el.append(el.classList.contains('blur') ? blur(c) : c);
         }));
     }
 
@@ -420,12 +470,27 @@
             <div class="grass"></div>
         </div>`, {backdrop: BACKDROP, world: OVERWORLD}],
 
+        featured: [`<div class="banner featured fill">
+            <div class="fill blur" data-view="backdrop"></div>
+            <div class="fill shade"></div>
+            <div class="world float" data-view="world"></div>
+            <div class="copy">${lockup}<p class="tagline">${TAGLINE}</p></div>
+            <div class="grass"></div>
+        </div>`, {backdrop: BACKDROP, world: {...OVERWORLD, level: 2}}],
+
         card: [`<div class="card fill">
             <div class="fill blur" data-view="backdrop"></div>
             <div class="fill shade"></div>
             <div class="copy">${lockup}<p class="tagline">${TAGLINE}</p></div>
             <div class="grass"></div>
         </div>`, {backdrop: BACKDROP}],
+
+        section: [`<div class="section fill">
+            <div class="fill" data-view="spot"></div>
+            <div class="fill shade"></div>
+            <div class="lockup pixel"><img src="${LOGO}" alt=""><span>${escape(params.get('title') ?? '')}</span></div>
+            <div class="grass"></div>
+        </div>`, {spot: {...SPOTS[params.get('spot') ?? 'meadow'], zoom: +(params.get('zoom') ?? 1)}}],
 
         'live-map': [`<div class="card live-map fill">
             <div class="fill" data-view="cubes"></div>
