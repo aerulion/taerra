@@ -639,7 +639,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       return;
     }
     final @Nullable String groupId = Waypoints.groupLayerId(group);
-    if (groupId != null && !viewer.canSeeLayer(this.taerraConfig, groupId)) {
+    if (!viewer.canSeeLayer(this.taerraConfig, groupId == null ? Waypoints.LAYER : groupId)) {
       ctx.status(403).result("Not allowed");
       return;
     }
@@ -658,6 +658,10 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
               standingY(world, request.x(), request.y(), request.z())
                   .thenAccept(
                       y -> {
+                        if (!canEditWaypoint(viewer, request.previous())) {
+                          result.complete(403);
+                          return;
+                        }
                         if (renamed
                             && this.waypoints.names().stream().anyMatch(name::equalsIgnoreCase)) {
                           result.complete(409);
@@ -694,15 +698,25 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       ctx.status(403).result("Cross-site request");
       return;
     }
-    if (!viewer(ctx).canEditWaypoints()) {
+    final @NotNull Viewer viewer = viewer(ctx);
+    if (!viewer.canEditWaypoints()) {
       ctx.status(403).result("Not allowed");
       return;
     }
     final @NotNull String name = ctx.pathParam("name");
     final @NotNull CompletableFuture<Integer> result = new CompletableFuture<>();
     Bukkit.getScheduler()
-        .runTask(this.plugin, () -> result.complete(this.waypoints.remove(name) ? 204 : 404));
+        .runTask(
+            this.plugin,
+            () ->
+                result.complete(
+                    canEditWaypoint(viewer, name) && this.waypoints.remove(name) ? 204 : 404));
     ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
+  }
+
+  private boolean canEditWaypoint(final @NotNull Viewer viewer, final @Nullable String name) {
+    final @Nullable String layer = name == null ? null : this.waypoints.layerOf(name);
+    return layer == null || viewer.canSeeLayer(this.taerraConfig, layer);
   }
 
   private void handleAvatarRequest(final @NotNull Context ctx) {

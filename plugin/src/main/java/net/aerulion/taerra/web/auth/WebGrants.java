@@ -45,6 +45,8 @@ public final class WebGrants {
                 final @Nullable Player player = Bukkit.getPlayer(uuid);
                 if (player != null) {
                   sessions.grant(uuid, of(player, config));
+                } else if (Bukkit.getOfflinePlayer(uuid).isBanned()) {
+                  sessions.endAll(uuid);
                 }
               }
             },

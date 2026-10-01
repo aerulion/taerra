@@ -43,6 +43,9 @@ public sealed interface Waypoints permits WaypointsImpl {
 
   boolean remove(@NotNull String name);
 
+  @Nullable
+  String layerOf(@NotNull String name);
+
   @NotNull
   List<String> names();
 

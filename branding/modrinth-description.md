@@ -35,7 +35,7 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 
 ### Made for servers
 
-- **Logins without passwords.** Players run `/taerra login` in game and click the link it sends. Their browser stays logged in for 30 days. The link works once, for five minutes, and players are told in game whenever a browser logs in as them. There are no accounts to create and no passwords to leak.
+- **Logins without passwords.** Players run `/taerra login` in game and click the link it sends. Their browser stays logged in for 30 days. The link works once, for five minutes, and players are told in game whenever a browser logs in as them. There are no accounts to create and no passwords to leak. Banned players are logged out of the web map on their own, and `/taerra logout <player>` logs anyone out by hand, say after taking their permissions away.
 - **Private worlds and layers.** Keep a world, or a layer hidden from everyone except logged-in players with the right permission.
 - **Teleport from the map.** Logged-in players with permission right-click the map to teleport there.
 - **Waypoints** in named groups and colors, on the web map, in the mod's world map, and, if players want, as labels in the world itself.

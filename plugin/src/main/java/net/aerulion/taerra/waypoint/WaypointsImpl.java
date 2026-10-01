@@ -144,6 +144,15 @@ public final class WaypointsImpl implements Waypoints, Listener {
   }
 
   @Override
+  public synchronized @Nullable String layerOf(final @NotNull String name) {
+    return layers().stream()
+        .filter(waypointLayer -> waypointLayer.get(id(name)) != null)
+        .map(MarkerLayer::id)
+        .findFirst()
+        .orElse(null);
+  }
+
+  @Override
   public @NotNull List<String> names() {
     return layers().stream()
         .flatMap(waypointLayer -> placed(waypointLayer).stream())
