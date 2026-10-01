@@ -23,8 +23,8 @@
         --stone-700: #313233;
         --stone-200: #a0a1a4;
         --stone-100: #d0d1d4;
-        --green: #3c8527;
-        --green-hi: #52a535;
+        --accent: #b35a1f;
+        --accent-hi: #d4732f;
     }
 
     * {
@@ -56,13 +56,12 @@
         filter: drop-shadow(0 28px 36px rgb(0 0 0 / .65));
     }
 
-    /* The grass edge from og.png: a block top seen side on. */
-    /* The grass edge from og.png: a block top seen side on. */
-    .grass {
+    /* The accent edge, the web map's copper: a block top seen side on. */
+    .edge {
         position: absolute;
         inset: auto 0 0;
         height: max(6px, calc(1.5 * var(--min)));
-        background: linear-gradient(var(--green-hi) 25%, var(--green) 25%);
+        background: linear-gradient(var(--accent-hi) 25%, var(--accent) 25%);
     }
 
     .pixel {
@@ -230,7 +229,7 @@
     }
 
     .kicker {
-        color: var(--green-hi);
+        color: var(--accent-hi);
         font-size: calc(1.85 * var(--min));
         letter-spacing: .06em;
     }
@@ -451,7 +450,7 @@
             ${dark ? '' : '<div class="fill shade"></div>'}
             <div class="copy"><div class="kicker pixel">${kicker}</div><h1>${title}</h1></div>
             ${lockup}
-            <div class="grass"></div>
+            <div class="edge"></div>
         </div>`;
     }
 
@@ -468,7 +467,7 @@
             <div class="fill shade"></div>
             <div class="world float" data-view="world"></div>
             <div class="copy">${lockup}<p class="tagline">${TAGLINE}</p></div>
-            <div class="grass"></div>
+            <div class="edge"></div>
         </div>`, {backdrop: BACKDROP, world: OVERWORLD}],
 
         featured: [`<div class="banner featured fill">
@@ -476,28 +475,28 @@
             <div class="fill shade"></div>
             <div class="world float" data-view="world"></div>
             <div class="copy">${lockup}<p class="tagline">${TAGLINE}</p></div>
-            <div class="grass"></div>
+            <div class="edge"></div>
         </div>`, {backdrop: BACKDROP, world: {...OVERWORLD, level: 2}}],
 
         card: [`<div class="card fill">
             <div class="fill blur" data-view="backdrop"></div>
             <div class="fill shade"></div>
             <div class="copy">${lockup}<p class="tagline">${TAGLINE}</p></div>
-            <div class="grass"></div>
+            <div class="edge"></div>
         </div>`, {backdrop: BACKDROP}],
 
         section: [`<div class="section fill">
             <div class="fill" data-view="spot"></div>
             <div class="fill shade"></div>
             <div class="lockup pixel"><img src="${LOGO}" alt=""><span>${escape(params.get('title') ?? '')}</span></div>
-            <div class="grass"></div>
+            <div class="edge"></div>
         </div>`, {spot: {...SPOTS[params.get('spot') ?? 'meadow'], zoom: +(params.get('zoom') ?? 1)}}],
 
         'live-map': [`<div class="card live-map fill">
             <div class="fill" data-view="cubes"></div>
             <div class="fill shade"></div>
             <div class="copy">${lockup}<div class="kicker pixel">Live map</div></div>
-            <div class="grass"></div>
+            <div class="edge"></div>
         </div>`, {cubes: {cubes: true}}],
 
         'gallery-isometric': [gallery('Isometric', 'Your whole world at a glance',

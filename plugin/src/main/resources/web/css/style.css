@@ -38,9 +38,10 @@
     --stone-100: #d0d1d4;
     --white: #fff;
 
-    --green: #3c8527;
-    --green-hi: #52a535;
-    --green-lo: #1d4d13;
+    --accent: #b35a1f;
+    --accent-hi: #d4732f;
+    --accent-lo: #5e2a0a;
+    --green: #52a535;
     --gold: #ffcf3f;
     --red: #e34a4a;
 
@@ -216,8 +217,8 @@ button {
 
 .world-tab[aria-current="true"]::after,
 .world-switch::after {
-    background: var(--green-hi);
-    box-shadow: inset 0 -2px var(--green);
+    background: var(--accent-hi);
+    box-shadow: inset 0 -2px var(--accent);
 }
 
 .world-switch {
@@ -291,7 +292,7 @@ button {
 
 .world-menu__item[aria-current="true"] {
     background: var(--stone-800);
-    box-shadow: inset 4px 0 var(--green-hi);
+    box-shadow: inset 4px 0 var(--accent-hi);
     color: var(--white);
 }
 
@@ -313,7 +314,7 @@ button {
 }
 
 .status__dot[data-state="connected"] {
-    background: var(--green-hi);
+    background: var(--green);
 }
 
 .status__dot[data-state="disconnected"] {
@@ -731,13 +732,13 @@ kbd {
 }
 
 .btn--primary {
-    background: var(--green);
+    background: var(--accent);
     color: var(--white);
-    box-shadow: inset 0 -4px var(--green-lo), inset 2px 2px rgb(255 255 255 / .2);
+    box-shadow: inset 0 -4px var(--accent-lo), inset 2px 2px rgb(255 255 255 / .2);
 }
 
 .btn--primary:hover {
-    background: var(--green-hi);
+    background: var(--accent-hi);
 }
 
 .segmented {
@@ -751,9 +752,9 @@ kbd {
 }
 
 .segmented .btn[aria-pressed="true"] {
-    background: var(--green);
+    background: var(--accent);
     color: var(--white);
-    box-shadow: inset 0 4px var(--green-lo);
+    box-shadow: inset 0 4px var(--accent-lo);
 }
 
 .segmented--small .btn {
@@ -765,7 +766,7 @@ kbd {
 
 .segmented--small .btn[aria-pressed="true"] {
     padding-bottom: 0;
-    box-shadow: inset 0 3px var(--green-lo);
+    box-shadow: inset 0 3px var(--accent-lo);
 }
 
 .rotation {
@@ -796,8 +797,8 @@ kbd {
 .progress__fill {
     width: 0;
     height: 100%;
-    background: var(--green-hi);
-    box-shadow: inset 0 -3px var(--green);
+    background: var(--accent-hi);
+    box-shadow: inset 0 -3px var(--accent);
     transition: width .3s ease;
 }
 
@@ -977,8 +978,8 @@ kbd {
 }
 
 .player[aria-pressed="true"] {
-    background: var(--green-lo);
-    box-shadow: inset 4px 0 var(--green-hi);
+    background: var(--accent-lo);
+    box-shadow: inset 4px 0 var(--accent-hi);
 }
 
 .player[aria-pressed="true"]::after {
@@ -1027,8 +1028,8 @@ kbd {
 }
 
 .layer input:checked {
-    background: var(--green-hi) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M5 1h1v1h1v1H6v1H5v1H4v1H2V5H1V4H0V3h2v1h1V3h1V2h1z'/%3E%3C/svg%3E") center / 10px no-repeat;
-    box-shadow: inset 0 -2px var(--green);
+    background: var(--accent-hi) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M5 1h1v1h1v1H6v1H5v1H4v1H2V5H1V4H0V3h2v1h1V3h1V2h1z'/%3E%3C/svg%3E") center / 10px no-repeat;
+    box-shadow: inset 0 -2px var(--accent);
 }
 
 .waypoint-icon {
@@ -1083,7 +1084,7 @@ kbd {
 }
 
 .marker-popup--player {
-    --marker: var(--green-hi);
+    --marker: var(--accent-hi);
 }
 
 .leaflet-tooltip.marker-tooltip::before {
@@ -1201,7 +1202,7 @@ kbd {
 }
 
 .context-menu button.is-done {
-    color: var(--green-hi);
+    color: var(--green);
 }
 
 .context-menu button.is-failed {
@@ -1342,7 +1343,7 @@ kbd {
 }
 
 .marker-popup__action.is-done {
-    color: var(--green-hi);
+    color: var(--green);
 }
 
 .marker-popup__action.is-failed {
@@ -1572,8 +1573,8 @@ kbd {
 }
 
 .chip input:checked + .chip__label {
-    background: var(--green-lo);
-    box-shadow: inset 0 -3px var(--green-hi);
+    background: var(--accent-lo);
+    box-shadow: inset 0 -3px var(--accent-hi);
 }
 
 .chip input:focus-visible + .chip__label {

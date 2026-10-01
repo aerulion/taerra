@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 public final class Messages {
 
-  static final @NotNull TextColor BRAND = TextColor.color(0xff0087);
+  static final @NotNull TextColor BRAND = TextColor.color(0xd4732f);
   static final @NotNull TextColor TEXT = NamedTextColor.GRAY;
   static final @NotNull TextColor VALUE = NamedTextColor.WHITE;
   static final @NotNull TextColor MUTED = TextColor.color(0x8c8d90);
