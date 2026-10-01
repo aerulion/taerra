@@ -85,6 +85,15 @@ ten most recent builds per stream still have a release to publish from.
 It needs the `MODRINTH_TOKEN` secret, a personal access token with the *Read projects* and *Create versions* scopes
 (the project is a draft until approved, so even reading it needs the token).
 
+Publishing a `build-<n>` tag also rebuilds and tests that tag and publishes its API to Maven Central under the same
+version. Central versions can never be deleted, so this is the only path there. It needs:
+
+| Secret                                  | Value                                                                  |
+|-----------------------------------------|------------------------------------------------------------------------|
+| `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`  | A Central Portal user token, from an account that owns `net.aerulion` |
+| `SIGNING_KEY`                           | An ASCII-armored PGP secret key whose public key is on a keyserver     |
+| `SIGNING_PASSWORD`                      | Its passphrase                                                         |
+
 ## Commit messages
 
 `<gitmoji> <type>: <Subject>`. Eleven types, each with exactly one emoji.
@@ -133,11 +142,12 @@ artifacts expire on their own.
 
 ## API
 
-Needs authentication to GitHub Packages. The plugin ships the API, so depend on it `compileOnly`.
+Released versions are on Maven Central; `pr<n>-…` snapshots and builds not yet on Modrinth are only in GitHub
+Packages, which needs authentication. The plugin ships the API, so depend on it `compileOnly`.
 
 ``` kotlin
 repositories {
-  maven("https://maven.pkg.github.com/aerulion/taerra")
+  mavenCentral()
 }
 
 dependencies {

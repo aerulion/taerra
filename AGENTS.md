@@ -90,6 +90,12 @@ calls pick `/users/...` or `/orgs/...` from the repository owner type.
 release's jar, never a rebuild, as a Paper or Fabric version of the one project, slug `taerra` (`MODRINTH_TOKEN` secret). Its changelog is `release-notes.sh` with `AUDIENCE=players` since the commit in the
 newest Modrinth version number of that loader.
 
+For a `build-<n>` tag, `modrinth.yml` then calls `build.yml` with `central: true`: it rebuilds and tests the tag under the
+same version and publishes the API to Maven Central, signed, through the Central Portal API (`CENTRAL_USERNAME`,
+`CENTRAL_PASSWORD`, `SIGNING_KEY`, `SIGNING_PASSWORD` secrets). Central versions are permanent, so nothing else
+publishes there. The API's POM is public and links only to Modrinth and the hosted license. Every public API type and
+member has Javadoc; the `javadoc` task runs doclint with `missing` and fails the build without it.
+
 The Discord channel is public and the repository private, so only `modrinth.yml` posts there, and nothing public
 (Discord, Modrinth notes, the mod and plugin metadata, the web map) links into the repository: the public link is the
 Modrinth page. Messages are embeds through `notify-discord.yml`, which blocks mentions. Discord needs the

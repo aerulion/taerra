@@ -1,7 +1,8 @@
 name: 🟢 Publish to Modrinth
 
 # Promotes a development build to a Modrinth release: the jar attached to its GitHub release, so what ships is exactly
-# what was tested. Plugin and mod are one Modrinth project, told apart by loader.
+# what was tested. Plugin and mod are one Modrinth project, told apart by loader. A plugin build's API is rebuilt and
+# tested at its tag and published to Maven Central under the same version.
 on:
   workflow_dispatch:
     inputs:
@@ -36,6 +37,7 @@ jobs:
       url: ${{ steps.publish.outputs.url }}
       description: ${{ steps.publish.outputs.description }}
       icon: ${{ steps.publish.outputs.icon }}
+      build: ${{ steps.publish.outputs.build }}
     steps:
       - name: 📥 Checkout the build
         uses: actions/checkout@v7
@@ -140,6 +142,7 @@ jobs:
           fi
           delimiter="EOF-$(openssl rand -hex 8)"
           {
+            echo "build=${TAG#*-}"
             echo "title=${title}"
             echo "url=${url}"
             echo "icon=$(jq -r '.icon_url // empty' <<< "${project}")"
@@ -147,6 +150,21 @@ jobs:
             printf '%s\n\n📥 [Download on Modrinth](%s)\n' "${changelog}" "${url}"
             echo "${delimiter}"
           } >> "$GITHUB_OUTPUT"
+
+  central:
+    name: 🏛️ Maven Central
+    needs: publish
+    if: startsWith(inputs.tag, 'build-')
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ inputs.tag }}
+      build-number: ${{ needs.publish.outputs.build }}
+      central: true
+    secrets:
+      CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+      CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+      SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+      SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
 
   announce:
     name: 💬 Announce on Discord

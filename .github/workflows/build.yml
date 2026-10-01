@@ -28,6 +28,20 @@ on:
         required: false
         type: boolean
         default: false
+      central:
+        description: Sign the API and publish it to Maven Central.
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      CENTRAL_USERNAME:
+        required: false
+      CENTRAL_PASSWORD:
+        required: false
+      SIGNING_KEY:
+        required: false
+      SIGNING_PASSWORD:
+        required: false
     outputs:
       version:
         description: The version this build resolved to.
@@ -83,6 +97,52 @@ jobs:
           ORG_GRADLE_PROJECT_GitHubPackagesUsername: ${{ github.actor }}
           ORG_GRADLE_PROJECT_GitHubPackagesPassword: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew :api:publish
+
+      - name: 🏛️ Publish the API to Maven Central
+        if: ${{ inputs.central }}
+        env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGNING_PASSWORD }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CENTRAL_USERNAME}" ] || [ -z "${CENTRAL_PASSWORD}" ] || [ -z "${ORG_GRADLE_PROJECT_signingKey}" ]; then
+            echo "::error::Set the CENTRAL_USERNAME, CENTRAL_PASSWORD, SIGNING_KEY and SIGNING_PASSWORD secrets."
+            exit 1
+          fi
+
+          ./gradlew :api:publishMavenPublicationToCentralRepository
+          (cd api/build/central && zip -qr ../central.zip . -x '*maven-metadata*')
+
+          central() {
+            curl --silent --show-error --fail-with-body --retry 3 --max-time 120 \
+              --header "Authorization: Bearer $(printf '%s:%s' "${CENTRAL_USERNAME}" "${CENTRAL_PASSWORD}" | base64 -w0)" "$@"
+          }
+          api='https://central.sonatype.com/api/v1/publisher'
+          id="$(central --form 'bundle=@api/build/central.zip;type=application/octet-stream' \
+            "${api}/upload?name=taerra-api-${VERSION}&publishingType=AUTOMATIC")"
+
+          for _ in $(seq 90); do
+            sleep 10
+            status="$(central --request POST "${api}/status?id=${id}")"
+            state="$(jq -r '.deploymentState' <<< "${status}")"
+            case "${state}" in
+              PUBLISHING|PUBLISHED)
+                echo "net.aerulion:taerra-api:${VERSION} is ${state,,} on Maven Central."
+                exit 0
+                ;;
+              FAILED)
+                jq '.errors' <<< "${status}"
+                echo "::error::Maven Central rejected deployment ${id}."
+                exit 1
+                ;;
+            esac
+          done
+          echo "::error::Maven Central did not validate deployment ${id} within 15 minutes."
+          exit 1
 
       - name: 📤 Upload the plugin jars
         if: ${{ inputs.upload-jars }}

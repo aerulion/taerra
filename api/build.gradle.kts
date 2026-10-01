@@ -2,6 +2,7 @@ plugins {
     id("taerra.java-conventions")
     `java-library`
     `maven-publish`
+    signing
 }
 
 base {
@@ -34,7 +35,7 @@ tasks.javadoc {
             "https://jd.papermc.io/paper/${libs.versions.paper.get().substringBefore(".build")}/",
             "https://jd.papermc.io/adventure/${libs.versions.adventure.get()}/",
         )
-        addBooleanOption("Xdoclint:all,-missing", true)
+        addBooleanOption("Xdoclint:all", true)
         addBooleanOption("quiet", true)
     }
 }
@@ -47,11 +48,11 @@ publishing {
             pom {
                 name = "TAERRA API"
                 description = "API for adding markers and layers to the TAERRA web map."
-                url = "https://github.com/aerulion/taerra"
+                url = "https://modrinth.com/project/taerra"
                 licenses {
                     license {
                         name = "TAERRA License"
-                        url = "https://github.com/aerulion/taerra/blob/main/LICENSE.md"
+                        url = "https://assets.corpium.net/taerra/license.txt"
                     }
                 }
                 developers {
@@ -60,11 +61,7 @@ publishing {
                         name = "aerulion"
                     }
                 }
-                scm {
-                    connection = "scm:git:https://github.com/aerulion/taerra.git"
-                    developerConnection = "scm:git:ssh://git@github.com/aerulion/taerra.git"
-                    url = "https://github.com/aerulion/taerra"
-                }
+                scm { url = "https://modrinth.com/project/taerra" }
             }
         }
     }
@@ -74,5 +71,18 @@ publishing {
             url = uri("https://maven.pkg.github.com/aerulion/taerra")
             credentials(PasswordCredentials::class)
         }
+        maven {
+            name = "Central"
+            url = uri(layout.buildDirectory.dir("central"))
+        }
+    }
+}
+
+val signingKey = providers.gradleProperty("signingKey").orNull
+
+if (signingKey != null) {
+    signing {
+        useInMemoryPgpKeys(signingKey, providers.gradleProperty("signingPassword").orNull)
+        sign(publishing.publications["maven"])
     }
 }
