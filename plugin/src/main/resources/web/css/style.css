@@ -126,6 +126,10 @@ button {
     white-space: nowrap;
 }
 
+.server-name.is-crowded {
+    display: none;
+}
+
 .worlds {
     display: flex;
     flex: 1 1 0;
@@ -1317,6 +1321,13 @@ kbd {
         left: var(--gap);
     }
 }
+
+@media (max-width: 400px) {
+    .topbar {
+        gap: 8px;
+    }
+}
+
 
 .marker-popup__actions {
     display: grid;

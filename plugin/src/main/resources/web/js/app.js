@@ -73,10 +73,27 @@ function renderWorlds() {
     $('player-scope').hidden = worlds.length < 2;
 }
 
+function shortLanguages(short) {
+    for (const option of $('language-select').options) {
+        option.textContent = short ? option.value.toUpperCase() : LANGUAGES[option.value];
+    }
+}
+
 function fitWorlds() {
     const nav = $('world-list');
+    const crowded = () => nav.scrollWidth > nav.clientWidth;
     nav.classList.remove('is-compact');
-    nav.classList.toggle('is-compact', nav.scrollWidth > nav.clientWidth);
+    $('server-name').classList.remove('is-crowded');
+    shortLanguages(false);
+    if (crowded()) {
+        nav.classList.add('is-compact');
+    }
+    if (crowded()) {
+        $('server-name').classList.add('is-crowded');
+    }
+    if (crowded()) {
+        shortLanguages(true);
+    }
 }
 
 new ResizeObserver(fitWorlds).observe($('world-list'));
