@@ -132,5 +132,6 @@
   "taerra.selection.started.hide": "Hiding, the chunks turn into stripes as they render",
   "taerra.selection.started.reveal": "Showing the chunks again, they come back as they render",
   "taerra.selection.busy": "Another render is running, try again once it's done",
-  "taerra.selection.failed": "That didn't work"
+  "taerra.selection.failed": "That didn't work",
+  "taerra.selection.count.one": "%s chunk selected"
 }

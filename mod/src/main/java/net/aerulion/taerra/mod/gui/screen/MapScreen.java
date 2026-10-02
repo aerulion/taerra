@@ -59,6 +59,7 @@ public final class MapScreen extends Screen {
   private static final int NEAR_ZOOM = 2;
   private static final int TOP_DOWN = -1;
   private static final long STATUS_MILLIS = 4000;
+  private static final int MIN_SELECTION_BUTTON = 40;
   private static final List<Integer> VIEWS = List.of(TOP_DOWN, 0, 1, 2, 3);
 
   private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
@@ -113,6 +114,7 @@ public final class MapScreen extends Screen {
   private long selectionStatusUntil;
   private boolean sending;
   private int dragButton;
+  private int footerWidth;
   private @Nullable Component notice;
   private long noticeUntil;
 
@@ -289,6 +291,8 @@ public final class MapScreen extends Screen {
   @Override
   protected void init() {
     this.layout.removeChildren();
+    this.layout.setFooterHeight(HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT);
+    this.footerWidth = this.width;
     final List<World> worlds = this.map.worlds();
     if (this.map.world(this.view.world()) == null && !worlds.isEmpty()) {
       selectWorld(worlds.getFirst());
@@ -444,6 +448,9 @@ public final class MapScreen extends Screen {
 
   @Override
   protected void repositionElements() {
+    if (this.selection != null && this.footerWidth != this.width) {
+      rebuildWidgets();
+    }
     this.layout.arrangeElements();
     final int height = mapBottom() - mapTop();
     this.players.updateSizeAndPosition(PanelList.WIDTH, height - SCOPE_HEIGHT, 0, mapTop());
@@ -931,7 +938,11 @@ public final class MapScreen extends Screen {
               ? this.selectionStatus
               : this.selection.isEmpty()
                   ? Component.translatable("taerra.selection.empty")
-                  : Component.translatable("taerra.selection.count", this.selection.size()),
+                  : Component.translatable(
+                      this.selection.size() == 1
+                          ? "taerra.selection.count.one"
+                          : "taerra.selection.count",
+                      this.selection.size()),
           middle,
           bottom - 24,
           !status ? 0xFFFFFF55 : this.selectionFailed ? 0xFFFF5555 : 0xFF55FF55);
@@ -1118,7 +1129,7 @@ public final class MapScreen extends Screen {
 
   private void addSelectionButtons(final @NotNull LinearLayout footer) {
     final @Nullable Account account = this.map.account();
-    final @NotNull List<Button> buttons = new ArrayList<>();
+    final @NotNull List<Button> tools = new ArrayList<>();
     for (final @NotNull SelectionTool tool : SelectionTool.values()) {
       final @NotNull Button button =
           Button.builder(Component.translatable(tool.key()), _ -> setTool(tool))
@@ -1127,24 +1138,46 @@ public final class MapScreen extends Screen {
                       Component.translatable(tool.key() + ".tooltip", tool.ordinal() + 1)))
               .build();
       button.active = tool != this.tool;
-      buttons.add(button);
+      tools.add(button);
     }
+    final @NotNull List<Button> actions = new ArrayList<>();
     if (account != null && account.render()) {
-      buttons.add(actionButton("render"));
+      actions.add(actionButton("render"));
     }
     if (account != null && account.hide()) {
-      buttons.add(actionButton("hide"));
-      buttons.add(actionButton("reveal"));
+      actions.add(actionButton("hide"));
+      actions.add(actionButton("reveal"));
     }
-    buttons.add(
+    actions.add(
         Button.builder(Component.translatable("taerra.selection.done"), _ -> stopSelecting())
             .build());
-    final int width =
-        Math.min(BUTTON_WIDTH, (this.width - 16 - 6 * (buttons.size() - 1)) / buttons.size());
-    for (final @NotNull Button button : buttons) {
-      button.setWidth(width);
-      footer.addChild(button);
+    final @NotNull List<Button> all = new ArrayList<>(tools);
+    all.addAll(actions);
+    if (fit(all)) {
+      all.forEach(footer::addChild);
+      return;
     }
+    fit(tools);
+    fit(actions);
+    final @NotNull LinearLayout rows = footer.addChild(LinearLayout.vertical().spacing(4));
+    tools.forEach(rows.addChild(LinearLayout.horizontal().spacing(6))::addChild);
+    actions.forEach(rows.addChild(LinearLayout.horizontal().spacing(6))::addChild);
+    this.layout.setFooterHeight(HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT + 24);
+  }
+
+  private boolean fit(final @NotNull List<Button> row) {
+    final int room = this.width - 16 - 6 * (row.size() - 1);
+    int wanted = 0;
+    for (final @NotNull Button button : row) {
+      button.setWidth(Math.max(MIN_SELECTION_BUTTON, this.font.width(button.getMessage()) + 12));
+      wanted += button.getWidth();
+    }
+    if (wanted > room) {
+      for (final @NotNull Button button : row) {
+        button.setWidth(button.getWidth() * room / wanted);
+      }
+    }
+    return wanted <= room;
   }
 
   private @NotNull Button actionButton(final @NotNull String action) {

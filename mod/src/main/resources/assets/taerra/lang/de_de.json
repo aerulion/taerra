@@ -132,5 +132,6 @@
   "taerra.selection.started.hide": "Wird verborgen, die Chunks werden beim Rendern zu Streifen",
   "taerra.selection.started.reveal": "Wird wieder gezeigt, die Chunks kommen beim Rendern zurück",
   "taerra.selection.busy": "Es läuft schon ein Render, versuch es danach nochmal",
-  "taerra.selection.failed": "Das hat nicht geklappt"
+  "taerra.selection.failed": "Das hat nicht geklappt",
+  "taerra.selection.count.one": "%s Chunk ausgewählt"
 }
