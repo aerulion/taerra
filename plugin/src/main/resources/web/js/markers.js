@@ -101,6 +101,15 @@ function smoothed(heights) {
     });
 }
 
+function togglePopup(event) {
+    L.DomEvent.stop(event);
+    if (this.isPopupOpen()) {
+        this.closePopup();
+    } else {
+        this.openPopup(event.latlng);
+    }
+}
+
 function hoverable(layer, over, out) {
     return layer.on('mouseover', () => layer.setStyle(over)).on('mouseout', () => layer.setStyle(out));
 }
@@ -306,6 +315,7 @@ class MarkerManager {
             } else if (inView && !entry.drawn) {
                 entry.drawn = this.draw(entry.marker);
                 entry.drawn?.bindPopup(() => this.popup(entry.layer, entry.marker), {className: 'marker-popup-frame'});
+                entry.drawn?.off('click', entry.drawn._openPopup, entry.drawn).on('click', togglePopup);
             }
             if (entry.drawn && inView !== group.hasLayer(entry.drawn)) {
                 if (inView) {
