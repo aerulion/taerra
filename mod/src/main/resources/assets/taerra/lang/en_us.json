@@ -30,7 +30,6 @@
   "taerra.map.reconnecting": "Reconnecting…",
   "taerra.map.spawn": "Spawn",
   "taerra.map.spawn.tooltip": "Go to spawn",
-  "taerra.map.view": "View",
   "taerra.map.view.isometric.0": "Isometric NW",
   "taerra.map.view.isometric.1": "Isometric NE",
   "taerra.map.view.isometric.2": "Isometric SE",
@@ -133,5 +132,9 @@
   "taerra.selection.started.reveal": "Showing the chunks again, they come back as they render",
   "taerra.selection.busy": "Another render is running, try again once it's done",
   "taerra.selection.failed": "That didn't work",
-  "taerra.selection.count.one": "%s chunk selected"
+  "taerra.selection.count.one": "%s chunk selected",
+  "taerra.map.rotate.left": "Rotate counter-clockwise (%s)",
+  "taerra.map.rotate.right": "Rotate clockwise (%s)",
+  "taerra.map.zoom_in": "Zoom in",
+  "taerra.map.zoom_out": "Zoom out"
 }

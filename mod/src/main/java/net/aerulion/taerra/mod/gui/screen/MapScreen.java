@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Set;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.gui.widget.CompassButton;
+import net.aerulion.taerra.mod.gui.widget.IconButton;
 import net.aerulion.taerra.mod.gui.widget.LayerList;
 import net.aerulion.taerra.mod.gui.widget.PanelList;
 import net.aerulion.taerra.mod.gui.widget.PlaceMenu;
@@ -29,6 +30,7 @@ import net.aerulion.taerra.mod.web.model.Waypoint;
 import net.aerulion.taerra.mod.web.model.World;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
@@ -60,7 +62,6 @@ public final class MapScreen extends Screen {
   private static final int TOP_DOWN = -1;
   private static final long STATUS_MILLIS = 4000;
   private static final int MIN_SELECTION_BUTTON = 40;
-  private static final List<Integer> VIEWS = List.of(TOP_DOWN, 0, 1, 2, 3);
 
   private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
   private final @NotNull WebMap map;
@@ -92,6 +93,8 @@ public final class MapScreen extends Screen {
   private @Nullable Button playersButton;
   private @Nullable CycleButton<Boolean> scope;
   private @Nullable CompassButton compass;
+  private @Nullable IconButton zoomIn;
+  private @Nullable IconButton zoomOut;
   private boolean playersOpen;
   private boolean layersOpen;
   private boolean dragging;
@@ -341,18 +344,33 @@ public final class MapScreen extends Screen {
                   .width(BUTTON_WIDTH)
                   .build());
       footer.addChild(
-          CycleButton.builder(
-                  MapScreen::viewName, this.view.isometric() ? this.view.rotation() : TOP_DOWN)
-              .withValues(VIEWS)
-              .withTooltip(_ -> Tooltip.create(viewTooltip()))
-              .displayOnlyValue()
-              .create(
-                  0,
-                  0,
-                  BUTTON_WIDTH,
-                  20,
-                  Component.translatable("taerra.map.view"),
-                  (_, selected) -> setView(selected)));
+          Button.builder(
+                  viewName(this.view.isometric() ? this.view.rotation() : TOP_DOWN),
+                  _ -> {
+                    setView(this.view.isometric() ? TOP_DOWN : this.view.rotation());
+                    rebuildWidgets();
+                  })
+              .tooltip(Tooltip.create(viewTooltip()))
+              .width(BUTTON_WIDTH)
+              .build());
+      if (this.view.isometric()) {
+        footer.addChild(
+            iconButton(
+                20,
+                IconButton.COUNTER_CLOCKWISE,
+                Component.translatable(
+                    "taerra.map.rotate.left",
+                    Component.literal("Shift+")
+                        .append(TaerraKeys.ROTATE.getTranslatedKeyMessage())),
+                () -> rotate(1)));
+        footer.addChild(
+            iconButton(
+                20,
+                IconButton.CLOCKWISE,
+                Component.translatable(
+                    "taerra.map.rotate.right", TaerraKeys.ROTATE.getTranslatedKeyMessage()),
+                () -> rotate(-1)));
+      }
     }
     if (this.selection == null) {
       footer.addChild(
@@ -405,6 +423,8 @@ public final class MapScreen extends Screen {
                       : this.view.projection(config).bearing(180) + this.view.spin();
                 },
                 () -> rotate(-1)));
+    this.zoomIn = addWidget(zoomButton(IconButton.PLUS, "taerra.map.zoom_in", 1));
+    this.zoomOut = addWidget(zoomButton(IconButton.MINUS, "taerra.map.zoom_out", -1));
     this.layout.visitWidgets(this::addRenderableWidget);
     if (this.menu != null) {
       addWidget(this.menu);
@@ -459,9 +479,14 @@ public final class MapScreen extends Screen {
     if (this.scope != null) {
       this.scope.setPosition(4, mapBottom() - SCOPE_HEIGHT + 2);
     }
+    final int controlsX = mapRight() - COMPASS_MARGIN - CompassButton.SIZE;
+    if (this.zoomIn != null && this.zoomOut != null) {
+      this.zoomIn.setPosition(controlsX, mapTop() + COMPASS_MARGIN);
+      this.zoomOut.setPosition(controlsX, mapTop() + COMPASS_MARGIN + CompassButton.SIZE);
+    }
     if (this.compass != null) {
       this.compass.setPosition(
-          mapRight() - COMPASS_MARGIN - CompassButton.SIZE, mapTop() + COMPASS_MARGIN);
+          controlsX, mapTop() + COMPASS_MARGIN + 2 * CompassButton.SIZE + COMPASS_MARGIN);
     }
   }
 
@@ -641,6 +666,10 @@ public final class MapScreen extends Screen {
       return;
     }
     compass.visible = this.map.config() != null && this.map.world(this.view.world()) != null;
+    if (this.zoomIn != null && this.zoomOut != null) {
+      this.zoomIn.visible = compass.visible;
+      this.zoomOut.visible = compass.visible;
+    }
     compass.active = this.view.isometric();
     compass.setTooltip(
         Tooltip.create(
@@ -825,13 +854,39 @@ public final class MapScreen extends Screen {
   }
 
   private boolean overCompass(final double x, final double y) {
-    final @Nullable CompassButton compass = this.compass;
-    return compass != null
-        && compass.visible
-        && x >= compass.getX()
-        && x < compass.getRight()
-        && y >= compass.getY()
-        && y < compass.getBottom();
+    return over(this.compass, x, y) || over(this.zoomIn, x, y) || over(this.zoomOut, x, y);
+  }
+
+  private static boolean over(
+      final @Nullable AbstractWidget control, final double x, final double y) {
+    return control != null
+        && control.visible
+        && x >= control.getX()
+        && x < control.getRight()
+        && y >= control.getY()
+        && y < control.getBottom();
+  }
+
+  private @NotNull IconButton zoomButton(
+      final String @NotNull [] icon, final @NotNull String tooltip, final int steps) {
+    return iconButton(
+        CompassButton.SIZE,
+        icon,
+        Component.translatable(tooltip),
+        () -> {
+          closeMenu();
+          this.view.zoomAt(steps, this.width / 2.0, (mapTop() + mapBottom()) / 2.0);
+        });
+  }
+
+  private static @NotNull IconButton iconButton(
+      final int size,
+      final String @NotNull [] icon,
+      final @NotNull Component tooltip,
+      final @NotNull Runnable onPress) {
+    final @NotNull IconButton button = new IconButton(size, icon, tooltip, onPress);
+    button.setTooltip(Tooltip.create(tooltip));
+    return button;
   }
 
   private void showMenu(final @NotNull PlaceMenu menu, final double mouseX, final double mouseY) {
@@ -910,11 +965,13 @@ public final class MapScreen extends Screen {
         }
       }
     }
-    final @Nullable CompassButton compass = this.compass;
-    if (compass != null && compass.visible) {
-      final boolean covered = this.menu != null && this.menu.isMouseOver(mouseX, mouseY);
-      compass.extractRenderState(
-          graphics, covered ? -1 : mouseX, covered ? -1 : mouseY, partialTick);
+    final boolean covered = this.menu != null && this.menu.isMouseOver(mouseX, mouseY);
+    for (final @Nullable AbstractWidget control :
+        new AbstractWidget[] {this.zoomIn, this.zoomOut, this.compass}) {
+      if (control != null && control.visible) {
+        control.extractRenderState(
+            graphics, covered ? -1 : mouseX, covered ? -1 : mouseY, partialTick);
+      }
     }
     if (this.moving != null) {
       graphics.centeredText(

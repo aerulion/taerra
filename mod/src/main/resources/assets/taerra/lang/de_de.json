@@ -30,7 +30,6 @@
   "taerra.map.reconnecting": "Verbinde neu…",
   "taerra.map.spawn": "Spawn",
   "taerra.map.spawn.tooltip": "Zum Spawn",
-  "taerra.map.view": "Ansicht",
   "taerra.map.view.isometric.0": "Isometrisch NW",
   "taerra.map.view.isometric.1": "Isometrisch NO",
   "taerra.map.view.isometric.2": "Isometrisch SO",
@@ -133,5 +132,9 @@
   "taerra.selection.started.reveal": "Wird wieder gezeigt, die Chunks kommen beim Rendern zurück",
   "taerra.selection.busy": "Es läuft schon ein Render, versuch es danach nochmal",
   "taerra.selection.failed": "Das hat nicht geklappt",
-  "taerra.selection.count.one": "%s Chunk ausgewählt"
+  "taerra.selection.count.one": "%s Chunk ausgewählt",
+  "taerra.map.rotate.left": "Gegen den Uhrzeigersinn drehen (%s)",
+  "taerra.map.rotate.right": "Im Uhrzeigersinn drehen (%s)",
+  "taerra.map.zoom_in": "Hineinzoomen",
+  "taerra.map.zoom_out": "Herauszoomen"
 }
