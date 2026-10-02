@@ -1,4 +1,4 @@
-![TAERRA](https://assets.corpium.net/taerra/description-header.png)
+![TAERRA](https://assets.corpium.net/taerra/description-header.png?v=72ad4167)
 
 **A live map of your Minecraft worlds, isometric or top-down, in the browser and in game.**
 
@@ -8,7 +8,11 @@ Everything is rendered on the server. Visitors and players only download finishe
 
 **[See it live on map.corpium.net →](https://map.corpium.net/)**
 
-![Early access](https://assets.corpium.net/taerra/section-early-access.png)
+![Showreel](https://assets.corpium.net/taerra/section-showreel.png?v=0713853e)
+
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/VIDEO_ID" title="TAERRA showreel" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+![Early access](https://assets.corpium.net/taerra/section-early-access.png?v=ef0f63d8)
 
 TAERRA is early in its development. It already runs on live servers, but it is not feature complete yet, and you may run into bugs or rough edges. Things can still change between versions as it grows.
 
@@ -16,7 +20,7 @@ If something breaks or looks wrong, please report it on [Discord](https://discor
 
 TAERRA is closed source for now. Once its license is settled, the source code will be made available.
 
-![Features](https://assets.corpium.net/taerra/section-features.png)
+![Features](https://assets.corpium.net/taerra/section-features.png?v=02c692b3)
 
 ### A map worth looking at
 
@@ -54,13 +58,13 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 - **Chunky:** while Chunky pre-generates a world, TAERRA stays out of its way, then tells you when a full render is worth starting.
 - **dynmap:** bring your existing markers over as waypoints with `/taerra import dynmap`, each marker set becoming a waypoint group.
 
-![Speed](https://assets.corpium.net/taerra/section-speed.png)
+![Speed](https://assets.corpium.net/taerra/section-speed.png?v=66962767)
 
 - **A whole world in minutes.** A 6,000-block-radius world, about 560,000 chunks, renders in every view, top-down and all four isometric rotations, in **2 minutes 46 seconds** on an Intel Core Ultra 7 265 with 64 GB of RAM.
 - **Easy on your server.** Live updates cost the main thread about 2 ms per tick, full renders nothing at all: rendering runs on its own threads, half your CPU cores by default, always leaving at least two to the game.
 - **Light on disk.** Tiles are stored as compact indexed PNGs and only rewritten when they actually changed.
 
-![The mod](https://assets.corpium.net/taerra/section-mod.png)
+![The mod](https://assets.corpium.net/taerra/section-mod.png?v=91bf52ff)
 
 The optional Fabric mod brings the server's map into the game. Join a server running TAERRA, and it connects by itself:
 
@@ -70,7 +74,7 @@ The optional Fabric mod brings the server's map into the game. Join a server run
 
 It only works on servers running the TAERRA plugin, and it renders nothing itself: it draws the images the server already made. It needs Fabric API. Mod Menu is optional, for the settings screen.
 
-![Getting started](https://assets.corpium.net/taerra/section-getting-started.png)
+![Getting started](https://assets.corpium.net/taerra/section-getting-started.png?v=bd7a7ddc)
 
 1. **Install.** Put the plugin jar in `plugins/` and start the server. On its first start, Paper's library loader downloads the libraries the plugin needs, so the server needs internet access once.
 2. **Choose your worlds.** None are on the map until you enable them: `/taerra config world minecraft:overworld enable`
@@ -81,7 +85,7 @@ It only works on servers running the TAERRA plugin, and it renders nothing itsel
 
 Every setting can also be changed in game with `/taerra config`.
 
-![Commands](https://assets.corpium.net/taerra/section-commands.png)
+![Commands](https://assets.corpium.net/taerra/section-commands.png?v=23bbbf5c)
 
 | Command | What it does |
 |---|---|
@@ -97,7 +101,7 @@ Every setting can also be changed in game with `/taerra config`.
 | `/taerra login` | Log in to the web map |
 | `/taerra logout [player]` | Log out of the web map in every browser |
 
-![Permissions](https://assets.corpium.net/taerra/section-permissions.png)
+![Permissions](https://assets.corpium.net/taerra/section-permissions.png?v=f1574e7f)
 
 | Permission | Default | Allows |
 |---|---|---|
@@ -114,7 +118,7 @@ Every setting can also be changed in game with `/taerra config`.
 | `taerra.web.layer.<layer>` | — | Seeing a private layer, e.g. `taerra.web.layer.worldguard` |
 | `taerra.hide` | nobody | Being hidden from the map |
 
-![Requirements](https://assets.corpium.net/taerra/section-requirements.png)
+![Requirements](https://assets.corpium.net/taerra/section-requirements.png?v=9d495b21)
 
 - **Plugin:** Paper 26.2 and Java 25. Spigot and Folia are not supported.
 - **Mod:** Fabric Loader, Fabric API, and Minecraft 26.2, on a server running the TAERRA plugin.
@@ -122,10 +126,10 @@ Every setting can also be changed in game with `/taerra config`.
 
 Render threads and cache sizes are configurable, so you decide how much CPU and memory the map may use.
 
-![More](https://assets.corpium.net/taerra/section-more.png)
+![More](https://assets.corpium.net/taerra/section-more.png?v=ef7dd80c)
 
 See TAERRA running on a real server at [map.corpium.net](https://map.corpium.net/), and if you are curious how it works under the hood, read the [technical deep dive](https://aerulion.net/taerra/). Questions, ideas, and bug reports are welcome on [Discord](https://discord.gg/Az4mxFRGTv).
 
-TAERRA is free to use on any server, commercial ones included. It is closed source; the [license](https://assets.corpium.net/taerra/license.txt) has the details.
+TAERRA is free to use on any server, commercial ones included. It is closed source; the [license](https://assets.corpium.net/taerra/license.txt?v=fa512c7e) has the details.
 
 <sub>NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</sub>

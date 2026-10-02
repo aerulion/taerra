@@ -5,11 +5,12 @@
 #   icon                the mark over the blurred world, for square avatars
 #   banner              lockup and tagline on the left, the whole world on the right, for wide headers
 #   card                lockup and tagline centred, for link previews
+#   thumbnail           lockup, a huge headline and the world spilling off the right, for video thumbnails
 #   live-map            lockup over drawn cubes, no world: the web map's preview, the same on every server
 #   featured            lockup, tagline and the whole world at gallery proportions: the featured gallery image
 #   section             a slim strip heading one section of a description, with these options:
 #                         title = "Features"   the heading
-#                         spot = "meadow"      where it looks: meadow, village, wide, bay, top-down, peaks, cherry, nether, end
+#                         spot = "meadow"      where it looks: meadow, village, coast, wide, bay, top-down, peaks, cherry, nether, end
 #   gallery-isometric   the whole overworld
 #   gallery-detail      a close-up at full detail
 #   gallery-top-down    the top-down map
@@ -59,6 +60,13 @@ layout = "gallery-dimensions"
 size = [1920, 1080]
 
 # Modrinth description: one strip per section
+
+[[image]]
+file = "modrinth/section-showreel.png"
+layout = "section"
+size = [1600, 200]
+title = "Showreel"
+spot = "coast"
 
 [[image]]
 file = "modrinth/section-early-access.png"
@@ -134,6 +142,13 @@ size = [1920, 480]
 file = "github/social-preview.png"
 layout = "card"
 size = [1280, 640]
+
+# YouTube
+
+[[image]]
+file = "youtube/thumbnail.png"
+layout = "thumbnail"
+size = [1280, 720]
 
 # Hangar
 

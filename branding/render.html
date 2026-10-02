@@ -1,37 +1,8 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>TAERRA brand image</title>
+<link href="brand.css" rel="stylesheet">
 <style>
-    @font-face {
-        font-family: "QuinqueFive";
-        /* The web map's metrics: the capitals fill the em, a fifth of it below the baseline, so the line box is cut to
-           exactly them and centring it centres the letters. */
-        ascent-override: 80%;
-        descent-override: 20%;
-        line-gap-override: 0%;
-        src: url("../plugin/src/main/resources/web/fonts/QuinqueFive-Regular.ttf") format("truetype");
-    }
-
-    @font-face {
-        font-family: "Schibsted Grotesk";
-        font-weight: 400 900;
-        src: url("../plugin/src/main/resources/web/fonts/SchibstedGrotesk.ttf") format("truetype");
-    }
-
-    :root {
-        --stone-900: #1e1e1f;
-        --stone-700: #313233;
-        --stone-200: #a0a1a4;
-        --stone-100: #d0d1d4;
-        --accent: #b35a1f;
-        --accent-hi: #d4732f;
-    }
-
-    * {
-        box-sizing: border-box;
-        margin: 0;
-    }
-
     html, body {
         width: calc(100 * var(--w));
         height: calc(100 * var(--h));
@@ -54,39 +25,6 @@
 
     .float > canvas {
         filter: drop-shadow(0 28px 36px rgb(0 0 0 / .65));
-    }
-
-    /* The accent edge, the web map's copper: a block top seen side on. */
-    .edge {
-        position: absolute;
-        inset: auto 0 0;
-        height: max(6px, calc(1.5 * var(--min)));
-        background: linear-gradient(var(--accent-hi) 25%, var(--accent) 25%);
-    }
-
-    .pixel {
-        font-family: "QuinqueFive";
-        line-height: 1;
-        text-transform: uppercase;
-    }
-
-    .lockup {
-        display: flex;
-        align-items: center;
-        gap: .42em;
-        letter-spacing: .02em;
-    }
-
-    .lockup img {
-        width: 1.6em;
-        height: 1.6em;
-    }
-
-    .tagline {
-        color: var(--stone-100);
-        font-weight: 500;
-        line-height: 1.35;
-        text-wrap: balance;
     }
 
     /* icon: the mark over the blurred world */
@@ -210,6 +148,46 @@
         letter-spacing: .3em;
     }
 
+    /* thumbnail: few huge words, readable at a YouTube list's size, the world large and spilling off the right */
+    .thumbnail .shade {
+        background: linear-gradient(90deg, rgb(0 0 0 / .92) 30%, rgb(0 0 0 / .4) 70%, rgb(0 0 0 / .2));
+    }
+
+    .thumbnail .world {
+        right: -20%;
+        top: 4%;
+        bottom: 0;
+        width: 74%;
+    }
+
+    .thumbnail .copy {
+        left: calc(6.5 * var(--h));
+        width: 52%;
+        gap: calc(4.5 * var(--h));
+    }
+
+    .thumbnail .lockup {
+        font-size: calc(9 * var(--h));
+    }
+
+    .thumbnail .kicker {
+        font-size: calc(4 * var(--h));
+        white-space: nowrap;
+    }
+
+    .thumbnail h1 {
+        font-size: calc(14 * var(--h));
+        font-weight: 900;
+        line-height: .98;
+        letter-spacing: -.025em;
+        text-shadow: 0 calc(.6 * var(--h)) calc(3 * var(--h)) rgb(0 0 0 / .7);
+    }
+
+    .thumbnail h1 em {
+        color: var(--accent-hi);
+        font-style: normal;
+    }
+
     /* gallery: kicker and headline over a picture */
     .gallery .shade {
         background: linear-gradient(180deg, rgb(0 0 0 / .85), rgb(0 0 0 / .35) 30%, transparent 45%);
@@ -226,12 +204,6 @@
         display: grid;
         gap: calc(1.7 * var(--min));
         max-width: calc(60 * var(--w));
-    }
-
-    .kicker {
-        color: var(--accent-hi);
-        font-size: calc(1.85 * var(--min));
-        letter-spacing: .06em;
     }
 
     .gallery h1 {
@@ -303,6 +275,7 @@
     const SPOTS = {
         meadow: DETAIL,
         village: {world: 'minecraft_overworld', level: 0, at: [25.6, -5.0]},
+        coast: {world: 'minecraft_overworld', level: 1, at: [12.8, -2.5]},
         wide: {world: 'minecraft_overworld', level: 3, at: [0, -.6]},
         bay: BACKDROP,
         'top-down': TOP_DOWN,
@@ -314,7 +287,7 @@
 
     const escape = text => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
     const lockup = `<div class="lockup pixel"><img src="${LOGO}" alt=""><span>TAERRA</span></div>`;
-    const TAGLINE = 'A live web map for Paper servers, and a Fabric mod that shows the same map in game.';
+    const TAGLINE = 'One map, rendered on your server: in the browser, and in game.';
 
     function canvas(w, h) {
         return Object.assign(document.createElement('canvas'), {width: w, height: h});
@@ -475,6 +448,14 @@
             <div class="fill shade"></div>
             <div class="world float" data-view="world"></div>
             <div class="copy">${lockup}<p class="tagline">${TAGLINE}</p></div>
+            <div class="edge"></div>
+        </div>`, {backdrop: BACKDROP, world: {...OVERWORLD, level: 2}}],
+
+        thumbnail: [`<div class="banner thumbnail fill">
+            <div class="fill blur" data-view="backdrop"></div>
+            <div class="fill shade"></div>
+            <div class="world float" data-view="world"></div>
+            <div class="copy">${lockup}<h1>Your world,<br><em>live</em> in 3D</h1><div class="kicker pixel">Paper + Fabric</div></div>
             <div class="edge"></div>
         </div>`, {backdrop: BACKDROP, world: {...OVERWORLD, level: 2}}],
 

@@ -1,0 +1,71 @@
+/* The brand look shared by render.html and video.html. */
+
+@font-face {
+    font-family: "QuinqueFive";
+    /* The web map's metrics: the capitals fill the em, a fifth of it below the baseline, so the line box is cut to
+       exactly them and centring it centres the letters. */
+    ascent-override: 80%;
+    descent-override: 20%;
+    line-gap-override: 0%;
+    src: url("../plugin/src/main/resources/web/fonts/QuinqueFive-Regular.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Schibsted Grotesk";
+    font-weight: 400 900;
+    src: url("../plugin/src/main/resources/web/fonts/SchibstedGrotesk.ttf") format("truetype");
+}
+
+:root {
+    --stone-900: #1e1e1f;
+    --stone-700: #313233;
+    --stone-200: #a0a1a4;
+    --stone-100: #d0d1d4;
+    --accent: #b35a1f;
+    --accent-hi: #d4732f;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+}
+
+/* The accent edge, the web map's copper: a block top seen side on. */
+.edge {
+    position: absolute;
+    inset: auto 0 0;
+    height: max(6px, calc(1.5 * var(--min)));
+    background: linear-gradient(var(--accent-hi) 25%, var(--accent) 25%);
+}
+
+.pixel {
+    font-family: "QuinqueFive";
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.lockup {
+    display: flex;
+    align-items: center;
+    gap: .42em;
+    letter-spacing: .02em;
+}
+
+.lockup img {
+    width: 1.6em;
+    height: 1.6em;
+}
+
+.tagline {
+    color: var(--stone-100);
+    font-weight: 500;
+    line-height: 1.35;
+    text-wrap: balance;
+}
+
+.kicker {
+    color: var(--accent-hi);
+    font-size: calc(1.85 * var(--min));
+    letter-spacing: .06em;
+}
+

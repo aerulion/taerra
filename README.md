@@ -5,7 +5,7 @@
 
 # TAERRA
 
-A live web map for Paper servers, and a Fabric mod that shows the same map in game.
+One map, rendered on your server: in the browser, and in game.
 
 | Directory      | Part                                                        |
 |----------------|-------------------------------------------------------------|

@@ -1,6 +1,7 @@
 """Renders the images listed in images.toml with headless Chrome."""
 
 import argparse
+import hashlib
 import re
 import shutil
 import subprocess
@@ -10,6 +11,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 HERE = Path(__file__).resolve().parent
+ASSETS = "https://assets.corpium.net/taerra/"
 CHROMES = (
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
@@ -34,6 +36,15 @@ def license_text(markdown):
         elif line != "---":
             lines.append(line)
     return "\n".join(lines) + "\n"
+
+
+def stamp_assets(markdown):
+    """Gives every hosted asset in the description a ?v= of its content, so caches fetch it anew once it changed."""
+    def stamp(match):
+        name = match.group(1)
+        file = next((f for f in (HERE / "images/modrinth" / name, HERE / name) if f.is_file()), None)
+        return match.group(0) if not file else f"{ASSETS}{name}?v={hashlib.sha1(file.read_bytes()).hexdigest()[:8]}"
+    return re.sub(rf"{re.escape(ASSETS)}([\w.-]+)(?:\?v=\w+)?", stamp, markdown)
 
 
 def main():
@@ -83,6 +94,9 @@ def main():
             f"{(HERE / 'render.html').as_uri()}?{query}",
         ], check=True, capture_output=True)
         print(f"{image['file']}  {width}x{height}  {out.stat().st_size // 1024} KiB")
+
+    description = HERE / "modrinth-description.md"
+    description.write_text(stamp_assets(description.read_text()))
 
 
 if __name__ == "__main__":

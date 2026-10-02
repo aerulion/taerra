@@ -1,0 +1,1578 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>TAERRA showreel</title>
+<link href="brand.css" rel="stylesheet">
+<style>
+    @font-face {
+        font-family: "Tektur";
+        font-weight: 700;
+        src: url("aerulion/Tektur-Bold.woff2") format("woff2");
+    }
+
+    @font-face {
+        font-family: "IBM Plex Mono";
+        font-weight: 400;
+        src: url("aerulion/IBMPlexMono-Regular.woff2") format("woff2");
+    }
+
+    :root {
+        --w: 19.2px;
+        --h: 10.8px;
+        --min: 10.8px;
+    }
+
+    html, body {
+        width: 1920px;
+        height: 1080px;
+        position: relative;
+        overflow: hidden;
+        background: #000;
+        color: #fff;
+        font-family: "Schibsted Grotesk", sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    body > *, #camera > * {
+        position: absolute;
+    }
+
+    #stage, #wipe, #camera, #shade, #fade, #flash {
+        inset: 0;
+    }
+
+    #stage, #wipe {
+        width: 1920px;
+        height: 1080px;
+    }
+
+    /* Behind the caption while the camera leans into the browser. */
+    #shade {
+        background: linear-gradient(rgb(0 0 0 / .85), rgb(0 0 0 / .5) 220px, rgb(0 0 0 / 0) 360px);
+    }
+
+    #camera {
+        transform-origin: 0 0;
+    }
+
+    .copy {
+        left: 80px;
+        top: 72px;
+        display: grid;
+        gap: 22px;
+    }
+
+    .copy .kicker {
+        font-size: 30px;
+    }
+
+    h1 {
+        font-size: 84px;
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -.02em;
+        text-shadow: 0 4px 24px rgb(0 0 0 / .5);
+    }
+
+    /* Each word rises out of its own slot. */
+    h1 .word, #slam h2 .word {
+        display: inline-block;
+        overflow: hidden;
+        padding-bottom: .14em;
+        margin-bottom: -.14em;
+        vertical-align: top;
+    }
+
+    h1 .word > span, #slam h2 .word > span {
+        display: inline-block;
+    }
+
+    #corner {
+        right: 80px;
+        top: 80px;
+        font-size: 20px;
+    }
+
+    #title {
+        inset: 0;
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: 56px;
+        text-align: center;
+    }
+
+    #title .lockup {
+        font-size: 110px;
+        gap: .5em;
+    }
+
+    #title .lockup img {
+        width: 1.7em;
+        height: 1.7em;
+    }
+
+    #title .tagline {
+        max-width: 1100px;
+        font-size: 44px;
+    }
+
+    #title .kicker {
+        font-size: 30px;
+        letter-spacing: .3em;
+    }
+
+    /* A big word slammed onto the screen on the beat. */
+    #slam {
+        inset: 0;
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: 34px;
+        text-align: center;
+        text-shadow: 0 6px 40px rgb(0 0 0 / .65);
+    }
+
+    #slam .kicker {
+        font-size: 30px;
+        letter-spacing: .3em;
+    }
+
+    #slam h2 {
+        max-width: 1500px;
+        font-size: 124px;
+        font-weight: 800;
+        line-height: 1.02;
+        letter-spacing: -.025em;
+        text-wrap: balance;
+    }
+
+    #slam h2.pixel {
+        font-size: 112px;
+        font-weight: 400;
+        letter-spacing: .06em;
+    }
+
+    /* The web map in a plain browser window. */
+    #browser {
+        left: 320px;
+        top: 250px;
+        width: 1280px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--stone-900);
+        box-shadow: 0 40px 80px rgb(0 0 0 / .7), 0 0 0 1px rgb(255 255 255 / .08);
+    }
+
+    #browser .bar {
+        height: 40px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+        background: var(--stone-700);
+    }
+
+    #browser .bar i {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #545556;
+    }
+
+    #browser .url {
+        margin-left: 18px;
+        padding: 5px 16px;
+        border-radius: 6px;
+        background: var(--stone-900);
+        color: var(--stone-200);
+        font-size: 15px;
+    }
+
+    #browser iframe {
+        display: block;
+        width: 1280px;
+        height: 720px;
+        border: 0;
+    }
+
+    #cursor {
+        left: 0;
+        top: 0;
+        width: 26px;
+        transform-origin: 0 0;
+        filter: drop-shadow(0 3px 4px rgb(0 0 0 / .6));
+    }
+
+    #ring {
+        left: 0;
+        top: 0;
+        width: 56px;
+        height: 56px;
+        margin: -28px;
+        border: 4px solid var(--accent-hi);
+        border-radius: 50%;
+    }
+
+    #stats {
+        left: 80px;
+        top: 300px;
+        width: 600px;
+        display: grid;
+        gap: 40px;
+    }
+
+    #stats div {
+        display: grid;
+        gap: 14px;
+    }
+
+    #stats b {
+        font-size: 76px;
+        font-weight: 400;
+        color: var(--accent-hi);
+    }
+
+    #stats span {
+        color: var(--stone-100);
+        font-size: 28px;
+        font-weight: 500;
+    }
+
+    #stats small {
+        color: var(--stone-200);
+        font-size: 20px;
+        line-height: 1.5;
+    }
+
+    /* Where a picture of another server comes from. */
+    #source {
+        left: 80px;
+        bottom: 52px;
+        color: var(--stone-100);
+        font-size: 18px;
+        letter-spacing: .08em;
+        text-shadow: 0 2px 10px rgb(0 0 0 / .8);
+    }
+
+    /* The closing credit, in aerulion's Nyx system: #fff on #000 and nothing between, the label in the mono
+       instrumentation face, the wordmark in Tektur 700, lowercase and tight. */
+    #credit {
+        left: 0;
+        right: 0;
+        top: 768px;
+        display: grid;
+        justify-items: center;
+        gap: 26px;
+        color: #fff;
+    }
+
+    #credit small {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 22px;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        line-height: 1.4;
+    }
+
+    #credit strong {
+        font-family: "Tektur", sans-serif;
+        font-size: 92px;
+        line-height: .82;
+        letter-spacing: -.01em;
+    }
+
+    #flash {
+        background: #fff;
+        mix-blend-mode: overlay;
+    }
+
+    #fade {
+        background: #000;
+    }
+</style>
+<body>
+<canvas height="1080" id="stage" width="1920"></canvas>
+<div id="camera">
+    <div id="browser">
+        <div class="bar"><i></i><i></i><i></i><span class="url">map.yourserver.net</span></div>
+        <iframe id="web"></iframe>
+    </div>
+    <div id="ring"></div>
+    <svg id="cursor" shape-rendering="crispEdges" viewBox="0 0 12 19">
+        <path d="M0 0h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h-5v1h1v2h1v2h1v2h-2v-1h-1v-2h-1v-2h-1v-1h-1v1h-1v1h-1v1h-1z" fill="#1e1e1f"/>
+        <path d="M1 2h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h-4v1h1v2h1v2h1v1h-1v-2h-1v-2h-1v-1h-2v1h-1v1h-1z" fill="#fff"/>
+    </svg>
+</div>
+<div id="shade"></div>
+<div class="copy"><div class="kicker pixel"></div><h1></h1></div>
+<div id="slam"><div class="kicker pixel"></div><h2></h2></div>
+<div class="lockup pixel" id="corner"><img alt="" src="../plugin/src/main/resources/web/images/icon.svg"><span>TAERRA</span></div>
+<div id="title">
+    <div class="lockup pixel"><img alt="" src="../plugin/src/main/resources/web/images/icon.svg"><span></span></div>
+    <p class="tagline">One map, rendered on your server: in the browser, and in game.</p>
+    <div class="kicker pixel"></div>
+</div>
+<div id="stats">
+    <div><b class="pixel" id="chunks"></b><span>chunks: a world with a 6,000-block radius</span></div>
+    <div><b class="pixel" id="clock"></b><span>to render all of it, top-down and from all four sides</span></div>
+    <div id="tick"><b class="pixel">2 ms</b><span>per tick for live updates</span></div>
+    <small>Corpium's main world, on an Intel Core Ultra 7 265 with 64 GB of RAM</small>
+</div>
+<div class="pixel" id="source">Corpium · map.corpium.net</div>
+<div id="credit"><small>A project by</small><strong>aerulion</strong></div>
+<div class="edge"></div>
+<canvas height="1080" id="wipe" width="1920"></canvas>
+<div id="flash"></div>
+<div id="fade"></div>
+<script type="module">
+    const params = new URLSearchParams(location.search);
+    const TILES = params.get('tiles');
+    const WEB = params.get('web');
+    const [W, H, T] = [1920, 1080, 256];
+    // Device pixels per page pixel: 2 renders 4K. Every canvas the frame is drawn on has that many more pixels and is
+    // drawn on in page pixels, and the worlds come from a level that much finer.
+    const SCALE = +(params.get('scale') ?? 1);
+    const $ = id => document.getElementById(id);
+    for (const id of ['stage', 'wipe']) {
+        Object.assign($(id), {width: W * SCALE, height: H * SCALE});
+    }
+    const g = $('stage').getContext('2d');
+
+    // Iso tiles are tiles-iso/<world>/<rotation>/<level>/<x>/<y>.png, level 0 is full detail with a block 8 pixels
+    // wide, every level above halves it. Top-down tiles are tiles/<world>/<level>/<x>/<y>.png, a block 4 pixels at
+    // level 0. Places are block coordinates.
+    const OVERWORLD = 'minecraft_overworld';
+    const VILLAGE = {x: 563, y: 64, z: -1075};
+    const iso = ({x, y, z}) => [(x - z) * 4, (x + z) * 2 - y * 4];
+
+    // The speed figures are Corpium's main world, so that is the world shown with them, straight from its live map,
+    // whose API zoom 4 is level 0. TARGET is its city, in level 0 iso pixels.
+    const CORPIUM = 'https://map.corpium.net';
+    const CORPIUM_WORLD = encodeURIComponent('minecraft:overworld');
+    const corpium = rotation => ({
+        rotation, maxLevel: 8,
+        src: (r, level, x, y) => `${CORPIUM}/api/iso/${CORPIUM_WORLD}/${r}/${4 - level}/${x}/${y}.png`,
+    });
+    const TARGET = iso({x: 751, y: 62, z: 541});
+
+    // The timeline, cut to the music: 139.63 bpm, a swell, then 32 bars from the drop, after which the track stops and
+    // rings out. bar(n) is the downbeat of bar n, counted from the drop. Both fitted to the track's kicks.
+    const BEAT = 60 / 139.63, DROP = 3.433;
+    const bar = n => DROP + 4 * BEAT * n;
+    const AT = {
+        title: bar(0),           // the cubes fall away from the name on the drop
+        top: bar(2),             // the top-down map spins in
+        fold: bar(4) - .9,       // folds into the isometric view through the drum fill, landing on bar 4
+        spin: bar(4),            // four quarter turns, one a beat
+        dive: bar(5),            // down to a village, block by block
+        dimensions: bar(6),      // overworld, nether and end slammed in on three beats, then side by side
+        web: bar(8),             // the web map, clicked through feature by feature
+        speed: bar(19),          // Corpium's world renders while the numbers run, then a dive into its city
+        ingame: bar(23),         // the mod's screenshots, two beats each
+        features: bar(25),       // a feature a beat
+        outro: bar(28),
+        credit: bar(31),
+        end: bar(32) + 2.4,      // the track stops on bar 32 and rings out
+        black: bar(32) + 5.4,    // then black, so a video site's end screens come after the credit
+    };
+    // Cube sweeps, each covering the screen by `cut`, where the next scene starts underneath. The first rains in slowly
+    // through the swell; the others take COVER seconds.
+    const COVER = .54;
+    const WAVES = [{cut: AT.title, cover: AT.title - BEAT}, {cut: AT.top}, {cut: AT.speed}, {cut: AT.outro}];
+    // The mod's screenshots, from branding/ingame/, 16:9, under one kicker, each with its own headline; a missing one
+    // shows where it goes.
+    const INGAME_KICKER = 'Fabric mod';
+    const INGAME = [
+        ['ingame-1.png', 'The world map, in game'],
+        ['ingame-2.png', 'Isometric, from all four sides'],
+        ['ingame-3.png', 'Regions and waypoints'],
+        ['ingame-4.png', 'A minimap, and waypoints in the world'],
+    ];
+    // A feature a beat before the outro, the last held until the cubes cover it.
+    const FEATURES = [
+        'Logins without passwords', 'Private worlds and layers', 'Teleport from the map', 'Follow any player',
+        'World borders', 'Chunky aware', 'Imports dynmap markers', 'Installs as an app',
+        'English and German', 'One jar, no database', 'Free for any server',
+    ];
+
+    // easing
+    const clamp = (v, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
+    const span = (t, a, b) => clamp((t - a) / (b - a));
+    const smooth = u => u * u * (3 - 2 * u);
+    const inOut = u => u < .5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2;
+    const out = u => 1 - (1 - u) ** 3;
+    const back = u => 1 + 2.2 * (u - 1) ** 3 + 1.2 * (u - 1) ** 2;
+    const lerp = (a, b, u) => a + (b - a) * u;
+    // In for `fade` seconds from a, out for `fade` seconds before b.
+    const between = (t, a, b, fade = .4) => Math.min(out(span(t, a, a + fade)), 1 - smooth(span(t, b - fade, b)));
+    const hash = (a, b) => {
+        const n = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+        return n - Math.floor(n);
+    };
+
+    // tiles
+
+    // An image, or null where there is none. A live map refuses a burst of hundreds of tiles at once, so at most
+    // LOADS are fetched together and a failed one is tried again: only a 404 leaves a tile out.
+    const cache = new Map(), LOADS = 12, waiting = [];
+    let loading = 0;
+
+    function load(src) {
+        if (!cache.has(src)) {
+            cache.set(src, (async () => {
+                while (loading >= LOADS) {
+                    await new Promise(next => waiting.push(next));
+                }
+                loading++;
+                try {
+                    for (let attempt = 0; attempt < 6; attempt++) {
+                        try {
+                            const response = await fetch(src);
+                            if (response.status === 404) {
+                                return null;
+                            }
+                            if (response.ok) {
+                                return await createImageBitmap(await response.blob());
+                            }
+                        } catch {
+                        }
+                        await new Promise(wait => setTimeout(wait, 250 * 2 ** attempt));
+                    }
+                    throw new Error(`Could not load ${src}`);
+                } finally {
+                    loading--;
+                    waiting.shift()?.();
+                }
+            })());
+        }
+        return cache.get(src);
+    }
+
+    function canvas(w, h) {
+        return Object.assign(document.createElement('canvas'), {width: w, height: h});
+    }
+
+    // A canvas the size of the frame in device pixels, drawn on in page pixels, and how to put it on the stage.
+    function surface() {
+        const c = canvas(W * SCALE, H * SCALE), ctx = c.getContext('2d');
+        ctx.scale(SCALE, SCALE);
+        return [c, ctx];
+    }
+
+    const whole = c => g.drawImage(c, 0, 0, W, H);
+
+    // Draws an iso world centred on (cx, cy) in level 0 pixels at s screen pixels per level 0 pixel, from the level
+    // that is never enlarged. The tiles are put together at their own size first and scaled as one picture: scaled
+    // one by one they leave seams, and rounded one by one they jitter against each other as the zoom moves.
+    const stitched = canvas(1, 1), stitchedCtx = stitched.getContext('2d');
+
+    async function drawWorld(ctx, view, cx, cy, s, w = W, h = H) {
+        const {world = OVERWORLD, rotation = 0, maxLevel = 3} = view;
+        const src = view.src ?? ((r, level, x, y) => `${TILES}/tiles-iso/${world}/${r}/${level}/${x}/${y}.png`);
+        // The canvas's own scale counts too: a 4K stage takes a level twice as fine.
+        const scale = s * ctx.getTransform().a;
+        const level = clamp(Math.floor(Math.log2(1 / scale) + 1e-6), 0, maxLevel);
+        const size = T << level, left = cx - w / 2 / s, top = cy - h / 2 / s;
+        const x0 = Math.floor(left / size), y0 = Math.floor(top / size);
+        const nx = Math.ceil((left + w / s) / size) - x0, ny = Math.ceil((top + h / s) / size) - y0;
+        const found = await Promise.all(Array.from({length: nx * ny}, (_, i) => {
+            const x = x0 + i % nx, y = y0 + Math.floor(i / nx);
+            return load(src(rotation, level, x, y)).then(img => img && {x, y, img});
+        }));
+        if (stitched.width < nx * T || stitched.height < ny * T) {
+            stitched.width = Math.max(stitched.width, nx * T);
+            stitched.height = Math.max(stitched.height, ny * T);
+        }
+        stitchedCtx.clearRect(0, 0, nx * T, ny * T);
+        for (const tile of found) {
+            if (tile) {
+                stitchedCtx.drawImage(tile.img, (tile.x - x0) * T, (tile.y - y0) * T);
+            }
+        }
+        ctx.imageSmoothingEnabled = scale < 1;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(stitched, 0, 0, nx * T, ny * T, (x0 * size - left) * s, (y0 * size - top) * s, nx * size * s, ny * size * s);
+    }
+
+    // The opaque part of a canvas.
+    function opaque(c) {
+        const {data} = c.getContext('2d', {willReadFrequently: true}).getImageData(0, 0, c.width, c.height);
+        let x0 = c.width, y0 = c.height, x1 = 0, y1 = 0;
+        for (let y = 0; y < c.height; y++) {
+            for (let x = 0; x < c.width; x++) {
+                if (data[(y * c.width + x) * 4 + 3] > 8) {
+                    x0 = Math.min(x0, x);
+                    x1 = Math.max(x1, x + 1);
+                    y0 = Math.min(y0, y);
+                    y1 = Math.max(y1, y + 1);
+                }
+            }
+        }
+        return {x0, y0, x1, y1};
+    }
+
+    // Where an iso world's rendered tiles end, in level 0 pixels, from n × n tiles of a coarse level.
+    async function bounds(view, level = 3, n = 16) {
+        const c = canvas(n * T, n * T), k = 2 ** level;
+        await drawWorld(c.getContext('2d', {willReadFrequently: true}), {...view, maxLevel: level}, 0, 0, 1 / k, c.width, c.height);
+        const {x0, y0, x1, y1} = opaque(c), half = c.width / 2;
+        return {cx: ((x0 + x1) / 2 - half) * k, cy: ((y0 + y1) / 2 - half) * k, w: (x1 - x0) * k, h: (y1 - y0) * k};
+    }
+
+    // A whole top-down world as one image, a tile's pixel per 2^level / 4 blocks, and the block at its centre.
+    async function topDown(src = (x, y) => `${TILES}/tiles/${OVERWORLD}/2/${x}/${y}.png`, n = 8) {
+        const c = canvas(2 * n * T, 2 * n * T), ctx = c.getContext('2d', {willReadFrequently: true});
+        await Promise.all(Array.from({length: 4 * n * n}, async (_, i) => {
+            const x = i % (2 * n) - n, y = Math.floor(i / (2 * n)) - n;
+            const img = await load(src(x, y));
+            if (img) {
+                ctx.drawImage(img, (x + n) * T, (y + n) * T);
+            }
+        }));
+        const edges = opaque(c), origin = -n * T;
+        return {plate: c, origin, edges, center: [origin + (edges.x0 + edges.x1) / 2, origin + (edges.y0 + edges.y1) / 2]};
+    }
+
+    // The fold from top-down to isometric, as the matrix taking a top-down level 0 pixel to an iso one: turned by
+    // theta degrees and squashed to q. At 45° and a half it is exactly the iso view of the ground; every quarter turn
+    // further back is the next rotation.
+    function fold(theta, q) {
+        const r = theta * Math.PI / 180, c = Math.cos(r) * Math.SQRT2, s = Math.sin(r) * Math.SQRT2;
+        return [[c, -s], [q * s, q * c]];
+    }
+
+    const thetaOf = rotation => 45 - 90 * rotation;
+    // Where the world sits on screen while it turns.
+    const CENTRE = [W / 2, H * .56];
+
+    // The flat map, folded by A and drawn s screen pixels per iso level 0 pixel. Its sides grow as it tilts, to the
+    // iso render's depth from sea level to the bottom of the world at q = 1/2.
+    function drawFlat(A, s, q, alpha) {
+        const {plate, origin, edges: {x0, y0, x1, y1}, center: [xc, zc]} = views.top, k = 4 * s;
+        const [dx, dz] = [origin - xc, origin - zc];
+        const m = [k * A[0][0], k * A[1][0], k * A[0][1], k * A[1][1],
+            CENTRE[0] + k * (A[0][0] * dx + A[0][1] * dz), CENTRE[1] + k * (A[1][0] * dx + A[1][1] * dz)];
+        const at = ([x, y]) => [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
+        const corners = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(at), depth = 512 * s * (1 - q) * 2;
+        g.save();
+        g.globalAlpha = alpha;
+        g.shadowColor = 'rgb(0 0 0 / .7)';
+        g.shadowBlur = 50 * SCALE;
+        g.shadowOffsetY = 34 * SCALE;
+        corners.forEach(([ax, ay], i) => {
+            const [bx, by] = corners[(i + 1) % 4];
+            g.fillStyle = bx > ax ? '#1e1e1f' : '#262627';
+            g.beginPath();
+            [[ax, ay], [bx, by], [bx, by + depth], [ax, ay + depth]].forEach(([x, y]) => g.lineTo(x, y));
+            g.fill();
+        });
+        g.shadowColor = 'transparent';
+        g.imageSmoothingQuality = 'high';
+        g.setTransform(...m.map(v => v * SCALE));
+        g.drawImage(plate, 0, 0);
+        g.restore();
+    }
+
+    // The iso render of a rotation, its centre where the flat map's is.
+    const [layer, layerCtx] = surface();
+
+    // Warped by `to`, a fold matrix, it is tilted as if it were the ground: exact at sea level, with whatever stands on
+    // it leaning a little. Between two rotations that hides the turn far better than the flat map would.
+    async function drawIso(rotation, s, alpha, to = null) {
+        const [xc, zc] = views.top.center, A = fold(thetaOf(rotation), .5);
+        // The flat map lies at sea level.
+        const cx = 4 * (A[0][0] * xc + A[0][1] * zc), cy = 4 * (A[1][0] * xc + A[1][1] * zc) - 64 * 4;
+        layerCtx.clearRect(0, 0, W, H);
+        await drawWorld(layerCtx, {rotation}, cx - (CENTRE[0] - W / 2) / s, cy - (CENTRE[1] - H / 2) / s, s);
+        g.save();
+        g.globalAlpha = alpha;
+        g.shadowColor = 'rgb(0 0 0 / .7)';
+        g.shadowBlur = 50 * SCALE;
+        g.shadowOffsetY = 34 * SCALE;
+        if (to) {
+            const det = A[0][0] * A[1][1] - A[0][1] * A[1][0];
+            const inverse = [[A[1][1] / det, -A[0][1] / det], [-A[1][0] / det, A[0][0] / det]];
+            const m = [0, 1].map(i => [0, 1].map(j => to[i][0] * inverse[0][j] + to[i][1] * inverse[1][j]));
+            // About the world's centre, which stays put.
+            g.setTransform(...[m[0][0], m[1][0], m[0][1], m[1][1], CENTRE[0] - m[0][0] * CENTRE[0] - m[0][1] * CENTRE[1],
+                CENTRE[1] - m[1][0] * CENTRE[0] - m[1][1] * CENTRE[1]].map(v => v * SCALE));
+        }
+        whole(layer);
+        g.restore();
+    }
+
+    function shadowed(draw) {
+        g.save();
+        g.shadowColor = 'rgb(0 0 0 / .7)';
+        g.shadowBlur = 50 * SCALE;
+        g.shadowOffsetY = 34 * SCALE;
+        draw();
+        g.restore();
+    }
+
+    // A world floating in the box (x, y, w, h), with its shadow.
+    async function floating(view, box, alpha = 1) {
+        const b = view.bounds, s = Math.min(box.w / b.w, box.h / b.h);
+        layerCtx.clearRect(0, 0, W, H);
+        await drawWorld(layerCtx, view, b.cx, b.cy, s, box.w, box.h);
+        g.globalAlpha = alpha;
+        shadowed(() => g.drawImage(layer, 0, 0, box.w * SCALE, box.h * SCALE, box.x, box.y, box.w, box.h));
+        g.globalAlpha = 1;
+    }
+
+    // The blurred world behind the title and outro, drawn once and drifted.
+    async function makeBackdrop() {
+        const c = canvas(W * 1.3, H * 1.3), ctx = c.getContext('2d');
+        await drawWorld(ctx, {}, -1024, -2048, .3, c.width, c.height);
+        const out = canvas(c.width, c.height), o = out.getContext('2d'), m = 90;
+        o.filter = 'blur(28px) saturate(1.15)';
+        o.drawImage(c, -m, -m, c.width + 2 * m, c.height + 2 * m);
+        return out;
+    }
+
+    function drawBackdrop(t, dim) {
+        const u = t / AT.end, scale = 1 + .08 * u;
+        const w = W * 1.15 * scale, h = H * 1.15 * scale;
+        g.drawImage(views.backdrop, (W - w) / 2 - 60 + 120 * u, (H - h) / 2 - 30 * u, w, h);
+        g.fillStyle = `rgb(0 0 0 / ${dim})`;
+        g.fillRect(0, 0, W, H);
+    }
+
+    // The gallery images' shade, so a caption reads over a world that fills the screen.
+    function shade(strength = 1) {
+        const gradient = g.createLinearGradient(0, 0, 0, H * .45);
+        gradient.addColorStop(0, `rgb(0 0 0 / ${.85 * strength})`);
+        gradient.addColorStop(.65, `rgb(0 0 0 / ${.35 * strength})`);
+        gradient.addColorStop(1, 'rgb(0 0 0 / 0)');
+        g.fillStyle = gradient;
+        g.fillRect(0, 0, W, H * .45);
+    }
+
+    // A picture drawn onto the stage cell by cell as k runs from 0 to 1, outward from the middle of the box like a
+    // render filling it in, each cell landing copper before its blocks show.
+    const [cells, cellsCtx] = surface();
+
+    function reveal(from, box, k, cell) {
+        cellsCtx.clearRect(0, 0, W, H);
+        for (let y = 0; y < box.h; y += cell) {
+            for (let x = 0; x < box.w; x += cell) {
+                const r = .8 * Math.hypot((x + cell / 2) / box.w - .5, (y + cell / 2) / box.h - .5) * 2 / Math.SQRT2 + .2 * hash(x + box.x, y);
+                const p = span(k, r * .92, r * .92 + .08);
+                if (p > 0) {
+                    cellsCtx.drawImage(from, (box.x + x) * SCALE, (box.y + y) * SCALE, cell * SCALE, cell * SCALE, box.x + x, box.y + y, cell, cell);
+                    if (p < 1) {
+                        cellsCtx.globalCompositeOperation = 'source-atop';
+                        cellsCtx.globalAlpha = 1 - p;
+                        cellsCtx.fillStyle = '#d4732f';
+                        cellsCtx.fillRect(box.x + x, box.y + y, cell, cell);
+                        cellsCtx.globalAlpha = 1;
+                        cellsCtx.globalCompositeOperation = 'source-over';
+                    }
+                }
+            }
+        }
+        shadowed(() => whole(cells));
+    }
+
+    // The cube sweep between scenes: a floor of blocks on the map's own iso grid, one colour per face, falls into
+    // place from the left until it covers the screen, then on down and away. Drawn back to front, so each block hides
+    // the sides of those behind it.
+    const wipe = $('wipe').getContext('2d');
+    wipe.scale(SCALE, SCALE);
+    const CUBE = 54;
+
+    function cubes(t) {
+        wipe.clearRect(0, 0, W, H);
+        const wave = WAVES.find(({cut, cover = COVER}) => t >= cut - cover && t < cut + COVER + .1);
+        if (!wave) {
+            return;
+        }
+        const {cut, cover = COVER} = wave, slow = cover / COVER, a = CUBE;
+        // p and q are the grid's diagonals: a block's top corner is at (p a, q a / 2).
+        for (let q = -2; q * a / 2 < H + a; q++) {
+            for (let p = -1 - (q & 1); p * a < W + 2 * a; p += 2) {
+                const x = p * a, y = q * a / 2;
+                const d = clamp(x / W + .06 * (hash(p, q) - .5)) * .29;
+                const fall = span(t, cut - cover + d * slow, cut - cover + (d + .25) * slow), away = span(t, cut + d, cut + d + .3);
+                if (fall === 0 || away === 1) {
+                    continue;
+                }
+                // Dropped from just above the screen, gathering speed; then on down past its bottom.
+                const drop = -(y + 3 * a) * (1 - fall * fall) + (H - y + a) * away * away;
+                const copper = hash(q, p) < .1, shade = hash(p + 7, q) * 3 | 0;
+                block(x, y + drop, a, copper ? ['#d4732f', '#b35a1f', '#8a4416']
+                    : [['#48494a', '#4f5052', '#424344'][shade], '#262627', '#1e1e1f']);
+            }
+        }
+    }
+
+    // A block whose top corner is at (x, y), 2a wide: top, left and right faces.
+    function block(x, y, a, [top, left, right]) {
+        const face = (colour, ...points) => {
+            wipe.fillStyle = wipe.strokeStyle = colour;
+            wipe.beginPath();
+            points.forEach(([px, py]) => wipe.lineTo(x + px * a, y + py * a));
+            wipe.closePath();
+            wipe.fill();
+            // Filled and stroked, so neighbouring faces meet without a hairline.
+            wipe.stroke();
+        };
+        face(left, [-1, .5], [0, 1], [0, 2], [-1, 1.5]);
+        face(right, [0, 1], [1, .5], [1, 1.5], [0, 2]);
+        face(top, [0, 0], [1, .5], [0, 1], [-1, .5]);
+    }
+
+    // A flash of light on every hard cut: [time, strength].
+    const FLASHES = [[AT.title, .9], [AT.dimensions, .7], [AT.dimensions + BEAT, .7], [AT.dimensions + 2 * BEAT, .7],
+        [bar(7), .5], [AT.web, .5], ...INGAME.map((_, i) => [AT.ingame + 2 * i * BEAT, .6]),
+        ...FEATURES.map((_, i) => [AT.features + i * BEAT, i % 4 ? .35 : .6])];
+
+    function flash(t) {
+        return FLASHES.reduce((most, [at, k]) => t >= at ? Math.max(most, k * Math.exp(-(t - at) * 9)) : most, 0);
+    }
+
+    // text
+
+    // Text typed out letter by letter, the rest already laid out but unseen, so nothing around it moves.
+    function typed(el, text, k) {
+        const n = Math.ceil(clamp(k) * text.length), key = `${n}/${text}`;
+        if (el.dataset.typed !== key) {
+            el.dataset.typed = key;
+            el.innerHTML = '';
+            el.append(text.slice(0, n), Object.assign(document.createElement('span'), {textContent: text.slice(n)}));
+            el.lastChild.style.visibility = 'hidden';
+        }
+    }
+
+    // Words in their own slots, to rise out of them.
+    function words(el, title) {
+        if (el.dataset.title !== title) {
+            el.dataset.title = title;
+            el.innerHTML = title.split(' ').map(word => `<span class="word"><span>${word}</span></span>`).join(' ');
+        }
+        return [...el.querySelectorAll('.word > span')];
+    }
+
+    const copy = document.querySelector('.copy'), kicker = copy.querySelector('.kicker'), headline = copy.querySelector('h1');
+    const B = BEAT;
+    // The web map's own timeline, in seconds from AT.web.
+    const WEB_AT = {
+        iso: 5 * B, rotate: [7 * B, 9 * B], gray: 11.5 * B, regions: 13 * B, follow: 19 * B, color: 23.5 * B,
+        menu: 26 * B, select: 27.5 * B, paint: [28.25 * B, 33 * B], hide: 34.5 * B, nether: 38.5 * B,
+    };
+
+    // Kicker and headline over each scene: [from, to, kicker, headline, and when the kicker is typed and leaves if it
+    // stays on over several headlines].
+    const CAPTIONS = [
+        [AT.top + .15, AT.fold - .1, 'Top-down', 'A classic flat map'],
+        [bar(4) - .3, AT.dive - .05, 'Isometric', 'Every block in 3D, from all four sides'],
+        [AT.dive + .05, AT.dimensions - .05, 'Detail', 'Down to every single block'],
+        [bar(7) - .05, AT.web - .05, 'Dimensions', 'Overworld, Nether and End'],
+        ...[
+            [0, WEB_AT.iso - B, 'Web map', 'Live in any browser'],
+            [WEB_AT.iso - B, WEB_AT.gray - B, 'Isometric', 'Turn it to every side'],
+            [WEB_AT.gray - B, WEB_AT.follow - 3 * B, 'Layers', 'Regions, borders, gray mode'],
+            [WEB_AT.follow - 3 * B, WEB_AT.menu - 1.5 * B, 'Live', 'Players and waypoints'],
+            [WEB_AT.menu - 1.5 * B, WEB_AT.paint[0], 'Right-click', 'Teleport, copy a link, and more'],
+            [WEB_AT.paint[0], WEB_AT.nether, 'Chunk selection', 'Render again, or hide a build site'],
+            [WEB_AT.nether, AT.speed - AT.web - .3, 'Worlds', 'Every world on one map'],
+        ].map(([a, b, kick, title]) => [AT.web + a + .1, AT.web + b - .05, kick, title]),
+        [AT.speed + .4, AT.speed + 10 * B, 'Speed', 'A whole world in minutes'],
+        [AT.speed + 11 * B, AT.ingame - .05, 'Scale', 'From 12,000 blocks down to one'],
+        ...INGAME.map(([, title], i) => [AT.ingame + 2 * i * B + .05, AT.ingame + 2 * (i + 1) * B - .05, INGAME_KICKER, title,
+            AT.ingame + .05, AT.features - .05]),
+    ];
+
+    // The kicker typed out, the headline's words rising out of their slots and leaving the same way.
+    function caption(t) {
+        const found = CAPTIONS.find(([a, b]) => t >= a && t < b);
+        if (!found) {
+            show(copy, 0);
+            return;
+        }
+        const [a, b, kick, title, typedAt = a, leaves = b] = found;
+        typed(kicker, kick, span(t, typedAt, typedAt + .25));
+        kicker.style.opacity = String(1 - smooth(span(t, leaves - .2, leaves)));
+        words(headline, title).forEach((word, i) => {
+            const rise = 1 - out(span(t, a + .04 + i * .035, a + .34 + i * .035));
+            const fall = smooth(span(t, b - .25 + i * .02, b - .03 + i * .02));
+            word.style.transform = `translateY(${(rise - fall) * 110}%)`;
+        });
+        show(copy, 1);
+    }
+
+    // A word slammed onto the screen: in big from a little larger, out in one frame.
+    const slam = $('slam');
+
+    function slammed(t, at, until, title, kick = '', pixel = false) {
+        if (t < at || t >= until) {
+            return false;
+        }
+        const k = out(span(t, at, at + .14));
+        slam.querySelector('.kicker').textContent = kick;
+        const h2 = slam.querySelector('h2');
+        h2.classList.toggle('pixel', pixel);
+        h2.textContent = title;
+        show(slam, clamp(k * 1.5), `scale(${lerp(1.22, 1, k) * (1 + .03 * span(t, at, until))})`);
+        return true;
+    }
+
+    function show(el, opacity, transform = '') {
+        el.style.opacity = String(opacity);
+        el.style.visibility = opacity > 0 ? 'visible' : 'hidden';
+        el.style.transform = transform;
+    }
+
+    // the web map
+
+    const frame = $('web'), browser = $('browser'), camera = $('camera'), cursor = $('cursor'), ring = $('ring');
+    // A world's tab by its name. The tabs are drawn anew on every switch.
+    const worldTab = name => [...web.doc.querySelectorAll('.world-tab:not(.world-switch)')].find(tab => tab.textContent.includes(name));
+    const regionToggle = () => {
+        const i = web.markers.layers.findIndex(layer => layer.id === 'worldguard');
+        return web.doc.querySelectorAll('#layer-list li')[i]?.querySelector('label');
+    };
+    // The chunks painted, in order, and hidden in the striped tiles at /tiles/video-hidden: see the README.
+    const PATCH = [[38, -69], [39, -69], [40, -69], [41, -69], [42, -69], [42, -68], [41, -68], [40, -68], [39, -68],
+        [38, -68], [37, -68], [37, -67], [38, -67], [39, -67], [40, -67], [41, -67], [42, -67], [41, -66], [40, -66],
+        [39, -66], [38, -66]];
+    const chunkCentre = ([x, z]) => ({x: x * 16 + 8, z: z * 16 + 8});
+    // Players walking about the village, as functions of the time.
+    const PLAYERS = [
+        ['Alex', '#e0c341', u => ({x: 560 + 34 * Math.cos(.35 * u), z: -1075 + 30 * Math.sin(.35 * u)})],
+        ['Steve', '#3ab3da', u => ({x: lerp(515, 600, smooth(span(Math.abs((u / 9) % 2 - 1), 0, 1))), z: -1110 + 60 * span(Math.abs((u / 9) % 2 - 1), 0, 1)})],
+        ['Noor', '#c95cd1', u => ({x: 640 + 14 * Math.sin(.5 * u), z: -1150 + 10 * Math.cos(.3 * u)})],
+    ];
+    // Logged in with every permission, as an operator would be: the web map's own buttons show for it.
+    const ACCOUNT = {name: 'TaerraDev', uuid: '00000000-0000-3000-8000-000000000000', teleport: true, waypoints: true, configure: true, render: true, hide: true};
+
+    // The clicks: what is clicked when, and where the pointer comes from.
+    const CLICKS = [
+        {at: WEB_AT.iso, target: () => web.doc.querySelector('[data-view="iso"]')},
+        ...WEB_AT.rotate.map(at => ({at, target: () => web.doc.querySelector('[data-turn="-1"]')})),
+        {at: WEB_AT.gray, target: () => web.doc.querySelector('[data-style="gray"]')},
+        {at: WEB_AT.regions, target: regionToggle},
+        {at: WEB_AT.follow, target: () => web.players.entries.get(uuidOf(0))?.button},
+        {at: WEB_AT.color, target: () => web.doc.querySelector('[data-style="color"]')},
+        {at: WEB_AT.menu, target: () => chunkPoint(PATCH[0])},
+        // The pointer leaves Select chunks by painting, and is at the end of the stroke afterwards.
+        {at: WEB_AT.select, target: () => web.doc.querySelector('#context-menu [data-action="select"]'), after: () => chunkPoint(PATCH.at(-1))},
+        {at: WEB_AT.hide, target: () => web.doc.getElementById('selection-hide')},
+        {at: WEB_AT.nether, target: () => worldTab('Nether')},
+    ];
+    // The camera's path, [beat, what it looks at, zoom]: it holds between two keys on the same thing and glides
+    // slowly between the others, leaning in on the part of the page being used.
+    const mapCentre = () => {
+        const r = web.map.getContainer().getBoundingClientRect();
+        return {x: r.left + r.width * .62, y: r.top + r.height * .55};
+    };
+    const PANEL = CLICKS[0].target, COLORS = CLICKS[3].target, FOLLOW = CLICKS[5].target, MENU = CLICKS[7].target;
+    const PAINTED = () => chunkPoint(PATCH[13]), BAR = CLICKS[9].target, TABS = CLICKS[10].target;
+    const KEYS = [
+        [0, null], [2, null],
+        [4.5, PANEL, 1.28], [8.5, PANEL, 1.28],         // Isometric, then both turns
+        [10.8, COLORS, 1.28], [13.3, COLORS, 1.28],     // Gray and Regions, just below
+        [16, mapCentre, 1.15], [16.5, mapCentre, 1.15], // the regions on the map
+        [18.6, FOLLOW, 1.28], [19.6, FOLLOW, 1.28],     // following a player
+        [22.2, mapCentre, 1.15], [24, mapCentre, 1.15], // who walks on, and back to color
+        [25.9, MENU, 1.25], [27.8, MENU, 1.25],         // right-click, Select chunks
+        [30, PAINTED, 1.3], [32.6, PAINTED, 1.3],       // the brush stroke
+        [34.3, BAR, 1.28], [35, BAR, 1.28],             // Hide
+        [37, PAINTED, 1.3], [37.2, PAINTED, 1.3],       // the stripes
+        [38.6, TABS, 1.2], [39.4, TABS, 1.2],           // the Nether
+        [42, null],
+    ].map(([beat, target, zoom]) => [beat * B, target, zoom]);
+
+    const uuidOf = i => `00000000-0000-3000-8000-00000000000${i + 1}`;
+
+    // The made-up players, put on the map by the web map's own update, which is otherwise switched off.
+    function walkers(players) {
+        Object.getPrototypeOf(players).updatePlayers.call(players,
+            PLAYERS.map(([name, color, at], i) => ({uuid: uuidOf(i), name, color, world: 'minecraft:overworld', ...at(0), y: 64, yaw: 0})));
+    }
+
+    async function openWeb() {
+        frame.src = `${WEB}/#lang=en`;
+        await new Promise(loaded => frame.onload = loaded);
+        const win = frame.contentWindow;
+        const until = async (test, ms = 10000) => {
+            for (const start = performance.now(); !test(); await new Promise(r => setTimeout(r, 50))) {
+                if (performance.now() - start > ms) {
+                    throw new Error('The web map did not get ready');
+                }
+            }
+        };
+        await until(() => win.document.querySelector('.world-tab:not(.world-switch)'));
+        // The web map's own modules, so the imports are the instances the map runs on.
+        const script = Object.assign(win.document.createElement('script'), {type: 'module'});
+        script.textContent = `import {mapManager} from './js/map.js'; import {playerManager} from './js/players.js';
+            import {markerManager} from './js/markers.js'; import {chunkSelection} from './js/selection.js';
+            window.taerraVideo = {mapManager, playerManager, markerManager, chunkSelection};`;
+        win.document.head.append(script);
+        await until(() => win.taerraVideo);
+        const {mapManager, playerManager, markerManager, chunkSelection} = win.taerraVideo;
+        const map = mapManager.getMap();
+        // Any zoom, set frame by frame, with tiles that appear as soon as they load.
+        map.options.zoomSnap = 0;
+        map._fadeAnimated = false;
+        // Leaflet thins an outline's points to the screen's pixels, differently at every zoom, so a region's edge would
+        // wriggle from frame to frame while the zoom glides. Every point is kept.
+        win.L.Polyline.prototype.options.smoothFactor = 0;
+        markerManager.redraw();
+        win.document.documentElement.style.cursor = 'none';
+        // In 4K the tiles come from a zoom finer, at half the size, as Leaflet's detectRetina would, so they show at
+        // the frame's own pixels. The striped tiles laid over them later go the same way.
+        if (SCALE > 1) {
+            const tileLayer = win.L.tileLayer, finer = Math.log2(SCALE);
+            win.L.tileLayer = (url, options = {}) => tileLayer(url, {
+                ...options, tileSize: (options.tileSize ?? 256) / SCALE, zoomOffset: finer,
+                minNativeZoom: (options.minZoom ?? 0) - finer, maxNativeZoom: (options.maxZoom ?? 18) - finer,
+            });
+            mapManager.rebuildTileLayer();
+        }
+
+        // The account, and the chunk selection's request, answered here: nothing is changed on the server.
+        const fetch = win.fetch.bind(win);
+        win.fetch = (input, init) => {
+            const url = String(input?.url ?? input);
+            if (url.endsWith('/api/account')) {
+                return Promise.resolve(new win.Response(JSON.stringify(ACCOUNT), {status: 200, headers: {'Content-Type': 'application/json'}}));
+            }
+            if (url.endsWith('/api/area')) {
+                return Promise.resolve(new win.Response(null, {status: 202}));
+            }
+            return fetch(input, init);
+        };
+        new win.BroadcastChannel('taerra-account').postMessage('changed');
+        await until(() => !win.document.getElementById('account-in').hidden);
+
+        // The players are placed frame by frame here, never by the server's updates.
+        playerManager.updatePlayers = () => {
+        };
+        walkers(playerManager);
+        await until(() => markerManager.layers.some(layer => layer.id === 'worldguard'));
+        return {win, doc: win.document, mapManager, players: playerManager, markers: markerManager, selection: chunkSelection, map, until};
+    }
+
+    // Leaflet scales its tiles as one layer between zoom levels, which leaves hairlines where they meet. Placed on
+    // whole pixels one by one, as drawWorld does, they meet exactly.
+    function snapTiles(layer) {
+        const {map} = web, size = layer.getTileSize();
+        const zoom = map.getZoom(), center = map.getCenter();
+        for (const level of Object.values(layer._levels)) {
+            const scale = map.getZoomScale(zoom, level.zoom);
+            const offset = level.origin.multiplyBy(scale).subtract(map._getNewPixelOrigin(center, zoom)).round();
+            level.el.style.transform = 'none';
+            for (const tile of level.el.children) {
+                const p = tile._leaflet_pos;
+                if (p) {
+                    const x0 = Math.round(offset.x + p.x * scale), y0 = Math.round(offset.y + p.y * scale);
+                    tile.style.transform = `translate3d(${x0}px, ${y0}px, 0)`;
+                    tile.style.width = `${Math.round(offset.x + (p.x + size.x) * scale) - x0}px`;
+                    tile.style.height = `${Math.round(offset.y + (p.y + size.y) * scale) - y0}px`;
+                    // Shrunk tiles are smoothed rather than losing every third pixel.
+                    tile.style.imageRendering = scale < 1 ? 'auto' : '';
+                }
+            }
+        }
+    }
+
+    const ground = (x, z) => {
+        const y = web.mapManager.surfaceHeightAt(Math.floor(x), Math.floor(z));
+        return Number.isFinite(y) ? y + 1 : 70;
+    };
+
+    // A chunk's centre on the web map, in the frame's coordinates.
+    function chunkPoint(chunk) {
+        const {x, z} = chunkCentre(chunk), r = web.map.getContainer().getBoundingClientRect();
+        const p = web.map.latLngToContainerPoint(web.mapManager.blockToLatLng(x, z, ground(x, z) - 1));
+        return {x: r.left + p.x, y: r.top + p.y};
+    }
+
+    // The hidden layer the server sends once chunks are hidden: PATCH's outline, in chunk corners.
+    const HIDDEN = {
+        id: 'hidden', label: 'Hidden areas', shown: true, private: false, markers: [{
+            id: 'minecraft:overworld/0', label: 'Hidden area', type: 'area', color: '#ffcf3f', minY: 63, maxY: 64,
+            fullHeight: false, hollow: true, details: [],
+            points: [[38, -69], [43, -69], [43, -66], [42, -66], [42, -65], [38, -65], [38, -66], [37, -66], [37, -68],
+                [38, -68]].map(([x, z]) => [x * 16, z * 16]),
+        }],
+    };
+
+    // The striped tiles the hide renders, laid over the web map's own once Hide is clicked.
+    let stripes = null, hideStatus = null;
+
+    function striped(shown) {
+        const {map, mapManager, win} = web;
+        const rotation = mapManager.getRotation();
+        if (stripes && (!shown || stripes.options.r !== rotation)) {
+            stripes.remove();
+            stripes = null;
+        }
+        if (shown && !stripes) {
+            stripes = win.L.tileLayer(`${location.origin}/tiles/video-hidden/tiles-iso/${OVERWORLD}/{r}/{level}/{x}/{y}.png`, {
+                r: rotation, level: data => 4 - data.z, tileSize: 256, noWrap: true,
+                minZoom: mapManager.tileLayer.options.minZoom, maxZoom: mapManager.tileLayer.options.maxZoom,
+                errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+            }).addTo(map);
+        }
+    }
+
+    // The web map's state at a time: world, view, layers, players and selection, and where it looks. Seeking
+    // backwards works too.
+    async function webAt(u) {
+        const {doc, mapManager, map, players, markers, selection, until, win} = web;
+        const nether = u >= WEB_AT.nether;
+        const tab = () => worldTab(nether ? 'Nether' : 'Overworld');
+        if (tab().getAttribute('aria-current') !== 'true') {
+            selection.stop();
+            const before = mapManager.tileLayer;
+            tab().click();
+            await until(() => tab().getAttribute('aria-current') === 'true' && mapManager.tileLayer !== before);
+        }
+        const mode = u >= WEB_AT.iso ? 'iso' : 'top';
+        if (mapManager.viewMode !== mode) {
+            doc.querySelector(`[data-view="${mode}"]`).click();
+        }
+        const turns = WEB_AT.rotate.filter(at => u >= at).length;
+        for (let i = 0; mode === 'iso' && mapManager.getRotation() !== (4 - turns) % 4 && i < 4; i++) {
+            doc.querySelector(turns ? '[data-turn="-1"]' : '[data-turn="1"]').click();
+        }
+        const style = u >= WEB_AT.gray && u < WEB_AT.color ? 'gray' : 'color';
+        if (doc.getElementById('map').dataset.style !== style) {
+            doc.querySelector(`[data-style="${style}"]`).click();
+        }
+        const regions = markers.layers.find(layer => layer.id === 'worldguard');
+        if (regions && markers.isShown(regions) !== u >= WEB_AT.regions) {
+            regionToggle().click();
+        }
+
+        // Players, where they are now; back on the map should anything have taken them off it.
+        if (PLAYERS.some((_, i) => !players.entries.has(uuidOf(i)))) {
+            console.warn('The players were taken off the web map; putting them back');
+            walkers(players);
+        }
+        for (const [i, [, , at]] of PLAYERS.entries()) {
+            const entry = players.entries.get(uuidOf(i)), {x, z} = at(u), ahead = at(u + .2);
+            entry.player = {...entry.player, x, z, y: ground(x, z), yaw: Math.atan2(-(ahead.x - x), ahead.z - z) * 180 / Math.PI};
+            players.place(entry);
+            players.aim(entry);
+            entry.coords.textContent = `${Math.round(x)}, ${entry.player.y}, ${Math.round(z)}`;
+        }
+        const following = u >= WEB_AT.follow && u < WEB_AT.menu && !nether;
+        if ((players.followed === uuidOf(0)) !== following) {
+            following ? players.entries.get(uuidOf(0)).button.click() : players.unfollow();
+        }
+
+        // Right-click, Select chunks, a brush stroke over the patch, Hide.
+        const selecting = u >= WEB_AT.select + .1 && !nether;
+        if (selecting && !selection.world) {
+            const {x, z} = chunkCentre(PATCH[0]);
+            selection.start('minecraft:overworld', {x, z});
+        } else if (!selecting && selection.world) {
+            selection.stop();
+        }
+        if (selecting && u < WEB_AT.hide) {
+            const n = 1 + Math.floor((PATCH.length - 1) * span(u, WEB_AT.paint[0], WEB_AT.paint[1]) + 1e-6);
+            selection.chunks.clear();
+            PATCH.slice(0, n).forEach(([x, z]) => selection.apply(x, z, false));
+            selection.status = null;
+            hideStatus = null;
+        } else if (selecting && !hideStatus) {
+            // The real button: its request is answered with 202 above, and the bar says what it would do.
+            await selection.act('hide');
+            hideStatus = selection.status;
+        }
+        if (selecting) {
+            selection.status = hideStatus;
+            selection.failed = false;
+            selection.draw();
+        }
+        striped(u >= WEB_AT.hide + .15 && !nether);
+        const hidden = u >= WEB_AT.hide + .15 && !nether;
+        if (hidden !== markers.layers.includes(HIDDEN)) {
+            markers.setLayers(hidden ? [...markers.layers, HIDDEN] : markers.layers.filter(layer => layer !== HIDDEN));
+        }
+
+        let place, zoom;
+        if (nether) {
+            place = {x: 40 * (u - WEB_AT.nether), y: 64, z: 0};
+            zoom = lerp(2.7, 2.3, smooth(span(u, WEB_AT.nether, AT.speed - AT.web)));
+        } else if (mode === 'top') {
+            const k = span(u, 0, WEB_AT.iso);
+            place = {x: lerp(450, VILLAGE.x, k), y: 64, z: lerp(-950, VILLAGE.z, k)};
+            zoom = lerp(1.6, 2.1, k);
+        } else if (u < WEB_AT.follow) {
+            const k = inOut(span(u, WEB_AT.iso, WEB_AT.rotate[1] + B));
+            place = {x: lerp(450, VILLAGE.x, k), y: 64, z: lerp(-950, VILLAGE.z, k)};
+            zoom = lerp(1.6, 2.4, k) - .3 * smooth(span(u, WEB_AT.gray, WEB_AT.follow));
+        } else if (u < WEB_AT.menu) {
+            const {x, z} = players.entries.get(uuidOf(0)).player, k = inOut(span(u, WEB_AT.follow, WEB_AT.follow + B));
+            place = {x: lerp(VILLAGE.x, x, k), y: 64, z: lerp(VILLAGE.z, z, k)};
+            zoom = lerp(2.1, 2.7, k);
+        } else {
+            const {x, z} = players.entries.get(uuidOf(0)).player, k = inOut(span(u, WEB_AT.menu - B, WEB_AT.menu));
+            const patch = {x: 650, z: -1070};
+            place = {x: lerp(x, patch.x, k), y: 64, z: lerp(z, patch.z, k)};
+            zoom = lerp(2.7, 3.1, k) + .15 * span(u, WEB_AT.menu, WEB_AT.nether);
+        }
+        mapManager.centerOnBlock(place.x, place.z, zoom, place.y);
+        // Leaflet puts the view on whole pixels, so a slow pan would step; the pane takes the fraction it rounded off,
+        // and tiles, markers and overlays move together, smoothly.
+        const exact = map.project(mapManager.blockToLatLng(place.x, place.z, place.y), zoom).subtract(map.getSize().divideBy(2));
+        const fraction = map.getPixelOrigin().subtract(exact);
+        // The menu closes whenever the map moves, so it is opened anew on every frame, after the move.
+        const menu = doc.getElementById('context-menu');
+        if (u >= WEB_AT.menu && u < WEB_AT.select + .1) {
+            const {x, z} = chunkCentre(PATCH[0]), latlng = mapManager.blockToLatLng(x, z, ground(x, z) - 1);
+            map.fire('contextmenu', {latlng, containerPoint: map.latLngToContainerPoint(latlng)});
+        } else {
+            menu.hidden = true;
+        }
+        await until(() => !mapManager.tileLayer.isLoading() && !stripes?.isLoading(), 20000);
+        // Every region drawn on its ground before the frame is taken, never half way.
+        await until(() => markers.sampling.size === 0, 20000);
+        markers.cull();
+        const pane = map.getPane('mapPane'), at = pane._leaflet_pos ?? {x: 0, y: 0};
+        pane.style.transform = `translate3d(${at.x + fraction.x}px, ${at.y + fraction.y}px, 0)`;
+        snapTiles(mapManager.tileLayer);
+        if (stripes) {
+            snapTiles(stripes);
+            stripes.getContainer().style.opacity = String(out(span(u, WEB_AT.hide + .15, WEB_AT.hide + .45)));
+            for (const tile of Object.values(stripes._tiles)) {
+                tile.el.style.opacity = '1';
+            }
+        }
+        await new Promise(r => win.requestAnimationFrame(() => win.requestAnimationFrame(r)));
+    }
+
+    // A point of the web map, in the camera's unmoved coordinates. A button that has just closed is where it was.
+    const lastPoints = new Map();
+
+    function webPoint(target) {
+        const found = target(), r = found?.getBoundingClientRect?.();
+        if (!found || r?.width === 0) {
+            return lastPoints.get(target) ?? [W / 2, H / 2];
+        }
+        const [x, y] = r ? [r.left + r.width / 2, r.top + r.height / 2] : [found.x, found.y];
+        const point = [browser.offsetLeft + frame.offsetLeft + x, browser.offsetTop + frame.offsetTop + y];
+        lastPoints.set(target, point);
+        return point;
+    }
+
+    // The camera leans in on what is clicked, then back to the browser filling the screen.
+    const REST = {focus: [W / 2, 545], zoom: 1.1};
+
+    function leanAt(u) {
+        // Most of the way to the target, so the camera moves less and the map around it stays in view.
+        const shot = key => {
+            if (!key?.[1]) {
+                return REST;
+            }
+            const [x, y] = webPoint(key[1]);
+            return {focus: [lerp(REST.focus[0], x, .7), lerp(REST.focus[1], y, .7)], zoom: key[2]};
+        };
+        const i = Math.max(0, KEYS.findLastIndex(([at]) => u >= at)), from = shot(KEYS[i]), to = shot(KEYS[i + 1] ?? KEYS[i]);
+        const k = KEYS[i + 1] ? smooth(span(u, KEYS[i][0], KEYS[i + 1][0])) : 0;
+        const focus = [lerp(from.focus[0], to.focus[0], k), lerp(from.focus[1], to.focus[1], k)];
+        const zoom = lerp(from.zoom, to.zoom, k);
+        camera.style.transform = `translate(${W / 2 - focus[0] * zoom}px, ${H / 2 - focus[1] * zoom}px) scale(${zoom})`;
+        return zoom;
+    }
+
+    // The pointer goes from click to click as someone using the map would; between Select chunks and Hide it paints.
+    function point(u) {
+        let x, y;
+        const painting = u >= WEB_AT.select + .1 && u < WEB_AT.paint[1] + .1;
+        if (painting) {
+            const f = (PATCH.length - 1) * span(u, WEB_AT.paint[0], WEB_AT.paint[1]), i = Math.floor(f);
+            const [ax, ay] = webPoint(() => chunkPoint(PATCH[i])), [bx, by] = webPoint(() => chunkPoint(PATCH[Math.min(i + 1, PATCH.length - 1)]));
+            const [sx, sy] = webPoint(CLICKS[8].target), k = inOut(span(u, WEB_AT.select + .1, WEB_AT.paint[0]));
+            x = lerp(sx, lerp(ax, bx, f - i), k);
+            y = lerp(sy, lerp(ay, by, f - i), k);
+        } else {
+            // Resting where it last clicked, then gliding to the next click in at most a second.
+            const i = CLICKS.findLastIndex(m => u >= m.at), done = CLICKS[i], next = CLICKS[i + 1];
+            const there = webPoint((next ?? done).target);
+            const here = done ? webPoint(done.after ?? done.target) : [there[0] + 260, there[1] + 200];
+            const k = next ? inOut(span(u, next.at - Math.min(1, .75 * (next.at - (done?.at ?? 0))), next.at - .1)) : 0;
+            x = lerp(here[0], there[0], k);
+            y = lerp(here[1], there[1], k);
+        }
+        const near = CLICKS.find(m => Math.abs(u - m.at) < .08);
+        const press = painting && u >= WEB_AT.paint[0] - .1 ? .85 : near ? 1 - .15 * (1 - Math.abs(u - near.at) / .08) : 1;
+        const alpha = Math.min(span(u, 1, 1.4), 1 - span(u, WEB_AT.nether + .6, WEB_AT.nether + .9));
+        show(cursor, alpha, `translate(${x}px, ${y}px) scale(${press})`);
+        const click = CLICKS.find(m => u >= m.at && u < m.at + .4);
+        if (click) {
+            const [tx, ty] = webPoint(click.target), pulse = span(u, click.at, click.at + .4);
+            show(ring, 1 - pulse, `translate(${tx}px, ${ty}px) scale(${.4 + pulse})`);
+        } else {
+            show(ring, 0);
+        }
+    }
+
+    // Speed: Corpium's world appears cell by cell as a render fills it in, in every view at once, while the numbers
+    // from the Modrinth description run up with it. Then the camera dives from the whole world into its city.
+    const SPEED_BOX = {x: 700, y: 210, w: 1150, h: 590};
+    const THUMBS = [0, 1, 2, 3].map(i => ({x: 700 + i * 292, y: 820, w: 274, h: 170}));
+
+    async function speed(u) {
+        const main = views.corpium[0], b = main.bounds, k = span(u, .2, 6 * B);
+        const s0 = Math.min(SPEED_BOX.w / b.w, SPEED_BOX.h / b.h), s1 = 1;
+        const z = inOut(span(u, 10.5 * B, 15 * B)), s = s0 * (s1 / s0) ** z;
+        // The city glides from where it lies in the box to the middle of the screen as the scale grows.
+        const box = [SPEED_BOX.x + SPEED_BOX.w / 2, SPEED_BOX.y + SPEED_BOX.h / 2];
+        const p0 = [box[0] + (TARGET[0] - b.cx) * s0, box[1] + (TARGET[1] - b.cy) * s0];
+        const p = [lerp(p0[0], W / 2, z), lerp(p0[1], H / 2, z)];
+        const drift = 1 + .08 * span(u, 15 * B, 16 * B);
+        layerCtx.clearRect(0, 0, W, H);
+        await drawWorld(layerCtx, main, TARGET[0] - (p[0] - W / 2) / (s * drift), TARGET[1] - (p[1] - H / 2) / (s * drift), s * drift);
+        if (k < 1) {
+            // A little past the box: the disc's rim reaches beyond its measured bounds.
+            reveal(layer, {x: SPEED_BOX.x - 48, y: SPEED_BOX.y - 48, w: SPEED_BOX.w + 96, h: SPEED_BOX.h + 96}, k, 24);
+        } else {
+            shadowed(() => whole(layer));
+        }
+        if (z > .6) {
+            shade(span(z, .6, 1));
+        }
+        // The other four views, filling in alongside.
+        const leave = smooth(span(u, 10 * B, 11 * B));
+        if (leave < 1) {
+            g.globalAlpha = 1 - leave;
+            for (const [i, thumb] of THUMBS.entries()) {
+                const view = i ? views.corpium[i] : views.corpiumTop, box = {...thumb, y: thumb.y + leave * 120};
+                layerCtx.clearRect(0, 0, W, H);
+                if (i) {
+                    const vb = view.bounds, fit = Math.min(box.w / vb.w, box.h / vb.h);
+                    await drawWorld(layerCtx, view, vb.cx - (box.x + box.w / 2 - W / 2) / fit, vb.cy - (box.y + box.h / 2 - H / 2) / fit, fit);
+                } else {
+                    const {plate, edges: e} = view, fit = Math.min(box.w / (e.x1 - e.x0), box.h / (e.y1 - e.y0));
+                    layerCtx.imageSmoothingEnabled = true;
+                    layerCtx.drawImage(plate, e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0, box.x + (box.w - (e.x1 - e.x0) * fit) / 2,
+                        box.y + (box.h - (e.y1 - e.y0) * fit) / 2, (e.x1 - e.x0) * fit, (e.y1 - e.y0) * fit);
+                }
+                reveal(layer, box, k, 8);
+            }
+            g.globalAlpha = 1;
+        }
+        const seconds = Math.round(166 * k);
+        $('chunks').textContent = Math.round(560000 * k).toLocaleString('en');
+        $('clock').textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+        $('clock').style.transform = `scale(${1 + .25 * Math.exp(-Math.max(0, u - 6 * B) * 8) * (u >= 6 * B)})`;
+        $('clock').style.transformOrigin = '0 50%';
+        $('tick').style.opacity = String(out(span(u, 5 * B, 6 * B)));
+        show($('stats'), between(u, .1, 11 * B, .3));
+    }
+
+    // In game: the game's window, drawn like the browser's, rises in, and the screenshots inside it cut every two beats,
+    // each whole and still, so its own edges show it is the game.
+    const GAME = {x: 320, y: 245, w: 1280, h: 720, bar: 40};
+
+    async function ingame(u) {
+        const i = Math.min(Math.floor(u / (2 * B)), INGAME.length - 1);
+        const img = await load(`ingame/${INGAME[i][0]}`);
+        const {x, y, w, h, bar} = GAME, enter = out(span(u, 0, .5)), zoom = lerp(.9, 1, enter) * (1 + .04 * span(u, 0, 8 * B));
+        g.save();
+        g.globalAlpha = clamp(enter * 2);
+        g.translate(W / 2, y + (h + bar) / 2 + (1 - enter) * 400);
+        g.scale(zoom, zoom);
+        g.translate(-W / 2, -(y + (h + bar) / 2));
+        const frame = new Path2D();
+        frame.roundRect(x, y, w, h + bar, 10);
+        shadowed(() => {
+            g.fillStyle = '#1e1e1f';
+            g.fill(frame);
+        });
+        g.clip(frame);
+        g.fillStyle = '#313233';
+        g.fillRect(x, y, w, bar);
+        g.fillStyle = '#545556';
+        for (let dot = 0; dot < 3; dot++) {
+            g.beginPath();
+            g.arc(x + 22 + 20 * dot, y + bar / 2, 6, 0, 2 * Math.PI);
+            g.fill();
+        }
+        g.font = '500 15px "Schibsted Grotesk"';
+        const title = 'Client', pill = g.measureText(title).width + 32;
+        g.fillStyle = '#1e1e1f';
+        g.beginPath();
+        g.roundRect(x + 94, y + 7, pill, bar - 14, 6);
+        g.fill();
+        g.fillStyle = '#a0a1a4';
+        g.textBaseline = 'middle';
+        g.fillText(title, x + 110, y + bar / 2 + 1);
+        if (img) {
+            g.imageSmoothingQuality = 'high';
+            g.drawImage(img, x, y + bar, w, h);
+        } else {
+            g.fillStyle = '#d4732f';
+            g.font = '32px QuinqueFive';
+            g.textAlign = 'center';
+            g.fillText(`branding/ingame/${INGAME[i][0]}`, x + w / 2, y + bar + h / 2);
+        }
+        g.restore();
+    }
+
+    // aerulion's mark, with rays along its four outer edges like its wallpapers, arriving as Nyx figures do: its
+    // outline traced as a hairline, then filled by a solid edge rising through it.
+    const MARK = {height: 240, cx: W / 2, cy: 430};
+    // The outer corners of the mark in its own units, apex, right, tail, left, 24 × 27.7 in all; and its outline, from
+    // aerulion/mark.svg.
+    const CORNERS = [[12, 0], [24, 20.7846], [12, 27.7128], [0, 20.7846]];
+    const OUTLINE = [[24, 20.7846], [20.7846, 22.641], [17.0718, 16.2102], [12, 19.1384], [10.1436, 18.0666], [12, 14.8512],
+        [15.2153, 12.9948], [12, 7.4256], [5.0718, 19.4256], [12, 23.4256], [15.7128, 21.282], [17.5692, 24.4974],
+        [12, 27.7128], [0, 20.7846], [12, 0]];
+
+    function credit(u) {
+        const text = $('credit');
+        if (u < 0) {
+            show(text, 0);
+            return;
+        }
+        const k = MARK.height / 27.7128, at = ([x, y]) => [MARK.cx + (x - 12) * k, MARK.cy + (y - 13.8564) * k];
+        const corners = CORNERS.map(at), outline = OUTLINE.map(at);
+        // The rays, white hairlines, never dimmed.
+        const grow = out(span(u, 0, 1.2)) * 2400;
+        g.strokeStyle = '#fff';
+        g.lineWidth = 1;
+        g.beginPath();
+        for (let i = 0; i < 4; i++) {
+            const [ax, ay] = corners[i], [bx, by] = corners[(i + 1) % 4];
+            const len = Math.hypot(bx - ax, by - ay), dx = (bx - ax) / len, dy = (by - ay) / len;
+            g.moveTo(ax - dx * grow, ay - dy * grow);
+            g.lineTo(bx + dx * grow, by + dy * grow);
+        }
+        g.stroke();
+
+        const path = new Path2D(), length = outline.reduce((sum, [x, y], i) => {
+            const [nx, ny] = outline[(i + 1) % outline.length];
+            return sum + Math.hypot(nx - x, ny - y);
+        }, 0);
+        outline.forEach(([x, y], i) => i ? path.lineTo(x, y) : path.moveTo(x, y));
+        path.closePath();
+        const edge = lerp(MARK.cy + MARK.height / 2, MARK.cy - MARK.height / 2, inOut(span(u, .75, 1.3)));
+        g.save();
+        g.beginPath();
+        g.rect(0, edge, W, H);
+        g.clip();
+        g.fillStyle = '#fff';
+        g.fill(path);
+        g.restore();
+        // The stroke only where the ink is not, so the filled mark has no rim.
+        g.save();
+        g.beginPath();
+        g.rect(0, 0, W, edge);
+        g.clip();
+        g.setLineDash([length, length]);
+        g.lineDashOffset = length * (1 - inOut(span(u, .1, .85)));
+        g.stroke(path);
+        g.restore();
+
+        // Label, then wordmark, each swept up into view with a short travel, never faded.
+        [...text.children].forEach((el, i) => {
+            const r = out(span(u, 1.1 + .15 * i, 1.6 + .15 * i));
+            el.style.clipPath = `inset(${(1 - r) * 100}% 0 0 0)`;
+            el.style.transform = `translateY(${(1 - r) * 16}px)`;
+        });
+        show(text, 1);
+    }
+
+    // scenes
+
+    let views, web;
+
+    async function seek(t) {
+        g.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+        g.clearRect(0, 0, W, H);
+        const titleBox = $('title');
+        let leaning = 1, slamming = false;
+
+        if (t < AT.top) {
+            // the title, uncovered by the first cubes
+            drawBackdrop(t, .55);
+            const u = t - AT.title;
+            typed(titleBox.querySelector('.lockup span'), 'TAERRA', span(u, .1, .45));
+            const mark = titleBox.querySelector('.lockup img'), pop = back(span(u, 0, .4));
+            mark.style.transform = `scale(${lerp(.5, 1, pop)}) rotate(${(1 - pop) * -20}deg)`;
+            const tag = out(span(u, .55, 1.05));
+            titleBox.querySelector('.tagline').style.opacity = String(tag);
+            titleBox.querySelector('.tagline').style.transform = `translateY(${(1 - tag) * 24}px)`;
+            typed(titleBox.querySelector('.kicker'), 'Available on Modrinth', 0);
+            show(titleBox, u >= 0 ? 1 : 0, `scale(${(1 + .04 * span(u, 0, 3.4)) * (1 + .06 * (1 - out(span(u, 0, .3))))})`);
+        } else if (t >= AT.outro && t < AT.credit) {
+            // outro: the name again, and where to get it; every line laid out from the start, so none of them moves
+            drawBackdrop(t, .55);
+            const u = t - AT.outro;
+            typed(titleBox.querySelector('.lockup span'), 'TAERRA', 1);
+            typed(titleBox.querySelector('.kicker'), 'Available on Modrinth', span(u, .7, .7 + .6));
+            for (const [el, at] of [['.lockup img', 0], ['.tagline', .3], ['.kicker', .7]]) {
+                const k = out(span(u, at, at + .5));
+                const node = titleBox.querySelector(el);
+                node.style.opacity = String(k);
+                node.style.transform = `translateY(${(1 - k) * 24}px)`;
+            }
+            show(titleBox, 1, `scale(${1 + .03 * span(u, 0, 2.4)})`);
+        } else {
+            show(titleBox, 0);
+        }
+
+        if (t >= AT.top && t < AT.dive) {
+            // the top-down map spins in, folds into the isometric view and turns through all four sides
+            const s = Math.min(W * .62 / views.rotations[0].bounds.w, H * .64 / views.rotations[0].bounds.h);
+            // The camera rises as the map folds, and dips into the dive at the end.
+            const settle = 1 + .05 * Math.sin(Math.PI * span(t, AT.top, AT.dive));
+            if (t < AT.fold) {
+                const k = out(span(t, AT.top, AT.fold)), grow = out(span(t, AT.top, AT.top + .8));
+                drawFlat(fold(lerp(-240, 0, k), 1), s * lerp(.2, .9, grow) * lerp(1, 1.11, k) * settle, 1, 1);
+            } else if (t < AT.spin) {
+                // The iso render rises out of the flat map halfway through the fold, tilted along with it.
+                const k = inOut(span(t, AT.fold, AT.spin)), to = fold(lerp(0, 45, k), lerp(1, .5, k));
+                drawFlat(to, s * settle, lerp(1, .5, k), 1);
+                await drawIso(0, s * settle, smooth(span(k, .35, .85)), to);
+            } else {
+                // A quarter turn a beat from the folded map on, each landing on the next: one rotation's render tilts into the
+                // next's.
+                const turns = (t - AT.spin) / BEAT, n = Math.min(Math.floor(turns), 4);
+                const k = n >= 4 ? 0 : inOut(span(turns - n, .3, 1)), to = fold(thetaOf(n) - 90 * k, .5);
+                // Gone once the next has taken over, so its leaning edges never show past them.
+                await drawIso(n % 4, s * settle, 1 - span(k, .7, .8), to);
+                if (k > 0) {
+                    await drawIso((n + 1) % 4, s * settle, smooth(span(k, .3, .7)), to);
+                }
+            }
+        }
+
+        if (t >= AT.dive && t < AT.dimensions) {
+            // down to a single village, as close as the web map goes
+            const s0 = Math.min(W * .62 / views.rotations[0].bounds.w, H * .64 / views.rotations[0].bounds.h), s1 = 1;
+            const z = inOut(span(t, AT.dive, AT.dimensions - .15));
+            const s = s0 * (s1 / s0) ** z;
+            const [xc, zc] = views.top.center;
+            const x0 = 4 * (xc - zc) - (CENTRE[0] - W / 2) / s0, y0 = 2 * (xc + zc) - 256 - (CENTRE[1] - H / 2) / s0;
+            // The village keeps its place on screen while everything around it grows.
+            const [px, py] = iso(VILLAGE), k = (s0 / s - s0 / s1) / (1 - s0 / s1);
+            layerCtx.clearRect(0, 0, W, H);
+            await drawWorld(layerCtx, {}, px + (x0 - px) * k, py + (y0 - py) * k, s);
+            shadowed(() => whole(layer));
+            shade(z);
+        }
+
+        if (t >= AT.dimensions && t < bar(7)) {
+            // overworld, nether and end, each filling the screen for a beat
+            const i = Math.min(Math.floor((t - AT.dimensions) / BEAT), 2), at = AT.dimensions + i * BEAT;
+            const view = views[['overworld', 'nether', 'end'][i]], b = view.bounds;
+            const away = i === 2 ? inOut(span(t, at + BEAT, bar(7))) : 0;
+            const s = [Math.max(W / b.w, H / b.h) * 3.5, Math.max(W / b.w, H / b.h) * 1.5, 1][i] * (1 + .12 * (1 - out(span(t, at, at + .3)))) * lerp(1, .35, away);
+            const [cx, cy] = [[-1024, -2048], [b.cx, b.cy], iso({x: 0, y: 62, z: 0})][i];
+            layerCtx.clearRect(0, 0, W, H);
+            await drawWorld(layerCtx, {...view, maxLevel: 4}, cx + 60 * (t - at) / s, cy, s);
+            g.globalAlpha = 1 - away;
+            whole(layer);
+            g.globalAlpha = 1;
+            g.fillStyle = 'rgb(0 0 0 / .25)';
+            g.fillRect(0, 0, W, H);
+            slamming = slammed(t, at, i === 2 ? at + BEAT * .9 : at + BEAT, ['Overworld', 'Nether', 'The End'][i], '', true);
+        }
+
+        if (t >= bar(7) - .4 && t < AT.web + .4) {
+            // then side by side, dropping in on the eighths, and away as the browser arrives
+            const leave = smooth(span(t, AT.web - .1, AT.web + .4));
+            g.save();
+            g.translate(W / 2, H * .62);
+            g.scale(1 + .05 * span(t, bar(7), AT.web), 1 + .05 * span(t, bar(7), AT.web));
+            g.translate(-W / 2, -H * .62);
+            for (const [i, name] of ['overworld', 'nether', 'end'].entries()) {
+                const land = bar(7) + i * BEAT / 2, k = back(span(t, land - .3, land));
+                if (k > 0) {
+                    await floating(views[name], {x: 90 + i * 590, y: H * .38 - (1 - k) * 260 + leave * 400, w: 560, h: H * .44}, clamp(k * 3) * (1 - leave));
+                }
+            }
+            g.restore();
+        }
+
+        if (t >= AT.web - .2 && t < AT.speed) {
+            // the real web map, clicked through
+            const u = t - AT.web;
+            await webAt(u);
+            // Flat once it has arrived: a 3D transform would resample the page, blurring and shimmering it.
+            const enter = out(span(u, 0, .7));
+            show(browser, clamp(enter * 2), enter < 1 ? `translateY(${(1 - enter) * 500}px) perspective(1800px) rotateX(${(1 - enter) * 50}deg) rotateZ(${(1 - enter) * -8}deg) scale(${lerp(.7, 1, enter)})` : '');
+            leaning = leanAt(u);
+            point(u);
+            show(camera, 1, camera.style.transform);
+        } else {
+            show(camera, 0);
+        }
+
+        if (t >= AT.speed && t < AT.ingame) {
+            await speed(t - AT.speed);
+        } else {
+            show($('stats'), 0);
+        }
+
+        if (t >= AT.ingame && t < AT.features) {
+            await ingame(t - AT.ingame);
+        }
+
+        if (t >= AT.features && t < AT.outro) {
+            // a feature a beat, over Corpium's city drifting by
+            const u = t - AT.features, i = Math.min(Math.floor(u / BEAT), FEATURES.length - 1), s = .42 + .05 * span(u, 0, 12 * BEAT);
+            layerCtx.clearRect(0, 0, W, H);
+            await drawWorld(layerCtx, views.corpium[0], TARGET[0] - 1400 + 260 * u, TARGET[1] - 300 + 60 * u, s);
+            whole(layer);
+            g.fillStyle = 'rgb(0 0 0 / .62)';
+            g.fillRect(0, 0, W, H);
+            slamming = slammed(t, AT.features + i * BEAT, i === FEATURES.length - 1 ? AT.outro - COVER : AT.features + (i + 1) * BEAT,
+                FEATURES[i], `${String(i + 1).padStart(2, '0')} / ${FEATURES.length}`);
+        }
+        if (!slamming) {
+            show(slam, 0);
+        }
+        show($('source'), Math.max(between(t, AT.speed + .3, AT.ingame, .2), between(t, AT.features, AT.outro - COVER, .1)));
+
+        credit(t - AT.credit);
+        caption(t);
+        // The caption stays, on a shade, while the camera leans in.
+        show($('shade'), span(leaning, REST.zoom, 1.3));
+        show($('corner'), between(t, AT.top, AT.outro - .3));
+        // The credit is aerulion's, without TAERRA's copper.
+        show(document.querySelector('.edge'), t < AT.credit ? 1 : 0);
+        $('flash').style.opacity = String(flash(t));
+        cubes(t);
+        // In from black at the start; at the end the ground closes over on a 30° edge, the Nyx curtain.
+        const fade = $('fade'), close = smooth(span(t, AT.end - .5, AT.end)), rise = W * Math.tan(Math.PI / 6);
+        if (t < AT.credit) {
+            fade.style.clipPath = '';
+            show(fade, 1 - span(t, 0, .3));
+        } else {
+            const y = lerp(H, -rise, close);
+            fade.style.clipPath = `polygon(0 ${y + rise}px, ${W}px ${y}px, ${W}px ${H}px, 0 ${H}px)`;
+            show(fade, close > 0 ? 1 : 0);
+        }
+    }
+
+    // Everything loaded and measured before the first frame.
+    async function prepare() {
+        await document.fonts.ready;
+        const rotations = await Promise.all([0, 1, 2, 3].map(async rotation => ({rotation, bounds: await bounds({rotation})})));
+        const corpium4 = await Promise.all([0, 1, 2, 3].map(async rotation => ({...corpium(rotation), bounds: await bounds(corpium(rotation), 8, 8)})));
+        views = {
+            rotations,
+            overworld: rotations[0],
+            nether: {world: 'minecraft_the_nether', bounds: await bounds({world: 'minecraft_the_nether'})},
+            end: {world: 'minecraft_the_end', bounds: await bounds({world: 'minecraft_the_end'})},
+            top: await topDown(),
+            corpium: corpium4,
+            // Top-down level 6, 4096 blocks a tile.
+            corpiumTop: await topDown((x, y) => `${CORPIUM}/api/tiles/${CORPIUM_WORLD}/-2/${x}/${y}.png`, 2),
+            backdrop: await makeBackdrop(),
+        };
+        web = await openWeb();
+        return AT.black;
+    }
+
+    globalThis.seek = seek;
+    globalThis.ready = prepare();
+</script>

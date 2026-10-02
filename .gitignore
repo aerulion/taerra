@@ -28,3 +28,10 @@ logs/
 
 .DS_Store
 Thumbs.db
+
+# The showreel, rendered by branding/video.mjs: uploaded, not committed
+branding/images/video/
+
+# Licensed music for the showreel
+branding/*.mp3
+branding/*.wav
