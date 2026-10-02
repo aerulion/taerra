@@ -47,21 +47,17 @@ public final class SettingsScreen extends OptionsSubScreen {
         OptionInstance.createBoolean(
             "taerra.options.side",
             OptionInstance.noTooltip(),
-            (caption, left) ->
-                Options.genericValueLabel(
-                    caption,
-                    Component.translatable(
-                        left ? "taerra.options.side.left" : "taerra.options.side.right")),
+            (_, left) ->
+                Component.translatable(
+                    left ? "taerra.options.side.left" : "taerra.options.side.right"),
             settings.minimapLeft(),
             settings::setMinimapLeft),
         OptionInstance.createBoolean(
             "taerra.options.colors",
             OptionInstance.noTooltip(),
-            (caption, gray) ->
-                Options.genericValueLabel(
-                    caption,
-                    Component.translatable(
-                        gray ? "taerra.options.colors.gray" : "taerra.options.colors.color")),
+            (_, gray) ->
+                Component.translatable(
+                    gray ? "taerra.options.colors.gray" : "taerra.options.colors.color"),
             settings.grayMap(),
             settings::setGrayMap),
         OptionInstance.createBoolean(
