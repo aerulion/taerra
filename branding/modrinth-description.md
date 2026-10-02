@@ -43,6 +43,7 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 - **One jar.** No external database, no CDN, and no web admin panel: everything is configured in game.
 - **Right-click any place** to copy its coordinates, or a link straight to it.
 - **Limit the map** to a circle, square, or rectangle, so it ends where your playable area does.
+- **Select chunks on the map**, in the browser or in game, to render them again, or to hide them behind caution stripes while staff build there. Players inside a hidden area are hidden too.
 - **Export the map as images** with `/taerra render image`.
 - **English and German** in the web map, the mod, and every in-game message.
 
@@ -102,8 +103,8 @@ Every setting can also be changed in game with `/taerra config`.
 |---|---|---|
 | `taerra.command.login` | everyone | `/taerra login` and `/taerra logout` |
 | `taerra.command.status` | op | `/taerra status` |
-| `taerra.command.render` | op | `/taerra render` |
-| `taerra.command.limit` | op | `/taerra limit` |
+| `taerra.command.render` | op | `/taerra render`, and rendering selected chunks again |
+| `taerra.command.limit` | op | `/taerra limit`, and hiding selected chunks |
 | `taerra.command.waypoint` | op | Adding and removing waypoints |
 | `taerra.command.config` | op | `/taerra config` and `/taerra import` |
 | `taerra.command.logout.others` | op | Logging other players out |
