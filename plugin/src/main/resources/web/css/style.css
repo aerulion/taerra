@@ -1692,6 +1692,31 @@ kbd {
     color: var(--green);
 }
 
+@media (max-width: 720px) {
+    .placing,
+    .selection {
+        left: var(--gap);
+        right: calc(54px + var(--gap));
+        width: auto;
+        max-width: none;
+        translate: none;
+    }
+}
+
+@media (max-width: 720px) and (hover: hover) {
+    .placing,
+    .selection {
+        top: calc(2 * var(--gap) + 40px);
+    }
+}
+
+@media (min-width: 721px) {
+    .stage:has(.panel:not(.is-collapsed)) :is(.placing, .selection) {
+        left: calc(50% + (var(--panel-w) - 54px) / 2);
+        max-width: calc(100% - var(--panel-w) - 54px - 2 * var(--gap));
+    }
+}
+
 .placing__cancel {
     flex: none;
     padding: 6px 10px;
