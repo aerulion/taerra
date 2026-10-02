@@ -7,6 +7,7 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,10 @@ import org.joml.Matrix3x2fStack;
 
 public final class MapViewImpl implements MapView {
 
+  private static final int SELECTION_FILL = 0x40FFFFFF;
+  private static final int SELECTION_LINE = 0xC0FFFFFF;
+  private static final int ERASE_LINE = 0xFFFF5555;
+  private static final int UNKNOWN_GROUND = 63;
   private static final int HOVER_RADIUS = 5;
   private static final int HIT_PIXELS = 3;
   private static final long GROUND_DEBOUNCE_MILLIS = 250;
@@ -80,6 +85,10 @@ public final class MapViewImpl implements MapView {
   private @NotNull Look look = Look.COLOR;
   private @Nullable List<Component> tooltip;
   private @Nullable MarkerHover hover;
+  private final Map<Long, Integer> surfaces = new HashMap<>();
+  private @Nullable ChunkSelection selection;
+  private double @Nullable [][] outline;
+  private boolean erasing;
   private @Nullable Projection shaped;
   private @Nullable List<Layer> shapedLayers;
   private @Nullable OverlayScene scene;
@@ -237,6 +246,19 @@ public final class MapViewImpl implements MapView {
   }
 
   @Override
+  public void select(
+      final @Nullable ChunkSelection selection,
+      final double @Nullable [][] outline,
+      final boolean erasing) {
+    if (selection != this.selection) {
+      this.surfaces.clear();
+    }
+    this.selection = selection;
+    this.outline = outline;
+    this.erasing = erasing;
+  }
+
+  @Override
   public void draw(
       final @NotNull GuiGraphicsExtractor graphics,
       final @NotNull WebMap map,
@@ -361,6 +383,15 @@ public final class MapViewImpl implements MapView {
       final int bottom = this.spin == 0 ? y1 : graphics.guiHeight();
       highlight(graphics, hovered, far, tiny(hovered.shape(), gui), top, bottom);
       hovered(hovered.layer(), hovered.marker(), hovered.shape());
+    }
+    if (this.selection != null) {
+      drawSelection(
+          graphics,
+          map,
+          this.selection,
+          projection,
+          this.spin == 0 ? y0 : 0,
+          this.spin == 0 ? y1 : graphics.guiHeight());
     }
     drawPoints(graphics, points, mouse);
     drawPlayers(graphics, map, projection, x0, y0, x1, y1, mouse, partialTick);
@@ -733,6 +764,72 @@ public final class MapViewImpl implements MapView {
             Math.round(
                 255.0 * (this.look.hoverFill() - this.look.fill()) / (255 - this.look.fill()));
     fill(graphics, face, top, bottom, Colors.withAlpha(extra, shape.color));
+  }
+
+  private void drawSelection(
+      final @NotNull GuiGraphicsExtractor graphics,
+      final @NotNull WebMap map,
+      final @NotNull ChunkSelection selection,
+      final @NotNull Projection projection,
+      final int top,
+      final int bottom) {
+    final @NotNull List<int[][]> rings = selection.rings();
+    if (!rings.isEmpty()) {
+      final @NotNull List<double[][]> shapes = new ArrayList<>(rings.size());
+      int bridged = 0;
+      for (final int @NotNull [][] ring : rings) {
+        final double @NotNull [][] points = new double[ring.length][];
+        for (int i = 0; i < ring.length; i++) {
+          points[i] = ground(map, projection, ring[i][0], ring[i][1]);
+        }
+        final double @NotNull [][] shape = screen(points);
+        shapes.add(shape);
+        bridged += shape.length + 2;
+      }
+      final double @NotNull [] anchor = shapes.getFirst()[0];
+      final double @NotNull [][] area = new double[bridged][];
+      int next = 0;
+      for (final double @NotNull [][] shape : shapes) {
+        area[next++] = anchor;
+        System.arraycopy(shape, 0, area, next, shape.length);
+        next += shape.length;
+        area[next++] = shape[0];
+      }
+      fill(graphics, area, top, bottom, SELECTION_FILL);
+      for (final double @NotNull [][] shape : shapes) {
+        Geometry.ring(graphics, shape, 1, SELECTION_LINE);
+      }
+    }
+    final double @Nullable [][] outline = this.outline;
+    if (outline != null && outline.length > 1) {
+      final double @NotNull [][] path = new double[outline.length][];
+      for (int i = 0; i < outline.length; i++) {
+        path[i] = ground(map, projection, outline[i][0], outline[i][1]);
+      }
+      Geometry.ring(graphics, screen(path), 1, this.erasing ? ERASE_LINE : SELECTION_LINE);
+    }
+  }
+
+  private double[] ground(
+      final @NotNull WebMap map,
+      final @NotNull Projection projection,
+      final double x,
+      final double z) {
+    if (!this.isometric || this.world == null) {
+      return projection.toMap(x, 0, z);
+    }
+    final int blockX = (int) Math.floor(x);
+    final int blockZ = (int) Math.floor(z);
+    final long key = ChunkSelection.key(blockX, blockZ);
+    @Nullable Integer y = this.surfaces.get(key);
+    if (y == null) {
+      final @Nullable OptionalInt surface = map.picks().surface(this.world, blockX, blockZ);
+      y = surface == null || surface.isEmpty() ? UNKNOWN_GROUND : surface.getAsInt();
+      if (surface != null) {
+        this.surfaces.put(key, y);
+      }
+    }
+    return projection.toMap(x, y + 1, z);
   }
 
   private void drawPoints(

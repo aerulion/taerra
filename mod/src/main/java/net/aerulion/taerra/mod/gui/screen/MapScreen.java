@@ -1,6 +1,9 @@
 package net.aerulion.taerra.mod.gui.screen;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.gui.widget.CompassButton;
 import net.aerulion.taerra.mod.gui.widget.LayerList;
@@ -10,6 +13,7 @@ import net.aerulion.taerra.mod.gui.widget.PlayerList;
 import net.aerulion.taerra.mod.gui.widget.RenderProgressOverlay;
 import net.aerulion.taerra.mod.gui.widget.WorldPicker;
 import net.aerulion.taerra.mod.input.TaerraKeys;
+import net.aerulion.taerra.mod.map.ChunkSelection;
 import net.aerulion.taerra.mod.map.MapView;
 import net.aerulion.taerra.mod.map.MarkerHover;
 import net.aerulion.taerra.mod.map.Place;
@@ -54,6 +58,7 @@ public final class MapScreen extends Screen {
   private static final int COMPASS_MARGIN = 6;
   private static final int NEAR_ZOOM = 2;
   private static final int TOP_DOWN = -1;
+  private static final long STATUS_MILLIS = 4000;
   private static final List<Integer> VIEWS = List.of(TOP_DOWN, 0, 1, 2, 3);
 
   private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
@@ -96,6 +101,18 @@ public final class MapScreen extends Screen {
   private @Nullable PlaceMenu menu;
   private @Nullable String followed;
   private @Nullable Waypoint moving;
+  private final List<double[]> lasso = new ArrayList<>();
+  private @Nullable ChunkSelection selection;
+  private @NotNull SelectionTool tool = SelectionTool.BRUSH;
+  private boolean stroking;
+  private boolean erasing;
+  private @Nullable Place anchor;
+  private @Nullable Place reach;
+  private @Nullable Component selectionStatus;
+  private boolean selectionFailed;
+  private long selectionStatusUntil;
+  private boolean sending;
+  private int dragButton;
   private @Nullable Component notice;
   private long noticeUntil;
 
@@ -243,6 +260,16 @@ public final class MapScreen extends Screen {
       this.moving = null;
       return true;
     }
+    if (this.selection != null && event.isEscape()) {
+      stopSelecting();
+      return true;
+    }
+    if (this.selection != null
+        && event.key() >= GLFW.GLFW_KEY_1
+        && event.key() < GLFW.GLFW_KEY_1 + SelectionTool.values().length) {
+      setTool(SelectionTool.values()[event.key() - GLFW.GLFW_KEY_1]);
+      return true;
+    }
     if (TaerraKeys.OPEN_MAP.matches(event)) {
       onClose();
       return true;
@@ -293,7 +320,9 @@ public final class MapScreen extends Screen {
         this.layout.addToFooter(LinearLayout.horizontal().spacing(6));
     final @Nullable World world = this.map.world(this.view.world());
     this.worldButton = null;
-    if (world == null) {
+    if (this.selection != null) {
+      addSelectionButtons(footer);
+    } else if (world == null) {
       footer.addChild(
                   Button.builder(Component.translatable("taerra.map.loading"), _ -> {})
                       .width(2 * BUTTON_WIDTH + 6)
@@ -321,16 +350,18 @@ public final class MapScreen extends Screen {
                   Component.translatable("taerra.map.view"),
                   (_, selected) -> setView(selected)));
     }
-    footer.addChild(
-        Button.builder(
-                Component.translatable("menu.options"),
-                _ -> this.minecraft.setScreenAndShow(new SettingsScreen(this, this.settings)))
-            .width(BUTTON_WIDTH)
-            .build());
-    footer.addChild(
-        Button.builder(Component.translatable("gui.done"), _ -> onClose())
-            .width(BUTTON_WIDTH)
-            .build());
+    if (this.selection == null) {
+      footer.addChild(
+          Button.builder(
+                  Component.translatable("menu.options"),
+                  _ -> this.minecraft.setScreenAndShow(new SettingsScreen(this, this.settings)))
+              .width(BUTTON_WIDTH)
+              .build());
+      footer.addChild(
+          Button.builder(Component.translatable("gui.done"), _ -> onClose())
+              .width(BUTTON_WIDTH)
+              .build());
+    }
 
     if (this.worldButton == null && this.worldPicker.isOpen()) {
       this.worldPicker.setOpen(false);
@@ -458,13 +489,31 @@ public final class MapScreen extends Screen {
     if (!overMap(event.x(), event.y())) {
       return false;
     }
-    if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+    if (this.selection != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+      final @Nullable Place place = this.view.placeAt(this.map, event.x(), event.y());
+      if (place != null) {
+        this.stroking = true;
+        this.erasing = event.hasShiftDown() || this.selection.contains(place.x(), place.z());
+        this.anchor = place;
+        this.reach = place;
+        this.lasso.clear();
+        this.lasso.add(new double[] {place.x() + .5, place.z() + .5});
+        if (this.tool == SelectionTool.BRUSH) {
+          this.selection.brush(place.x(), place.z(), this.erasing);
+        }
+        selectionChanged();
+      }
+      return true;
+    }
+    if (this.selection == null && event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
       this.moving = null;
       openPlaceMenu(event.x(), event.y());
       return true;
     }
-    if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+    if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT
+        || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
       this.dragging = true;
+      this.dragButton = event.button();
       this.dragDistance = 0;
       this.dragVelocityX = 0;
       this.dragVelocityY = 0;
@@ -477,10 +526,28 @@ public final class MapScreen extends Screen {
 
   @Override
   public boolean mouseReleased(final MouseButtonEvent event) {
-    if (this.dragging && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+    if (this.stroking && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+      this.stroking = false;
+      final @Nullable ChunkSelection selection = this.selection;
+      if (selection != null && this.anchor != null && this.reach != null) {
+        if (this.tool == SelectionTool.RECTANGLE) {
+          selection.box(
+              this.anchor.x(), this.anchor.z(), this.reach.x(), this.reach.z(), this.erasing);
+        } else if (this.tool == SelectionTool.LASSO) {
+          selection.lasso(this.lasso.toArray(double[][]::new), this.erasing);
+        }
+      }
+      this.lasso.clear();
+      selectionChanged();
+      return true;
+    }
+    if (this.dragging && event.button() == this.dragButton) {
       this.dragging = false;
       if (this.dragDistance <= CLICK_SLOP) {
         final @Nullable MarkerHover hover = this.view.hover();
+        if (this.selection != null) {
+          return true;
+        }
         if (this.moving != null) {
           moveWaypoint(event.x(), event.y());
         } else if (hover != null) {
@@ -497,6 +564,15 @@ public final class MapScreen extends Screen {
   @Override
   public boolean mouseDragged(
       final MouseButtonEvent event, final double dragX, final double dragY) {
+    if (this.stroking) {
+      final int steps =
+          this.tool == SelectionTool.BRUSH ? (int) Math.ceil(Math.hypot(dragX, dragY) / 2) : 1;
+      for (int step = 1; step <= steps; step++) {
+        stroke(event.x() - dragX + dragX * step / steps, event.y() - dragY + dragY * step / steps);
+      }
+      selectionChanged();
+      return true;
+    }
     if (!this.dragging) {
       return super.mouseDragged(event, dragX, dragY);
     }
@@ -578,6 +654,9 @@ public final class MapScreen extends Screen {
     final @Nullable MapConfig config = this.map.config();
     this.view.setWorld(world.name());
     this.moving = null;
+    this.selection = null;
+    this.stroking = false;
+    this.view.select(null, null, false);
     if (config != null) {
       this.view.centerOn(config, world.spawn().x(), world.spawn().y(), world.spawn().z());
       zoomNear();
@@ -837,6 +916,25 @@ public final class MapScreen extends Screen {
           middle,
           bottom - 24,
           0xFFFFFF55);
+    } else if (this.selection != null) {
+      graphics.centeredText(
+          this.font,
+          Component.translatable("taerra.selection.hint"),
+          middle,
+          bottom - 36,
+          0xFFA0A0A0);
+      final boolean status =
+          this.selectionStatus != null && System.currentTimeMillis() < this.selectionStatusUntil;
+      graphics.centeredText(
+          this.font,
+          status
+              ? this.selectionStatus
+              : this.selection.isEmpty()
+                  ? Component.translatable("taerra.selection.empty")
+                  : Component.translatable("taerra.selection.count", this.selection.size()),
+          middle,
+          bottom - 24,
+          !status ? 0xFFFFFF55 : this.selectionFailed ? 0xFFFF5555 : 0xFF55FF55);
     } else if (this.notice != null && System.currentTimeMillis() < this.noticeUntil) {
       graphics.centeredText(this.font, this.notice, middle, bottom - 24, 0xFFFF5555);
     }
@@ -878,6 +976,14 @@ public final class MapScreen extends Screen {
               this.minecraft.setScreenAndShow(
                   new WaypointScreen(
                       this, this.map, Waypoint.create(world, place.x(), standing, place.z()))));
+    }
+    if (account != null && (account.render() || account.hide())) {
+      menu.add(
+          Component.translatable("taerra.menu.select"),
+          _ -> {
+            closeMenu();
+            startSelecting(place);
+          });
     }
     menu.add(
         Component.translatable("taerra.menu.link"),
@@ -937,6 +1043,159 @@ public final class MapScreen extends Screen {
     }
     if (!menu.isEmpty()) {
       showMenu(menu, mouseX, mouseY);
+    }
+  }
+
+  private void startSelecting(final @NotNull Place place) {
+    this.moving = null;
+    this.selection = new ChunkSelection();
+    this.selection.brush(place.x(), place.z(), false);
+    selectionChanged();
+    rebuildWidgets();
+  }
+
+  private void stopSelecting() {
+    this.selection = null;
+    this.stroking = false;
+    this.view.select(null, null, false);
+    rebuildWidgets();
+  }
+
+  private void setTool(final @NotNull SelectionTool tool) {
+    this.tool = tool;
+    rebuildWidgets();
+  }
+
+  private void stroke(final double x, final double y) {
+    final @Nullable Place place = overMap(x, y) ? this.view.placeAt(this.map, x, y) : null;
+    final @Nullable ChunkSelection selection = this.selection;
+    if (place == null || selection == null) {
+      return;
+    }
+    this.reach = place;
+    if (this.tool == SelectionTool.BRUSH) {
+      selection.brush(place.x(), place.z(), this.erasing);
+    } else if (this.tool == SelectionTool.LASSO) {
+      final double @NotNull [] last = this.lasso.getLast();
+      if (Math.abs(last[0] - place.x() - .5) + Math.abs(last[1] - place.z() - .5) >= 1) {
+        this.lasso.add(new double[] {place.x() + .5, place.z() + .5});
+      }
+    }
+  }
+
+  private void showSelectionStatus(final @NotNull Component status, final boolean failed) {
+    this.selectionStatus = status;
+    this.selectionFailed = failed;
+    this.selectionStatusUntil = System.currentTimeMillis() + STATUS_MILLIS;
+  }
+
+  private void selectionChanged() {
+    this.selectionStatus = null;
+    this.selectionFailed = false;
+    this.view.select(this.selection, outline(), this.erasing);
+  }
+
+  private double @Nullable [][] outline() {
+    final @Nullable Place anchor = this.anchor;
+    final @Nullable Place reach = this.reach;
+    if (!this.stroking || anchor == null || reach == null) {
+      return null;
+    }
+    return switch (this.tool) {
+      case BRUSH -> null;
+      case LASSO -> this.lasso.toArray(double[][]::new);
+      case RECTANGLE -> {
+        final int @NotNull [] box =
+            ChunkSelection.boxChunks(anchor.x(), anchor.z(), reach.x(), reach.z());
+        final int x0 = box[0] << 4;
+        final int z0 = box[1] << 4;
+        final int x1 = (box[2] + 1) << 4;
+        final int z1 = (box[3] + 1) << 4;
+        yield new double[][] {{x0, z0}, {x1, z0}, {x1, z1}, {x0, z1}};
+      }
+    };
+  }
+
+  private void addSelectionButtons(final @NotNull LinearLayout footer) {
+    final @Nullable Account account = this.map.account();
+    final @NotNull List<Button> buttons = new ArrayList<>();
+    for (final @NotNull SelectionTool tool : SelectionTool.values()) {
+      final @NotNull Button button =
+          Button.builder(Component.translatable(tool.key()), _ -> setTool(tool))
+              .tooltip(
+                  Tooltip.create(
+                      Component.translatable(tool.key() + ".tooltip", tool.ordinal() + 1)))
+              .build();
+      button.active = tool != this.tool;
+      buttons.add(button);
+    }
+    if (account != null && account.render()) {
+      buttons.add(actionButton("render"));
+    }
+    if (account != null && account.hide()) {
+      buttons.add(actionButton("hide"));
+      buttons.add(actionButton("reveal"));
+    }
+    buttons.add(
+        Button.builder(Component.translatable("taerra.selection.done"), _ -> stopSelecting())
+            .build());
+    final int width =
+        Math.min(BUTTON_WIDTH, (this.width - 16 - 6 * (buttons.size() - 1)) / buttons.size());
+    for (final @NotNull Button button : buttons) {
+      button.setWidth(width);
+      footer.addChild(button);
+    }
+  }
+
+  private @NotNull Button actionButton(final @NotNull String action) {
+    final @NotNull Button button =
+        Button.builder(Component.translatable("taerra.selection." + action), _ -> area(action))
+            .build();
+    button.active = !this.sending;
+    return button;
+  }
+
+  private void area(final @NotNull String action) {
+    final @Nullable ChunkSelection selection = this.selection;
+    final @Nullable String world = this.view.world();
+    if (selection == null || world == null || this.sending) {
+      return;
+    }
+    if (selection.isEmpty()) {
+      showSelectionStatus(Component.translatable("taerra.selection.empty"), true);
+      return;
+    }
+    this.sending = true;
+    rebuildWidgets();
+    this.map.area(
+        action,
+        world,
+        Set.copyOf(selection.chunks()),
+        status -> {
+          this.sending = false;
+          if (selection == this.selection) {
+            if (status == 202) {
+              selection.clear();
+              selectionChanged();
+            }
+            showSelectionStatus(
+                Component.translatable(
+                    status == 202
+                        ? "taerra.selection.started." + action
+                        : status == 409 ? "taerra.selection.busy" : "taerra.selection.failed"),
+                status != 202);
+          }
+          rebuildWidgets();
+        });
+  }
+
+  private enum SelectionTool {
+    BRUSH,
+    RECTANGLE,
+    LASSO;
+
+    private @NotNull String key() {
+      return "taerra.selection.tool." + name().toLowerCase(Locale.ROOT);
     }
   }
 

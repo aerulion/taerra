@@ -11,20 +11,26 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.logging.Level;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.limit.WorldLimits;
+import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.model.WorldLimit;
 import net.aerulion.taerra.permission.TaerraPermission;
+import net.aerulion.taerra.rendering.iso.IsoTileGeometry;
 import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
+import net.aerulion.taerra.rendering.queue.RenderPriority;
 import net.aerulion.taerra.rendering.queue.RenderQueue;
 import net.aerulion.taerra.rendering.region.RegionFileScanner;
 import net.aerulion.taerra.rendering.region.RegionScanListener;
@@ -34,6 +40,7 @@ import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.storage.WorldImageExport;
 import net.aerulion.taerra.storage.WorldImageExporter;
 import net.aerulion.taerra.util.Throwables;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
@@ -120,12 +127,13 @@ public final class RenderSubCommand implements TaerraSubCommand {
                             context -> {
                               final @NotNull World world =
                                   context.getArgument("world", World.class);
-                              return start(
-                                  context,
+                              start(
+                                  sender(context),
                                   TileGeneratorService.FULL_RENDER,
                                   world,
                                   Messages.tr("render.what.full"),
                                   listener -> scanFull(world, listener));
+                              return SUCCESS;
                             })))
         .then(
             Commands.literal("radius")
@@ -297,8 +305,8 @@ public final class RenderSubCommand implements TaerraSubCommand {
     final int maxRegionZ = Math.floorDiv(centerZ + radiusBlocks, REGION_SIZE_BLOCKS);
     final @NotNull WorldLimit circle = WorldLimit.circle(centerX, centerZ, radiusBlocks);
     final @Nullable WorldLimit limit = this.limits.get(WorldKeys.id(world));
-    return start(
-        context,
+    start(
+        sender(context),
         "radius_render",
         world,
         Messages.tr(
@@ -321,6 +329,64 @@ public final class RenderSubCommand implements TaerraSubCommand {
                         && intersects(
                             limit, tileCoordinate.x(), tileCoordinate.z(), TileGeometry.TILE_SIZE),
                 listener));
+    return SUCCESS;
+  }
+
+  public boolean chunks(
+      final @NotNull Audience audience,
+      final @NotNull World world,
+      final @NotNull Set<Long> chunks,
+      final @Nullable Boolean hide) {
+    final @NotNull String worldName = WorldKeys.id(world);
+    final @Nullable WorldLimit limit = this.limits.get(worldName);
+    final @NotNull Set<Long> regions = new HashSet<>();
+    final @NotNull Set<Long> tiles = new HashSet<>();
+    final @NotNull Set<TileCoordinate> isometric = new LinkedHashSet<>();
+    for (final long chunk : chunks) {
+      final int blockX = ChunkCoordinate.keyX(chunk) << 4;
+      final int blockZ = ChunkCoordinate.keyZ(chunk) << 4;
+      regions.add(
+          ChunkCoordinate.key(
+              Math.floorDiv(blockX, REGION_SIZE_BLOCKS),
+              Math.floorDiv(blockZ, REGION_SIZE_BLOCKS)));
+      tiles.add(
+          ChunkCoordinate.key(
+              Math.floorDiv(blockX, TileGeometry.TILE_SIZE),
+              Math.floorDiv(blockZ, TileGeometry.TILE_SIZE)));
+      for (final @NotNull MapRotation rotation : MapRotation.values()) {
+        IsoTileGeometry.forEachTileCovering(
+            blockX,
+            blockZ,
+            16,
+            world.getMinHeight(),
+            world.getMaxHeight(),
+            rotation,
+            (tileX, tileY) ->
+                isometric.add(TileCoordinate.isometric(worldName, rotation, 0, tileX, tileY)));
+      }
+    }
+    final @NotNull Component amount = Messages.tr("unit.chunks", Messages.value(chunks.size()));
+    return start(
+        audience,
+        hide == null ? "area_render" : "hide_render",
+        world,
+        hide == null
+            ? amount
+            : Messages.tr(hide ? "render.what.hide" : "render.what.reveal", amount),
+        listener -> {
+          if (hide != null) {
+            this.limits.setHidden(worldName, chunks, hide);
+          }
+          this.columns.forget(worldName, chunks);
+          this.renderQueue.enqueueAll(isometric, RenderPriority.FULL_RENDER_ZOOM_0);
+          return RegionFileScanner.scanWorld(
+              world,
+              region -> regions.contains(ChunkCoordinate.key(region.x(), region.z())),
+              tile ->
+                  tiles.contains(ChunkCoordinate.key(tile.x(), tile.z()))
+                      && intersects(limit, tile.x(), tile.z(), TileGeometry.TILE_SIZE),
+              listener);
+        });
   }
 
   @NotNull
@@ -336,33 +402,31 @@ public final class RenderSubCommand implements TaerraSubCommand {
         listener);
   }
 
-  int start(
-      final @NotNull CommandContext<? extends CommandSourceStack> context,
+  boolean start(
+      final @NotNull Audience audience,
       final @NotNull String mode,
       final @NotNull World world,
       final @NotNull Component description,
       final @NotNull Function<RegionScanListener, RegionScanResult> scan) {
     final @NotNull String worldName = WorldKeys.id(world);
     if (!this.config.worldEnabled(worldName)) {
-      feedback(
-          context,
+      audience.sendMessage(
           Messages.error(
               "render.world_disabled",
               Messages.world(worldName),
               Messages.command("/taerra config world " + worldName + " enable")));
-      return SUCCESS;
+      return false;
     }
     if (!this.generator.tryBeginManualRender(mode, worldName)) {
-      feedback(
-          context,
+      audience.sendMessage(
           Messages.error(
               "render.busy",
               Messages.command("/taerra status"),
               Messages.command("/taerra render cancel")));
-      return SUCCESS;
+      return false;
     }
 
-    feedback(context, Messages.info("render.scanning", Messages.world(worldName), description));
+    audience.sendMessage(Messages.info("render.scanning", Messages.world(worldName), description));
 
     CompletableFuture.runAsync(
         () -> {
@@ -406,12 +470,12 @@ public final class RenderSubCommand implements TaerraSubCommand {
                   Messages.warning(
                       "render.unreadable", Messages.value(scanResult.unreadableRegions())));
             }
-            sendSync(context, Messages.lines(lines));
+            sendSync(audience, Messages.lines(lines));
           } catch (final Exception e) {
             final @NotNull String failure = Throwables.describe(e);
             this.generator.cancelManualRender("Render failed: " + failure);
             sendSync(
-                context,
+                audience,
                 Messages.error(
                     "render.failed", Messages.world(worldName), Messages.value(failure)));
             this.plugin
@@ -420,15 +484,19 @@ public final class RenderSubCommand implements TaerraSubCommand {
           }
         });
 
-    return SUCCESS;
+    return true;
   }
 
   private void sendSync(
       final @NotNull CommandContext<? extends CommandSourceStack> context,
       final @NotNull Component message) {
+    sendSync(sender(context), message);
+  }
+
+  private void sendSync(final @NotNull Audience audience, final @NotNull Component message) {
     this.plugin
         .getServer()
         .getScheduler()
-        .runTask(this.plugin, () -> sender(context).sendMessage(message));
+        .runTask(this.plugin, () -> audience.sendMessage(message));
   }
 }

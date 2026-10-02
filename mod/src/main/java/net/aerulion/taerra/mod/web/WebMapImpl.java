@@ -11,6 +11,7 @@ import java.lang.reflect.Type;
 import java.net.http.WebSocket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -240,6 +241,27 @@ public final class WebMapImpl implements WebMap {
     }
     target.put("z", z);
     this.client.send("POST", "/api/teleport", target, then);
+  }
+
+  @Override
+  public void area(
+      final String action,
+      final String world,
+      final Collection<Long> chunks,
+      final IntConsumer then) {
+    this.client.send(
+        "POST",
+        "/api/area",
+        Map.of(
+            "action",
+            action,
+            "world",
+            world,
+            "chunks",
+            chunks.stream()
+                .map(chunk -> new int[] {(int) (chunk >> 32), chunk.intValue()})
+                .toList()),
+        then);
   }
 
   @Override

@@ -1,5 +1,6 @@
 package net.aerulion.taerra.mod.web;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -57,6 +58,8 @@ public sealed interface WebMap permits WebMapImpl {
   void deleteWaypoint(String world, String name, IntConsumer then);
 
   void teleport(String world, int x, @Nullable Integer y, int z, IntConsumer then);
+
+  void area(String action, String world, Collection<Long> chunks, IntConsumer then);
 
   String link(
       String world, int x, @Nullable Integer y, int z, long zoom, boolean isometric, int rotation);

@@ -18,7 +18,8 @@ public enum TaerraPermission {
       PermissionDefault.OP),
   COMMAND_RENDER(
       "command.render",
-      "Gives the user the right to use the '/taerra render' command.",
+      "Gives the user the right to use the '/taerra render' command and to re-render chunks"
+          + " selected on the map.",
       PermissionDefault.OP),
   COMMAND_WAYPOINT(
       "command.waypoint",
@@ -26,7 +27,8 @@ public enum TaerraPermission {
       PermissionDefault.OP),
   COMMAND_LIMIT(
       "command.limit",
-      "Gives the user the right to limit the area of a world the map renders.",
+      "Gives the user the right to limit the area of a world the map renders and to hide"
+          + " chunks from the map.",
       PermissionDefault.OP),
   COMMAND_CONFIG(
       "command.config",

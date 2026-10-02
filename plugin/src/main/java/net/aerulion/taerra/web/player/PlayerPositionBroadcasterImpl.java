@@ -130,7 +130,12 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
                 player.getLocation().getBlockX(), player.getLocation().getBlockZ())) {
           continue;
         }
-        final boolean hidden = !PlayerMapPayloadSerializer.shouldIncludePlayer(player);
+        final boolean hidden =
+            !PlayerMapPayloadSerializer.shouldIncludePlayer(player)
+                || this.limits.hidden(
+                    worldName,
+                    player.getLocation().getBlockX() >> 4,
+                    player.getLocation().getBlockZ() >> 4);
         final @NotNull Map<String, Object> data = PlayerMapPayloadSerializer.serialize(player);
         data.put("hidden", hidden);
         withHidden.add(data);

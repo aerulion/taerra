@@ -19,6 +19,7 @@ import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.integration.ChunkyGeneration;
 import net.aerulion.taerra.integration.WorldBorders;
 import net.aerulion.taerra.integration.WorldGuardRegions;
+import net.aerulion.taerra.limit.HiddenAreaMarkers;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.listener.world.WorldChangeListener;
 import net.aerulion.taerra.marker.MarkerRegistryImpl;
@@ -220,6 +221,15 @@ public final class Taerra extends JavaPlugin {
       final @NotNull WaypointsImpl waypoints = new WaypointsImpl(this, markers);
       waypoints.load();
       getServer().getPluginManager().registerEvents(waypoints, this);
+      final @NotNull RenderSubCommand render =
+          new RenderSubCommand(
+              this,
+              generatorService,
+              renderQueue,
+              tileStorage,
+              chunkColumnsCache,
+              worldLimits,
+              configuration);
       final @NotNull TaerraWebServer webServer =
           new TaerraWebServerImpl(
               this,
@@ -231,7 +241,8 @@ public final class Taerra extends JavaPlugin {
               playerBroadcaster,
               webSessions,
               modHandshake,
-              waypoints);
+              waypoints,
+              render);
       this.webServer = webServer;
       webServer.start();
       tileUpdateBroadcaster.start();
@@ -275,11 +286,11 @@ public final class Taerra extends JavaPlugin {
       if (configuration.worldBorders()) {
         WorldBorders.start(this, markers, configuration);
       }
+      HiddenAreaMarkers.start(this, markers, worldLimits);
 
       registerCommands(
           generatorService,
-          renderQueue,
-          tileStorage,
+          render,
           tileCache,
           isoTileService,
           chunkColumnsCache,
@@ -308,8 +319,7 @@ public final class Taerra extends JavaPlugin {
 
   private void registerCommands(
       final @NotNull TileGeneratorService generatorService,
-      final @NotNull RenderQueue renderQueue,
-      final @NotNull TileStorage tileStorage,
+      final @NotNull RenderSubCommand render,
       final @NotNull TileCache tileCache,
       final @NotNull IsoTileService isoTileService,
       final @NotNull ChunkColumnsCache chunkColumnsCache,
@@ -319,15 +329,6 @@ public final class Taerra extends JavaPlugin {
       final @NotNull TaerraWebServer webServer,
       final @NotNull WebSessions webSessions,
       final @NotNull MarkerRegistryInternal markers) {
-    final @NotNull RenderSubCommand render =
-        new RenderSubCommand(
-            this,
-            generatorService,
-            renderQueue,
-            tileStorage,
-            chunkColumnsCache,
-            worldLimits,
-            configuration);
     TaerraCommands.register(
         this,
         List.of(

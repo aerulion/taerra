@@ -45,6 +45,9 @@ export function translatePage() {
     for (const element of document.querySelectorAll('[data-i18n-label]')) {
         element.setAttribute('aria-label', t(element.dataset.i18nLabel));
     }
+    for (const element of document.querySelectorAll('[data-i18n-title]')) {
+        element.title = t(element.dataset.i18nTitle, {key: element.getAttribute('aria-keyshortcuts') ?? ''});
+    }
 }
 
 export function setLanguage(code) {

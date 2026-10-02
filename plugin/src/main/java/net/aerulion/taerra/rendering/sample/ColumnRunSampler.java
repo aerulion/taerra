@@ -19,6 +19,8 @@ public final class ColumnRunSampler {
   private static final int ROOF_THICKNESS = 5;
   private static final int MAX_GROUND_COVER_HEIGHT = 2;
   private static final int NO_THIN = Integer.MIN_VALUE;
+  private static final int BLOCKED_Y = 63;
+  private static final int STRIPE_WIDTH = 4;
 
   private ColumnRunSampler() {
     super();
@@ -56,6 +58,26 @@ public final class ColumnRunSampler {
             localZ,
             !clipped && localX > 0 && localX < 15 && localZ > 0 && localZ < 15,
             findColumnTop(source, ceilingY, shapes, localX, localZ));
+      }
+    }
+    return builder.build();
+  }
+
+  public static @NotNull ChunkColumns blockedChunk(
+      final @NotNull ColumnSource source, final int chunkX, final int chunkZ) {
+    final @NotNull ChunkColumnsBuilder builder = ChunkColumns.builder(chunkX, chunkZ);
+    final int y = Math.clamp(BLOCKED_Y, source.minHeight(), source.maxHeight() - 1);
+    for (int localX = 0; localX < 16; localX++) {
+      for (int localZ = 0; localZ < 16; localZ++) {
+        final int diagonal = (chunkX << 4) + localX + (chunkZ << 4) + localZ;
+        builder
+            .addRun(
+                y,
+                y,
+                Math.floorMod(diagonal, 2 * STRIPE_WIDTH) < STRIPE_WIDTH
+                    ? Material.YELLOW_CONCRETE
+                    : Material.BLACK_CONCRETE)
+            .completeColumn(null, null);
       }
     }
     return builder.build();

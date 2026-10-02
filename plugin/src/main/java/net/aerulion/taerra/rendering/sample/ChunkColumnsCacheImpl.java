@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,14 +104,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       }
       return null;
     }
-    final @NotNull ChunkColumns columns =
-        ColumnRunSampler.sampleChunk(
-            source,
-            ColumnRunSampler.ceilingY(world),
-            this.shapes,
-            chunkX,
-            chunkZ,
-            this.limits.get(WorldKeys.id(world)));
+    final @NotNull ChunkColumns columns = sample(world, source, chunkX, chunkZ);
     if (current) {
       recordHeights(WorldKeys.id(world), chunkX, chunkZ, columns.heights());
       this.cache.put(key, columns);
@@ -187,6 +181,17 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
   }
 
   @Override
+  public void forget(final @NotNull String worldName, final @NotNull Collection<Long> chunks) {
+    this.cache.invalidateAll(
+        chunks.stream()
+            .map(
+                chunk ->
+                    new ChunkKey(
+                        worldName, ChunkCoordinate.keyX(chunk), ChunkCoordinate.keyZ(chunk)))
+            .toList());
+  }
+
+  @Override
   public void forgetWorld(final @NotNull String worldName) {
     this.cache.asMap().keySet().removeIf(key -> key.worldName().equals(worldName));
     this.heights.remove(worldName);
@@ -195,6 +200,23 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
   @Override
   public long size() {
     return this.cache.estimatedSize();
+  }
+
+  private @NotNull ChunkColumns sample(
+      final @NotNull World world,
+      final @NotNull ColumnSource source,
+      final int chunkX,
+      final int chunkZ) {
+    final @NotNull String worldName = WorldKeys.id(world);
+    return this.limits.hidden(worldName, chunkX, chunkZ)
+        ? ColumnRunSampler.blockedChunk(source, chunkX, chunkZ)
+        : ColumnRunSampler.sampleChunk(
+            source,
+            ColumnRunSampler.ceilingY(world),
+            this.shapes,
+            chunkX,
+            chunkZ,
+            this.limits.get(worldName));
   }
 
   private void recordHeights(
@@ -221,14 +243,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
     if (source == null) {
       return;
     }
-    final @NotNull ChunkColumns columns =
-        ColumnRunSampler.sampleChunk(
-            source,
-            ColumnRunSampler.ceilingY(world),
-            this.shapes,
-            chunkX,
-            chunkZ,
-            this.limits.get(WorldKeys.id(world)));
+    final @NotNull ChunkColumns columns = sample(world, source, chunkX, chunkZ);
     recordHeights(WorldKeys.id(world), chunkX, chunkZ, columns.heights());
     this.cache.put(new ChunkKey(WorldKeys.id(world), chunkX, chunkZ), columns);
   }

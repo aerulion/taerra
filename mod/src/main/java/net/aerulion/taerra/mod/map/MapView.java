@@ -44,6 +44,8 @@ public sealed interface MapView permits MapViewImpl {
   @Nullable
   MarkerHover hover();
 
+  void select(@Nullable ChunkSelection selection, double @Nullable [][] outline, boolean erasing);
+
   void draw(
       GuiGraphicsExtractor graphics,
       WebMap map,

@@ -199,6 +199,7 @@
         <button data-action="waypoint" data-i18n="menu.waypoint" hidden role="menuitem" type="button">Add waypoint
             here
         </button>
+        <button data-action="select" data-i18n="menu.select" hidden role="menuitem" type="button">Select chunks</button>
         <button data-action="link" data-i18n="menu.link" role="menuitem" type="button">Copy link to this place</button>
         <button data-action="center" data-i18n="menu.center" role="menuitem" type="button">Center map here</button>
     </div>
@@ -206,6 +207,35 @@
     <div class="placing" hidden id="placing">
         <span id="placing-text" role="status"></span>
         <button class="placing__cancel" data-i18n="waypoint.cancel" id="placing-cancel" type="button">Cancel</button>
+    </div>
+
+    <div aria-label="Chunk selection" class="selection" data-i18n-label="selection.label" hidden id="selection"
+         role="toolbar">
+        <h2><span data-i18n="selection.title">Selection</span> <span class="badge" id="selection-count">0</span></h2>
+        <div aria-label="Tool" class="segmented segmented--small" data-i18n-label="selection.tool" role="group">
+            <button aria-keyshortcuts="1" aria-pressed="true" class="btn" data-i18n="selection.tool.brush"
+                    data-i18n-title="selection.tool.brush.tooltip" data-tool="brush" type="button">Brush
+            </button>
+            <button aria-keyshortcuts="2" aria-pressed="false" class="btn" data-i18n="selection.tool.rectangle"
+                    data-i18n-title="selection.tool.rectangle.tooltip" data-tool="rectangle" type="button">Rectangle
+            </button>
+            <button aria-keyshortcuts="3" aria-pressed="false" class="btn" data-i18n="selection.tool.lasso"
+                    data-i18n-title="selection.tool.lasso.tooltip" data-tool="lasso" type="button">Lasso
+            </button>
+        </div>
+        <div class="selection__actions">
+            <button class="btn" data-action="render" data-i18n="selection.render" hidden id="selection-render"
+                    type="button">Re-render
+            </button>
+            <button class="btn" data-action="hide" data-i18n="selection.hide" hidden id="selection-hide"
+                    type="button">Hide from map
+            </button>
+            <button class="btn" data-action="reveal" data-i18n="selection.reveal" hidden id="selection-reveal"
+                    type="button">Show on map
+            </button>
+            <button class="btn selection__done" data-action="done" data-i18n="selection.done" type="button">Done</button>
+        </div>
+        <p class="selection__message" id="selection-text" role="status"></p>
     </div>
 
     <div aria-hidden="true" class="hud">

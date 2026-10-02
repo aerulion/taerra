@@ -66,6 +66,31 @@ class ColumnRunSamplerTest {
   }
 
   @Test
+  @DisplayName("a hidden chunk is a flat striped plane and never reads the blocks underneath")
+  void hiddenChunkIsStriped() {
+    final @NotNull ChunkColumns columns =
+        ColumnRunSampler.blockedChunk(
+            new TestChunk(
+                (localX, localZ, y) -> {
+                  throw new AssertionError("read a hidden block");
+                }),
+            -1,
+            0);
+
+    assertEquals(63, columns.minTopY());
+    assertEquals(63, columns.maxTopY());
+    assertEquals(
+        Material.YELLOW_CONCRETE,
+        columns.runMaterial(columns.runStart(ChunkColumns.columnIndex(0, 0))));
+    assertEquals(
+        Material.BLACK_CONCRETE,
+        columns.runMaterial(columns.runStart(ChunkColumns.columnIndex(4, 0))));
+    assertEquals(
+        Material.YELLOW_CONCRETE,
+        columns.runMaterial(columns.runStart(ChunkColumns.columnIndex(4, 4))));
+  }
+
+  @Test
   @DisplayName("a solid column is one run down to the world floor")
   void solidColumnIsOneRun() {
     final @NotNull ChunkColumns columns = sample(y -> y <= 70 ? Material.STONE : Material.AIR);

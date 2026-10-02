@@ -3,6 +3,7 @@ import {defaultLanguage, hashLanguage, language, LANGUAGES, numbers, setLanguage
 import {mapManager} from './map.js';
 import {element, markerManager, privateIcon} from './markers.js';
 import {playerManager} from './players.js';
+import {chunkSelection} from './selection.js';
 import {waypointEditor} from './waypoints.js';
 import {wsManager} from './websocket.js';
 
@@ -97,6 +98,7 @@ async function selectWorld(name) {
     renderWorlds();
     document.title = `${worldLabel(world)} · ${SERVER_NAME}`;
 
+    chunkSelection.stop();
     mapManager.setWorld(world);
     playerManager.setWorld(world.name);
     wsManager.subscribe(world.name);
@@ -272,6 +274,7 @@ function syncViewControls() {
     $('rotation-readout').setAttribute('aria-label', t('view.facing', {direction}));
     playerManager.reposition();
     markerManager.redraw();
+    chunkSelection.redraw();
 }
 
 function setupLanguage() {
@@ -443,6 +446,7 @@ function setupContextMenu() {
         }
         menu.querySelector('[data-action="teleport"]').hidden = !accountManager.canTeleport();
         menu.querySelector('[data-action="waypoint"]').hidden = !accountManager.canEditWaypoints();
+        menu.querySelector('[data-action="select"]').hidden = !accountManager.canRender() && !accountManager.canHide();
         menu.hidden = false;
         const stage = menu.parentElement.getBoundingClientRect();
         const x = Math.min(event.containerPoint.x, stage.width - menu.offsetWidth - 8);
@@ -465,6 +469,12 @@ function setupContextMenu() {
         }
         if (action === 'teleport') {
             await teleport(button, block);
+            return;
+        }
+        if (action === 'select') {
+            const start = block;
+            close();
+            chunkSelection.start(currentWorld.name, start);
             return;
         }
         if (action === 'waypoint') {
@@ -550,6 +560,7 @@ const accountReady = accountManager.initialize().catch(error => console.error('F
 await mapManager.initialize();
 markerManager.initialize();
 waypointEditor.initialize();
+chunkSelection.initialize();
 playerManager.worldLabel = worldName;
 playerManager.onWorld = selectWorld;
 markerManager.onWaypoint = async (action, waypoint, button) => {

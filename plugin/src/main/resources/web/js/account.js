@@ -95,4 +95,12 @@ function canConfigure() {
     return current?.configure === true;
 }
 
-export const accountManager = {initialize, canTeleport, canEditWaypoints, canConfigure};
+function canRender() {
+    return current?.render === true;
+}
+
+function canHide() {
+    return current?.hide === true;
+}
+
+export const accountManager = {initialize, canTeleport, canEditWaypoints, canConfigure, canRender, canHide};

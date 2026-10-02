@@ -29,6 +29,14 @@ public record Viewer(@Nullable UUID uuid, @NotNull Set<String> grants) {
     return this.grants.contains(TaerraPermission.COMMAND_CONFIG.node());
   }
 
+  public boolean canRender() {
+    return this.grants.contains(TaerraPermission.COMMAND_RENDER.node());
+  }
+
+  public boolean canHide() {
+    return this.grants.contains(TaerraPermission.COMMAND_LIMIT.node());
+  }
+
   public boolean canSeeHidden() {
     return this.grants.contains(TaerraPermission.WEB_SEE_HIDDEN.node());
   }

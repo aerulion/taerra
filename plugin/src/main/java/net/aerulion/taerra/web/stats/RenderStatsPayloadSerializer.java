@@ -3,6 +3,7 @@ package net.aerulion.taerra.web.stats;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.aerulion.taerra.rendering.pipeline.RenderStatusSnapshot;
+import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
 import net.aerulion.taerra.rendering.session.ManualRenderSessionSnapshot;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,7 +23,12 @@ public final class RenderStatsPayloadSerializer {
     if (session.active()) {
       final @NotNull Map<String, Object> render = new LinkedHashMap<>();
       render.put("world", session.worldName());
-      render.put("kind", session.mode().startsWith("radius") ? "area" : "full");
+      render.put(
+          "kind",
+          session.mode().equals(TileGeneratorService.FULL_RENDER)
+                  || session.mode().equals(TileGeneratorService.LIMIT_RENDER)
+              ? "full"
+              : "area");
       render.put("phase", session.phase());
       render.put("scannedRegions", session.scannedRegions());
       render.put("totalRegions", session.totalRegions());

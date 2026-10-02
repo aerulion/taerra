@@ -28,7 +28,9 @@ public final class WebGrants {
                 TaerraPermission.WEB_TELEPORT.node(),
                 TaerraPermission.WEB_SEE_HIDDEN.node(),
                 TaerraPermission.COMMAND_WAYPOINT.node(),
-                TaerraPermission.COMMAND_CONFIG.node()))
+                TaerraPermission.COMMAND_CONFIG.node(),
+                TaerraPermission.COMMAND_RENDER.node(),
+                TaerraPermission.COMMAND_LIMIT.node()))
         .filter(player::hasPermission)
         .collect(Collectors.toUnmodifiableSet());
   }

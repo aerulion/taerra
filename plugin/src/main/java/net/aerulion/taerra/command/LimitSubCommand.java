@@ -151,8 +151,8 @@ public final class LimitSubCommand implements TaerraSubCommand {
       final @NotNull CommandContext<CommandSourceStack> context, final @Nullable WorldLimit limit) {
     final @NotNull World world = world(context);
     final @NotNull String worldName = WorldKeys.id(world);
-    return this.render.start(
-        context,
+    this.render.start(
+        sender(context),
         TileGeneratorService.LIMIT_RENDER,
         world,
         limit == null
@@ -162,5 +162,6 @@ public final class LimitSubCommand implements TaerraSubCommand {
           this.limits.set(worldName, limit);
           return this.render.scanFull(world, listener);
         });
+    return SUCCESS;
   }
 }

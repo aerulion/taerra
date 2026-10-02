@@ -23,12 +23,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import net.aerulion.taerra.command.Messages;
+import net.aerulion.taerra.command.RenderSubCommand;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.marker.MarkerRegistryInternal;
+import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
@@ -49,6 +53,7 @@ import net.aerulion.taerra.web.player.PlayerAvatars;
 import net.aerulion.taerra.web.player.PlayerPositionBroadcaster;
 import net.aerulion.taerra.web.socket.MapWebSocketHandler;
 import net.aerulion.taerra.web.stats.RenderStatsPayloadSerializer;
+import net.kyori.adventure.audience.Audience;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
@@ -63,6 +68,7 @@ import org.jetbrains.annotations.Nullable;
 public final class TaerraWebServerImpl implements TaerraWebServer {
 
   private static final int MAX_QUEUED_FRAMES = 64;
+  private static final int MAX_AREA_CHUNKS = 16384;
 
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig taerraConfig;
@@ -74,6 +80,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private final @NotNull WebSessions sessions;
   private final @NotNull ModHandshake modHandshake;
   private final @NotNull Waypoints waypoints;
+  private final @NotNull RenderSubCommand render;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private final @NotNull PlayerAvatars avatars = new PlayerAvatars();
   private @Nullable Javalin app;
@@ -94,7 +101,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       final @NotNull PlayerPositionBroadcaster players,
       final @NotNull WebSessions sessions,
       final @NotNull ModHandshake modHandshake,
-      final @NotNull Waypoints waypoints) {
+      final @NotNull Waypoints waypoints,
+      final @NotNull RenderSubCommand render) {
     super();
     this.plugin = plugin;
     this.taerraConfig = taerraConfig;
@@ -106,6 +114,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     this.sessions = sessions;
     this.modHandshake = modHandshake;
     this.waypoints = waypoints;
+    this.render = render;
   }
 
   private static int environmentSortOrder(final @NotNull String environmentName) {
@@ -156,7 +165,9 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
         "name", session.name(),
         "teleport", viewer.canTeleport(),
         "waypoints", viewer.canEditWaypoints(),
-        "configure", viewer.canConfigure());
+        "configure", viewer.canConfigure(),
+        "render", viewer.canRender(),
+        "hide", viewer.canHide());
   }
 
   private static void respondWithPick(
@@ -345,6 +356,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 config.routes.get("/api/waypoints/groups", this::handleWaypointGroupsRequest);
                 config.routes.put("/api/waypoints", this::handleWaypointSaveRequest);
                 config.routes.delete("/api/waypoints/{name}", this::handleWaypointDeleteRequest);
+                config.routes.post("/api/area", this::handleAreaRequest);
 
                 config.routes.ws("/ws", this.wsHandler::configure);
               });
@@ -719,6 +731,62 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
   }
 
+  private void handleAreaRequest(final @NotNull Context ctx) {
+    if (!sameOrigin(ctx)) {
+      ctx.status(403).result("Cross-site request");
+      return;
+    }
+    final @NotNull Viewer viewer = viewer(ctx);
+    final @NotNull AreaRequest request;
+    try {
+      request = ctx.bodyAsClass(AreaRequest.class);
+    } catch (final Exception e) {
+      ctx.status(400).result("Invalid area");
+      return;
+    }
+    final @Nullable Boolean hide =
+        "hide".equals(request.action())
+            ? Boolean.TRUE
+            : "reveal".equals(request.action()) ? Boolean.FALSE : null;
+    if ((hide == null && !"render".equals(request.action()))
+        || request.world() == null
+        || request.chunks() == null
+        || request.chunks().isEmpty()
+        || request.chunks().size() > MAX_AREA_CHUNKS
+        || request.chunks().stream().anyMatch(chunk -> chunk == null || chunk.length != 2)
+        || !viewer.canSee(this.taerraConfig, request.world())) {
+      ctx.status(400).result("Invalid area");
+      return;
+    }
+    if (hide == null ? !viewer.canRender() : !viewer.canHide()) {
+      ctx.status(403).result("Not allowed");
+      return;
+    }
+    final @NotNull Set<Long> chunks =
+        request.chunks().stream()
+            .map(chunk -> ChunkCoordinate.key(chunk[0], chunk[1]))
+            .collect(Collectors.toUnmodifiableSet());
+    final @NotNull CompletableFuture<Integer> result = new CompletableFuture<>();
+    Bukkit.getScheduler()
+        .runTask(
+            this.plugin,
+            () -> {
+              final @Nullable World world = WorldKeys.resolve(request.world());
+              if (world == null) {
+                result.complete(400);
+                return;
+              }
+              final @Nullable Player player =
+                  viewer.uuid() == null ? null : Bukkit.getPlayer(viewer.uuid());
+              result.complete(
+                  this.render.chunks(
+                          player == null ? Audience.empty() : player, world, chunks, hide)
+                      ? 202
+                      : 409);
+            });
+    ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
+  }
+
   private boolean canEditWaypoint(final @NotNull Viewer viewer, final @Nullable String name) {
     final @Nullable String layer = name == null ? null : this.waypoints.layerOf(name);
     return layer == null || viewer.canSeeLayer(this.taerraConfig, layer);
@@ -922,6 +990,9 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
             })
         .toList();
   }
+
+  private record AreaRequest(
+      @Nullable String action, @Nullable String world, @Nullable List<int[]> chunks) {}
 
   private record TeleportRequest(
       @Nullable String world, @Nullable Integer x, @Nullable Integer y, @Nullable Integer z) {}
