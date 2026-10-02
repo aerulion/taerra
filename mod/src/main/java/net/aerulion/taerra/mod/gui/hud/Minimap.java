@@ -1,6 +1,7 @@
 package net.aerulion.taerra.mod.gui.hud;
 
 import net.aerulion.taerra.mod.config.Settings;
+import net.aerulion.taerra.mod.gui.widget.CompassButton;
 import net.aerulion.taerra.mod.map.MapView;
 import net.aerulion.taerra.mod.map.MapViewImpl;
 import net.aerulion.taerra.mod.map.Projection;
@@ -25,6 +26,7 @@ public final class Minimap implements HudElement {
   private static final int MARGIN = 4;
   private static final int INSET = 3;
   private static final int EFFECT_ROW = 26;
+  private static final int NEEDLE_INSET = 9;
 
   private final MapSession session;
   private final @NotNull Settings settings;
@@ -89,15 +91,11 @@ public final class Minimap implements HudElement {
         -1,
         partialTick);
 
-    final double northX = Math.sin(this.view.spin());
-    final double northY = -Math.cos(this.view.spin());
-    final double edge = (size / 2.0 - 1) / Math.max(Math.abs(northX), Math.abs(northY));
-    graphics.centeredText(
-        minecraft.font,
-        "N",
-        (int) Math.round((left + right) / 2.0 + northX * edge),
-        (int) Math.round((top + bottom) / 2.0 + northY * edge) - 4,
-        0xFFFFFFFF);
+    CompassButton.drawNeedle(
+        graphics,
+        right - INSET - NEEDLE_INSET,
+        top + INSET + NEEDLE_INSET,
+        Projection.topDown(map.config()).bearing(180) + this.view.spin());
     graphics.centeredText(
         minecraft.font,
         "%d %d %d".formatted(player.getBlockX(), player.getBlockY(), player.getBlockZ()),

@@ -50,9 +50,16 @@ public final class CompassButton extends AbstractButton {
       final int mouseY,
       final float partialTick) {
     extractDefaultSprite(graphics);
-    final double angle = this.north.getAsDouble();
-    needle(graphics, angle, true);
-    needle(graphics, angle, false);
+    drawNeedle(graphics, getX() + SIZE / 2f, getY() + SIZE / 2f, this.north.getAsDouble());
+  }
+
+  public static void drawNeedle(
+      final @NotNull GuiGraphicsExtractor graphics,
+      final float centerX,
+      final float centerY,
+      final double angle) {
+    needle(graphics, centerX, centerY, angle, true);
+    needle(graphics, centerX, centerY, angle, false);
   }
 
   @Override
@@ -60,11 +67,15 @@ public final class CompassButton extends AbstractButton {
     defaultButtonNarrationText(output);
   }
 
-  private void needle(
-      final @NotNull GuiGraphicsExtractor graphics, final double angle, final boolean shadow) {
+  private static void needle(
+      final @NotNull GuiGraphicsExtractor graphics,
+      final float centerX,
+      final float centerY,
+      final double angle,
+      final boolean shadow) {
     final @NotNull Matrix3x2fStack pose = graphics.pose();
     pose.pushMatrix();
-    pose.translate(getX() + SIZE / 2f, getY() + SIZE / 2f);
+    pose.translate(centerX, centerY);
     pose.rotate((float) angle);
     pose.translate(-NEEDLE_WIDTH / 2f, -NEEDLE_HEIGHT / 2f);
     if (shadow) {
