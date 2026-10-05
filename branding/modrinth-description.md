@@ -122,8 +122,8 @@ Every setting can also be changed in game with `/taerra config`.
 
 ![Requirements](https://assets.corpium.net/taerra/section-requirements.png?v=9d495b21)
 
-- **Plugin:** Paper 26.2 and Java 25. Spigot and Folia are not supported.
-- **Mod:** Fabric Loader, Fabric API, and Minecraft 26.2, on a server running the TAERRA plugin.
+- **Plugin:** Paper 26.3 and Java 25. Spigot and Folia are not supported.
+- **Mod:** Fabric Loader, Fabric API, and Minecraft 26.3, on a server running the TAERRA plugin.
 - **Updates:** when a new version of both comes out, update the plugin first. A mod newer than the server's plugin tells players to ask the server to update. Plugin and mod share one build counter, so their build numbers skip and don't have to match.
 
 Render threads and cache sizes are configurable, so you decide how much CPU and memory the map may use.

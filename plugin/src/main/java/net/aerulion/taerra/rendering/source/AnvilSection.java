@@ -59,17 +59,14 @@ final class AnvilSection {
     this.allAir = air;
   }
 
-  static @NotNull AnvilSection decode(final @NotNull CompoundTag sectionTag) {
+  static @NotNull AnvilSection decode(
+      final @NotNull CompoundTag sectionTag, final @NotNull ChunkFormat format) {
     final @NotNull CompoundTag blocks = sectionTag.getCompoundOrEmpty("block_states");
     final @NotNull ListTag blockPalette = blocks.getListOrEmpty("palette");
     final Material @NotNull [] palette = new Material[Math.max(1, blockPalette.size())];
     palette[0] = Material.AIR;
     for (int i = 0; i < blockPalette.size(); i++) {
-      palette[i] =
-          blockPalette
-              .getCompound(i)
-              .map(entry -> AnvilMaterials.byName(entry.getStringOr("Name", "")))
-              .orElse(Material.AIR);
+      palette[i] = AnvilMaterials.byName(format.blockStateName(blockPalette, i));
     }
     final int bits = bitsOnDisk(blockPalette.size(), 4, 8);
     final long @NotNull [] data =

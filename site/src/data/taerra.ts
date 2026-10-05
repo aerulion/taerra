@@ -298,8 +298,8 @@ const en = {
             }
         ] satisfies Step[],
         requirements: [
-            {part: 'Plugin', needs: 'Paper 26.2 and Java 25. Spigot and Folia are not supported.'},
-            {part: 'Mod', needs: 'Fabric Loader, Fabric API and Minecraft 26.2, on a server running the plugin'},
+            {part: 'Plugin', needs: 'Paper 26.3 and Java 25. Spigot and Folia are not supported.'},
+            {part: 'Mod', needs: 'Fabric Loader, Fabric API and Minecraft 26.3, on a server running the plugin'},
             {
                 part: 'Updates',
                 needs: 'Update the plugin first. A mod newer than the plugin asks players to have the server updated. Plugin and mod share one build counter, so their numbers skip and don’t have to match.'

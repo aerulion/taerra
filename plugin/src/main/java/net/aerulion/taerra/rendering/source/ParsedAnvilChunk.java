@@ -24,8 +24,11 @@ public final class ParsedAnvilChunk implements ColumnSource {
     this.sections = sections;
   }
 
-  public static @NotNull ParsedAnvilChunk fromNbt(
-      final @NotNull CompoundTag chunkTag, final int minHeight, final int maxHeight) {
+  static @NotNull ParsedAnvilChunk fromNbt(
+      final @NotNull CompoundTag chunkTag,
+      final @NotNull ChunkFormat format,
+      final int minHeight,
+      final int maxHeight) {
     final int minSectionY = minHeight >> 4;
     final AnvilSection @NotNull [] sections = new AnvilSection[(maxHeight - minHeight) >> 4];
     final @NotNull ListTag sectionTags = chunkTag.getListOrEmpty("sections");
@@ -36,7 +39,7 @@ public final class ParsedAnvilChunk implements ColumnSource {
       }
       final int index = sectionTag.getByteOr("Y", (byte) 0) - minSectionY;
       if (index >= 0 && index < sections.length) {
-        sections[index] = AnvilSection.decode(sectionTag);
+        sections[index] = AnvilSection.decode(sectionTag, format);
       }
     }
     return new ParsedAnvilChunk(minHeight, maxHeight, sections);

@@ -1,5 +1,6 @@
 package net.aerulion.taerra.mod.gui.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -46,7 +47,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 public final class MapScreen extends Screen {
 
@@ -243,7 +243,8 @@ public final class MapScreen extends Screen {
         openWorlds(false);
         return true;
       }
-      if (event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) {
+      if (event.key() == InputConstants.KEY_RETURN
+          || event.key() == InputConstants.KEY_NUMPADENTER) {
         final @Nullable World first = this.worldPicker.first();
         if (first != null) {
           pickWorld(first);
@@ -270,9 +271,9 @@ public final class MapScreen extends Screen {
       return true;
     }
     if (this.selection != null
-        && event.key() >= GLFW.GLFW_KEY_1
-        && event.key() < GLFW.GLFW_KEY_1 + SelectionTool.values().length) {
-      setTool(SelectionTool.values()[event.key() - GLFW.GLFW_KEY_1]);
+        && event.key() >= InputConstants.KEY_1
+        && event.key() < InputConstants.KEY_1 + SelectionTool.values().length) {
+      setTool(SelectionTool.values()[event.key() - InputConstants.KEY_1]);
       return true;
     }
     if (TaerraKeys.OPEN_MAP.matches(event)) {
@@ -506,7 +507,7 @@ public final class MapScreen extends Screen {
         return true;
       }
       closeMenu();
-      if (event.button() != GLFW.GLFW_MOUSE_BUTTON_RIGHT || !overMap(event.x(), event.y())) {
+      if (event.button() != InputConstants.MOUSE_BUTTON_RIGHT || !overMap(event.x(), event.y())) {
         return true;
       }
     }
@@ -523,7 +524,7 @@ public final class MapScreen extends Screen {
     if (!overMap(event.x(), event.y())) {
       return false;
     }
-    if (this.selection != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+    if (this.selection != null && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
       final @Nullable Place place = this.view.placeAt(this.map, event.x(), event.y());
       if (place != null) {
         this.stroking = true;
@@ -539,13 +540,13 @@ public final class MapScreen extends Screen {
       }
       return true;
     }
-    if (this.selection == null && event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+    if (this.selection == null && event.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
       this.moving = null;
       openPlaceMenu(event.x(), event.y());
       return true;
     }
-    if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT
-        || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+    if (event.button() == InputConstants.MOUSE_BUTTON_LEFT
+        || event.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
       this.dragging = true;
       this.dragButton = event.button();
       this.dragDistance = 0;
@@ -560,7 +561,7 @@ public final class MapScreen extends Screen {
 
   @Override
   public boolean mouseReleased(final MouseButtonEvent event) {
-    if (this.stroking && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+    if (this.stroking && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
       this.stroking = false;
       final @Nullable ChunkSelection selection = this.selection;
       if (selection != null && this.anchor != null && this.reach != null) {

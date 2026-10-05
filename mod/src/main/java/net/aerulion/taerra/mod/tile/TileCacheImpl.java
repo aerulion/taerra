@@ -1,8 +1,8 @@
 package net.aerulion.taerra.mod.tile;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.logging.LogUtils;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;

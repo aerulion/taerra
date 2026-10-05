@@ -81,7 +81,7 @@ python -m pip install -e .
 Provision the assets automatically (requires read access to the private assets repository):
 
 ```bash
-python -m mcdata.generate --version 26.2
+python -m mcdata.generate --version 26.3
 ```
 
 Or point at an existing checkout:
@@ -96,7 +96,7 @@ directories this tool reads, about 30 MB, and re-fetch incrementally.
 ### Useful options
 
 ```bash
-python -m mcdata.generate --version 26.2 \
+python -m mcdata.generate --version 26.3 \
   --output ../../plugin/src/main/resources/block_data.json \
   --full-threshold 0.25 \
   --bandwidth 0.055 \

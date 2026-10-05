@@ -111,12 +111,12 @@ tasks {
             modrinth("chunky", "MdY6JATr")
             modrinth("chunkyborder", "asaBBItO")
             url(
-                "https://ci.enginehub.org/repository/download/bt10/30195:id/worldedit-bukkit-7.4.6-SNAPSHOT-dist.jar?branch=version/7.4.x&guest=1"
+                "https://ci.enginehub.org/repository/download/bt10/30292:id/worldedit-bukkit-7.4.6-SNAPSHOT-dist.jar?branch=version/7.4.x&guest=1"
             )
             url(
-                "https://ci.enginehub.org/repository/download/bt11/30192:id/worldguard-bukkit-7.0.20-SNAPSHOT-dist.jar?branch=version/7.0.x&guest=1"
+                "https://ci.enginehub.org/repository/download/bt11/30231:id/worldguard-bukkit-7.0.20-SNAPSHOT-dist.jar?branch=version/7.0.x&guest=1"
             )
-            url("https://download.luckperms.net/1672/bukkit/loader/LuckPerms-Bukkit-5.5.85.jar")
+            url("https://download.luckperms.net/1674/bukkit/loader/LuckPerms-Bukkit-5.5.87.jar")
         }
     }
 }

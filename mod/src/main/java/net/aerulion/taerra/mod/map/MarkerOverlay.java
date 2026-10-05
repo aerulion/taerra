@@ -1,8 +1,8 @@
 package net.aerulion.taerra.mod.map;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.logging.LogUtils;
+import com.mojang.renderpearl.api.textures.GpuSampler;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
