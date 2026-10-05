@@ -38,6 +38,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
     SETTINGS.put("web.host", StringArgumentType.word());
     SETTINGS.put("web.public-url", StringArgumentType.greedyString());
     SETTINGS.put("web.name", StringArgumentType.greedyString());
+    SETTINGS.put("join-hint.interval-days", IntegerArgumentType.integer(0));
     SETTINGS.put("rendering.render-threads", IntegerArgumentType.integer(0));
     SETTINGS.put("rendering.max-tiles-per-second", IntegerArgumentType.integer(0));
     SETTINGS.put("rendering.update-interval", IntegerArgumentType.integer(0));
@@ -205,6 +206,10 @@ public final class ConfigSubCommand implements TaerraSubCommand {
           .runTaskAsynchronously(this.plugin, this.webServer::restart);
       feedback(
           context, Messages.success("config.set_web", Messages.value(key), Messages.value(value)));
+      return SUCCESS;
+    }
+    if (key.startsWith("join-hint.")) {
+      feedback(context, Messages.success("config.set", Messages.value(key), Messages.value(value)));
       return SUCCESS;
     }
     feedback(

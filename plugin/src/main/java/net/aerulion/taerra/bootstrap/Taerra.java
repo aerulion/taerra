@@ -21,6 +21,7 @@ import net.aerulion.taerra.integration.WorldBorders;
 import net.aerulion.taerra.integration.WorldGuardRegions;
 import net.aerulion.taerra.limit.HiddenAreaMarkers;
 import net.aerulion.taerra.limit.WorldLimits;
+import net.aerulion.taerra.listener.JoinHint;
 import net.aerulion.taerra.listener.world.WorldChangeListener;
 import net.aerulion.taerra.marker.MarkerRegistryImpl;
 import net.aerulion.taerra.marker.MarkerRegistryInternal;
@@ -194,6 +195,7 @@ public final class Taerra extends JavaPlugin {
       WebGrants.start(this, configuration, webSessions);
       final @NotNull ModHandshake modHandshake = new ModHandshake(this, configuration, webSessions);
       modHandshake.start();
+      getServer().getPluginManager().registerEvents(new JoinHint(this, configuration), this);
       final @NotNull TileUpdateBroadcaster tileUpdateBroadcaster =
           new TileUpdateBroadcasterImpl(this, webSocketHandler);
       this.tileUpdateBroadcaster = tileUpdateBroadcaster;

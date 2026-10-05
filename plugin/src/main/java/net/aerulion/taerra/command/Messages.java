@@ -74,6 +74,13 @@ public final class Messages {
     return warning("login.done", command("/taerra logout"));
   }
 
+  public static @NotNull Component joinHint(final @NotNull String mapUrl) {
+    final @NotNull Component mod = link("https://download.taerra.dev", tr("join_hint.mod"));
+    return mapUrl.isEmpty()
+        ? info("join_hint.mod_only", mod)
+        : info("join_hint.text", link(mapUrl, tr("login.open")), mod);
+  }
+
   static @NotNull TranslatableComponent tr(
       final @NotNull String key, final @NotNull ComponentLike... args) {
     return Component.translatable("taerra." + key, args);

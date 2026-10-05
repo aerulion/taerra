@@ -16,6 +16,12 @@ web:
   # alone; /taerra config web.name "" empties it. Up to 32 letters, digits, spaces and - _ . , : ' & ( ) # ! ? +
   name: ""
 
+# A chat hint a few seconds after joining that links the map (at web.public-url, when set) and the
+# mod. Skipped for players who already have the mod, and shown to each player at most once every
+# this many days (0 = never).
+join-hint:
+  interval-days: 7
+
 # Rendering settings
 rendering:
   # Number of threads for tile rendering (0 = half the CPU cores, leaving at least two free for the server)
