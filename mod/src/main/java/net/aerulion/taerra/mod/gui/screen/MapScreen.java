@@ -353,24 +353,26 @@ public final class MapScreen extends Screen {
               .tooltip(Tooltip.create(viewTooltip()))
               .width(BUTTON_WIDTH)
               .build());
-      if (this.view.isometric()) {
-        footer.addChild(
-            iconButton(
-                20,
-                IconButton.COUNTER_CLOCKWISE,
-                Component.translatable(
-                    "taerra.map.rotate.left",
-                    Component.literal("Shift+")
-                        .append(TaerraKeys.ROTATE.getTranslatedKeyMessage())),
-                () -> rotate(1)));
-        footer.addChild(
-            iconButton(
-                20,
-                IconButton.CLOCKWISE,
-                Component.translatable(
-                    "taerra.map.rotate.right", TaerraKeys.ROTATE.getTranslatedKeyMessage()),
-                () -> rotate(-1)));
-      }
+      footer.addChild(
+                  iconButton(
+                      20,
+                      IconButton.COUNTER_CLOCKWISE,
+                      Component.translatable(
+                          "taerra.map.rotate.left",
+                          Component.literal("Shift+")
+                              .append(TaerraKeys.ROTATE.getTranslatedKeyMessage())),
+                      () -> rotate(1)))
+              .active =
+          this.view.isometric();
+      footer.addChild(
+                  iconButton(
+                      20,
+                      IconButton.CLOCKWISE,
+                      Component.translatable(
+                          "taerra.map.rotate.right", TaerraKeys.ROTATE.getTranslatedKeyMessage()),
+                      () -> rotate(-1)))
+              .active =
+          this.view.isometric();
     }
     if (this.selection == null) {
       footer.addChild(
