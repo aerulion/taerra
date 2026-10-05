@@ -60,6 +60,9 @@ Build numbers, not semver: release `<build>-<commit>` (`412-a1b2c3d`), PR snapsh
 `<commit>-dev` / `<commit>-dirty-dev`. `settings.gradle.kts` derives it from `TAERRA_BUILD_NUMBER`,
 `TAERRA_PR_NUMBER` and `git` for every project; workflows never build a version string — `./gradlew -q printVersion`
 is the source of truth. `<build>` is the `release.yml` run number, shared by both streams, so tags skip numbers.
+People read it as "Build 412": jars are `taerra-paper-build-412-a1b2c3d.jar` / `taerra-fabric-…` (`jarVersion`,
+`pr7-build-…`, `dev-<commit>[-dirty]`), Modrinth and Discord say "TAERRA Build 412 for Paper", `/taerra` shows
+"Build 412 (a1b2c3d)". Maven coordinates, the API jar and the plugin and mod metadata keep the plain version.
 
 `build.yml` is the only reusable Gradle workflow. It runs `./gradlew build`, then `./gradlew :api:publish` as a
 separate step, so nothing is published before every test has passed. Caching is `gradle/actions/setup-gradle` alone —
@@ -74,12 +77,12 @@ are both the plugin and the mod, `site/` and what it takes from `branding/` and 
 of `branding/` and Markdown are none, anything else is the plugin. `build.yml` runs once if the plugin or the mod
 changed, then:
 
-- plugin: tag `build-<n>`, plugin and API jars attached, API published to GitHub Packages
+- plugin: tag `plugin-<n>`, plugin and API jars attached, API published to GitHub Packages
 - mod: tag `mod-<n>`, mod jar attached
 - website: `.github/actions/build-site` checks and builds it, the deploy goes to GitHub Pages, then the one `site` tag
   moves to that commit (no release)
 
-With `release-tags: 'true'`, `classify-changes` diffs each stream against the newest `build-`/`mod-` tag HEAD descends
+With `release-tags: 'true'`, `classify-changes` diffs each stream against the newest `plugin-`/`mod-` tag HEAD descends
 from, or the `site` tag, falling back to `github.event.before`. Required: GitHub keeps one pending run per concurrency
 group, so a cancelled run's commits would otherwise never be classified.
 
@@ -92,11 +95,11 @@ Both streams share one release list, so `cleanup-releases.yml` refuses to run wi
 `pr-cleanup.yml` matches the `pr<n>-` prefix; both follow the version format in `settings.gradle.kts`. The package API
 calls pick `/users/...` or `/orgs/...` from the repository owner type.
 
-`modrinth.yml` is the only way to Modrinth: run by hand with a `build-<n>`/`mod-<n>` tag, it uploads that GitHub
+`modrinth.yml` is the only way to Modrinth: run by hand with plugin or mod and a build number, it uploads that GitHub
 release's jar, never a rebuild, as a Paper or Fabric version of the one project, slug `taerra` (`MODRINTH_TOKEN` secret). Its changelog is `release-notes.sh` with `AUDIENCE=players` since the commit in the
 newest Modrinth version number of that loader.
 
-For a `build-<n>` tag, `modrinth.yml` then calls `build.yml` with `central: true`: it rebuilds and tests the tag under the
+For the plugin, `modrinth.yml` then calls `build.yml` with `central: true`: it rebuilds and tests the tag under the
 same version and publishes the API to Maven Central, signed, through the Central Portal API (`CENTRAL_USERNAME`,
 `CENTRAL_PASSWORD`, `SIGNING_KEY`, `SIGNING_PASSWORD` secrets). Central versions are permanent, so nothing else
 publishes there. The API's POM is public and links only to taerra.dev and the hosted license. Every public API type and

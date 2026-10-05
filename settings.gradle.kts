@@ -39,4 +39,15 @@ val taerraVersion =
         else -> "$commitHash-dev"
     }
 
-gradle.beforeProject { version = taerraVersion }
+val jarVersion =
+    when {
+        pullRequestNumber != null -> "pr$pullRequestNumber-build-${buildNumber ?: "0"}-$commitHash"
+        buildNumber != null -> "build-$buildNumber-$commitHash"
+        workingTreeDirty -> "dev-$commitHash-dirty"
+        else -> "dev-$commitHash"
+    }
+
+gradle.beforeProject {
+    version = taerraVersion
+    extra["jarVersion"] = jarVersion
+}

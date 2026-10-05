@@ -31,7 +31,7 @@ jobs:
     uses: ./.github/workflows/cleanup-releases.yml
     with:
       keep-latest: ${{ inputs.keep-latest }}
-      tag-prefix: build-
+      tag-prefix: plugin-
     permissions:
       contents: write
 

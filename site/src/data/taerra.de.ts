@@ -260,7 +260,7 @@ export const de: Copy = {
             {part: 'Mod', needs: 'Fabric Loader, Fabric API und Minecraft 26.2, auf einem Server mit dem Plugin'},
             {
                 part: 'Updates',
-                needs: 'Aktualisiere zuerst das Plugin. Ist die Mod neuer als das Plugin, bittet sie die Spieler:innen, den Server aktualisieren zu lassen.'
+                needs: 'Aktualisiere zuerst das Plugin. Ist die Mod neuer als das Plugin, bittet sie die Spieler:innen, den Server aktualisieren zu lassen. Plugin und Mod teilen sich einen Build-Zähler, ihre Nummern springen also und müssen nicht übereinstimmen.'
             }
         ],
         more: [

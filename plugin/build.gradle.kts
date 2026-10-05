@@ -11,7 +11,11 @@ plugins {
 }
 
 base {
-    archivesName = "taerra"
+    archivesName = "taerra-paper"
+}
+
+tasks.withType<AbstractArchiveTask>().configureEach {
+    archiveVersion = project.extra["jarVersion"] as String
 }
 
 val runtimeLibraries =

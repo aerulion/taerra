@@ -302,7 +302,7 @@ const en = {
             {part: 'Mod', needs: 'Fabric Loader, Fabric API and Minecraft 26.2, on a server running the plugin'},
             {
                 part: 'Updates',
-                needs: 'Update the plugin first. A mod newer than the plugin asks players to have the server updated.'
+                needs: 'Update the plugin first. A mod newer than the plugin asks players to have the server updated. Plugin and mod share one build counter, so their numbers skip and don’t have to match.'
             }
         ],
         more: [

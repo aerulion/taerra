@@ -11,6 +11,10 @@ base {
     archivesName = "taerra-fabric"
 }
 
+tasks.withType<AbstractArchiveTask>().configureEach {
+    archiveVersion = project.extra["jarVersion"] as String
+}
+
 repositories { maven("https://maven.terraformersmc.com/releases/") }
 
 dependencies {

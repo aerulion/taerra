@@ -53,7 +53,13 @@ public final class TaerraCommands {
       final @NotNull List<? extends TaerraSubCommand> subCommands,
       final @NotNull CommandSender sender) {
     final @NotNull List<Component> lines = new ArrayList<>();
-    lines.add(Messages.header(Messages.value(plugin.getPluginMeta().getVersion())));
+    lines.add(
+        Messages.header(
+            Messages.value(
+                plugin
+                    .getPluginMeta()
+                    .getVersion()
+                    .replaceFirst("^(\\d+)-(\\p{XDigit}+)$", "Build $1 ($2)"))));
     for (final @NotNull TaerraSubCommand subCommand : subCommands) {
       if (subCommand.permission().check(sender)) {
         final @NotNull Component description = Messages.tr("command." + subCommand.name());

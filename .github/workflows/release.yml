@@ -87,9 +87,9 @@ jobs:
       - name: 📦 Create GitHub release
         uses: ./.github/actions/github-release
         with:
-          tag: build-${{ github.run_number }}
-          prefix: build-
-          title: build-${{ github.run_number }} (${{ needs.build.outputs.version }})
+          tag: plugin-${{ github.run_number }}
+          prefix: plugin-
+          title: plugin-${{ github.run_number }} (${{ needs.build.outputs.version }})
           files: |
             ./generated/plugin/build/libs/*.jar
             ./generated/api/build/libs/*.jar
@@ -190,7 +190,7 @@ jobs:
     uses: ./.github/workflows/cleanup-releases.yml
     with:
       keep-latest: 10
-      tag-prefix: build-
+      tag-prefix: plugin-
     permissions:
       contents: write
 

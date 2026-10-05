@@ -6,10 +6,15 @@ name: 🟢 Publish to Modrinth
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: The build to publish, by its GitHub release tag, build-<n> for the plugin or mod-<n> for the mod.
+      part:
+        description: What to publish.
         required: true
-        type: string
+        type: choice
+        options: [ plugin, mod ]
+      build:
+        description: The build number, n in its GitHub release plugin-<n> or mod-<n>.
+        required: true
+        type: number
       channel:
         description: The Modrinth release channel.
         type: choice
@@ -37,12 +42,11 @@ jobs:
       url: ${{ steps.publish.outputs.url }}
       description: ${{ steps.publish.outputs.description }}
       icon: ${{ steps.publish.outputs.icon }}
-      build: ${{ steps.publish.outputs.build }}
     steps:
       - name: 📥 Checkout the build
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ inputs.part }}-${{ inputs.build }}
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
@@ -54,7 +58,8 @@ jobs:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           # The slug the mod, the plugin and the web map link to as well.
           SLUG: taerra
-          TAG: ${{ inputs.tag }}
+          PART: ${{ inputs.part }}
+          BUILD: ${{ inputs.build }}
           CHANNEL: ${{ inputs.channel }}
         run: |
           set -euo pipefail
@@ -64,13 +69,14 @@ jobs:
             exit 1
           fi
 
-          if [[ ! "${TAG}" =~ ^(build|mod)-[0-9]+$ ]]; then
-            echo "::error::'${TAG}' is not a build-<n> or mod-<n> tag."
+          if [[ ! "${BUILD}" =~ ^[0-9]+$ ]]; then
+            echo "::error::'${BUILD}' is not a build number."
             exit 1
           fi
-          case "${TAG}" in
-            build-*) prefix='build-' loader='paper' jar='^taerra-[0-9].*\.jar$' part='Paper' ;;
-            mod-*) prefix='mod-' loader='fabric' jar='^taerra-fabric-[0-9].*\.jar$' part='Fabric' ;;
+          TAG="${PART}-${BUILD}"
+          case "${PART}" in
+            plugin) prefix='plugin-' loader='paper' jar='^taerra-paper-build-[0-9]+-[0-9a-f]+\.jar$' part='Paper' ;;
+            mod) prefix='mod-' loader='fabric' jar='^taerra-fabric-build-[0-9]+-[0-9a-f]+\.jar$' part='Fabric' ;;
           esac
 
           gh release download "${TAG}" --repo "${GITHUB_REPOSITORY}" --dir dist --pattern '*.jar'
@@ -79,9 +85,8 @@ jobs:
             echo "::error::The ${TAG} release has no ${part} jar."
             exit 1
           fi
-          version="${file#taerra-}"
-          version="${version#fabric-}"
-          version="${version%.jar}"
+          version="${file%.jar}"
+          version="${version#*-build-}"
           minecraft="$(sed -nE 's/^minecraft = "([^"]+)"$/\1/p' gradle/libs.versions.toml)"
 
           modrinth() {
@@ -115,7 +120,7 @@ jobs:
               '[{project_id: $api, dependency_type: "required"}, {project_id: $menu, dependency_type: "optional"}]')"
           fi
 
-          name="TAERRA ${TAG#*-} for ${part}"
+          name="TAERRA Build ${BUILD} for ${part}"
           jq -n --arg name "${name}" --arg version "${version}" --arg changelog "${changelog}" \
             --argjson dependencies "${dependencies}" --arg minecraft "${minecraft}" --arg channel "${CHANNEL}" \
             --arg loader "${loader}" --arg project "${id}" '{
@@ -142,7 +147,6 @@ jobs:
           fi
           delimiter="EOF-$(openssl rand -hex 8)"
           {
-            echo "build=${TAG#*-}"
             echo "title=${title}"
             echo "url=${url}"
             echo "icon=$(jq -r '.icon_url // empty' <<< "${project}")"
@@ -154,11 +158,11 @@ jobs:
   central:
     name: 🏛️ Maven Central
     needs: publish
-    if: startsWith(inputs.tag, 'build-')
+    if: inputs.part == 'plugin'
     uses: ./.github/workflows/build.yml
     with:
-      ref: ${{ inputs.tag }}
-      build-number: ${{ needs.publish.outputs.build }}
+      ref: plugin-${{ inputs.build }}
+      build-number: ${{ format('{0}', inputs.build) }}
       central: true
     secrets:
       CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
