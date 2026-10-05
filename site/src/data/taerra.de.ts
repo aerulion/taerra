@@ -25,7 +25,7 @@ export const de: Copy = {
         kicker: 'Paper + Fabric',
         title: ['Deine Welt, ', 'live', ' in 3D'] as Marked,
         tagline: 'Eine Karte, gerendert auf deinem Server: im Browser und im Spiel.',
-        lede: 'TAERRA macht aus deinen Minecraft-Welten eine Live-Karte, die jeder öffnen kann: jeder Block ein beleuchteter, schattierter Würfel, von oben oder schräg von allen vier Seiten. Spieler bekommen dieselbe Karte im Spiel, mit allem, was der Browser kann, und dazu einer Minikarte.',
+        lede: 'TAERRA macht aus deinen Minecraft-Welten eine Live-Karte, die alle öffnen können: jeder Block ein beleuchteter, schattierter Würfel, von oben oder schräg von allen vier Seiten. Spieler:innen bekommen dieselbe Karte im Spiel, mit allem, was der Browser kann, und dazu einer Minikarte.',
         modrinth: 'Auf Modrinth holen',
         demo: 'Live ansehen',
         note: 'Kostenlos für jeden Server, auch für kommerzielle.',
@@ -46,7 +46,7 @@ export const de: Copy = {
     speed: {
         kicker: 'Tempo',
         title: 'Eine ganze Welt in Minuten',
-        lede: 'Alles wird auf deinem Server gerendert, in eigenen Threads. Besucher laden nur fertige Bilder, deshalb ist die Karte auf dem Handy so schnell wie auf einem Gaming-PC.',
+        lede: 'Alles wird auf deinem Server gerendert, in eigenen Threads. Besucher:innen laden nur fertige Bilder, deshalb ist die Karte auf dem Handy so schnell wie auf einem Gaming-PC.',
         stats: [
             {
                 value: '2:46',
@@ -96,16 +96,16 @@ export const de: Copy = {
                 title: 'Immer die Welt, wie sie gerade ist',
                 features: [
                     {
-                        title: 'Spieler bewegen sich live',
-                        text: 'Positionen aktualisieren sich jede Sekunde, mit Spielerliste und einem Folgemodus, der jemanden im Blick behält, auch über Welten hinweg.'
+                        title: 'Spieler:innen bewegen sich live',
+                        text: 'Positionen aktualisieren sich jede Sekunde, mit einer Liste aller Spieler:innen und einem Folgemodus, der jemanden im Blick behält, auch über Welten hinweg.'
                     },
                     {
                         title: 'Farben aus der Ortungsleiste',
-                        text: 'Jeder Spieler trägt die Farbe seines Punkts in der Ortungsleiste, so siehst du auf einen Blick, wer wer ist, auf der Karte und im Spiel.'
+                        text: 'Alle Spieler:innen tragen die Farbe ihres Punkts in der Ortungsleiste, so siehst du auf einen Blick, wer wer ist, auf der Karte und im Spiel.'
                     },
                     {
                         title: 'Die Karte bleibt aktuell',
-                        text: 'Jede Änderung wird erfasst, ob von Spielern gebaut oder von der Natur gewachsen, und in einem Intervall deiner Wahl neu gezeichnet. Eine Stelle, die sich hundertmal ändert, wird einmal gezeichnet.'
+                        text: 'Jede Änderung wird erfasst, ob von Spieler:innen gebaut oder von der Natur gewachsen, und in einem Intervall deiner Wahl neu gezeichnet. Eine Stelle, die sich hundertmal ändert, wird einmal gezeichnet.'
                     },
                     {
                         title: 'Zusehen beim Rendern',
@@ -119,23 +119,23 @@ export const de: Copy = {
                 features: [
                     {
                         title: 'Anmelden ohne Passwort',
-                        text: 'Spieler geben /taerra login ein und klicken auf den Link, den sie bekommen. Der Link funktioniert einmal, der Browser bleibt 30 Tage angemeldet, und Spieler erfahren im Spiel, wann immer sich ein Browser als sie anmeldet.'
+                        text: 'Spieler:innen geben /taerra login ein und klicken auf den Link, den sie bekommen. Der Link funktioniert einmal, der Browser bleibt 30 Tage angemeldet, und Spieler:innen erfahren im Spiel, wann immer sich ein Browser als sie anmeldet.'
                     },
                     {
                         title: 'Private Welten und Ebenen',
-                        text: 'Verstecke eine Welt oder Ebene vor allen außer angemeldeten Spielern mit der passenden Berechtigung.'
+                        text: 'Verstecke eine Welt oder Ebene vor allen außer angemeldeten Spieler:innen mit der passenden Berechtigung.'
                     },
                     {
                         title: 'Teleport von der Karte',
-                        text: 'Angemeldete Spieler mit Berechtigung klicken mit rechts auf eine beliebige Stelle der Karte, um dorthin zu gelangen.'
+                        text: 'Angemeldete Spieler:innen mit Berechtigung klicken mit rechts auf eine beliebige Stelle der Karte, um dorthin zu gelangen.'
                     },
                     {
                         title: 'Wegpunkte',
-                        text: 'In benannten Gruppen und Farben, auch privaten. Spieler mit Berechtigung setzen, verschieben und färben sie direkt auf der Karte, und die Mod zeigt sie als Beschriftung in der Welt selbst.'
+                        text: 'In benannten Gruppen und Farben, auch privaten. Spieler:innen mit Berechtigung setzen, verschieben und färben sie direkt auf der Karte, und die Mod zeigt sie als Beschriftung in der Welt selbst.'
                     },
                     {
                         title: 'Datenschutz eingebaut',
-                        text: 'Zuschauer, unsichtbare und per Vanish versteckte Spieler bleiben von der Karte fern, und wer sich in Serverlisten verbirgt, erscheint als anonymer Punkt. Spielerköpfe kommen von deinem Server, deshalb verrät das Ansehen der Karte keinen Besucher an Mojang.'
+                        text: 'Spieler:innen im Zuschauermodus, unsichtbar oder per Vanish versteckt, bleiben von der Karte fern, und wer sich in Serverlisten verbirgt, erscheint als anonymer Punkt. Die Köpfe der Spieler:innen kommen von deinem Server, deshalb verrät das Ansehen der Karte niemanden an Mojang.'
                     },
                     {
                         title: 'Eine Jar',
@@ -171,7 +171,7 @@ export const de: Copy = {
                 kicker: 'Verträgt sich mit anderen',
                 title: 'Passt zu den Plugins, die du schon hast',
                 features: [
-                    {title: 'WorldGuard', text: 'Regionen als Ebene, die Besucher einschalten können.'},
+                    {title: 'WorldGuard', text: 'Regionen als Ebene, die Besucher:innen einschalten können.'},
                     {title: 'Weltgrenzen', text: 'Die Vanilla-Grenze und ChunkyBorder-Grenzen als Ebene.'},
                     {
                         title: 'Chunky',
@@ -186,10 +186,10 @@ export const de: Copy = {
     mod: {
         kicker: 'Fabric-Mod',
         title: 'Dieselbe Karte im Spiel',
-        lede: 'Die optionale Fabric-Mod bringt die Karte deines Servers zu deinen Spielern. Betritt einen Server mit TAERRA, und sie verbindet sich von selbst, schon angemeldet, ganz ohne /taerra login.',
+        lede: 'Die optionale Fabric-Mod bringt die Karte deines Servers zu deinen Spieler:innen. Betritt einen Server mit TAERRA, und sie verbindet sich von selbst, schon angemeldet, ganz ohne /taerra login.',
         points: [
-            'Eine ganze Weltkarte, die alles kann, was die Web-Karte kann: beide Ansichten und alle vier Drehungen, Ebenen, Spieler und Folgemodus, Wegpunkte, Teleport, Chunk-Auswahl und Render-Fortschritt',
-            'Eine Minikarte, die du in Größe und Zoom anpassen, links oder rechts platzieren und mit dem Spieler drehen kannst',
+            'Eine ganze Weltkarte, die alles kann, was die Web-Karte kann: beide Ansichten und alle vier Drehungen, Ebenen, Spieler:innen und Folgemodus, Wegpunkte, Teleport, Chunk-Auswahl und Render-Fortschritt',
+            'Eine Minikarte, die du in Größe und Zoom anpassen, links oder rechts platzieren und mit deiner Blickrichtung drehen kannst',
             'Wegpunkte in der Welt, als Beschriftung dort, wo sie sind'
         ],
         note: 'Sie rendert selbst nichts: Sie zeichnet die Bilder, die der Server schon gemacht hat. Braucht Fabric API; Mod Menu ist optional.',
@@ -209,7 +209,7 @@ export const de: Copy = {
             },
             {
                 caption: 'Eine Minikarte und Wegpunkte in der Welt',
-                alt: 'Ein Spieler auf einem grasbewachsenen Hügel, Wegpunkt-Beschriftungen über der Landschaft und eine Minikarte oben rechts'
+                alt: 'Eine Spielfigur auf einem grasbewachsenen Hügel, Wegpunkt-Beschriftungen über der Landschaft und eine Minikarte oben rechts'
             }
         ],
         viewer: {
@@ -260,7 +260,7 @@ export const de: Copy = {
             {part: 'Mod', needs: 'Fabric Loader, Fabric API und Minecraft 26.2, auf einem Server mit dem Plugin'},
             {
                 part: 'Updates',
-                needs: 'Aktualisiere zuerst das Plugin. Ist die Mod neuer als das Plugin, bittet sie die Spieler, den Server aktualisieren zu lassen.'
+                needs: 'Aktualisiere zuerst das Plugin. Ist die Mod neuer als das Plugin, bittet sie die Spieler:innen, den Server aktualisieren zu lassen.'
             }
         ],
         more: [
@@ -297,7 +297,7 @@ export const de: Copy = {
                 {command: '/taerra waypoint add|remove …', text: 'Wegpunkte hinzufügen oder entfernen'},
                 {command: '/taerra import dynmap <datei>', text: 'Markierungen aus dynmap importieren'},
                 {command: '/taerra login', text: 'Bei der Web-Karte anmelden'},
-                {command: '/taerra logout [spieler]', text: 'In jedem Browser von der Web-Karte abmelden'}
+                {command: '/taerra logout [name]', text: 'In jedem Browser von der Web-Karte abmelden'}
             ]
         },
         permissions: {
@@ -322,7 +322,7 @@ export const de: Copy = {
                     text: 'Wegpunkte hinzufügen, verschieben und entfernen'
                 },
                 {permission: 'taerra.command.config', standard: 'OP', text: '`/taerra config` und `/taerra import`'},
-                {permission: 'taerra.command.logout.others', standard: 'OP', text: 'Andere Spieler abmelden'},
+                {permission: 'taerra.command.logout.others', standard: 'OP', text: 'Andere Spieler:innen abmelden'},
                 {
                     permission: 'taerra.web.teleport',
                     standard: 'OP',
@@ -331,7 +331,7 @@ export const de: Copy = {
                 {
                     permission: 'taerra.web.see-hidden',
                     standard: 'OP',
-                    text: 'Versteckte Spieler auf der Karte sehen, wenn angemeldet'
+                    text: 'Versteckte Spieler:innen auf der Karte sehen, wenn angemeldet'
                 },
                 {
                     permission: 'taerra.web.world.<welt>',
