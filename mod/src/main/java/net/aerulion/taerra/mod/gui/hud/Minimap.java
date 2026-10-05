@@ -25,7 +25,7 @@ public final class Minimap implements HudElement {
       Identifier.withDefaultNamespace("container/inventory/effect_background");
   private static final int MARGIN = 4;
   private static final int INSET = 3;
-  private static final int EFFECT_ROW = 26;
+  private static final int COORDINATES = 12;
   private static final int NEEDLE_INSET = 9;
 
   private final MapSession session;
@@ -38,21 +38,40 @@ public final class Minimap implements HudElement {
     this.view = new MapViewImpl(settings, settings.minimapZoom(), true);
   }
 
+  public @NotNull HudElement below(final @NotNull HudElement effects) {
+    return (graphics, deltaTracker) -> {
+      final int shift =
+          shown() && !this.settings.minimapLeft()
+              ? MARGIN + this.settings.minimapSize() + 2 * INSET + COORDINATES
+              : 0;
+      graphics.pose().pushMatrix();
+      graphics.pose().translate(0, shift);
+      effects.extractRenderState(graphics, deltaTracker);
+      graphics.pose().popMatrix();
+    };
+  }
+
+  private boolean shown() {
+    final @NotNull Minecraft minecraft = Minecraft.getInstance();
+    final @Nullable WebMap map = this.session.map();
+    if (!this.settings.minimap()
+        || map == null
+        || minecraft.player == null
+        || map.config() == null
+        || minecraft.debugEntries.isOverlayVisible()) {
+      return false;
+    }
+    this.view.setWorld(Dimensions.current());
+    return map.world(this.view.world()) != null;
+  }
+
   @Override
   public void extractRenderState(
       final GuiGraphicsExtractor graphics, final DeltaTracker deltaTracker) {
     final @NotNull Minecraft minecraft = Minecraft.getInstance();
     final @Nullable WebMap map = this.session.map();
     final @Nullable LocalPlayer player = minecraft.player;
-    if (!this.settings.minimap()
-        || map == null
-        || player == null
-        || map.config() == null
-        || minecraft.debugEntries.isOverlayVisible()) {
-      return;
-    }
-    this.view.setWorld(Dimensions.current());
-    if (map.world(this.view.world()) == null) {
+    if (map == null || player == null || !shown()) {
       return;
     }
     final float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
@@ -64,17 +83,7 @@ public final class Minimap implements HudElement {
             ? -Projection.topDown(map.config()).bearing(player.getViewYRot(partialTick))
             : 0);
 
-    int top = MARGIN;
-    if (!this.settings.minimapLeft()) {
-      if (player.getActiveEffects().stream()
-          .anyMatch(effect -> effect.getEffect().value().isBeneficial())) {
-        top += EFFECT_ROW;
-      }
-      if (player.getActiveEffects().stream()
-          .anyMatch(effect -> !effect.getEffect().value().isBeneficial())) {
-        top += EFFECT_ROW;
-      }
-    }
+    final int top = MARGIN;
     final int size = this.settings.minimapSize() + 2 * INSET;
     final int left = this.settings.minimapLeft() ? MARGIN : graphics.guiWidth() - MARGIN - size;
     final int right = left + size;

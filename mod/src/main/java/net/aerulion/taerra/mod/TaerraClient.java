@@ -57,10 +57,10 @@ public final class TaerraClient implements ClientModInitializer {
         (handler, client) -> client.execute(this.session::close));
     TaerraKeys.register();
     ClientTickEvents.END_CLIENT_TICK.register(this::tick);
+    final @NotNull Minimap minimap = new Minimap(this.session, settings);
     HudElementRegistry.attachElementBefore(
-        VanillaHudElements.CHAT,
-        Identifier.fromNamespaceAndPath("taerra", "minimap"),
-        new Minimap(this.session, settings));
+        VanillaHudElements.CHAT, Identifier.fromNamespaceAndPath("taerra", "minimap"), minimap);
+    HudElementRegistry.replaceElement(VanillaHudElements.MOB_EFFECTS, minimap::below);
     LevelRenderEvents.COLLECT_SUBMITS.register(new WaypointLabels(this.session, settings));
   }
 
