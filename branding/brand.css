@@ -7,13 +7,13 @@
     ascent-override: 80%;
     descent-override: 20%;
     line-gap-override: 0%;
-    src: url("../plugin/src/main/resources/web/fonts/QuinqueFive-Regular.ttf") format("truetype");
+    src: url("../plugin/src/main/resources/web/fonts/QuinqueFive-Regular.woff2") format("woff2");
 }
 
 @font-face {
     font-family: "Schibsted Grotesk";
     font-weight: 400 900;
-    src: url("../plugin/src/main/resources/web/fonts/SchibstedGrotesk.ttf") format("truetype");
+    src: url("../plugin/src/main/resources/web/fonts/SchibstedGrotesk.woff2") format("woff2");
 }
 
 :root {
