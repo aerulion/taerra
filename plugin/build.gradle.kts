@@ -113,7 +113,7 @@ paper {
     version = project.version.toString()
     author = "aerulion"
     description = "A live isometric and top-down web map of your worlds."
-    website = "https://modrinth.com/project/taerra"
+    website = "https://taerra.dev"
     apiVersion = libs.versions.paper.get().substringBefore(".build")
     foliaSupported = false
     serverDependencies {

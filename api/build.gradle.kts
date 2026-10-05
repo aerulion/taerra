@@ -48,7 +48,7 @@ publishing {
             pom {
                 name = "TAERRA API"
                 description = "API for adding markers and layers to the TAERRA web map."
-                url = "https://modrinth.com/project/taerra"
+                url = "https://taerra.dev"
                 licenses {
                     license {
                         name = "TAERRA License"
@@ -61,7 +61,7 @@ publishing {
                         name = "aerulion"
                     }
                 }
-                scm { url = "https://modrinth.com/project/taerra" }
+                scm { url = "https://taerra.dev" }
             }
         }
     }

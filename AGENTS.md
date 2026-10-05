@@ -99,13 +99,15 @@ newest Modrinth version number of that loader.
 For a `build-<n>` tag, `modrinth.yml` then calls `build.yml` with `central: true`: it rebuilds and tests the tag under the
 same version and publishes the API to Maven Central, signed, through the Central Portal API (`CENTRAL_USERNAME`,
 `CENTRAL_PASSWORD`, `SIGNING_KEY`, `SIGNING_PASSWORD` secrets). Central versions are permanent, so nothing else
-publishes there. The API's POM is public and links only to Modrinth and the hosted license. Every public API type and
+publishes there. The API's POM is public and links only to taerra.dev and the hosted license. Every public API type and
 member has Javadoc; the `javadoc` task runs doclint with `missing` and fails the build without it.
 
 The Discord channel is public and the repository private, so only `modrinth.yml` posts there, and nothing public
-(Discord, Modrinth notes, the mod and plugin metadata, the web map) links into the repository: the public link is the
-Modrinth page. Messages are embeds through `notify-discord.yml`, which blocks mentions. Discord needs the
-`DISCORD_WEBHOOK_ID` and `DISCORD_WEBHOOK_TOKEN` secrets.
+(Discord, Modrinth notes, the mod and plugin metadata, the web map) links into the repository. The public links are
+taerra.dev and two redirects on its domain, `download.taerra.dev` to the Modrinth page and `discord.taerra.dev` to the
+Discord invite, set up with the domain's DNS rather than in this repository: link those, not modrinth.com or the invite,
+except for a link to one Modrinth version. Messages are embeds through `notify-discord.yml`, which blocks mentions.
+Discord needs the `DISCORD_WEBHOOK_ID` and `DISCORD_WEBHOOK_TOKEN` secrets.
 
 ## Website
 

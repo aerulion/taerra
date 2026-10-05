@@ -16,7 +16,7 @@ Everything is rendered on the server. Visitors and players only download finishe
 
 TAERRA is early in its development. It already runs on live servers, but it is not feature complete yet, and you may run into bugs or rough edges. Things can still change between versions as it grows.
 
-If something breaks or looks wrong, please report it on [Discord](https://discord.gg/Az4mxFRGTv): every report helps make TAERRA better for everyone.
+If something breaks or looks wrong, please report it on [Discord](https://discord.taerra.dev): every report helps make TAERRA better for everyone.
 
 TAERRA is closed source for now. Once its license is settled, the source code will be made available.
 
@@ -130,7 +130,7 @@ Render threads and cache sizes are configurable, so you decide how much CPU and 
 
 ![More](https://assets.corpium.net/taerra/section-more.png?v=ef7dd80c)
 
-See TAERRA running on a real server at [map.corpium.net](https://map.corpium.net/), and if you are curious how it works under the hood, read the [technical deep dive](https://aerulion.net/taerra/). Questions, ideas, and bug reports are welcome on [Discord](https://discord.gg/Az4mxFRGTv).
+See TAERRA running on a real server at [map.corpium.net](https://map.corpium.net/), and if you are curious how it works under the hood, read the [technical deep dive](https://aerulion.net/taerra/). Questions, ideas, and bug reports are welcome on [Discord](https://discord.taerra.dev).
 
 TAERRA is free to use on any server, commercial ones included. It is closed source; the [license](https://assets.corpium.net/taerra/license.txt?v=fa512c7e) has the details.
 

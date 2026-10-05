@@ -6,7 +6,7 @@
   "description": "In-game viewer and minimap for the TAERRA server map.",
   "authors": [ "aerulion" ],
   "contact": {
-    "homepage": "https://modrinth.com/project/taerra"
+    "homepage": "https://taerra.dev"
   },
   "icon": "assets/taerra/icon.png",
   "license": "LicenseRef-TAERRA-License",
