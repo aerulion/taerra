@@ -1,0 +1,145 @@
+---
+import {Image} from 'astro:assets';
+import icon from '../../../plugin/src/main/resources/web/images/icon.svg';
+import {getRelativeLocaleUrl} from 'astro:i18n';
+import {copy, languages, links, type Language} from '../data/taerra';
+
+const {header} = copy(Astro.currentLocale);
+const codes = Object.keys(languages) as Language[];
+const home = getRelativeLocaleUrl(Astro.currentLocale ?? 'en');
+---
+
+<header>
+    <div class="bar container">
+        <a class="lockup pixel" href={`${home}#top`} aria-label={header.home}>
+            <Image src={icon} alt="" width={32} height={32} layout="fixed" loading="eager" />
+            <span>Taerra</span>
+        </a>
+        <nav aria-label={header.sections}>
+            {header.nav.map(({label, href}) => (
+                <a href={home + href}>{label}</a>
+            ))}
+        </nav>
+        <select class="language" aria-label={header.language}>
+            {codes.map((code) => (
+                <option
+                    value={code}
+                    lang={code}
+                    data-href={getRelativeLocaleUrl(code)}
+                    selected={code === Astro.currentLocale}
+                >
+                    {languages[code]}
+                </option>
+            ))}
+        </select>
+        <a class="btn btn--primary" href={links.modrinth}>
+            {header.download}
+        </a>
+    </div>
+</header>
+
+<script>
+    for (const select of document.querySelectorAll<HTMLSelectElement>('select.language')) {
+        select.addEventListener('change', () => {
+            try {
+                localStorage.setItem('language', select.value);
+            } catch (error) {
+                console.debug(error);
+            }
+            location.href = select.selectedOptions[0].dataset.href! + location.hash;
+        });
+    }
+</script>
+
+<style>
+    header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--black);
+        border-bottom: 1px solid var(--stone-700);
+    }
+
+    .bar {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        height: 64px;
+    }
+
+    .lockup {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 20px;
+        letter-spacing: 0.02em;
+        text-decoration: none;
+    }
+
+    nav {
+        display: flex;
+        gap: 28px;
+        margin-left: auto;
+    }
+
+    nav a {
+        color: var(--stone-100);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    nav a:hover {
+        color: var(--white);
+    }
+
+    .btn {
+        min-height: 40px;
+        padding: 0 16px 4px;
+    }
+
+    .language {
+        min-height: 40px;
+        padding: 0 8px;
+        background: var(--stone-900);
+        border: 1px solid var(--stone-600);
+        color: var(--stone-100);
+        font: inherit;
+        font-size: 15px;
+        cursor: pointer;
+    }
+
+    .language:hover {
+        border-color: var(--stone-200);
+    }
+
+    @media (max-width: 720px) {
+        nav {
+            display: none;
+        }
+
+        .language {
+            margin-left: auto;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .bar {
+            gap: 12px;
+        }
+
+        .lockup {
+            gap: 8px;
+            font-size: 16px;
+        }
+
+        .btn {
+            padding: 0 12px 4px;
+        }
+    }
+
+    @media (max-width: 380px) {
+        .lockup span {
+            display: none;
+        }
+    }
+</style>

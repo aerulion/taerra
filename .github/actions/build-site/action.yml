@@ -1,0 +1,46 @@
+name: Build the website
+description: >-
+  Checks taerra.dev in site/ the way `bun run check` does, then builds it into site/dist. Needs the repository checked
+  out, with the files the page takes from branding/ and the plugin.
+
+runs:
+  using: composite
+  steps:
+    - name: 🟩 Set up Node
+      uses: actions/setup-node@v7
+      with:
+        node-version: '22'
+
+    - name: 🍞 Set up Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
+
+    - name: 💾 Restore the dependency cache
+      uses: actions/cache@v6
+      with:
+        path: ~/.bun/install/cache
+        key: ${{ runner.os }}-bun-${{ hashFiles('site/bun.lock') }}
+        restore-keys: ${{ runner.os }}-bun-
+
+    - name: 📦 Install dependencies
+      shell: bash
+      working-directory: site
+      run: bun install --frozen-lockfile
+
+    - name: 🎨 Check formatting
+      shell: bash
+      working-directory: site
+      run: bun run format:check
+
+    - name: 🔍 Lint
+      if: ${{ !cancelled() }}
+      shell: bash
+      working-directory: site
+      run: bun run lint
+
+    - name: 🏗️ Check types and build
+      if: ${{ !cancelled() }}
+      shell: bash
+      working-directory: site
+      run: PUBLIC_COMMIT_HASH="$(git rev-parse HEAD)" bun run build

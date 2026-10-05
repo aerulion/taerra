@@ -11,6 +11,8 @@ on:
     branches: [ main ]
     paths-ignore:
       - '**.md'
+  schedule:
+    - cron: '0 0 1 1 *'
 
 permissions:
   contents: read
@@ -28,6 +30,7 @@ jobs:
     outputs:
       plugin: ${{ steps.detect.outputs.plugin }}
       mod: ${{ steps.detect.outputs.mod }}
+      site: ${{ steps.detect.outputs.site }}
       any: ${{ steps.detect.outputs.any }}
     steps:
       - name: 📥 Checkout repository
@@ -48,7 +51,7 @@ jobs:
   build:
     name: 🛡️ Validation
     needs: changes
-    if: needs.changes.outputs.any == 'true'
+    if: needs.changes.outputs.plugin == 'true' || needs.changes.outputs.mod == 'true'
     permissions:
       contents: read
       packages: write
@@ -121,6 +124,55 @@ jobs:
           prefix: mod-
           title: mod-${{ github.run_number }} (${{ needs.build.outputs.version }})
           files: ./generated/*.jar
+
+  build-site:
+    name: 🌐 Build website
+    timeout-minutes: 15
+    needs: changes
+    if: needs.changes.outputs.site == 'true' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: 🏗️ Check and build the website
+        uses: ./.github/actions/build-site
+
+      - name: 📤 Upload the Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/dist
+
+  release-site:
+    name: 🌐 Deploy website
+    timeout-minutes: 10
+    needs: build-site
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: 🔖 Move the site tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/site" --silent 2>/dev/null; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/site" -f sha="${GITHUB_SHA}" -F force=true --silent
+          else
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" -f ref=refs/tags/site -f sha="${GITHUB_SHA}" --silent
+          fi
+          echo "site now points at ${GITHUB_SHA::7}."
 
   cleanup-packages:
     name: 🧹 Cleanup old packages

@@ -249,6 +249,10 @@
         position: relative;
     }
 
+    html:has(.view), html:has(.view) body {
+        background: transparent;
+    }
+
     .gallery .stage .grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -283,6 +287,10 @@
         cherry: {world: 'minecraft_overworld', level: 1, at: [20, 0]},
         nether: {world: 'minecraft_the_nether', level: 1, at: [0, 0]},
         end: {world: 'minecraft_the_end', level: 1, at: [-1.6, -.4]},
+        overworld: {world: 'minecraft_overworld', level: 2, centred: true},
+        'overworld-top': {world: 'minecraft_overworld', level: 2, centred: true, view: 'top'},
+        'whole-nether': {...OVERWORLD, world: 'minecraft_the_nether'},
+        'whole-end': {...OVERWORLD, world: 'minecraft_the_end'},
     };
 
     const escape = text => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
@@ -323,7 +331,7 @@
         for (const {x, y, img} of found) {
             g.drawImage(img, (x - x0) * T, (y - y0) * T);
         }
-        return c;
+        return Object.assign(c, {x0: x0 * T, y0: y0 * T});
     }
 
     // Crops to the rendered part: tiles are transparent where the world ends.
@@ -342,6 +350,38 @@
         }
         const out = canvas(x1 - x0, y1 - y0);
         out.getContext('2d').drawImage(c, -x0, -y0);
+        return Object.assign(out, {x0: (c.x0 ?? 0) + x0, y0: (c.y0 ?? 0) + y0});
+    }
+
+    async function whole(spec) {
+        const r = (128 >> spec.level) + 1;
+        return trim(await stitch(tileDir(spec), -r, -r, r, r, true));
+    }
+
+    function project(rotation, level, x, z) {
+        const t = (45 - 90 * rotation) * Math.PI / 180, c = Math.cos(t) * Math.SQRT2, s = Math.sin(t) * Math.SQRT2;
+        return [4 * (c * x - s * z) / 2 ** level, (2 * (s * x + c * z) - 4 * 64) / 2 ** level];
+    }
+
+    async function centred(spec, w, h) {
+        const top = await whole({...spec, view: 'top'}), k = 2 ** spec.level / 4;
+        const [xc, zc] = [(top.x0 + top.width / 2) * k, (top.y0 + top.height / 2) * k];
+        const isos = await Promise.all([0, 1, 2, 3].map(async rotation => {
+            const plate = await whole({...spec, view: undefined, rotation});
+            return {rotation, plate, centre: project(rotation, spec.level, xc, zc)};
+        }));
+        const scale = Math.min(...isos.map(({plate: {x0, y0, width, height}, centre: [cx, cy]}) => Math.min(
+            w / 2 / Math.max(cx - x0, x0 + width - cx), h / 2 / Math.max(cy - y0, y0 + height - cy))));
+        const out = canvas(w, h), g = out.getContext('2d');
+        g.imageSmoothingQuality = 'high';
+        if (spec.view === 'top') {
+            g.drawImage(top, w / 2 - scale * top.width / 2, h / 2 - scale * top.height / 2,
+                scale * top.width, scale * top.height);
+        } else {
+            const {plate, centre: [cx, cy]} = isos[spec.rotation ?? 0];
+            g.drawImage(plate, w / 2 + scale * (plate.x0 - cx), h / 2 + scale * (plate.y0 - cy),
+                scale * plate.width, scale * plate.height);
+        }
         return out;
     }
 
@@ -379,6 +419,9 @@
     async function picture(spec, w, h) {
         if (spec.cubes) {
             return cubes(w, h);
+        }
+        if (spec.centred) {
+            return centred(spec, w, h);
         }
         const out = canvas(w, h), g = out.getContext('2d');
         g.imageSmoothingQuality = 'high';
@@ -472,6 +515,14 @@
             <div class="lockup pixel"><img src="${LOGO}" alt=""><span>${escape(params.get('title') ?? '')}</span></div>
             <div class="edge"></div>
         </div>`, {spot: {...SPOTS[params.get('spot') ?? 'meadow'], zoom: +(params.get('zoom') ?? 1)}}],
+
+        view: [`<div class="view fill ${params.has('blur') ? 'blur' : ''}" data-view="spot"></div>`, {
+            spot: {
+                ...SPOTS[params.get('spot') ?? 'meadow'],
+                zoom: +(params.get('zoom') ?? 1),
+                rotation: +(params.get('rotation') ?? 0)
+            }
+        }],
 
         'live-map': [`<div class="card live-map fill">
             <div class="fill" data-view="cubes"></div>

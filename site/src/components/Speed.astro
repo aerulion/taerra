@@ -1,0 +1,99 @@
+---
+import {copy} from '../data/taerra';
+
+const {speed} = copy(Astro.currentLocale);
+---
+
+<section class="section speed" aria-labelledby="speed-title">
+    <div class="container">
+        <div class="heading" data-reveal>
+            <p class="kicker pixel">{speed.kicker}</p>
+            <h2 id="speed-title" class="title">
+                {speed.title}
+            </h2>
+            <p class="lede">{speed.lede}</p>
+        </div>
+        <dl class="stats">
+            {speed.stats.map(({value, label}, i) => (
+                <div class="stat" data-reveal style={`--stagger: ${i}`}>
+                    <dt data-time={/^\d+:\d\d$/.test(value) ? value : undefined}>{value}</dt>
+                    <dd>{label}</dd>
+                </div>
+            ))}
+        </dl>
+        <p class="footnote">{speed.footnote}</p>
+    </div>
+</section>
+
+<script>
+    const format = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+    const timers = [...document.querySelectorAll<HTMLElement>('[data-time]')].filter(
+        (timer) => timer.getBoundingClientRect().top > innerHeight
+    );
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                for (const {target, isIntersecting} of entries) {
+                    if (!isIntersecting) continue;
+                    observer.unobserve(target);
+                    const timer = target as HTMLElement;
+                    const [minutes, seconds] = timer.dataset.time!.split(':').map(Number);
+                    const total = minutes * 60 + seconds;
+                    const start = performance.now() + 300;
+                    const tick = (now: number) => {
+                        const progress = Math.min(Math.max((now - start) / 1600, 0), 1);
+                        timer.textContent = format(Math.round(total * (1 - (1 - progress) ** 4)));
+                        if (progress < 1) requestAnimationFrame(tick);
+                    };
+                    requestAnimationFrame(tick);
+                }
+            },
+            {rootMargin: '0px 0px -15% 0px'}
+        );
+        for (const timer of timers) {
+            timer.textContent = format(0);
+            observer.observe(timer);
+        }
+    }
+</script>
+
+<style>
+    .speed {
+        background: radial-gradient(ellipse at 50% 0%, var(--stone-900), var(--black) 70%);
+    }
+
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+    }
+
+    .stat {
+        display: grid;
+        align-content: start;
+        gap: 16px;
+        padding: 28px;
+        background: var(--stone-900);
+        border: 2px solid var(--black);
+        box-shadow: var(--slab-shadow);
+    }
+
+    dt {
+        color: var(--accent-hi);
+        font-size: clamp(56px, 6vw, 80px);
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+    }
+
+    dd {
+        color: var(--stone-100);
+    }
+
+    .footnote {
+        margin-top: 24px;
+        color: var(--stone-200);
+        font-size: 15px;
+    }
+</style>

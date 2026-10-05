@@ -171,3 +171,74 @@ size = [1200, 630]
 file = "../../mod/src/main/resources/assets/taerra/icon.png"
 layout = "icon"
 size = [256, 256]
+
+# The website, taerra.dev: pictures without copy, which the page sets over them
+
+[[image]]
+file = "../../site/public/og.png"
+layout = "card"
+size = [1200, 630]
+
+[[image]]
+file = "../../site/src/assets/backdrop.png"
+layout = "view"
+size = [1920, 1080]
+spot = "bay"
+blur = true
+
+[[image]]
+file = "../../site/src/assets/world-top.png"
+layout = "view"
+size = [1600, 1000]
+spot = "overworld-top"
+
+[[image]]
+file = "../../site/src/assets/world-0.png"
+layout = "view"
+size = [1600, 1000]
+spot = "overworld"
+
+[[image]]
+file = "../../site/src/assets/world-1.png"
+layout = "view"
+size = [1600, 1000]
+spot = "overworld"
+rotation = 1
+
+[[image]]
+file = "../../site/src/assets/world-2.png"
+layout = "view"
+size = [1600, 1000]
+spot = "overworld"
+rotation = 2
+
+[[image]]
+file = "../../site/src/assets/world-3.png"
+layout = "view"
+size = [1600, 1000]
+spot = "overworld"
+rotation = 3
+
+[[image]]
+file = "../../site/src/assets/detail.png"
+layout = "view"
+size = [1920, 1080]
+spot = "meadow"
+
+[[image]]
+file = "../../site/src/assets/top-down.png"
+layout = "view"
+size = [1920, 1080]
+spot = "top-down"
+
+[[image]]
+file = "../../site/src/assets/nether.png"
+layout = "view"
+size = [1200, 800]
+spot = "whole-nether"
+
+[[image]]
+file = "../../site/src/assets/end.png"
+layout = "view"
+size = [1200, 800]
+spot = "whole-end"

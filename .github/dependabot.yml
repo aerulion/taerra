@@ -54,3 +54,21 @@ updates:
         patterns:
           - "*"
     open-pull-requests-limit: 5
+
+  - package-ecosystem: bun
+    directory: /site
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:00"
+      timezone: UTC
+    commit-message:
+      prefix: ":arrow_up: deps:"
+    labels:
+      - dependencies
+      - website
+    groups:
+      site:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5

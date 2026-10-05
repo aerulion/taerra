@@ -1,0 +1,409 @@
+---
+import {Picture, getImage} from 'astro:assets';
+import Expand from '../icons/expand.svg';
+import Previous from '../icons/previous.svg';
+import Next from '../icons/next.svg';
+import Close from '../icons/close.svg';
+import shot1 from '../../../branding/ingame/ingame-1.png';
+import shot2 from '../../../branding/ingame/ingame-2.png';
+import shot3 from '../../../branding/ingame/ingame-3.png';
+import shot4 from '../../../branding/ingame/ingame-4.png';
+import {copy, links} from '../data/taerra';
+
+const {mod} = copy(Astro.currentLocale);
+
+const {viewer} = mod;
+const shots = await Promise.all(
+    [shot1, shot2, shot3, shot4].map(async (src, i) => {
+        const full = await getImage({src, layout: 'full-width', format: 'avif'});
+        return {src, full, ...mod.shots[i]};
+    })
+);
+---
+
+<section id="mod" class="section mod" aria-labelledby="mod-title">
+    <div class="container">
+        <div class="intro">
+            <div class="heading" data-reveal>
+                <p class="kicker pixel">{mod.kicker}</p>
+                <h2 id="mod-title" class="title">
+                    {mod.title}
+                </h2>
+                <p class="lede">{mod.lede}</p>
+            </div>
+            <div class="points" data-reveal style="--stagger: 1">
+                <ul>
+                    {mod.points.map((point) => (
+                        <li>{point}</li>
+                    ))}
+                </ul>
+                <p class="note">{mod.note}</p>
+                <div class="actions">
+                    <a class="btn btn--primary" href={links.modrinth}>
+                        {mod.download}
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="shots">
+            {shots.map(({src, full, caption, alt}, i) => (
+                <figure class={i ? '' : 'lead'} data-reveal style={`--stagger: ${i && i - 1}`}>
+                    <a
+                        class="zoom"
+                        href={full.src}
+                        data-srcset={full.srcSet.attribute}
+                        data-caption={caption}
+                        aria-label={`${viewer.open}: ${caption}`}
+                    >
+                        <Picture
+                            {src}
+                            formats={['avif']}
+                            fallbackFormat="webp"
+                            width={i ? 800 : 1200}
+                            sizes={i ? '(min-width: 861px) 400px, 100vw' : undefined}
+                            {alt}
+                        />
+                        <span class="badge" aria-hidden="true">
+                            <Expand />
+                        </span>
+                    </a>
+                    <figcaption>{caption}</figcaption>
+                </figure>
+            ))}
+        </div>
+    </div>
+    <dialog class="viewer" aria-label={viewer.label} tabindex="-1">
+        <figure>
+            <img alt="" sizes="92vw" />
+            <figcaption>
+                <span class="count pixel"></span>
+                <span class="caption"></span>
+            </figcaption>
+        </figure>
+        <button class="btn btn--dark nav prev" type="button" aria-label={viewer.previous}>
+            <Previous aria-hidden="true" />
+        </button>
+        <button class="btn btn--dark nav next" type="button" aria-label={viewer.next}>
+            <Next aria-hidden="true" />
+        </button>
+        <button class="btn btn--dark close" type="button" aria-label={viewer.close}>
+            <Close aria-hidden="true" />
+        </button>
+    </dialog>
+</section>
+
+<script>
+    for (const section of document.querySelectorAll<HTMLElement>('.mod')) {
+        const links = [...section.querySelectorAll<HTMLAnchorElement>('a.zoom')];
+        const dialog = section.querySelector<HTMLDialogElement>('dialog.viewer')!;
+        const image = dialog.querySelector('img')!;
+        const count = dialog.querySelector('.count')!;
+        const caption = dialog.querySelector('.caption')!;
+        let current = 0;
+
+        const show = (index: number) => {
+            current = (index + links.length) % links.length;
+            const link = links[current];
+            const thumbnail = link.querySelector('img')!;
+            image.removeAttribute('srcset');
+            image.src = thumbnail.currentSrc;
+            image.alt = thumbnail.alt;
+            const full = new Image();
+            full.sizes = image.sizes;
+            full.srcset = link.dataset.srcset!;
+            full.src = link.href;
+            full.decode().then(
+                () => {
+                    if (links[current] !== link) return;
+                    image.srcset = full.srcset;
+                    image.src = full.src;
+                },
+                () => {}
+            );
+            count.textContent = `${current + 1} / ${links.length}`;
+            caption.textContent = link.dataset.caption!;
+        };
+
+        links.forEach((link, index) =>
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                show(index);
+                dialog.showModal();
+                dialog.focus();
+            })
+        );
+        dialog.querySelector('.prev')!.addEventListener('click', () => show(current - 1));
+        dialog.querySelector('.next')!.addEventListener('click', () => show(current + 1));
+        dialog.querySelector('.close')!.addEventListener('click', () => dialog.close());
+        dialog.addEventListener('click', (event) => {
+            if (event.target === dialog || event.target === dialog.querySelector('figure')) dialog.close();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (!dialog.open) return;
+            if (event.key === 'ArrowLeft') show(current - 1);
+            if (event.key === 'ArrowRight') show(current + 1);
+        });
+        let touchX = 0;
+        dialog.addEventListener('touchstart', (event) => (touchX = event.touches[0].clientX), {passive: true});
+        dialog.addEventListener('touchend', (event) => {
+            const distance = event.changedTouches[0].clientX - touchX;
+            if (Math.abs(distance) > 48) show(current + (distance < 0 ? 1 : -1));
+        });
+        dialog.addEventListener('close', () => links[current].focus());
+    }
+</script>
+
+<style>
+    .mod {
+        border-top: 1px solid var(--stone-700);
+    }
+
+    .intro {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: clamp(24px, 4vw, 56px);
+        align-items: end;
+        margin-bottom: clamp(40px, 6vw, 72px);
+    }
+
+    .intro .heading {
+        margin: 0;
+    }
+
+    .points {
+        display: grid;
+        gap: 20px;
+    }
+
+    ul {
+        display: grid;
+        gap: 10px;
+        padding: 0;
+        list-style: none;
+    }
+
+    li {
+        position: relative;
+        padding-left: 28px;
+        color: var(--stone-100);
+    }
+
+    li::before {
+        content: '';
+        position: absolute;
+        top: 0.5em;
+        left: 0;
+        width: 12px;
+        height: 12px;
+        background: var(--accent-hi);
+        box-shadow: inset 0 -3px var(--accent);
+    }
+
+    .note {
+        color: var(--stone-200);
+        font-size: 15px;
+    }
+
+    .shots {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .lead {
+        grid-column: 1 / -1;
+    }
+
+    .shots figure {
+        display: grid;
+        gap: 10px;
+    }
+
+    .zoom {
+        position: relative;
+        display: block;
+        overflow: hidden;
+        border: 2px solid var(--black);
+        box-shadow: 0 12px 32px rgb(0 0 0 / 0.6);
+        cursor: zoom-in;
+    }
+
+    .zoom :global(img) {
+        width: 100%;
+        transition: transform 0.6s var(--ease-out);
+    }
+
+    .zoom:hover :global(img) {
+        transform: scale(1.03);
+    }
+
+    .badge {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        background: rgb(0 0 0 / 0.7);
+        color: var(--white);
+        opacity: 0;
+        translate: 0 6px;
+        transition:
+            opacity 0.3s ease,
+            translate 0.3s var(--ease-out);
+    }
+
+    .zoom:hover .badge,
+    .zoom:focus-visible .badge {
+        opacity: 1;
+        translate: 0 0;
+    }
+
+    @media (hover: none) {
+        .badge {
+            opacity: 1;
+            translate: 0 0;
+        }
+    }
+
+    .viewer {
+        width: 100vw;
+        max-width: none;
+        height: 100dvh;
+        max-height: none;
+        padding: clamp(16px, 4vw, 48px);
+        background: transparent;
+        border: 0;
+        color: var(--white);
+        opacity: 0;
+        transition:
+            opacity 0.3s ease,
+            display 0.3s allow-discrete,
+            overlay 0.3s allow-discrete;
+    }
+
+    .viewer:focus {
+        outline: none;
+    }
+
+    .viewer[open] {
+        display: grid;
+        place-items: center;
+        opacity: 1;
+    }
+
+    @starting-style {
+        .viewer[open] {
+            opacity: 0;
+        }
+    }
+
+    .viewer::backdrop {
+        background: rgb(0 0 0 / 0);
+        backdrop-filter: blur(0);
+        transition:
+            background 0.3s ease,
+            backdrop-filter 0.3s ease,
+            display 0.3s allow-discrete,
+            overlay 0.3s allow-discrete;
+    }
+
+    .viewer[open]::backdrop {
+        background: rgb(0 0 0 / 0.88);
+        backdrop-filter: blur(8px);
+    }
+
+    @starting-style {
+        .viewer[open]::backdrop {
+            background: rgb(0 0 0 / 0);
+            backdrop-filter: blur(0);
+        }
+    }
+
+    .viewer figure {
+        display: grid;
+        justify-items: center;
+        gap: 14px;
+        width: 100%;
+        height: 100%;
+        align-content: center;
+        transition: scale 0.4s var(--ease-out);
+    }
+
+    .viewer:not([open]) figure {
+        scale: 0.96;
+    }
+
+    @starting-style {
+        .viewer[open] figure {
+            scale: 0.96;
+        }
+    }
+
+    .viewer img {
+        max-width: 100%;
+        max-height: calc(100dvh - 2 * clamp(16px, 4vw, 48px) - 48px);
+        width: auto;
+        border: 2px solid var(--black);
+        border-bottom: 6px solid var(--accent);
+        box-shadow: 0 24px 64px rgb(0 0 0 / 0.8);
+    }
+
+    .viewer figcaption {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        color: var(--stone-100);
+        font-size: 16px;
+    }
+
+    .count {
+        color: var(--accent-hi);
+        font-size: 10px;
+    }
+
+    .viewer .btn {
+        position: absolute;
+        width: 48px;
+        padding: 0 0 4px;
+    }
+
+    .close {
+        top: clamp(12px, 2vw, 24px);
+        right: clamp(12px, 2vw, 24px);
+    }
+
+    .nav {
+        top: 50%;
+        translate: 0 -50%;
+    }
+
+    .prev {
+        left: clamp(12px, 2vw, 24px);
+    }
+
+    .next {
+        right: clamp(12px, 2vw, 24px);
+    }
+
+    @media (max-width: 860px) {
+        .nav {
+            top: auto;
+            bottom: clamp(12px, 2vw, 24px);
+            translate: none;
+        }
+    }
+
+    .shots figcaption {
+        color: var(--stone-200);
+        font-size: 15px;
+    }
+
+    @media (max-width: 860px) {
+        .intro,
+        .shots {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+</style>

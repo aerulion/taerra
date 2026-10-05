@@ -26,6 +26,7 @@ jobs:
     outputs:
       plugin: ${{ steps.detect.outputs.plugin }}
       mod: ${{ steps.detect.outputs.mod }}
+      site: ${{ steps.detect.outputs.site }}
       any: ${{ steps.detect.outputs.any }}
     steps:
       - name: 📥 Checkout repository
@@ -95,7 +96,7 @@ jobs:
   build:
     name: 🛡️ Validation
     needs: changes
-    if: needs.changes.outputs.any == 'true'
+    if: needs.changes.outputs.plugin == 'true' || needs.changes.outputs.mod == 'true'
     permissions:
       contents: read
       packages: write
@@ -109,12 +110,29 @@ jobs:
         && contains(github.event.pull_request.labels.*.name, 'deploy') }}
       upload-jars: ${{ contains(github.event.pull_request.labels.*.name, 'deploy') }}
 
+  site:
+    name: 🌐 Website
+    timeout-minutes: 15
+    needs: changes
+    if: needs.changes.outputs.site == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: 🏗️ Check and build the website
+        uses: ./.github/actions/build-site
+
   comment:
     name: 💬 Update PR comment
     timeout-minutes: 5
     needs: [ changes, build ]
     if: >-
-      always() && needs.changes.result == 'success' && needs.changes.outputs.any == 'true'
+      always() && needs.changes.result == 'success'
+      && (needs.changes.outputs.plugin == 'true' || needs.changes.outputs.mod == 'true')
       && contains(github.event.pull_request.labels.*.name, 'deploy')
     permissions:
       contents: read

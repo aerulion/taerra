@@ -1,7 +1,7 @@
 name: Classify changed files
 description: >-
-  Splits a diff into the two release streams. mod/ is the mod, shared build files are both, anything else is the
-  plugin.
+  Splits a diff into the three release streams. mod/ is the mod, shared build files are both, site/ and the files it
+  takes from elsewhere are the website, the rest of branding/ and Markdown are none, anything else is the plugin.
 
 inputs:
   base:
@@ -26,6 +26,9 @@ outputs:
   mod:
     description: Whether the mod changed.
     value: ${{ steps.detect.outputs.mod }}
+  site:
+    description: Whether the website changed.
+    value: ${{ steps.detect.outputs.site }}
   any:
     description: Whether any stream changed.
     value: ${{ steps.detect.outputs.any }}
@@ -83,10 +86,16 @@ runs:
           local stream="$1" base="$2" file
           while IFS= read -r file; do
             case "${file}" in
-              '' | *.md | branding/*) ;;
+              '' | *.md) ;;
+              site/* | .github/actions/build-site/* | branding/ingame/* | branding/images/youtube/*)
+                if [ "${stream}" = 'site' ]; then return 0; fi ;;
+              branding/*) ;;
+              plugin/src/main/resources/web/fonts/QuinqueFive-Regular.woff2 | plugin/src/main/resources/web/favicon.ico \
+                | plugin/src/main/resources/web/images/*)
+                if [ "${stream}" != 'mod' ]; then return 0; fi ;;
               mod/*) if [ "${stream}" = 'mod' ]; then return 0; fi ;;
               gradle/* | build-logic/* | settings.gradle.kts | build.gradle.kts | gradle.properties | gradlew | gradlew.bat)
-                return 0 ;;
+                if [ "${stream}" != 'site' ]; then return 0; fi ;;
               *) if [ "${stream}" = 'plugin' ]; then return 0; fi ;;
             esac
           done < <(git diff --name-only "${base}...HEAD")
@@ -116,16 +125,18 @@ runs:
 
         plugin="$(classify plugin 'build-*')"
         mod="$(classify mod 'mod-*')"
+        site="$(classify site 'site')"
 
         any=false
-        if [ "${plugin}" = true ] || [ "${mod}" = true ]; then
+        if [ "${plugin}" = true ] || [ "${mod}" = true ] || [ "${site}" = true ]; then
           any=true
         fi
 
         {
           echo "plugin=${plugin}"
           echo "mod=${mod}"
+          echo "site=${site}"
           echo "any=${any}"
         } >> "${GITHUB_OUTPUT}"
 
-        echo "plugin=${plugin} mod=${mod}"
+        echo "plugin=${plugin} mod=${mod} site=${site}"

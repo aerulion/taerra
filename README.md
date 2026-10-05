@@ -14,6 +14,7 @@ One map, rendered on your server: in the browser, and in game.
 | `mod/`         | The Fabric mod: map screen and minimap, a viewer only       |
 | `tools/mcdata` | Generates `block_data.json` from the vanilla assets         |
 | `branding/`    | Renders the logo and store images from the map tiles        |
+| `site/`        | taerra.dev, the project's web page (Astro, Bun)             |
 
 Rendering happens on the server and nowhere else. The mod draws the tiles the plugin serves and speaks the same HTTP
 API as the web map, which is why both live in one repository: a change to that API and every client of it belong in
@@ -62,15 +63,17 @@ single source of truth; no workflow assembles a version string.
 
 Every push to `main` releases whichever parts it changed.
 
-| Touches            | Releases                          | Tags        |
-|--------------------|-----------------------------------|-------------|
-| anything else      | plugin jar, API → GitHub Packages | `build-<n>` |
-| `mod/`             | mod jar                           | `mod-<n>`   |
-| shared build files | both                              | both        |
+| Touches            | Releases                          | Tags         |
+|--------------------|-----------------------------------|--------------|
+| anything else      | plugin jar, API → GitHub Packages | `build-<n>`  |
+| `mod/`             | mod jar                           | `mod-<n>`    |
+| shared build files | both                              | both         |
+| `site/`            | taerra.dev → GitHub Pages         | moves `site` |
 
-The shared build files are `gradle/`, `build-logic/`, the root build scripts and the wrapper. Markdown and `branding/` are
-excluded everywhere. Anything outside `mod/` counts as the plugin, so a new top-level file releases a build rather than silently
-not releasing one.
+The shared build files are `gradle/`, `build-logic/`, the root build scripts and the wrapper. The website also counts
+the in-game shots, the showreel thumbnail and the web map's font and icons it takes from elsewhere; the rest of
+`branding/` and Markdown are excluded everywhere. Anything else counts as the plugin, so a new top-level file releases a
+build rather than silently not releasing one.
 
 Every release runs the whole Gradle build first, and the API is published in a second step, after every test has
 passed. The ten most recent releases per stream and the ten most recent API versions are kept. `manual-cleanup.yml` runs the same cleanup on demand.

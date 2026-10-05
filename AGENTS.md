@@ -15,6 +15,7 @@ allowed) and a Fabric mod that shows the same map in game. Gradle multi-module b
 | `mod/`         | Fabric client mod (Loom): map screen and minimap                                       |
 | `tools/mcdata` | Python generator for `plugin/src/main/resources/block_data.json` and `colormaps.json`  |
 | `branding/`    | Brand images (store icons, headers, gallery) rendered from the logo and dev server tiles |
+| `site/`        | taerra.dev, the promo page: Astro and Bun, deployed to GitHub Pages by `release.yml`   |
 
 It is a public plugin: nothing in it may be specific to one server network.
 
@@ -41,6 +42,7 @@ layers and teleport. Extend that model; don't add external authentication.
 ./gradlew :mod:runClient                     # Minecraft client with the mod
 ./gradlew runDev                             # both: server in offline mode, client joins it as TaerraDev
 ./gradlew -q printVersion
+cd site && bun run dev                       # taerra.dev on http://localhost:4321; bun run check is what CI runs
 ```
 
 Spotless formats Java (google-java-format, per module), every `*.gradle.kts` (ktfmt kotlinlang style) and the JSON
@@ -66,16 +68,20 @@ misses the userdev CI cache.
 
 ## Release pipeline
 
-`release.yml` runs on every push to `main`. `.github/actions/classify-changes` splits the push into two streams:
+`release.yml` runs on every push to `main`. `.github/actions/classify-changes` splits the push into three streams:
 `mod/` is the mod, shared build files (`gradle/`, `build-logic/`, root `*.gradle.kts`, `gradle.properties`, wrapper)
-are both, `branding/` and Markdown are neither, anything else is the plugin. `build.yml` runs once, then:
+are both the plugin and the mod, `site/` and what it takes from `branding/` and the web map are the website, the rest
+of `branding/` and Markdown are none, anything else is the plugin. `build.yml` runs once if the plugin or the mod
+changed, then:
 
 - plugin: tag `build-<n>`, plugin and API jars attached, API published to GitHub Packages
 - mod: tag `mod-<n>`, mod jar attached
+- website: `.github/actions/build-site` checks and builds it, the deploy goes to GitHub Pages, then the one `site` tag
+  moves to that commit (no release)
 
 With `release-tags: 'true'`, `classify-changes` diffs each stream against the newest `build-`/`mod-` tag HEAD descends
-from, falling back to `github.event.before`. Required: GitHub keeps one pending run per concurrency group, so a
-cancelled run's commits would otherwise never be classified.
+from, or the `site` tag, falling back to `github.event.before`. Required: GitHub keeps one pending run per concurrency
+group, so a cancelled run's commits would otherwise never be classified.
 
 `.github/actions/github-release` writes notes with `release-notes.sh` from the commit log, grouped by the commit types
 the `commit-msg` hook enforces. Its pathspecs must match `classify-changes`; edit both together, and the hook's types
@@ -100,6 +106,32 @@ The Discord channel is public and the repository private, so only `modrinth.yml`
 (Discord, Modrinth notes, the mod and plugin metadata, the web map) links into the repository: the public link is the
 Modrinth page. Messages are embeds through `notify-discord.yml`, which blocks mentions. Discord needs the
 `DISCORD_WEBHOOK_ID` and `DISCORD_WEBHOOK_TOKEN` secrets.
+
+## Website
+
+`site/` is taerra.dev, a single promo page for players and server owners; aerulion.net/taerra stays the technical deep
+dive. Astro with Bun, following aerulion.github.io: Prettier, ESLint and `astro check` (`bun run check`), fonts through
+Astro's fonts API (QuinqueFive from the plugin's copy, the rest from Fontsource). Copy lives in `src/data/taerra.ts`
+(English, at `/`) and `taerra.de.ts` (German, at `/de/`, in the web map's du voice), never in components, and takes
+its facts from `branding/modrinth-description.md`; change all three together. `/` sends German browsers to `/de/`
+until the header's language picker stores a choice. Each locale has its own `404.astro`, out of the sitemap; GitHub
+Pages serves the English one for every missing path, so it sends `/de/…` and German browsers on to `/de/404/`. The
+look is the web map's: its tokens, fonts and slab buttons, the copper edge. Its pictures are rendered by
+`branding/generate.py site/` into `src/assets/` and `public/og.png`; the in-game shots and the web map's icons are
+imported from where they live. Motion is subtle and off under `prefers-reduced-motion`: `data-reveal` elements rise in
+as they scroll into view (`--stagger` delays them), the hero world floats and, until it is turned by hand, folds from
+the top-down map into each isometric rotation and back (`branding/render.html` centres all five pictures on the world's
+middle at sea level, at one scale, for that), and the mod screenshots open in a `<dialog>` viewer.
+
+The page's own footer (`Footer.astro`: links, the Mojang disclaimer, the build's commit from `PUBLIC_COMMIT_HASH`, which
+`build-site` sets and which is never a link) ends with `src/components/aerulion/`, the aerulion credit shared by every
+aerulion project: Nyx only (#000, #fff, Tektur, IBM Plex Mono), no props and no tokens from the host page. Like
+aerulion.net it is English on every page, its imprint and privacy links too. Copy the folder as it is, spread its
+`nyxFonts` into `astro.config` and place it last in the page's footer.
+
+It is the website stream of `release.yml`, checked by `pr.yml` with the same `build-site` action, and `release.yml` also
+rebuilds it on 1 January for the footer's year. It is public, so like everything else public it never links into the
+repository.
 
 ## Pull requests
 

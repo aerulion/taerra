@@ -1,0 +1,69 @@
+---
+import {Image} from 'astro:assets';
+import backdrop from '../assets/backdrop.png';
+import {copy, links} from '../data/taerra';
+
+const {closing} = copy(Astro.currentLocale);
+const [before, link, after] = closing.deepDive;
+---
+
+<section class="closing" aria-labelledby="closing-title">
+    <Image class="backdrop" src={backdrop} alt="" layout="full-width" />
+    <div class="container section">
+        <div class="heading" data-reveal>
+            <p class="kicker pixel">{closing.kicker}</p>
+            <h2 id="closing-title" class="title">
+                {closing.title}
+            </h2>
+            <p class="lede">{closing.text}</p>
+        </div>
+        <div class="actions" data-reveal style="--stagger: 1">
+            <a class="btn btn--primary" href={links.modrinth}>
+                {closing.modrinth}
+            </a>
+            <a class="btn" href={links.discord}>
+                {closing.discord}
+            </a>
+            <a class="btn btn--dark" href={links.demo}>
+                {closing.demo}
+            </a>
+        </div>
+        <p class="license">{closing.license}</p>
+        <p class="deep-dive">
+            {before}
+            <a href={links.deepDive}>{link}</a>
+            {after}
+        </p>
+    </div>
+    <div class="edge"></div>
+</section>
+
+<style>
+    .closing {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        border-top: 1px solid var(--stone-700);
+    }
+
+    .closing :global(.backdrop) {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.35;
+    }
+
+    .license,
+    .deep-dive {
+        margin-top: 24px;
+        color: var(--stone-100);
+        font-size: 16px;
+    }
+
+    .deep-dive {
+        margin-top: 8px;
+    }
+</style>

@@ -1,0 +1,128 @@
+---
+import {Font} from 'astro:assets';
+
+const year = new Date().getFullYear();
+
+const H = 27.7128;
+const LEFT = 1.8564;
+const M = H / 4;
+const WORD = 84.8;
+const WIDTH = 24 + M + WORD;
+const MARK =
+    'M25.8564 20.7846 22.641 22.641 18.9282 16.2102 13.8564 19.1384 12 18.0666 13.8564 14.8512 17.0717 12.9948 13.8564 7.4256 6.9282 19.4256 13.8564 23.4256 17.5692 21.282 19.4256 24.4974 13.8564 27.7128 1.8564 20.7846 13.8564 0Z';
+---
+
+<Font cssVariable="--font-nyx-wordmark" />
+<Font cssVariable="--font-nyx-label" />
+
+<div class="nyx">
+    <div class="inner">
+        <a class="credit" href="https://aerulion.net" aria-label="A project by aerulion">
+            <span class="label" aria-hidden="true">
+                A project by
+            </span>
+            <svg class="lockup" viewBox={`${LEFT} 0 ${WIDTH} ${H}`} style={`--ratio: ${WIDTH / H}`} aria-hidden="true">
+                <path d={MARK}></path>
+                <text x={LEFT + 24 + M} y={H / 2 + 6.6} textLength={WORD} lengthAdjust="spacingAndGlyphs">
+                    aerulion
+                </text>
+            </svg>
+        </a>
+        <div class="legal">
+            <nav aria-label="Legal">
+                <a href="https://aerulion.net/imprint/">Imprint</a>
+                <span aria-hidden="true">/</span>
+                <a href="https://aerulion.net/privacy/">Privacy</a>
+            </nav>
+            <p>&copy; {year} aerulion</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nyx {
+        background: #000;
+        color: #fff;
+        font-family: var(--font-nyx-label);
+        font-size: 11px;
+        font-weight: 400;
+        line-height: 1.5;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+    }
+
+    .inner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px 48px;
+        width: min(100% - 32px, 1200px);
+        margin-inline: auto;
+        padding: 48px 0;
+    }
+
+    .credit {
+        display: grid;
+        justify-items: start;
+        gap: 12px;
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .credit:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 3px;
+    }
+
+    .lockup {
+        height: 32px;
+        width: calc(32px * var(--ratio));
+        fill: #fff;
+    }
+
+    text {
+        font-family: var(--font-nyx-wordmark);
+        font-size: 19px;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+
+    .legal {
+        display: grid;
+        justify-items: end;
+        gap: 12px;
+    }
+
+    nav {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    nav a {
+        padding: 0 4px;
+        color: #fff;
+        text-decoration: none;
+        transition:
+            background 250ms linear,
+            color 250ms linear;
+    }
+
+    nav a:hover,
+    nav a:focus-visible {
+        background: #fff;
+        color: #000;
+    }
+
+    nav a:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 3px;
+    }
+
+    p {
+        margin: 0;
+    }
+</style>

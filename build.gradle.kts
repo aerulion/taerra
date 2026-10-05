@@ -11,7 +11,7 @@ repositories { mavenCentral() }
 spotless {
     kotlinGradle {
         target("**/*.gradle.kts")
-        targetExclude("**/build/**")
+        targetExclude("**/build/**", "site/**")
         ktfmt(libs.versions.ktfmt.get()).kotlinlangStyle()
     }
     json {

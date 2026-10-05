@@ -1,0 +1,179 @@
+---
+import {copy} from '../data/taerra';
+
+const {reference} = copy(Astro.currentLocale);
+const {commands, permissions} = reference;
+const parts = (text: string) => text.split('`').map((part, i) => ({part, code: i % 2 === 1}));
+---
+
+<section id="reference" class="section reference" aria-labelledby="reference-title">
+    <div class="container">
+        <div class="heading" data-reveal>
+            <p class="kicker pixel">{reference.kicker}</p>
+            <h2 id="reference-title" class="title">
+                {reference.title}
+            </h2>
+            <p class="lede">{reference.lede}</p>
+        </div>
+        <div class="tables">
+            <div class="table" data-reveal>
+                <table>
+                    <caption class="pixel">{commands.title}</caption>
+                    <thead>
+                        <tr>
+                            {commands.head.map((label) => (
+                                <th scope="col">{label}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {commands.rows.map(({command, text}) => (
+                            <tr>
+                                <th scope="row">
+                                    <code>{command}</code>
+                                </th>
+                                <td>{text}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            <div class="table" data-reveal style="--stagger: 1">
+                <table class="permissions">
+                    <caption class="pixel">{permissions.title}</caption>
+                    <thead>
+                        <tr>
+                            {permissions.head.map((label) => (
+                                <th scope="col">{label}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {permissions.rows.map(({permission, standard, text}) => (
+                            <tr>
+                                <th scope="row">
+                                    <code>{permission}</code>
+                                </th>
+                                <td class="standard">
+                                    <span class="visually-hidden">{permissions.head[1]}: </span>
+                                    {standard}
+                                </td>
+                                <td>{parts(text).map(({part, code}) => (code ? <code>{part}</code> : part))}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .reference {
+        border-top: 1px solid var(--stone-700);
+    }
+
+    .tables {
+        display: grid;
+        gap: 24px;
+    }
+
+    .table {
+        padding: 8px 24px 16px;
+        background: var(--stone-900);
+        border: 2px solid var(--black);
+        box-shadow: var(--slab-shadow);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    caption {
+        padding: 20px 0 12px;
+        color: var(--accent-hi);
+        font-size: 10px;
+        text-align: left;
+    }
+
+    thead th {
+        padding: 8px 16px 8px 0;
+        color: var(--stone-200);
+        font-size: 13px;
+        font-weight: 600;
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    tbody tr {
+        border-top: 1px solid var(--stone-700);
+    }
+
+    tbody th,
+    td {
+        padding: 12px 16px 12px 0;
+        vertical-align: baseline;
+        text-align: left;
+    }
+
+    tbody th {
+        font-weight: 400;
+        white-space: nowrap;
+    }
+
+    tbody th code {
+        color: var(--white);
+    }
+
+    td {
+        color: var(--stone-100);
+        font-size: 16px;
+    }
+
+    td code {
+        color: var(--white);
+        overflow-wrap: anywhere;
+    }
+
+    .standard {
+        color: var(--accent-hi);
+        font-family: var(--font-mono);
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 860px) {
+        thead {
+            display: none;
+        }
+
+        tbody tr {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 4px 16px;
+            padding: 12px 0;
+        }
+
+        tbody th,
+        td {
+            padding: 0;
+        }
+
+        tbody th {
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        td:last-child {
+            grid-column: 1 / -1;
+        }
+    }
+
+    @media (min-width: 861px) {
+        .visually-hidden {
+            display: none;
+        }
+    }
+</style>

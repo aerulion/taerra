@@ -87,6 +87,7 @@ def main():
             "--hide-scrollbars",
             "--force-device-scale-factor=1",
             "--allow-file-access-from-files",
+            "--default-background-color=00000000",
             # Virtual time stands still while tiles load, so this only has to cover the page's own work.
             "--virtual-time-budget=30000",
             f"--window-size={width},{height}",

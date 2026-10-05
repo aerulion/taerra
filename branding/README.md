@@ -69,4 +69,7 @@ on every run, so edit the Markdown. Every run also gives those URLs in the descr
 Modrinth's image proxy fetches a changed image anew: paste the description into Modrinth again after uploading.
 `python3 branding/generate.py none` only does that, rendering nothing.
 
+The `view` layout is a picture and nothing else, for taerra.dev to set its own copy over: `python3 branding/generate.py site/`
+writes the website's into `site/src/assets/` and its link preview into `site/public/og.png`.
+
 Changes here never trigger a release.

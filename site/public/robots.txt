@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://taerra.dev/sitemap-index.xml

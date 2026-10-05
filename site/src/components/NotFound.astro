@@ -1,0 +1,47 @@
+---
+import {Image} from 'astro:assets';
+import {getRelativeLocaleUrl} from 'astro:i18n';
+import backdrop from '../assets/backdrop.png';
+import {copy} from '../data/taerra';
+
+const t = copy(Astro.currentLocale).notFound;
+---
+
+<main class="not-found">
+    <Image class="backdrop" src={backdrop} alt="" layout="full-width" priority />
+    <div class="container section">
+        <div class="heading">
+            <p class="kicker pixel">404</p>
+            <h1 class="title">{t.heading}</h1>
+            <p class="lede">{t.text}</p>
+        </div>
+        <div class="actions">
+            <a class="btn btn--primary" href={getRelativeLocaleUrl(Astro.currentLocale ?? 'en')}>
+                {t.back}
+            </a>
+        </div>
+    </div>
+    <div class="edge"></div>
+</main>
+
+<style>
+    .not-found {
+        position: relative;
+        display: grid;
+        grid-template-rows: 1fr auto;
+        align-items: center;
+        min-height: calc(100svh - 64px);
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    .not-found :global(.backdrop) {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.35;
+    }
+</style>

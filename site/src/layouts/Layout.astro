@@ -1,0 +1,153 @@
+---
+import {Font} from 'astro:assets';
+import '../styles/global.css';
+import {getAbsoluteLocaleUrl, getRelativeLocaleUrl} from 'astro:i18n';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import Showreel from '../components/Showreel.astro';
+import Speed from '../components/Speed.astro';
+import Views from '../components/Views.astro';
+import Features from '../components/Features.astro';
+import Mod from '../components/Mod.astro';
+import GetStarted from '../components/GetStarted.astro';
+import Reference from '../components/Reference.astro';
+import Closing from '../components/Closing.astro';
+import Footer from '../components/Footer.astro';
+import {copy, languages, links} from '../data/taerra';
+
+interface Props {
+    notFound?: boolean;
+}
+
+const lang = Astro.currentLocale ?? 'en';
+const {meta, notFound: missing} = copy(lang);
+const {notFound = false} = Astro.props;
+const noindex = notFound;
+const title = notFound ? missing.title : meta.title;
+const {description} = meta;
+const german = getRelativeLocaleUrl('de', notFound ? '404' : '');
+const redirect = `try {
+    const wanted = localStorage.getItem('language') ?? (navigator.languages ?? [navigator.language])[0];
+    const german = ${notFound ? "location.pathname.startsWith('/de/') || " : ''}wanted?.toLowerCase().startsWith('de');
+    if (german) location.replace(${JSON.stringify(german)} + location.hash);
+} catch (error) {
+    console.debug(error);
+}`;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const og = new URL('/og.png', Astro.site).href;
+const other = lang === 'de' ? 'en' : 'de';
+const locales: Record<string, string> = {en: 'en_US', de: 'de_DE'};
+
+const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+        {'@type': 'WebSite', name: 'TAERRA', url: getAbsoluteLocaleUrl('en'), inLanguage: Object.keys(languages)},
+        {
+            '@type': 'SoftwareApplication',
+            name: 'TAERRA',
+            description,
+            inLanguage: lang,
+            url: canonical,
+            image: og,
+            applicationCategory: 'GameApplication',
+            operatingSystem: 'Paper 26.2, Fabric',
+            offers: {'@type': 'Offer', price: 0, priceCurrency: 'EUR'},
+            downloadUrl: links.modrinth,
+            author: {'@type': 'Person', name: 'aerulion', url: 'https://aerulion.net'}
+        }
+    ]
+};
+---
+
+<!doctype html>
+<html {lang}>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {lang === 'en' && <script is:inline set:html={redirect} />}
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        <meta name="author" content="aerulion" />
+        {noindex ? (
+            <meta name="robots" content="noindex, follow" />
+        ) : (
+            <>
+                <meta name="robots" content="index, follow, max-image-preview:large" />
+                <link rel="canonical" href={canonical} />
+                {Object.keys(languages).map((code) => (
+                    <link rel="alternate" hreflang={code} href={getAbsoluteLocaleUrl(code)} />
+                ))}
+                <link rel="alternate" hreflang="x-default" href={getAbsoluteLocaleUrl('en')} />
+            </>
+        )}
+        <meta name="theme-color" content="#000000" />
+        <link rel="icon" href="/favicon.ico" sizes="32x32" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+        <Font cssVariable="--font-display" preload />
+        <Font cssVariable="--font-body" preload />
+        <Font cssVariable="--font-mono" />
+
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content={locales[lang]} />
+        <meta property="og:locale:alternate" content={locales[other]} />
+        <meta property="og:site_name" content="TAERRA" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        {!noindex && <meta property="og:url" content={canonical} />}
+        <meta property="og:image" content={og} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:alt" content={meta.ogImageAlt} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image:alt" content={meta.ogImageAlt} />
+
+        {!noindex && <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />}
+    </head>
+    <body>
+        <Header />
+        <slot>
+            <main>
+                <Hero />
+                <Showreel />
+                <Speed />
+                <Views />
+                <Features />
+                <Mod />
+                <GetStarted />
+                <Reference />
+                <Closing />
+            </main>
+        </slot>
+        <Footer />
+        <script>
+            const pending = [...document.querySelectorAll<HTMLElement>('[data-reveal]')].filter(
+                (element) => element.getBoundingClientRect().top > innerHeight
+            );
+            if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                const observer = new IntersectionObserver(
+                    (entries) => {
+                        for (const entry of entries) {
+                            if (!entry.isIntersecting) continue;
+                            observer.unobserve(entry.target);
+                            entry.target.classList.replace('is-pending', 'is-revealed');
+                        }
+                    },
+                    {rootMargin: '0px 0px -8% 0px'}
+                );
+                for (const element of pending) {
+                    element.classList.add('is-pending');
+                    observer.observe(element);
+                }
+                document.addEventListener('transitionend', (event) => {
+                    const target = event.target as HTMLElement;
+                    if (event.propertyName === 'translate' && target.classList.contains('is-revealed')) {
+                        target.classList.remove('is-revealed');
+                    }
+                });
+            }
+        </script>
+    </body>
+</html>
