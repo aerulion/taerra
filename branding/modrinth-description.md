@@ -34,7 +34,9 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 ### Live
 
 - **Players move live**, updated every second, with a player list, and a follow mode that keeps someone in view, even across worlds.
+- **Colors from the locator bar.** Every player wears the color of their dot on the locator bar, so you know who is who at a glance, on the map and in game.
 - **The map updates itself.** Every change is recorded, built by players or grown by nature, and redrawn at an interval you choose, 15 minutes by default. A spot changed a hundred times is drawn once.
+- **Watch it render.** A render shows its progress right on the map, with the time it has left, in the browser and in game.
 - **Installable as an app** on phones and desktops, when the map is served over HTTPS.
 
 ### Made for servers
@@ -42,7 +44,7 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 - **Logins without passwords.** Players run `/taerra login` in game and click the link it sends. Their browser stays logged in for 30 days. The link works once, for five minutes, and players are told in game whenever a browser logs in as them. There are no accounts to create and no passwords to leak. Banned players are logged out of the web map on their own, and `/taerra logout <player>` logs anyone out by hand, say after taking their permissions away.
 - **Private worlds and layers.** Keep a world, or a layer hidden from everyone except logged-in players with the right permission.
 - **Teleport from the map.** Logged-in players with permission right-click the map to teleport there.
-- **Waypoints** in named groups and colors, on the web map, in the mod's world map, and, if players want, as labels in the world itself.
+- **Waypoints** in named groups and colors, private ones too. Players with permission add, move, and recolor them right on the map, in the browser or in game, and the mod shows them as labels in the world itself.
 - **Privacy built in.** Players in spectator mode, invisible or vanished, don't appear, and neither does anyone with `taerra.hide`. Staff with `taerra.web.see-hidden` still see them, marked as hidden. Players who turned off server listings in their client show as an anonymous gray dot. Player heads are served by your server, so viewing the map never reveals a visitor's address to Mojang.
 - **One jar.** No external database, no CDN, and no web admin panel: everything is configured in game.
 - **Right-click any place** to copy its coordinates, or a link straight to it.
@@ -66,10 +68,10 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 
 ![The mod](https://assets.corpium.net/taerra/section-mod.png?v=91bf52ff)
 
-The optional Fabric mod brings the server's map into the game. Join a server running TAERRA, and it connects by itself:
+The optional Fabric mod brings the server's map into the game. Join a server running TAERRA, and it connects by itself, already logged in, so no `/taerra login` is needed in game:
 
+- a **full world map** that does everything the web map does: both views and all four rotations, layers, players and follow mode, waypoints, teleporting, chunk selection, and render progress
 - a **minimap** you can size, zoom, place on either side, and turn with the player
-- a **full world map** with both views, all four rotations, layers, players, waypoints, and teleporting
 - **waypoints in the world** as labels where they are
 
 It only works on servers running the TAERRA plugin, and it renders nothing itself: it draws the images the server already made. It needs Fabric API. Mod Menu is optional, for the settings screen.
@@ -109,7 +111,7 @@ Every setting can also be changed in game with `/taerra config`.
 | `taerra.command.status` | op | `/taerra status` |
 | `taerra.command.render` | op | `/taerra render`, and rendering selected chunks again |
 | `taerra.command.limit` | op | `/taerra limit`, and hiding selected chunks |
-| `taerra.command.waypoint` | op | Adding and removing waypoints |
+| `taerra.command.waypoint` | op | Adding, moving, and removing waypoints |
 | `taerra.command.config` | op | `/taerra config` and `/taerra import` |
 | `taerra.command.logout.others` | op | Logging other players out |
 | `taerra.web.teleport` | op | Teleporting from the map while logged in |
