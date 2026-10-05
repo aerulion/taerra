@@ -32,6 +32,8 @@ class MapManager {
         };
         this.rotation = 0;
         this.depth = {top_down: MapManager.DEFAULT_MAX_ZOOM, isometric: []};
+        this.bounds = null;
+        this.placing = false;
         this.pickCache = new Map();
         this.pickPending = new Map();
         this.epoch = Date.now();
@@ -182,6 +184,7 @@ class MapManager {
             pending = e;
         });
         this.map.on('mouseout', () => this.forgetPointer());
+        this.map.on('moveend resize', () => this.keepInBounds());
 
     }
 
@@ -212,6 +215,25 @@ class MapManager {
             this.tileLayer.options.minZoom = this.activeMinZoom();
             this.map.setMinZoom(this.activeMinZoom());
         }
+    }
+
+    setBounds(bounds) {
+        this.bounds = bounds ?? null;
+        this.keepInBounds();
+    }
+
+    keepInBounds() {
+        if (!this.bounds || this.placing) {
+            return;
+        }
+        const {minX, minZ, maxX, maxZ} = this.bounds;
+        const zoom = this.map.getZoom();
+        const area = L.bounds([[minX, minZ], [minX, maxZ + 1], [maxX + 1, minZ], [maxX + 1, maxZ + 1]]
+            .map(([x, z]) => this.map.project(this.blockToLatLng(x, z), zoom)));
+        const half = this.map.getSize().divideBy(2);
+        this.map.panInsideBounds(L.latLngBounds(
+            this.map.unproject(area.min.subtract(half), zoom),
+            this.map.unproject(area.max.add(half), zoom)));
     }
 
     viewZoomOffset() {
@@ -326,6 +348,7 @@ class MapManager {
         this.newEpoch();
         this.map.getContainer().dataset.environment = world.environment ?? '';
         this.depth = world.depth ?? this.depth;
+        this.bounds = world.bounds ?? null;
 
         this.rebuildTileLayer();
 
@@ -565,7 +588,9 @@ class MapManager {
     }
 
     centerOnBlock(x, z, zoom, y) {
+        this.placing = true;
         this.map.setView(this.blockToLatLng(x, z, y), zoom ?? this.map.getZoom(), {animate: false});
+        this.placing = false;
     }
 
     updatePointer(event) {

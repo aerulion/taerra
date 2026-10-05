@@ -252,6 +252,12 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     return depth(layer);
   }
 
+  @Override
+  public int @Nullable [] renderedArea(final @NotNull String worldName) {
+    depth(TileCoordinate.topDown(worldName, 0, 0, 0));
+    return this.depths.area(worldName);
+  }
+
   private void dispatchSafely() {
     if (!this.running.get()) {
       return;
@@ -617,6 +623,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       this.tileUpdateBroadcaster.tileUpdated(coord);
     }
     if (created) {
+      this.depths.extend(coord);
       pyramidChanged(coord);
     }
   }

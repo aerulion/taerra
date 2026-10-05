@@ -287,6 +287,9 @@ public final class MapViewImpl implements MapView {
     this.pixels = Minecraft.getInstance().getWindow().getGuiScale();
     this.unitPixels = unitPixels();
     animate();
+    if (!this.minimap && world.bounds() != null) {
+      keepInside(world.bounds(), projection);
+    }
     final double originX = snap(this.screenX - this.centerX * this.unitPixels);
     final double originY = snap(this.screenY - this.centerY * this.unitPixels);
     this.subPixelX = originX - Math.floor(originX);
@@ -401,6 +404,25 @@ public final class MapViewImpl implements MapView {
       graphics.setComponentTooltipForNextFrame(
           Minecraft.getInstance().font, this.tooltip, mouseX, mouseY);
     }
+  }
+
+  private void keepInside(
+      final World.@NotNull Bounds bounds, final @NotNull Projection projection) {
+    double minX = Double.POSITIVE_INFINITY;
+    double minY = Double.POSITIVE_INFINITY;
+    double maxX = Double.NEGATIVE_INFINITY;
+    double maxY = Double.NEGATIVE_INFINITY;
+    for (final int x : new int[] {bounds.minX(), bounds.maxX() + 1}) {
+      for (final int z : new int[] {bounds.minZ(), bounds.maxZ() + 1}) {
+        final double @NotNull [] corner = projection.toMap(x, this.centerHeight, z);
+        minX = Math.min(minX, corner[0]);
+        minY = Math.min(minY, corner[1]);
+        maxX = Math.max(maxX, corner[0]);
+        maxY = Math.max(maxY, corner[1]);
+      }
+    }
+    this.centerX = Math.clamp(this.centerX, minX, maxX);
+    this.centerY = Math.clamp(this.centerY, minY, maxY);
   }
 
   private double unitPixels() {

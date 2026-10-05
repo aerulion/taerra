@@ -1,10 +1,13 @@
 package net.aerulion.taerra.rendering.tile;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.TileCoordinate;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
@@ -59,5 +62,18 @@ class PyramidDepthsTest {
     final @NotNull PyramidDepths onlyTop =
         new PyramidDepths(level -> level.zoom() == 4 ? List.of(level) : List.of());
     assertEquals(4, onlyTop.measure(LAYER, true).depth());
+  }
+
+  @Test
+  @DisplayName("the rendered area is measured in whole regions and grows with new tiles")
+  void area() {
+    final @NotNull PyramidDepths depths = disk(-16, 15, 4);
+    assertNull(depths.area("world"));
+    depths.measure(LAYER, true);
+    assertArrayEquals(new int[] {-1024, 0, 1023, 511}, depths.area("world"));
+    depths.extend(TileCoordinate.topDown("world", 0, 20, -1));
+    assertArrayEquals(new int[] {-1024, -512, 1535, 511}, depths.area("world"));
+    depths.extend(TileCoordinate.isometric("world", MapRotation.R0, 0, 500, 500));
+    assertArrayEquals(new int[] {-1024, -512, 1535, 511}, depths.area("world"));
   }
 }

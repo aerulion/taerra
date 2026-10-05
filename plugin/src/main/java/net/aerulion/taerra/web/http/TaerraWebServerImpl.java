@@ -982,6 +982,13 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                                           WorldKeys.id(world), rotation, 0, 0, 0)))
                           .toList()));
 
+              final int @Nullable [] area = this.generatorService.renderedArea(WorldKeys.id(world));
+              if (area != null) {
+                worldData.put(
+                    "bounds",
+                    Map.of("minX", area[0], "minZ", area[1], "maxX", area[2], "maxZ", area[3]));
+              }
+
               final @NotNull org.bukkit.Location spawn = world.getSpawnLocation();
               worldData.put(
                   "spawn",

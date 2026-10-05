@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public record World(
     String name,
@@ -11,6 +12,7 @@ public record World(
     String environment,
     @SerializedName("private") boolean restricted,
     Depth depth,
+    @Nullable Bounds bounds,
     Spawn spawn) {
 
   public int minZoom(final @NotNull MapConfig config, final boolean isometric, final int rotation) {
@@ -40,6 +42,8 @@ public record World(
   }
 
   public record Depth(@SerializedName("top_down") int topDown, int[] isometric) {}
+
+  public record Bounds(int minX, int minZ, int maxX, int maxZ) {}
 
   public record Spawn(int x, int y, int z) {}
 }

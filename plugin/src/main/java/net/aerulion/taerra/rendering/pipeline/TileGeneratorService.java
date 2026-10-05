@@ -5,6 +5,7 @@ import net.aerulion.taerra.rendering.region.RegionScanProgress;
 import net.aerulion.taerra.rendering.region.RegionScanResult;
 import net.aerulion.taerra.rendering.session.RenderHistory;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public sealed interface TileGeneratorService permits TileGeneratorServiceImpl {
 
@@ -38,4 +39,6 @@ public sealed interface TileGeneratorService permits TileGeneratorServiceImpl {
   RenderStatusSnapshot statusSnapshot();
 
   int pyramidDepth(@NotNull TileCoordinate layer);
+
+  int @Nullable [] renderedArea(@NotNull String worldName);
 }

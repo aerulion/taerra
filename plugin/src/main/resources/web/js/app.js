@@ -156,6 +156,7 @@ async function refreshWorlds() {
     }
     currentWorld = worlds.find(world => world.name === currentWorld?.name) ?? null;
     mapManager.setDepth(currentWorld?.depth);
+    mapManager.setBounds(currentWorld?.bounds);
     if (worlds.length === 0) {
         $('world-list').textContent = t('worlds.none');
         return;
