@@ -72,6 +72,17 @@ tasks {
     runDevBundleServer {
         runDirectory = rootProject.layout.projectDirectory.dir("run")
         args("-wworld-${libs.versions.paper.get().substringBefore(".build").replace(".", "-")}")
+        val properties = rootProject.layout.projectDirectory.file("run/server.properties").asFile
+        doFirst {
+            val lines =
+                if (properties.exists())
+                    properties.readLines().filterNot { it.startsWith("level-seed=") }
+                else emptyList()
+            properties.parentFile.mkdirs()
+            properties.writeText(
+                (lines + "level-seed=7212011082581230045").joinToString("\n", postfix = "\n")
+            )
+        }
         if (gradle.startParameter.taskNames.any { it.removePrefix(":") == "runDev" }) {
             args("-o", "false")
             val ops = rootProject.layout.projectDirectory.file("run/ops.json").asFile
