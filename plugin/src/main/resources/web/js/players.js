@@ -1,6 +1,6 @@
 import {numbers, t} from './i18n.js';
 import {mapManager, pixelPath} from './map.js';
-import {element} from './markers.js';
+import {element, markerManager, PLAYER_LAYER} from './markers.js';
 
 const FALLBACK_AVATAR = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" shape-rendering="crispEdges">
 <rect width="8" height="8" fill="#7a7a7a"/><rect width="8" height="2" fill="#4a4a4a"/><rect y="2" width="1" height="1" fill="#4a4a4a"/><rect x="7" y="2" width="1" height="1" fill="#4a4a4a"/>
@@ -156,12 +156,16 @@ class PlayerManager {
 
     show(entry) {
         const map = mapManager.getMap();
-        if (entry.player.world !== this.world) {
+        if (entry.player.world !== this.world || !markerManager.isShown(PLAYER_LAYER)) {
             entry.marker.remove();
         } else if (!map.hasLayer(entry.marker)) {
             entry.marker.addTo(map);
             entry.marker.getElement().classList.toggle('is-followed', this.followed === entry.player.uuid);
         }
+    }
+
+    showAll() {
+        this.entries.forEach(entry => this.show(entry));
     }
 
     create(player) {

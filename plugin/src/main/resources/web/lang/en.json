@@ -47,6 +47,7 @@
   "menu.center": "Center map here",
   "menu.copied": "Copied",
   "layers.title": "Layers",
+  "layer.players": "Players",
   "layer.worldborder": "World border",
   "layer.worldguard": "Regions",
   "layer.waypoints": "Waypoints",

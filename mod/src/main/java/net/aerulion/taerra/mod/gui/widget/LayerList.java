@@ -1,6 +1,7 @@
 package net.aerulion.taerra.mod.gui.widget;
 
 import java.util.List;
+import java.util.stream.Stream;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.minecraft.client.Minecraft;
@@ -30,7 +31,8 @@ public final class LayerList extends ContainerObjectSelectionList<LayerList.Entr
 
   public void refresh(final @Nullable String world) {
     final List<Layer> layers = world == null ? List.of() : this.map.markers(world);
-    replaceEntries(layers.stream().map(Entry::new).toList());
+    replaceEntries(
+        Stream.concat(Stream.of(Layer.PLAYERS), layers.stream()).map(Entry::new).toList());
   }
 
   @Override
@@ -50,7 +52,7 @@ public final class LayerList extends ContainerObjectSelectionList<LayerList.Entr
 
     private Entry(final @NotNull Layer layer) {
       final @NotNull Font font = Minecraft.getInstance().font;
-      this.count = String.valueOf(layer.markers().size());
+      this.count = layer == Layer.PLAYERS ? "" : String.valueOf(layer.markers().size());
       final @NotNull String name = layer.displayName().getString();
       final int room =
           getRowWidth() - Checkbox.getBoxSize(font) - 4 - font.width(this.count) - COUNT_GAP;

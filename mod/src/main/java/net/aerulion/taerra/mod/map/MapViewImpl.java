@@ -891,6 +891,9 @@ public final class MapViewImpl implements MapView {
       final int y1,
       final double[] mouse,
       final float partialTick) {
+    if (!map.shown(Layer.PLAYERS)) {
+      return;
+    }
     final @Nullable LocalPlayer self = Minecraft.getInstance().player;
     final String selfId = self == null ? "" : self.getUUID().toString();
     final @NotNull TextureAtlasSprite arrow = MapIcons.decoration("player");

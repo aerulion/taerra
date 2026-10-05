@@ -580,6 +580,7 @@ waypointEditor.initialize();
 chunkSelection.initialize();
 playerManager.worldLabel = worldName;
 playerManager.onWorld = selectWorld;
+markerManager.onPlayers = () => playerManager.showAll();
 markerManager.onWaypoint = async (action, waypoint, button) => {
     if (action === 'teleport') {
         if (await teleportButton(button, waypoint)) {

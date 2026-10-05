@@ -14,6 +14,7 @@
   "taerra.env.NETHER": "Der Nether",
   "taerra.env.NORMAL": "Oberwelt",
   "taerra.env.THE_END": "Das Ende",
+  "taerra.layer.players": "Spieler",
   "taerra.layer.waypoints": "Wegpunkte",
   "taerra.layer.worldborder": "Weltgrenze",
   "taerra.layer.worldguard": "Regionen",

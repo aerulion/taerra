@@ -12,6 +12,8 @@ public record Layer(
     @SerializedName("private") boolean restricted,
     List<Marker> markers) {
 
+  public static final Layer PLAYERS = new Layer("players", "Players", true, false, List.of());
+
   public @NotNull Component displayName() {
     return Component.translatableWithFallback("taerra.layer." + this.id, this.label);
   }

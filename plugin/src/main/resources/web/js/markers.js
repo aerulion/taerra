@@ -25,6 +25,8 @@ export const PIN_SVG = `<svg class="waypoint__pin" viewBox="0 0 9 11" width="18"
 <path d="${pixelPath(PIN_OUTLINE)}" fill="#111"/><path d="${pixelPath(PIN_BODY)}" fill="currentColor"/>
 <path d="${pixelPath(PIN_SHINE)}" fill="#fff" fill-opacity=".45"/><path d="${pixelPath(PIN_EYE)}" fill="#fff"/></svg>`;
 
+export const PLAYER_LAYER = {id: 'players', shown: true, markers: []};
+
 export function privateIcon() {
     const icon = element('span', 'private-icon');
     icon.title = t('private.hint');
@@ -173,7 +175,7 @@ class MarkerManager {
         this.cullTimer = 0;
         this.visibility = {};
         this.onWaypoint = null;
-        this.section = document.getElementById('layer-section');
+        this.onPlayers = null;
         this.list = document.getElementById('layer-list');
     }
 
@@ -249,6 +251,7 @@ class MarkerManager {
         this.visibility = {};
         params.getAll('show').forEach(id => this.visibility[id] = true);
         params.getAll('hide').forEach(id => this.visibility[id] = false);
+        this.onPlayers?.();
         this.redraw();
         this.renderControls();
     }
@@ -264,6 +267,9 @@ class MarkerManager {
             group?.addTo(mapManager.getMap());
         } else {
             group?.remove();
+        }
+        if (layer === PLAYER_LAYER) {
+            this.onPlayers?.();
         }
         this.cull();
     }
@@ -578,8 +584,7 @@ class MarkerManager {
     }
 
     renderControls() {
-        this.section.hidden = this.layers.length === 0;
-        this.list.replaceChildren(...this.layers.map(layer => {
+        this.list.replaceChildren(...[PLAYER_LAYER, ...this.layers].map(layer => {
             const toggle = document.createElement('input');
             toggle.type = 'checkbox';
             toggle.checked = this.isShown(layer);
@@ -589,8 +594,10 @@ class MarkerManager {
             if (layer.private) {
                 name.append(privateIcon());
             }
-            row.append(toggle, name,
-                element('span', 'badge', numbers.format(layer.markers.length)));
+            row.append(toggle, name);
+            if (layer !== PLAYER_LAYER) {
+                row.append(element('span', 'badge', numbers.format(layer.markers.length)));
+            }
             const item = document.createElement('li');
             item.append(row);
             return item;
