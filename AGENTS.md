@@ -118,7 +118,7 @@ Discord needs the `DISCORD_WEBHOOK_ID` and `DISCORD_WEBHOOK_TOKEN` secrets.
 
 ## Website
 
-`site/` is taerra.dev, a single promo page for players and server owners; aerulion.net/taerra stays the technical deep
+`site/` is taerra.dev, a single promo page for players and server owners; aerulion.net/work/taerra stays the technical deep
 dive. Astro with Bun, following aerulion.github.io: Prettier, ESLint and `astro check` (`bun run check`), fonts through
 Astro's fonts API (QuinqueFive from the plugin's copy, the rest from Fontsource). Copy lives in `src/data/taerra.ts`
 (English, at `/`) and `taerra.de.ts` (German, at `/de/`, in the web map's du voice), never in components, and takes

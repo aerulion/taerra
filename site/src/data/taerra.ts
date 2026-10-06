@@ -4,7 +4,7 @@ export const links = {
     modrinth: 'https://download.taerra.dev',
     demo: 'https://map.corpium.net/',
     discord: 'https://discord.taerra.dev',
-    deepDive: 'https://aerulion.net/taerra/'
+    deepDive: 'https://aerulion.net/work/taerra/'
 };
 
 export const showreel: string | null = '7u9XtATjbF8';

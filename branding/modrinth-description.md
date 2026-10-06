@@ -10,7 +10,7 @@ Everything is rendered on the server. Visitors and players only download finishe
 
 ![Showreel](https://assets.corpium.net/taerra/section-showreel.png?v=0713853e)
 
-<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/VIDEO_ID" title="TAERRA showreel" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/7u9XtATjbF8" title="TAERRA showreel" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ![Early access](https://assets.corpium.net/taerra/section-early-access.png?v=ef0f63d8)
 
@@ -130,7 +130,7 @@ Render threads and cache sizes are configurable, so you decide how much CPU and 
 
 ![More](https://assets.corpium.net/taerra/section-more.png?v=ef7dd80c)
 
-See TAERRA running on a real server at [map.corpium.net](https://map.corpium.net/), and if you are curious how it works under the hood, read the [technical deep dive](https://aerulion.net/taerra/). Questions, ideas, and bug reports are welcome on [Discord](https://discord.taerra.dev).
+See TAERRA running on a real server at [map.corpium.net](https://map.corpium.net/), and if you are curious how it works under the hood, read the [technical deep dive](https://aerulion.net/work/taerra/). Questions, ideas, and bug reports are welcome on [Discord](https://discord.taerra.dev).
 
 TAERRA is free to use on any server, commercial ones included. It is closed source; the [license](https://assets.corpium.net/taerra/license.txt?v=fa512c7e) has the details.
 
