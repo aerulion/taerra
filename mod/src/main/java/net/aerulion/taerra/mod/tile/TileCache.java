@@ -1,6 +1,6 @@
 package net.aerulion.taerra.mod.tile;
 
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import org.jetbrains.annotations.Nullable;
 
 public sealed interface TileCache permits TileCacheImpl {

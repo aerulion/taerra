@@ -7,7 +7,11 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 import net.aerulion.taerra.model.RegionCoordinate;
+import net.aerulion.taerra.model.WorldKeys;
+import net.minecraft.SharedConstants;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.ListTag;
@@ -22,7 +26,10 @@ import org.jetbrains.annotations.Nullable;
 
 public final class RegionFileChunkSourceProvider implements ChunkSourceProvider, AutoCloseable {
 
+  private static final @NotNull Logger LOGGER =
+      Logger.getLogger(RegionFileChunkSourceProvider.class.getName());
   private static final long NBT_QUOTA_BYTES = 64L << 20;
+  private static final @NotNull Set<String> WARNED_WORLDS = ConcurrentHashMap.newKeySet();
 
   private static final @NotNull Set<String> UNFINISHED_STATUSES =
       Set.of(
@@ -34,6 +41,8 @@ public final class RegionFileChunkSourceProvider implements ChunkSourceProvider,
           "minecraft:surface",
           "minecraft:carvers");
 
+  private final int currentDataVersion;
+  private final @NotNull String worldId;
   private final @NotNull Path regionDirectory;
   private final int minHeight;
   private final int maxHeight;
@@ -43,6 +52,8 @@ public final class RegionFileChunkSourceProvider implements ChunkSourceProvider,
 
   public RegionFileChunkSourceProvider(final @NotNull World world) {
     super();
+    this.currentDataVersion = SharedConstants.getCurrentVersion().dataVersion().version();
+    this.worldId = WorldKeys.id(world);
     this.regionDirectory = RegionDirectoryResolver.resolveRegionDirectory(world);
     this.minHeight = world.getMinHeight();
     this.maxHeight = world.getMaxHeight();
@@ -81,13 +92,21 @@ public final class RegionFileChunkSourceProvider implements ChunkSourceProvider,
                   new FieldSelector(ListTag.TYPE, "sections"),
                   new FieldSelector(IntTag.TYPE, "xPos"),
                   new FieldSelector(IntTag.TYPE, "zPos"),
-                  new FieldSelector(StringTag.TYPE, "Status"));
+                  new FieldSelector(StringTag.TYPE, "Status"),
+                  new FieldSelector(IntTag.TYPE, "DataVersion"));
           NbtIo.parse(input, fields, NbtAccounter.create(NBT_QUOTA_BYTES));
           if (fields.getResult() instanceof final @NotNull CompoundTag tag
               && tag.getIntOr("xPos", chunkX) == chunkX
               && tag.getIntOr("zPos", chunkZ) == chunkZ) {
+            final int dataVersion = tag.getIntOr("DataVersion", 0);
+            final @Nullable ChunkFormat format =
+                ChunkFormat.of(dataVersion, this.currentDataVersion);
+            if (format == null) {
+              warnUnsupported(dataVersion);
+              return null;
+            }
             return isFinished(tag.getStringOr("Status", ""))
-                ? ParsedAnvilChunk.fromNbt(tag, this.minHeight, this.maxHeight)
+                ? ParsedAnvilChunk.fromNbt(tag, format, this.minHeight, this.maxHeight)
                 : null;
           }
         }
@@ -99,6 +118,26 @@ public final class RegionFileChunkSourceProvider implements ChunkSourceProvider,
       }
     }
     return null;
+  }
+
+  private void warnUnsupported(final int dataVersion) {
+    if (!WARNED_WORLDS.add(this.worldId)) {
+      return;
+    }
+    LOGGER.warning(
+        dataVersion > this.currentDataVersion
+            ? "World "
+                + this.worldId
+                + " has chunks from a newer Minecraft version (DataVersion "
+                + dataVersion
+                + ") than this server; they stay off the map"
+            : "World "
+                + this.worldId
+                + " has chunks saved before Minecraft 26.2 (DataVersion "
+                + dataVersion
+                + ", oldest supported "
+                + ChunkFormat.oldestDataVersion()
+                + "); they stay off the map until the server is started with --forceUpgrade");
   }
 
   private @Nullable RegionFileReader regionFor(final @NotNull RegionCoordinate coordinate)

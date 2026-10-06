@@ -4,7 +4,7 @@ Guidance for AI coding agents in this repository. `CLAUDE.md` is a symlink to th
 
 ## Project
 
-TAERRA is a live web map for Paper servers (Java 25, Paper 26.2 via `paperweight-userdev`, Mojang mappings, NMS
+TAERRA is a live web map for Paper servers (Java 25, Paper 26.3 via `paperweight-userdev`, Mojang mappings, NMS
 allowed) and a Fabric mod that shows the same map in game. Gradle multi-module build, versions in
 `gradle/libs.versions.toml`, shared Java setup in `build-logic` (`taerra.java-conventions`).
 
@@ -25,6 +25,10 @@ client. A change to a route or its JSON lands together with the web map and mod 
 The mod learns the web map's address and session from the plugin's `taerra:web` join message (`ModHandshake`), which
 carries a protocol number: bump `ModHandshake.PROTOCOL` and the mod's `TaerraClient.PROTOCOL` together whenever a
 route, its JSON or that message changes in a way an older mod would misread.
+
+The plugin reads chunks straight from the region files, without the game's data fixers. `rendering/source/ChunkFormat`
+maps each chunk's `DataVersion` to the reader for that format, back to 26.2 and no further: a Minecraft update that
+changes the chunk format adds a constant with its release's `DataVersion` and leaves the older ones alone.
 
 The look is fixed product identity: full-block cubes, one colour per face, lighting hardcoded in
 `rendering/style/Lighting.java`. No style options or toggles; change the constants.

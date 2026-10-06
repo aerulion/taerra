@@ -108,7 +108,7 @@ public final class WaypointLabels implements LevelRenderEvents.CollectSubmits {
         final float scale = (float) (PIXEL * Math.max(distance, STEADY) / STEADY);
         pose.pushPose();
         pose.translate(offset);
-        pose.mulPose(camera.orientation);
+        pose.rotate(camera.orientation);
         pose.scale(scale, -scale, scale);
         submit(context, pose, font, text(marker, distance), -font.lineHeight, true);
         pose.scale(ICON, ICON, ICON);

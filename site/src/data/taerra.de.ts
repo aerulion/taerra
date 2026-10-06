@@ -256,8 +256,8 @@ export const de: Copy = {
             }
         ],
         requirements: [
-            {part: 'Plugin', needs: 'Paper 26.2 und Java 25. Spigot und Folia werden nicht unterstützt.'},
-            {part: 'Mod', needs: 'Fabric Loader, Fabric API und Minecraft 26.2, auf einem Server mit dem Plugin'},
+            {part: 'Plugin', needs: 'Paper 26.3 und Java 25. Spigot und Folia werden nicht unterstützt.'},
+            {part: 'Mod', needs: 'Fabric Loader, Fabric API und Minecraft 26.3, auf einem Server mit dem Plugin'},
             {
                 part: 'Updates',
                 needs: 'Aktualisiere zuerst das Plugin. Ist die Mod neuer als das Plugin, bittet sie die Spieler:innen, den Server aktualisieren zu lassen. Plugin und Mod teilen sich einen Build-Zähler, ihre Nummern springen also und müssen nicht übereinstimmen.'

@@ -128,7 +128,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--assets-dir", type=Path, help="Existing checkout of the minecraft-assets repository")
-    source.add_argument("--version", help="Minecraft version to provision from the assets repository, e.g. 26.2")
+    source.add_argument("--version", help="Minecraft version to provision from the assets repository, e.g. 26.3")
     parser.add_argument("--cache-dir", type=Path, default=DEFAULT_CACHE, help="Where provisioned checkouts are kept")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Target block_data.json path")
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT, help="Optional report JSON path")
