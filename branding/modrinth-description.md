@@ -75,6 +75,7 @@ The optional Fabric mod brings the server's map into the game. Join a server run
 - a **full world map** that does everything the web map does: both views and all four rotations, layers, players and follow mode, waypoints, search, teleporting, chunk selection, and render progress
 - a **minimap** you can size, zoom, place on either side, and turn with the player
 - **waypoints in the world** as labels where they are
+- **navigation** to a waypoint, a player, or any spot on the map, started in game or from the web map while you play: a beacon beam where it is, and an arrow with the distance at the top of the screen, through the Nether too
 
 It only works on servers running the TAERRA plugin, and it renders nothing itself: it draws the images the server already made. It needs Fabric API. Mod Menu is optional, for the settings screen.
 

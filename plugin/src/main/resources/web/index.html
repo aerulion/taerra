@@ -203,6 +203,8 @@
         <p class="context-menu__title" id="context-menu-title"></p>
         <button data-action="coordinates" data-i18n="menu.coordinates" role="menuitem" type="button">Copy coordinates
         </button>
+        <button data-action="navigate" data-i18n="menu.navigate" hidden role="menuitem" type="button">Navigate here
+        </button>
         <button data-action="teleport" data-i18n="menu.teleport" hidden role="menuitem" type="button">Teleport here
         </button>
         <button data-action="waypoint" data-i18n="menu.waypoint" hidden role="menuitem" type="button">Add waypoint
@@ -213,6 +215,14 @@
         <button data-action="select" data-i18n="menu.select" hidden role="menuitem" type="button">Select chunks</button>
         <button data-action="link" data-i18n="menu.link" role="menuitem" type="button">Copy link to this place</button>
         <button data-action="center" data-i18n="menu.center" role="menuitem" type="button">Center map here</button>
+    </div>
+
+    <div aria-label="Navigation" class="navigation" data-i18n-label="navigation.label" data-i18n-title="navigation.hint"
+         hidden id="navigation" role="status" title="Shown in game with the TAERRA mod">
+        <span class="navigation__icon" id="navigation-icon"></span>
+        <span class="navigation__text" id="navigation-text"></span>
+        <button class="placing__cancel" data-i18n="navigation.show" id="navigation-show" type="button">Show</button>
+        <button class="placing__cancel" data-i18n="navigation.stop" id="navigation-stop" type="button">Stop</button>
     </div>
 
     <div class="placing" hidden id="placing">

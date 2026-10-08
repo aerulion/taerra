@@ -9,6 +9,7 @@ import net.aerulion.taerra.mod.tile.TileCache;
 import net.aerulion.taerra.mod.web.model.Account;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.MapConfig;
+import net.aerulion.taerra.mod.web.model.NavigationTarget;
 import net.aerulion.taerra.mod.web.model.Player;
 import net.aerulion.taerra.mod.web.model.Progress;
 import net.aerulion.taerra.mod.web.model.Waypoint;
@@ -41,6 +42,13 @@ public sealed interface WebMap permits WebMapImpl {
 
   @Nullable
   Account account();
+
+  @Nullable
+  NavigationTarget navigation();
+
+  long navigationVersion();
+
+  void navigate(@Nullable NavigationTarget target);
 
   @Nullable
   Progress progress();

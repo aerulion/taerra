@@ -32,6 +32,7 @@ import net.aerulion.taerra.mod.util.Urls;
 import net.aerulion.taerra.mod.web.model.Account;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.MapConfig;
+import net.aerulion.taerra.mod.web.model.NavigationTarget;
 import net.aerulion.taerra.mod.web.model.Player;
 import net.aerulion.taerra.mod.web.model.Progress;
 import net.aerulion.taerra.mod.web.model.Waypoint;
@@ -69,6 +70,8 @@ public final class WebMapImpl implements WebMap {
   private @NotNull List<World> worlds = List.of();
   private @NotNull List<Player> players = List.of();
   private @Nullable Account account;
+  private @Nullable NavigationTarget navigation;
+  private long navigationVersion;
   private @Nullable Progress progress;
   private @Nullable WebSocket socket;
   private @Nullable String subscribed;
@@ -156,6 +159,26 @@ public final class WebMapImpl implements WebMap {
   @Override
   public @Nullable Account account() {
     return this.account;
+  }
+
+  @Override
+  public @Nullable NavigationTarget navigation() {
+    return this.navigation;
+  }
+
+  @Override
+  public long navigationVersion() {
+    return this.navigationVersion;
+  }
+
+  @Override
+  public void navigate(final @Nullable NavigationTarget target) {
+    this.client.send(target == null ? "DELETE" : "PUT", "/api/navigation", target, _ -> {});
+  }
+
+  private void setNavigation(final @Nullable NavigationTarget target) {
+    this.navigation = target;
+    this.navigationVersion++;
   }
 
   @Override
@@ -429,6 +452,8 @@ public final class WebMapImpl implements WebMap {
 
   private void refreshAccount() {
     this.client.<Account>json("/api/account", Account.class, account -> this.account = account);
+    this.client.<NavigationTarget>json(
+        "/api/navigation", NavigationTarget.class, this::setNavigation);
   }
 
   private void refreshWorlds() {
@@ -517,6 +542,8 @@ public final class WebMapImpl implements WebMap {
         }
       }
       case "players" -> setPlayers(GSON.fromJson(message.get("data"), PLAYERS));
+      case "navigation" ->
+          setNavigation(GSON.fromJson(message.get("target"), NavigationTarget.class));
       case "markers" -> {
         final String world = message.get("world").getAsString();
         if (this.markers.containsKey(world)) {

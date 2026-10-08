@@ -27,6 +27,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -90,6 +91,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private final @NotNull ModHandshake modHandshake;
   private final @NotNull Waypoints waypoints;
   private final @NotNull PersonalWaypoints personalWaypoints;
+  private final @NotNull Map<UUID, NavigationTarget> navigations = new ConcurrentHashMap<>();
   private final @NotNull RenderSubCommand render;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private final @NotNull PlayerAvatars avatars = new PlayerAvatars();
@@ -176,6 +178,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
         "uuid", session.uuid().toString(),
         "name", session.name(),
         "teleport", viewer.canTeleport(),
+        "mod", viewer.usesMod(),
         "markers", viewer.canEditMarkers(),
         "privateGroups", viewer.canCreatePrivateGroups(),
         "personal", viewer.canKeepPersonalMarkers(),
@@ -440,6 +443,9 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 config.routes.get("/api/waypoints/groups", this::handleWaypointGroupsRequest);
                 config.routes.put("/api/waypoints", this::handleWaypointSaveRequest);
                 config.routes.delete("/api/waypoints/{name}", this::handleWaypointDeleteRequest);
+                config.routes.get("/api/navigation", this::handleNavigationRequest);
+                config.routes.put("/api/navigation", this::handleNavigationSaveRequest);
+                config.routes.delete("/api/navigation", this::handleNavigationDeleteRequest);
                 config.routes.post("/api/area", this::handleAreaRequest);
 
                 config.routes.ws("/ws", this.wsHandler::configure);
@@ -842,6 +848,91 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
   }
 
+  private void handleNavigationRequest(final @NotNull Context ctx) {
+    final @NotNull Viewer viewer = viewer(ctx);
+    final @Nullable NavigationTarget target =
+        viewer.uuid() == null ? null : this.navigations.get(viewer.uuid());
+    ctx.header("Cache-Control", "no-store");
+    if (target == null || !viewer.canSee(this.taerraConfig, target.world())) {
+      ctx.status(204);
+      return;
+    }
+    ctx.json(target);
+  }
+
+  private void handleNavigationSaveRequest(final @NotNull Context ctx) {
+    final @NotNull Viewer viewer = viewer(ctx);
+    if (!sameOrigin(ctx) || viewer.uuid() == null) {
+      ctx.status(403).result("Not allowed");
+      return;
+    }
+    final @NotNull NavigationTarget request;
+    try {
+      request = ctx.bodyAsClass(NavigationTarget.class);
+    } catch (final Exception e) {
+      ctx.status(400).result("Invalid target");
+      return;
+    }
+    final @NotNull String cleaned =
+        request.label() == null
+            ? ""
+            : request.label().replaceAll("[^" + Names.CHARACTERS + "]", "").strip();
+    final @Nullable String label =
+        Names.of(cleaned.substring(0, Math.min(cleaned.length(), Names.MAX_LENGTH)));
+    final @NotNull OptionalInt color = HexColors.parseRgb(request.color());
+    if (label == null
+        || color.isEmpty()
+        || request.world() == null
+        || !viewer.canSee(this.taerraConfig, request.world())
+        || !Double.isFinite(request.x())
+        || !Double.isFinite(request.z())
+        || (request.y() != null && !Double.isFinite(request.y()))
+        || (request.player() != null && !isUuid(request.player()))) {
+      ctx.status(400).result("Invalid target");
+      return;
+    }
+    final @NotNull NavigationTarget target =
+        new NavigationTarget(
+            label,
+            request.world(),
+            request.x(),
+            request.y(),
+            request.z(),
+            HexColors.format(color.getAsInt()),
+            request.player());
+    this.navigations.put(viewer.uuid(), target);
+    publishNavigation(viewer.uuid(), target);
+    ctx.status(204);
+  }
+
+  private void handleNavigationDeleteRequest(final @NotNull Context ctx) {
+    final @NotNull Viewer viewer = viewer(ctx);
+    if (!sameOrigin(ctx) || viewer.uuid() == null) {
+      ctx.status(403).result("Not allowed");
+      return;
+    }
+    this.navigations.remove(viewer.uuid());
+    publishNavigation(viewer.uuid(), null);
+    ctx.status(204);
+  }
+
+  private void publishNavigation(
+      final @NotNull UUID player, final @Nullable NavigationTarget target) {
+    final @NotNull Map<String, Object> message = new HashMap<>();
+    message.put("type", "navigation");
+    message.put("target", target);
+    this.wsHandler.sendTo(player, message);
+  }
+
+  private static boolean isUuid(final @NotNull String value) {
+    try {
+      UUID.fromString(value);
+      return true;
+    } catch (final IllegalArgumentException e) {
+      return false;
+    }
+  }
+
   private void handleAreaRequest(final @NotNull Context ctx) {
     if (!sameOrigin(ctx)) {
       ctx.status(403).result("Cross-site request");
@@ -1119,6 +1210,15 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
             })
         .toList();
   }
+
+  private record NavigationTarget(
+      @Nullable String label,
+      @Nullable String world,
+      double x,
+      @Nullable Double y,
+      double z,
+      @Nullable String color,
+      @Nullable String player) {}
 
   private record AreaRequest(
       @Nullable String action, @Nullable String world, @Nullable List<int[]> chunks) {}

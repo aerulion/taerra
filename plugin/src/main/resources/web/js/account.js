@@ -91,6 +91,18 @@ function canEditMarkers() {
     return current?.markers === true;
 }
 
+function loggedIn() {
+    return current !== null;
+}
+
+function usesMod() {
+    return current?.mod === true;
+}
+
+function ownUuid() {
+    return current?.uuid ?? null;
+}
+
 function canKeepPersonal() {
     return current?.personal === true;
 }
@@ -108,5 +120,6 @@ function canHide() {
 }
 
 export const accountManager = {
-    initialize, canTeleport, canEditMarkers, canKeepPersonal, canCreatePrivateGroups, canRender, canHide
+    initialize, loggedIn, usesMod, ownUuid, canTeleport, canEditMarkers, canKeepPersonal, canCreatePrivateGroups, canRender,
+    canHide
 };

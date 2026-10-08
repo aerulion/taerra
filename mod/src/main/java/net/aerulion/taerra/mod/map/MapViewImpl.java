@@ -12,7 +12,9 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
+import net.aerulion.taerra.mod.TaerraClient;
 import net.aerulion.taerra.mod.config.Settings;
+import net.aerulion.taerra.mod.navigation.Navigation;
 import net.aerulion.taerra.mod.pick.PickCache;
 import net.aerulion.taerra.mod.tile.TileKey;
 import net.aerulion.taerra.mod.util.Colors;
@@ -451,6 +453,7 @@ public final class MapViewImpl implements MapView {
           this.spin == 0 ? y1 : graphics.guiHeight());
     }
     drawPoints(graphics, points, mouse);
+    drawTarget(graphics, map, projection, x0, y0, x1, y1);
     drawPlayers(graphics, map, projection, x0, y0, x1, y1, mouse, partialTick);
     pose.popMatrix();
     graphics.disableScissor();
@@ -996,6 +999,42 @@ public final class MapViewImpl implements MapView {
       graphics.text(font, label, 1, 1, 0xFFFFFFFF, false);
       pose.popMatrix();
     }
+  }
+
+  private void drawTarget(
+      final @NotNull GuiGraphicsExtractor graphics,
+      final @NotNull WebMap map,
+      final @NotNull Projection projection,
+      final int x0,
+      final int y0,
+      final int x1,
+      final int y1) {
+    final Navigation.@Nullable Target target = TaerraClient.navigation().target();
+    final double @Nullable [] at =
+        target == null || this.world == null ? null : target.in(this.world);
+    if (at == null) {
+      return;
+    }
+    final double @NotNull [] point =
+        toScreen(
+            Double.isNaN(at[1])
+                ? ground(map, projection, at[0], at[2])
+                : projection.toMap(at[0], at[1], at[2]));
+    final double @NotNull [] shown = onScreen(point);
+    final boolean inside = shown[0] >= x0 && shown[0] < x1 && shown[1] >= y0 && shown[1] < y1;
+    if (!inside && !this.minimap) {
+      return;
+    }
+    final @NotNull TextureAtlasSprite sprite =
+        MapIcons.decoration(inside ? "target_x" : "target_point");
+    icon(
+        graphics,
+        inside
+            ? point
+            : unturn(Math.clamp(shown[0], x0 + 4, x1 - 4), Math.clamp(shown[1], y0 + 4, y1 - 4)),
+        0,
+        () ->
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, 0, 0, 8, 8, target.color()));
   }
 
   private void drawPlayers(

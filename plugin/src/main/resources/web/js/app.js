@@ -1,6 +1,7 @@
 import {accountManager} from './account.js';
 import {defaultLanguage, hashLanguage, language, LANGUAGES, numbers, setLanguage, t, translatePage} from './i18n.js';
 import {mapManager} from './map.js';
+import {navigationManager} from './navigation.js';
 import {element, markerManager, privateIcon} from './markers.js';
 import {playerManager} from './players.js';
 import {searchPalette} from './search.js';
@@ -119,6 +120,7 @@ async function selectWorld(name) {
     chunkSelection.stop();
     mapManager.setWorld(world);
     playerManager.setWorld(world.name);
+    navigationManager.setWorld(world.name);
     wsManager.subscribe(world.name);
     void markerManager.load(world.name);
 }
@@ -293,6 +295,7 @@ function syncViewControls() {
     $('rotation-readout').setAttribute('aria-label', t('view.facing', {direction}));
     playerManager.reposition();
     markerManager.redraw();
+    navigationManager.redraw();
     chunkSelection.redraw();
 }
 
@@ -463,6 +466,7 @@ function setupContextMenu() {
             button.classList.remove('is-done', 'is-failed');
             button.textContent = t(button.dataset.i18n);
         }
+        menu.querySelector('[data-action="navigate"]').hidden = !accountManager.usesMod();
         menu.querySelector('[data-action="teleport"]').hidden = !accountManager.canTeleport();
         const placing = accountManager.canEditMarkers() || accountManager.canKeepPersonal();
         menu.querySelector('[data-action="waypoint"]').hidden = !placing;
@@ -491,6 +495,16 @@ function setupContextMenu() {
         }
         if (action === 'teleport') {
             await teleport(button, block);
+            return;
+        }
+        if (action === 'navigate') {
+            const {x, z} = block;
+            const y = exact ? block.y + 1 : null;
+            close();
+            void navigationManager.navigate({
+                label: exact ? `${x}, ${y}, ${z}` : `${x}, ${z}`, world: currentWorld.name,
+                x: x + .5, y, z: z + .5, color: '#ffffff', player: null
+            });
             return;
         }
         if (action === 'select' || action === 'area' || action === 'line') {
@@ -580,6 +594,16 @@ translatePage();
 const accountReady = accountManager.initialize().catch(error => console.error('Failed to log in:', error));
 await mapManager.initialize();
 markerManager.initialize();
+navigationManager.initialize();
+navigationManager.onShow = (target) => {
+    void selectWorld(target.world);
+    if (target.player) {
+        playerManager.follow(target.player);
+    } else {
+        mapManager.centerOnBlock(Math.floor(target.x), Math.floor(target.z), Math.max(mapManager.getMap().getZoom(), 2),
+            Number.isFinite(target.y) ? Math.floor(target.y) : undefined);
+    }
+};
 waypointEditor.initialize();
 chunkSelection.initialize();
 searchPalette.initialize({
@@ -592,6 +616,14 @@ playerManager.worldLabel = worldName;
 playerManager.onWorld = selectWorld;
 markerManager.onPlayers = () => playerManager.showAll();
 markerManager.onWaypoint = async (action, waypoint, button) => {
+    if (action === 'navigate') {
+        mapManager.getMap().closePopup();
+        void navigationManager.navigate({
+            label: waypoint.name, world: waypoint.world, x: waypoint.x + .5, y: waypoint.y, z: waypoint.z + .5,
+            color: waypoint.color, player: null
+        });
+        return;
+    }
     if (action === 'teleport') {
         if (await teleportButton(button, waypoint)) {
             setTimeout(() => mapManager.getMap().closePopup(), 700);

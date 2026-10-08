@@ -98,6 +98,22 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
         });
   }
 
+  @Override
+  public void sendTo(final @NotNull UUID player, final @NotNull Object message) {
+    final @NotNull String json;
+    try {
+      json = this.mapper.writeValueAsString(message);
+    } catch (final Exception e) {
+      return;
+    }
+    this.connections.forEach(
+        (ctx, connection) -> {
+          if (player.equals(connection.viewer().uuid())) {
+            send(ctx, json);
+          }
+        });
+  }
+
   public static @NotNull String markersMessage(final @NotNull String world) {
     return "{\"type\":\"markers\",\"world\":\"" + world + "\"}";
   }

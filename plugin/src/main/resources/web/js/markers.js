@@ -618,9 +618,6 @@ class MarkerManager {
 
     waypointActions(layer, marker) {
         const actions = element('div', 'marker-popup__actions');
-        if (!isWaypointLayer(layer)) {
-            return actions;
-        }
         const point = marker.type === 'point';
         const [x, y, z] = point ? marker.position.map(Math.floor) : [];
         const personal = layer.id === PERSONAL_LAYER;
@@ -639,6 +636,12 @@ class MarkerManager {
             button.addEventListener('click', () => this.onWaypoint?.(name, waypoint, button));
             actions.append(button);
         };
+        if (point && accountManager.usesMod()) {
+            action('navigate', 'waypoint.navigate');
+        }
+        if (!isWaypointLayer(layer)) {
+            return actions;
+        }
         if (point && accountManager.canTeleport()) {
             action('teleport', 'waypoint.teleport');
         }

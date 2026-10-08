@@ -240,7 +240,8 @@ const en = {
         points: [
             'A full world map that does everything the web map does: both views and all four rotations, layers, players and follow mode, waypoints, search, teleporting, chunk selection and render progress',
             'A minimap you can size, zoom, place on either side and turn with the player',
-            'Waypoints in the world, as labels where they are'
+            'Waypoints in the world, as labels where they are',
+            'Navigation to a waypoint, a player or any spot, started in game or from the web map: a beacon beam where it is and an arrow with the distance, through the Nether too'
         ],
         note: 'It renders nothing itself: it draws the images the server already made. Needs Fabric API; Mod Menu is optional.',
         download: 'Get the mod',

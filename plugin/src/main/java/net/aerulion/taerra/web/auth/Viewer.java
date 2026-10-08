@@ -17,6 +17,10 @@ public record Viewer(@Nullable UUID uuid, @NotNull Set<String> grants) {
             || this.grants.contains(TaerraConfig.worldPermission(worldName)));
   }
 
+  public boolean usesMod() {
+    return this.grants.contains(WebGrants.MOD);
+  }
+
   public boolean canTeleport() {
     return this.grants.contains(TaerraPermission.WEB_TELEPORT.node());
   }

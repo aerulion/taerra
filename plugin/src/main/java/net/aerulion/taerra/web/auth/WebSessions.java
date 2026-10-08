@@ -170,6 +170,17 @@ public final class WebSessions {
     }
   }
 
+  public synchronized void revoke(final @NotNull UUID uuid, final @NotNull String node) {
+    final @Nullable Set<String> granted = this.grants.get(uuid);
+    if (granted != null && granted.contains(node)) {
+      grant(
+          uuid,
+          granted.stream()
+              .filter(other -> !other.equals(node))
+              .collect(Collectors.toUnmodifiableSet()));
+    }
+  }
+
   public synchronized void end(final @Nullable String token) {
     if (token == null) {
       return;

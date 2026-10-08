@@ -1,6 +1,8 @@
+import {accountManager} from './account.js';
 import {numbers, t} from './i18n.js';
 import {mapManager, pixelPath} from './map.js';
 import {element, markerManager, PLAYER_LAYER} from './markers.js';
+import {navigationManager} from './navigation.js';
 
 const FALLBACK_AVATAR = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" shape-rendering="crispEdges">
 <rect width="8" height="8" fill="#7a7a7a"/><rect width="8" height="2" fill="#4a4a4a"/><rect y="2" width="1" height="1" fill="#4a4a4a"/><rect x="7" y="2" width="1" height="1" fill="#4a4a4a"/>
@@ -218,6 +220,20 @@ class PlayerManager {
         content.append(element('span', 'marker-popup__layer', t(player.hidden ? 'players.hiddenPlayer' : 'players.title')),
             element('strong', 'marker-popup__title', player.name),
             element('span', 'marker-popup__facts', `${player.x}, ${player.y}, ${player.z}`));
+        if (accountManager.usesMod() && !player.anonymous && player.uuid !== accountManager.ownUuid()) {
+            const actions = element('div', 'marker-popup__actions');
+            const navigate = element('button', 'marker-popup__action', t('waypoint.navigate'));
+            navigate.type = 'button';
+            navigate.addEventListener('click', () => {
+                mapManager.getMap().closePopup();
+                void navigationManager.navigate({
+                    label: player.name, world: player.world, x: player.x, y: player.y, z: player.z,
+                    color: player.color, player: player.uuid
+                });
+            });
+            actions.append(navigate);
+            content.append(actions);
+        }
         return content;
     }
 

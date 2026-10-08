@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import net.aerulion.taerra.mod.TaerraClient;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.gui.widget.CompassButton;
 import net.aerulion.taerra.mod.gui.widget.IconButton;
@@ -21,6 +22,7 @@ import net.aerulion.taerra.mod.map.Drawing;
 import net.aerulion.taerra.mod.map.MapView;
 import net.aerulion.taerra.mod.map.MarkerHover;
 import net.aerulion.taerra.mod.map.Place;
+import net.aerulion.taerra.mod.navigation.Navigation;
 import net.aerulion.taerra.mod.util.Colors;
 import net.aerulion.taerra.mod.util.Dimensions;
 import net.aerulion.taerra.mod.util.Toasts;
@@ -1267,7 +1269,47 @@ public final class MapScreen extends Screen {
               config, place.x() + .5, standing == null ? 64 : standing, place.z() + .5);
           closeMenu();
         });
+    menu.add(
+        Component.translatable("taerra.menu.navigate"),
+        _ ->
+            navigate(
+                new Navigation.Target(
+                    place.describe().getString(),
+                    world,
+                    place.x() + .5,
+                    standing == null ? Double.NaN : standing,
+                    place.z() + .5,
+                    0xFFFFFFFF,
+                    null)));
+    final @Nullable Player followed = this.followed == null ? null : this.map.player(this.followed);
+    if (followed != null) {
+      menu.add(
+          Component.translatable("taerra.menu.navigate_player", followed.displayName()),
+          _ ->
+              navigate(
+                  new Navigation.Target(
+                      followed.displayName().getString(),
+                      followed.world(),
+                      followed.x(),
+                      followed.y(),
+                      followed.z(),
+                      0xFF000000 | Colors.argb(followed.color()),
+                      followed.uuid())));
+    }
+    if (TaerraClient.navigation().target() != null) {
+      menu.add(
+          Component.translatable("taerra.menu.stop_navigation"),
+          _ -> {
+            TaerraClient.navigation().stop();
+            closeMenu();
+          });
+    }
     showMenu(menu, mouseX, mouseY);
+  }
+
+  private void navigate(final Navigation.@NotNull Target target) {
+    TaerraClient.navigation().start(target);
+    onClose();
   }
 
   private void openMarkerMenu(
@@ -1276,15 +1318,31 @@ public final class MapScreen extends Screen {
     final @Nullable Account account = this.map.account();
     final @Nullable String world = this.view.world();
     final boolean point = "point".equals(marker.type()) && marker.position() != null;
-    if (account == null
-        || world == null
-        || !hover.layer().waypoints()
-        || (!point && marker.points() == null)
-        || marker.label() == null) {
+    if (world == null
+        || marker.label() == null
+        || (!point && (!hover.layer().waypoints() || marker.points() == null))) {
       return;
     }
     final @NotNull Waypoint waypoint = Waypoint.of(world, hover.layer(), marker);
     final @NotNull PlaceMenu menu = new PlaceMenu(Component.literal(marker.label()));
+    if (point) {
+      menu.add(
+          Component.translatable("taerra.waypoint.navigate"),
+          _ ->
+              navigate(
+                  new Navigation.Target(
+                      marker.label(),
+                      world,
+                      marker.position().get(0),
+                      marker.position().get(1),
+                      marker.position().get(2),
+                      0xFF000000 | Colors.argb(marker.color()),
+                      null)));
+    }
+    if (account == null || !hover.layer().waypoints()) {
+      showMenu(menu, mouseX, mouseY);
+      return;
+    }
     if (point && account.teleport()) {
       menu.add(
           Component.translatable("taerra.waypoint.teleport"),

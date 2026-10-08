@@ -4,11 +4,14 @@ import java.util.Objects;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.config.SettingsImpl;
 import net.aerulion.taerra.mod.gui.hud.Minimap;
+import net.aerulion.taerra.mod.gui.hud.NavigationBeam;
+import net.aerulion.taerra.mod.gui.hud.NavigationHud;
 import net.aerulion.taerra.mod.gui.hud.WaypointLabels;
 import net.aerulion.taerra.mod.gui.screen.MapScreen;
 import net.aerulion.taerra.mod.input.TaerraKeys;
 import net.aerulion.taerra.mod.map.MapView;
 import net.aerulion.taerra.mod.map.MapViewImpl;
+import net.aerulion.taerra.mod.navigation.Navigation;
 import net.aerulion.taerra.mod.session.HandshakePayload;
 import net.aerulion.taerra.mod.session.MapSession;
 import net.aerulion.taerra.mod.session.MapSessionImpl;
@@ -34,12 +37,17 @@ public final class TaerraClient implements ClientModInitializer {
   public static final int PROTOCOL = 2;
 
   private static @Nullable Settings settings;
+  private static final Navigation NAVIGATION = new Navigation();
 
   private MapSession session;
   private MapView screenView;
 
   public static @NotNull Settings settings() {
     return Objects.requireNonNull(settings, "TAERRA is not initialized");
+  }
+
+  public static @NotNull Navigation navigation() {
+    return NAVIGATION;
   }
 
   @Override
@@ -52,9 +60,9 @@ public final class TaerraClient implements ClientModInitializer {
     PayloadTypeRegistry.clientboundPlay().register(HandshakePayload.TYPE, HandshakePayload.CODEC);
     ClientPlayNetworking.registerGlobalReceiver(
         HandshakePayload.TYPE, (payload, context) -> this.session.connect(payload));
-    ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> this.session.close());
+    ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> close());
     ClientConfigurationConnectionEvents.INIT.register(
-        (handler, client) -> client.execute(this.session::close));
+        (handler, client) -> client.execute(this::close));
     TaerraKeys.register();
     ClientTickEvents.END_CLIENT_TICK.register(this::tick);
     final @NotNull Minimap minimap = new Minimap(this.session, settings);
@@ -62,10 +70,22 @@ public final class TaerraClient implements ClientModInitializer {
         VanillaHudElements.CHAT, Identifier.fromNamespaceAndPath("taerra", "minimap"), minimap);
     HudElementRegistry.replaceElement(VanillaHudElements.MOB_EFFECTS, minimap::below);
     LevelRenderEvents.COLLECT_SUBMITS.register(new WaypointLabels(this.session, settings));
+    HudElementRegistry.replaceElement(
+        VanillaHudElements.BOSS_BAR, new NavigationHud(this.session, NAVIGATION)::above);
+    LevelRenderEvents.COLLECT_SUBMITS.register(new NavigationBeam(NAVIGATION));
+  }
+
+  private void close() {
+    this.session.close();
+    NAVIGATION.forget();
   }
 
   private void tick(final @NotNull Minecraft minecraft) {
     this.session.tick(Dimensions.current());
+    NAVIGATION.tick(this.session.map(), minecraft.player, Dimensions.current());
+    while (TaerraKeys.STOP_NAVIGATION.consumeClick()) {
+      NAVIGATION.stop();
+    }
     while (TaerraKeys.OPEN_MAP.consumeClick()) {
       final @Nullable WebMap map = this.session.map();
       if (map != null) {

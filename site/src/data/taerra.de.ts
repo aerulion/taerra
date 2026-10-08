@@ -198,7 +198,8 @@ export const de: Copy = {
         points: [
             'Eine ganze Weltkarte, die alles kann, was die Web-Karte kann: beide Ansichten und alle vier Drehungen, Ebenen, Spieler:innen und Folgemodus, Wegpunkte, Suche, Teleport, Chunk-Auswahl und Render-Fortschritt',
             'Eine Minikarte, die du in Größe und Zoom anpassen, links oder rechts platzieren und mit deiner Blickrichtung drehen kannst',
-            'Wegpunkte in der Welt, als Beschriftung dort, wo sie sind'
+            'Wegpunkte in der Welt, als Beschriftung dort, wo sie sind',
+            'Navigation zu einem Wegpunkt, Spieler:innen oder jedem Ort, gestartet im Spiel oder auf der Web-Karte: ein Leuchtfeuerstrahl, wo er ist, und ein Pfeil mit der Entfernung, auch durch den Nether'
         ],
         note: 'Sie rendert selbst nichts: Sie zeichnet die Bilder, die der Server schon gemacht hat. Braucht Fabric API; Mod Menu ist optional.',
         download: 'Mod holen',

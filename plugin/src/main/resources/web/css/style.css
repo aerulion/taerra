@@ -1930,7 +1930,12 @@ kbd {
     cursor: crosshair;
 }
 
-.placing {
+.stage:has(.placing:not([hidden]), .selection:not([hidden])) .navigation {
+    display: none;
+}
+
+.placing,
+.navigation {
     position: absolute;
     top: var(--gap);
     left: 50%;
@@ -2055,6 +2060,7 @@ kbd {
 
 @media (max-width: 720px) {
     .placing,
+    .navigation,
     .selection {
         left: var(--gap);
         right: calc(54px + var(--gap));
@@ -2066,16 +2072,39 @@ kbd {
 
 @media (max-width: 720px) and (hover: hover) {
     .placing,
+    .navigation,
     .selection {
         top: calc(2 * var(--gap) + 40px);
     }
 }
 
 @media (min-width: 721px) {
-    .stage:has(.panel:not(.is-collapsed)) :is(.placing, .selection) {
+    .stage:has(.panel:not(.is-collapsed)) :is(.placing, .navigation, .selection) {
         left: calc(50% + (var(--panel-w) - 54px) / 2);
         max-width: calc(100% - var(--panel-w) - 54px - 2 * var(--gap));
     }
+}
+
+.navigation {
+    gap: 10px;
+    padding-left: 8px;
+}
+
+.navigation__icon,
+.navigation-target {
+    display: flex;
+    flex: none;
+    color: var(--marker);
+}
+
+.navigation__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.navigation-target {
+    filter: drop-shadow(0 0 1px rgb(0 0 0 / .6));
 }
 
 .placing__cancel {

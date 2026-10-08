@@ -29,7 +29,7 @@ public final class MapIcons {
     graphics.fill(1, 3, 2, 4, GEM_SHINE);
   }
 
-  static @NotNull TextureAtlasSprite decoration(final @NotNull String name) {
+  public static @NotNull TextureAtlasSprite decoration(final @NotNull String name) {
     return Minecraft.getInstance()
         .getAtlasManager()
         .getAtlasOrThrow(AtlasIds.MAP_DECORATIONS)

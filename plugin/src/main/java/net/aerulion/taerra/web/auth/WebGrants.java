@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class WebGrants {
 
+  public static final @NotNull String MOD = "taerra.mod";
   private static final long REFRESH_TICKS = 20L;
 
   private WebGrants() {
@@ -23,7 +24,11 @@ public final class WebGrants {
   public static @NotNull Set<String> of(
       final @NotNull Player player, final @NotNull TaerraConfig config) {
     return Stream.concat(
-            config.webPermissions().stream(),
+            Stream.concat(
+                config.webPermissions().stream(),
+                player.getListeningPluginChannels().contains(ModHandshake.CHANNEL)
+                    ? Stream.of(MOD)
+                    : Stream.empty()),
             Stream.of(
                 TaerraPermission.WEB_TELEPORT.node(),
                 TaerraPermission.WEB_SEE_HIDDEN.node(),
@@ -32,7 +37,7 @@ public final class WebGrants {
                 TaerraPermission.WEB_MARKERS.node(),
                 TaerraPermission.WEB_MARKERS_PRIVATE.node(),
                 TaerraPermission.WEB_MARKERS_PERSONAL.node()))
-        .filter(player::hasPermission)
+        .filter(node -> node.equals(MOD) || player.hasPermission(node))
         .collect(Collectors.toUnmodifiableSet());
   }
 
@@ -50,6 +55,8 @@ public final class WebGrants {
                   sessions.grant(uuid, of(player, config));
                 } else if (Bukkit.getOfflinePlayer(uuid).isBanned()) {
                   sessions.endAll(uuid);
+                } else {
+                  sessions.revoke(uuid, MOD);
                 }
               }
             },
