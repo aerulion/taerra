@@ -18,17 +18,16 @@ public enum TaerraPermission {
       PermissionDefault.OP),
   COMMAND_RENDER(
       "command.render",
-      "Gives the user the right to use the '/taerra render' command and to re-render chunks"
-          + " selected on the map.",
+      "Gives the user the right to use the '/taerra render' command.",
       PermissionDefault.OP),
   COMMAND_WAYPOINT(
       "command.waypoint",
-      "Gives the user the right to add and remove waypoints on the web map.",
+      "Gives the user the right to use the '/taerra waypoint' command.",
       PermissionDefault.OP),
   COMMAND_LIMIT(
       "command.limit",
-      "Gives the user the right to limit the area of a world the map renders and to hide"
-          + " chunks from the map.",
+      "Gives the user the right to limit the area of a world the map renders with '/taerra"
+          + " limit'.",
       PermissionDefault.OP),
   COMMAND_CONFIG(
       "command.config",
@@ -50,6 +49,22 @@ public enum TaerraPermission {
   WEB_TELEPORT(
       "web.teleport",
       "Lets the user teleport themselves by right-clicking the web map while logged in.",
+      PermissionDefault.OP),
+  WEB_RENDER(
+      "web.render",
+      "Lets the user render chunks selected on the map again while logged in.",
+      PermissionDefault.OP),
+  WEB_HIDE(
+      "web.hide",
+      "Lets the user hide and reveal chunks selected on the map while logged in.",
+      PermissionDefault.OP),
+  WEB_MARKERS(
+      "web.markers",
+      "Lets the user add, edit, move and remove markers on the map while logged in.",
+      PermissionDefault.OP),
+  WEB_MARKERS_PRIVATE(
+      "web.markers.private",
+      "Lets the user create private marker groups on the map while logged in.",
       PermissionDefault.OP),
   HIDE("hide", "Hides the player from the web map.", PermissionDefault.FALSE),
   ;

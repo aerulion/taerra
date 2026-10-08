@@ -21,20 +21,20 @@ public record Viewer(@Nullable UUID uuid, @NotNull Set<String> grants) {
     return this.grants.contains(TaerraPermission.WEB_TELEPORT.node());
   }
 
-  public boolean canEditWaypoints() {
-    return this.grants.contains(TaerraPermission.COMMAND_WAYPOINT.node());
+  public boolean canEditMarkers() {
+    return this.grants.contains(TaerraPermission.WEB_MARKERS.node());
   }
 
-  public boolean canConfigure() {
-    return this.grants.contains(TaerraPermission.COMMAND_CONFIG.node());
+  public boolean canCreatePrivateGroups() {
+    return this.grants.contains(TaerraPermission.WEB_MARKERS_PRIVATE.node());
   }
 
   public boolean canRender() {
-    return this.grants.contains(TaerraPermission.COMMAND_RENDER.node());
+    return this.grants.contains(TaerraPermission.WEB_RENDER.node());
   }
 
   public boolean canHide() {
-    return this.grants.contains(TaerraPermission.COMMAND_LIMIT.node());
+    return this.grants.contains(TaerraPermission.WEB_HIDE.node());
   }
 
   public boolean canSeeHidden() {

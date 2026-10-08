@@ -197,7 +197,7 @@ class WaypointEditor {
         $('waypoint-new-group').hidden = true;
         $('waypoint-group-name').value = '';
         $('waypoint-private').checked = false;
-        $('waypoint-private-option').hidden = !accountManager.canConfigure();
+        $('waypoint-private-option').hidden = !accountManager.canCreatePrivateGroups();
     }
 
     async open({world, x, y, z, name = '', color = DEFAULT_COLOR, group = '', previous = null}) {

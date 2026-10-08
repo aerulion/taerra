@@ -306,21 +306,9 @@ export const de: Copy = {
             rows: [
                 {permission: 'taerra.command.login', standard: 'alle', text: '`/taerra login` und `/taerra logout`'},
                 {permission: 'taerra.command.status', standard: 'OP', text: '`/taerra status`'},
-                {
-                    permission: 'taerra.command.render',
-                    standard: 'OP',
-                    text: '`/taerra render` und ausgewählte Chunks neu rendern'
-                },
-                {
-                    permission: 'taerra.command.limit',
-                    standard: 'OP',
-                    text: '`/taerra limit` und ausgewählte Chunks verstecken'
-                },
-                {
-                    permission: 'taerra.command.waypoint',
-                    standard: 'OP',
-                    text: 'Wegpunkte hinzufügen, verschieben und entfernen'
-                },
+                {permission: 'taerra.command.render', standard: 'OP', text: '`/taerra render`'},
+                {permission: 'taerra.command.limit', standard: 'OP', text: '`/taerra limit`'},
+                {permission: 'taerra.command.waypoint', standard: 'OP', text: '`/taerra waypoint`'},
                 {permission: 'taerra.command.config', standard: 'OP', text: '`/taerra config` und `/taerra import`'},
                 {permission: 'taerra.command.logout.others', standard: 'OP', text: 'Andere Spieler:innen abmelden'},
                 {
@@ -332,6 +320,26 @@ export const de: Copy = {
                     permission: 'taerra.web.see-hidden',
                     standard: 'OP',
                     text: 'Versteckte Spieler:innen auf der Karte sehen, wenn angemeldet'
+                },
+                {
+                    permission: 'taerra.web.render',
+                    standard: 'OP',
+                    text: 'Ausgewählte Chunks neu rendern, wenn angemeldet'
+                },
+                {
+                    permission: 'taerra.web.hide',
+                    standard: 'OP',
+                    text: 'Ausgewählte Chunks verstecken und wieder zeigen, wenn angemeldet'
+                },
+                {
+                    permission: 'taerra.web.markers',
+                    standard: 'OP',
+                    text: 'Marker hinzufügen, bearbeiten, verschieben und entfernen, wenn angemeldet'
+                },
+                {
+                    permission: 'taerra.web.markers.private',
+                    standard: 'OP',
+                    text: 'Private Marker-Gruppen anlegen, wenn angemeldet'
                 },
                 {
                     permission: 'taerra.web.world.<welt>',

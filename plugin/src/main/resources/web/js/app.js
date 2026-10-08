@@ -463,7 +463,7 @@ function setupContextMenu() {
             button.textContent = t(button.dataset.i18n);
         }
         menu.querySelector('[data-action="teleport"]').hidden = !accountManager.canTeleport();
-        menu.querySelector('[data-action="waypoint"]').hidden = !accountManager.canEditWaypoints();
+        menu.querySelector('[data-action="waypoint"]').hidden = !accountManager.canEditMarkers();
         menu.querySelector('[data-action="select"]').hidden = !accountManager.canRender() && !accountManager.canHide();
         menu.hidden = false;
         const stage = menu.parentElement.getBoundingClientRect();

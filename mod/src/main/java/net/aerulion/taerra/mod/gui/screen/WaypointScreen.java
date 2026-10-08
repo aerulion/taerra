@@ -183,7 +183,7 @@ public final class WaypointScreen extends Screen {
       groupName.setValue(this.newGroup);
       groupName.setHint(Component.translatable("taerra.waypoint.group_name"));
       final @Nullable Account account = this.map.account();
-      if (account != null && account.configure()) {
+      if (account != null && account.privateGroups()) {
         contents.addChild(
             Checkbox.builder(Component.translatable("taerra.waypoint.private"), this.font)
                 .selected(this.privateGroup)

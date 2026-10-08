@@ -87,12 +87,12 @@ function canTeleport() {
     return current?.teleport === true;
 }
 
-function canEditWaypoints() {
-    return current?.waypoints === true;
+function canEditMarkers() {
+    return current?.markers === true;
 }
 
-function canConfigure() {
-    return current?.configure === true;
+function canCreatePrivateGroups() {
+    return current?.privateGroups === true;
 }
 
 function canRender() {
@@ -103,4 +103,4 @@ function canHide() {
     return current?.hide === true;
 }
 
-export const accountManager = {initialize, canTeleport, canEditWaypoints, canConfigure, canRender, canHide};
+export const accountManager = {initialize, canTeleport, canEditMarkers, canCreatePrivateGroups, canRender, canHide};

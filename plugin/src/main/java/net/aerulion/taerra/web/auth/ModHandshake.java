@@ -23,7 +23,7 @@ public final class ModHandshake implements Listener {
 
   public static final @NotNull String CHANNEL = "taerra:web";
 
-  public static final int PROTOCOL = 1;
+  public static final int PROTOCOL = 2;
 
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig config;

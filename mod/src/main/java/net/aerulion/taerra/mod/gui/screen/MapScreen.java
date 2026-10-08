@@ -1040,7 +1040,7 @@ public final class MapScreen extends Screen {
           Component.translatable("taerra.menu.teleport"),
           item -> teleport(menu, item, world, place.x(), standing, place.z()));
     }
-    if (account != null && account.waypoints()) {
+    if (account != null && account.markers()) {
       menu.add(
           Component.translatable("taerra.menu.waypoint"),
           _ ->
@@ -1101,7 +1101,7 @@ public final class MapScreen extends Screen {
           Component.translatable("taerra.waypoint.teleport"),
           item -> teleport(menu, item, world, waypoint.x(), waypoint.y(), waypoint.z()));
     }
-    if (marker.id().startsWith("waypoint:") && account.waypoints()) {
+    if (marker.id().startsWith("waypoint:") && account.markers()) {
       menu.add(
           Component.translatable("taerra.waypoint.move"),
           _ -> {

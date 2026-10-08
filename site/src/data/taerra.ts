@@ -349,17 +349,9 @@ const en = {
                     text: '`/taerra login` and `/taerra logout`'
                 },
                 {permission: 'taerra.command.status', standard: 'op', text: '`/taerra status`'},
-                {
-                    permission: 'taerra.command.render',
-                    standard: 'op',
-                    text: '`/taerra render`, and rendering selected chunks again'
-                },
-                {
-                    permission: 'taerra.command.limit',
-                    standard: 'op',
-                    text: '`/taerra limit`, and hiding selected chunks'
-                },
-                {permission: 'taerra.command.waypoint', standard: 'op', text: 'Adding, moving and removing waypoints'},
+                {permission: 'taerra.command.render', standard: 'op', text: '`/taerra render`'},
+                {permission: 'taerra.command.limit', standard: 'op', text: '`/taerra limit`'},
+                {permission: 'taerra.command.waypoint', standard: 'op', text: '`/taerra waypoint`'},
                 {permission: 'taerra.command.config', standard: 'op', text: '`/taerra config` and `/taerra import`'},
                 {permission: 'taerra.command.logout.others', standard: 'op', text: 'Logging other players out'},
                 {permission: 'taerra.web.teleport', standard: 'op', text: 'Teleporting from the map while logged in'},
@@ -367,6 +359,26 @@ const en = {
                     permission: 'taerra.web.see-hidden',
                     standard: 'op',
                     text: 'Seeing hidden players on the map while logged in'
+                },
+                {
+                    permission: 'taerra.web.render',
+                    standard: 'op',
+                    text: 'Rendering selected chunks again while logged in'
+                },
+                {
+                    permission: 'taerra.web.hide',
+                    standard: 'op',
+                    text: 'Hiding and revealing selected chunks while logged in'
+                },
+                {
+                    permission: 'taerra.web.markers',
+                    standard: 'op',
+                    text: 'Adding, editing, moving and removing markers while logged in'
+                },
+                {
+                    permission: 'taerra.web.markers.private',
+                    standard: 'op',
+                    text: 'Creating private marker groups while logged in'
                 },
                 {
                     permission: 'taerra.web.world.<world>',

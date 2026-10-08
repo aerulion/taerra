@@ -164,8 +164,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
         "uuid", session.uuid().toString(),
         "name", session.name(),
         "teleport", viewer.canTeleport(),
-        "waypoints", viewer.canEditWaypoints(),
-        "configure", viewer.canConfigure(),
+        "markers", viewer.canEditMarkers(),
+        "privateGroups", viewer.canCreatePrivateGroups(),
         "render", viewer.canRender(),
         "hide", viewer.canHide());
   }
@@ -607,7 +607,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
 
   private void handleWaypointGroupsRequest(final @NotNull Context ctx) {
     final @NotNull Viewer viewer = viewer(ctx);
-    if (!viewer.canEditWaypoints()) {
+    if (!viewer.canEditMarkers()) {
       ctx.status(403).result("Not allowed");
       return;
     }
@@ -630,7 +630,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       return;
     }
     final @NotNull Viewer viewer = viewer(ctx);
-    if (!viewer.canEditWaypoints()) {
+    if (!viewer.canEditMarkers()) {
       ctx.status(403).result("Not allowed");
       return;
     }
@@ -686,7 +686,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                         }
                         if (groupId != null
                             && request.privateGroup()
-                            && viewer.canConfigure()
+                            && viewer.canCreatePrivateGroups()
                             && this.waypoints.groups().stream()
                                 .noneMatch(known -> known.id().equals(groupId))) {
                           this.taerraConfig.setLayerPrivate(this.plugin, groupId, true);
@@ -716,7 +716,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       return;
     }
     final @NotNull Viewer viewer = viewer(ctx);
-    if (!viewer.canEditWaypoints()) {
+    if (!viewer.canEditMarkers()) {
       ctx.status(403).result("Not allowed");
       return;
     }

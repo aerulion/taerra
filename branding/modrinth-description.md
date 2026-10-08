@@ -109,13 +109,17 @@ Every setting can also be changed in game with `/taerra config`.
 |---|---|---|
 | `taerra.command.login` | everyone | `/taerra login` and `/taerra logout` |
 | `taerra.command.status` | op | `/taerra status` |
-| `taerra.command.render` | op | `/taerra render`, and rendering selected chunks again |
-| `taerra.command.limit` | op | `/taerra limit`, and hiding selected chunks |
-| `taerra.command.waypoint` | op | Adding, moving, and removing waypoints |
+| `taerra.command.render` | op | `/taerra render` |
+| `taerra.command.limit` | op | `/taerra limit` |
+| `taerra.command.waypoint` | op | `/taerra waypoint` |
 | `taerra.command.config` | op | `/taerra config` and `/taerra import` |
 | `taerra.command.logout.others` | op | Logging other players out |
 | `taerra.web.teleport` | op | Teleporting from the map while logged in |
 | `taerra.web.see-hidden` | op | Seeing hidden players on the map while logged in |
+| `taerra.web.render` | op | Rendering selected chunks again while logged in |
+| `taerra.web.hide` | op | Hiding and revealing selected chunks while logged in |
+| `taerra.web.markers` | op | Adding, editing, moving, and removing markers while logged in |
+| `taerra.web.markers.private` | op | Creating private marker groups while logged in |
 | `taerra.web.world.<world>` | — | Seeing a private world, e.g. `taerra.web.world.minecraft.the_end` |
 | `taerra.web.layer.<layer>` | — | Seeing a private layer, e.g. `taerra.web.layer.worldguard` |
 | `taerra.hide` | nobody | Being hidden from the map |

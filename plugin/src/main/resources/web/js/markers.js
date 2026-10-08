@@ -570,7 +570,7 @@ class MarkerManager {
         if (accountManager.canTeleport()) {
             action('teleport', 'waypoint.teleport');
         }
-        if (marker.id.startsWith('waypoint:') && accountManager.canEditWaypoints()) {
+        if (marker.id.startsWith('waypoint:') && accountManager.canEditMarkers()) {
             action('move', 'waypoint.move');
             action('edit', 'waypoint.editShort');
         }
