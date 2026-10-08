@@ -10,15 +10,18 @@ public record Layer(
     String label,
     boolean shown,
     @SerializedName("private") boolean restricted,
+    boolean personal,
     List<Marker> markers) {
 
-  public static final Layer PLAYERS = new Layer("players", "Players", true, false, List.of());
+  public static final String PERSONAL = "personal";
+  public static final Layer PLAYERS =
+      new Layer("players", "Players", true, false, false, List.of());
 
   public @NotNull Component displayName() {
     return Component.translatableWithFallback("taerra.layer." + this.id, this.label);
   }
 
   public boolean waypoints() {
-    return this.id.equals("waypoints") || this.id.startsWith("waypoints.");
+    return this.personal || this.id.equals("waypoints") || this.id.startsWith("waypoints.");
   }
 }

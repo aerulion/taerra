@@ -45,6 +45,7 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 - **Private worlds and layers.** Keep a world, or a layer hidden from everyone except logged-in players with the right permission.
 - **Teleport from the map.** Logged-in players with permission right-click the map to teleport there.
 - **Waypoints, areas, and lines** in named groups and colors, private ones too, each with an optional description. Players with permission draw, move, and recolor them right on the map, in the browser or in game, with areas traced from selected chunks or clicked point by point, and lines straight or smooth. The mod shows waypoints as labels in the world itself.
+- **Waypoints of your own.** Every logged-in player can keep up to 100 waypoints, areas, and lines only they see, in the browser and in game. They are drawn as gems and dashed lines, so they never pass for the server's. Other plugins can show players their own markers the same way, like their homes.
 - **Privacy built in.** Players in spectator mode, invisible or vanished, don't appear, and neither does anyone with `taerra.hide`. Staff with `taerra.web.see-hidden` still see them, marked as hidden. Players who turned off server listings in their client show as an anonymous gray dot. Player heads are served by your server, so viewing the map never reveals a visitor's address to Mojang.
 - **One jar.** No external database, no CDN, and no web admin panel: everything is configured in game.
 - **Right-click any place** to copy its coordinates, or a link straight to it.
@@ -121,6 +122,7 @@ Every setting can also be changed in game with `/taerra config`.
 | `taerra.web.hide` | op | Hiding and revealing selected chunks while logged in |
 | `taerra.web.markers` | op | Adding, editing, moving, and removing markers while logged in |
 | `taerra.web.markers.private` | op | Creating private marker groups while logged in |
+| `taerra.web.markers.personal` | everyone | Keeping waypoints only you see while logged in |
 | `taerra.web.world.<world>` | — | Seeing a private world, e.g. `taerra.web.world.minecraft.the_end` |
 | `taerra.web.layer.<layer>` | — | Seeing a private layer, e.g. `taerra.web.layer.worldguard` |
 | `taerra.hide` | nobody | Being hidden from the map |

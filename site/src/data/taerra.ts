@@ -176,6 +176,10 @@ const en = {
                         text: 'In named groups and colors, private ones too, each with an optional description. Players with permission draw, move and recolor them right on the map, areas from selected chunks or point by point, lines straight or smooth, and the mod shows waypoints as labels in the world itself.'
                     },
                     {
+                        title: 'Waypoints of your own',
+                        text: "Every logged-in player keeps up to 100 waypoints, areas and lines only they see, in the browser and in game, drawn as gems and dashed lines so they never pass for the server's. Other plugins can show players their own markers the same way, like their homes."
+                    },
+                    {
                         title: 'Privacy built in',
                         text: 'Spectators, vanished and invisible players stay off the map, and players who hide from server lists show as an anonymous dot. Player heads come from your server, so viewing it never reveals a visitor to Mojang.'
                     },
@@ -383,6 +387,11 @@ const en = {
                     permission: 'taerra.web.markers.private',
                     standard: 'op',
                     text: 'Creating private marker groups while logged in'
+                },
+                {
+                    permission: 'taerra.web.markers.personal',
+                    standard: 'everyone',
+                    text: 'Keeping waypoints only you see while logged in'
                 },
                 {
                     permission: 'taerra.web.world.<world>',

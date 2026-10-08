@@ -134,6 +134,10 @@ export const de: Copy = {
                         text: 'In benannten Gruppen und Farben, auch privaten, jeweils mit optionaler Beschreibung. Spieler:innen mit Berechtigung zeichnen, verschieben und färben sie direkt auf der Karte, Flächen aus ausgewählten Chunks oder Punkt für Punkt, Linien gerade oder weich, und die Mod zeigt Wegpunkte als Beschriftung in der Welt selbst.'
                     },
                     {
+                        title: 'Eigene Wegpunkte',
+                        text: 'Alle angemeldeten Spieler:innen haben bis zu 100 Wegpunkte, Flächen und Linien, die nur sie sehen, im Browser und im Spiel, gezeichnet als Edelsteine und gestrichelte Linien, damit sie nie mit denen des Servers verwechselt werden. Andere Plugins zeigen Spieler:innen so auch ihre eigenen Markierungen, etwa ihre Homes.'
+                    },
+                    {
                         title: 'Datenschutz eingebaut',
                         text: 'Spieler:innen im Zuschauermodus, unsichtbar oder per Vanish versteckt, bleiben von der Karte fern, und wer sich in Serverlisten verbirgt, erscheint als anonymer Punkt. Die Köpfe der Spieler:innen kommen von deinem Server, deshalb verrät das Ansehen der Karte niemanden an Mojang.'
                     },
@@ -344,6 +348,11 @@ export const de: Copy = {
                     permission: 'taerra.web.markers.private',
                     standard: 'OP',
                     text: 'Private Marker-Gruppen anlegen, wenn angemeldet'
+                },
+                {
+                    permission: 'taerra.web.markers.personal',
+                    standard: 'alle',
+                    text: 'Wegpunkte anlegen, die nur du siehst, wenn angemeldet'
                 },
                 {
                     permission: 'taerra.web.world.<welt>',

@@ -1,9 +1,11 @@
 package net.aerulion.taerra.web.marker;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Predicate;
 import net.aerulion.taerra.api.marker.AreaMarker;
 import net.aerulion.taerra.api.marker.LineMarker;
@@ -11,6 +13,7 @@ import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.api.marker.PointMarker;
+import net.aerulion.taerra.marker.PlayerMarkerLayerImpl;
 import net.aerulion.taerra.util.HexColors;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -41,20 +44,56 @@ public final class MarkerPayloadSerializer {
               .toList();
       if (!markers.isEmpty()) {
         layers.add(
-            Map.of(
-                "id",
-                layer.id(),
-                "label",
-                layer.label(),
-                "shown",
-                layer.shownByDefault(),
-                "private",
-                layerPrivate.test(layer.id()),
-                "markers",
-                markers));
+            layer(layer.id(), layer.label(), layer.shownByDefault(), false, layerPrivate, markers));
       }
     }
     return layers;
+  }
+
+  public static @NotNull List<Map<String, Object>> player(
+      final @NotNull Collection<PlayerMarkerLayerImpl> playerLayers,
+      final @NotNull UUID player,
+      final @NotNull String worldId,
+      final @NotNull Predicate<String> layerVisible,
+      final @NotNull Predicate<String> layerPrivate) {
+    final @NotNull List<Map<String, Object>> layers = new ArrayList<>();
+    for (final @NotNull PlayerMarkerLayerImpl layer : playerLayers) {
+      if (!layerVisible.test(layer.id())) {
+        continue;
+      }
+      final @NotNull List<Map<String, Object>> markers =
+          layer.markers(player).stream()
+              .filter(marker -> marker.world().asString().equals(worldId))
+              .map(MarkerPayloadSerializer::marker)
+              .toList();
+      if (!markers.isEmpty()) {
+        layers.add(
+            layer(layer.id(), layer.label(), layer.shownByDefault(), true, layerPrivate, markers));
+      }
+    }
+    return layers;
+  }
+
+  private static @NotNull Map<String, Object> layer(
+      final @NotNull String id,
+      final @NotNull String label,
+      final boolean shown,
+      final boolean personal,
+      final @NotNull Predicate<String> layerPrivate,
+      final @NotNull List<Map<String, Object>> markers) {
+    return Map.of(
+        "id",
+        id,
+        "label",
+        label,
+        "shown",
+        shown,
+        "personal",
+        personal,
+        "private",
+        layerPrivate.test(id),
+        "markers",
+        markers);
   }
 
   static @NotNull Map<String, Object> marker(final @NotNull Marker marker) {

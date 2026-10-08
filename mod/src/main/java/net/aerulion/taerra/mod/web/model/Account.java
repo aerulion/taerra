@@ -6,5 +6,6 @@ public record Account(
     boolean teleport,
     boolean markers,
     boolean privateGroups,
+    boolean personal,
     boolean render,
     boolean hide) {}

@@ -52,6 +52,7 @@ import net.aerulion.taerra.storage.TileCacheImpl;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.storage.TileStorageImpl;
 import net.aerulion.taerra.util.Throwables;
+import net.aerulion.taerra.waypoint.PersonalWaypoints;
 import net.aerulion.taerra.waypoint.Waypoints;
 import net.aerulion.taerra.waypoint.WaypointsImpl;
 import net.aerulion.taerra.web.auth.ModHandshake;
@@ -244,6 +245,7 @@ public final class Taerra extends JavaPlugin {
               webSessions,
               modHandshake,
               waypoints,
+              new PersonalWaypoints(this, markers, new File(getDataFolder(), "personal-waypoints")),
               render);
       this.webServer = webServer;
       webServer.start();

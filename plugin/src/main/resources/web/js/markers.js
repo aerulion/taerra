@@ -25,7 +25,27 @@ export const PIN_SVG = `<svg class="waypoint__pin" viewBox="0 0 9 11" width="18"
 <path d="${pixelPath(PIN_OUTLINE)}" fill="#111"/><path d="${pixelPath(PIN_BODY)}" fill="currentColor"/>
 <path d="${pixelPath(PIN_SHINE)}" fill="#fff" fill-opacity=".45"/><path d="${pixelPath(PIN_EYE)}" fill="#fff"/></svg>`;
 
+const GEM_OUTLINE = [[4, 0, 1, 1], [3, 1, 3, 1], [2, 2, 5, 1], [1, 3, 7, 1], [0, 4, 9, 2], [1, 6, 7, 1], [2, 7, 5, 2], [3, 9, 3, 1], [4, 10, 1, 1]];
+const GEM_BODY = [[4, 1, 1, 1], [3, 2, 3, 1], [2, 3, 5, 1], [1, 4, 7, 2], [2, 6, 5, 1], [3, 7, 3, 2], [4, 9, 1, 1]];
+const GEM_SHINE = [[3, 2, 1, 1], [2, 3, 2, 1]];
+const DASHES = '6 4';
+
+export const GEM_SVG = `<svg class="waypoint__pin" viewBox="0 0 9 11" width="18" height="22" aria-hidden="true">
+<path d="${pixelPath(GEM_OUTLINE)}" fill="#111"/><path d="${pixelPath(GEM_BODY)}" fill="currentColor"/>
+<path d="${pixelPath(GEM_SHINE)}" fill="#fff" fill-opacity=".6"/></svg>`;
+
 export const PLAYER_LAYER = {id: 'players', shown: true, markers: []};
+export const PERSONAL_LAYER = 'personal';
+
+export function personalIcon() {
+    const icon = element('span', 'personal-icon');
+    icon.title = t('personal.hint');
+    icon.setAttribute('role', 'img');
+    icon.setAttribute('aria-label', t('personal.label'));
+    icon.innerHTML = `<svg viewBox="0 0 5 7" width="10" height="14" aria-hidden="true" shape-rendering="crispEdges">
+<path d="${pixelPath([[2, 0, 1, 1], [1, 1, 3, 1], [0, 2, 5, 2], [1, 4, 3, 1], [1, 5, 3, 1], [2, 6, 1, 1]])}" fill="currentColor"/></svg>`;
+    return icon;
+}
 
 export function privateIcon() {
     const icon = element('span', 'private-icon');
@@ -131,7 +151,11 @@ function shade(hex, factor) {
 }
 
 function isWaypointLayer(layer) {
-    return layer.id === 'waypoints' || layer.id.startsWith('waypoints.');
+    return layer.personal || layer.id === 'waypoints' || layer.id.startsWith('waypoints.');
+}
+
+export function markerIcon(layer) {
+    return layer.personal ? GEM_SVG : PIN_SVG;
 }
 
 function facts(marker) {
@@ -346,7 +370,7 @@ class MarkerManager {
             if (inView && !entry.drawn && performance.now() - started > DRAW_BUDGET_MS) {
                 unfinished = true;
             } else if (inView && !entry.drawn) {
-                entry.drawn = this.draw(entry.marker);
+                entry.drawn = this.draw(entry.marker, entry.layer.personal);
                 entry.drawn?.bindPopup(() => this.popup(entry.layer, entry.marker), {className: 'marker-popup-frame'});
                 entry.drawn?.off('click', entry.drawn._openPopup, entry.drawn).on('click', togglePopup);
             }
@@ -384,8 +408,9 @@ class MarkerManager {
         return L.latLngBounds(points.map(([x, y, z]) => mapManager.project(x, y, z)));
     }
 
-    draw(marker) {
+    draw(marker, personal) {
         const color = marker.color;
+        const dashArray = personal ? DASHES : null;
         switch (marker.type) {
             case 'point': {
                 const [x, y, z] = marker.position;
@@ -394,7 +419,7 @@ class MarkerManager {
                 if (marker.label) {
                     pin.on('add', () => pin.getElement()?.setAttribute('aria-label', marker.label));
                 }
-                return pin.setIcon(this.pin(marker, pin));
+                return pin.setIcon(this.pin(marker, pin, personal ? GEM_SVG : PIN_SVG));
             }
             case 'line': {
                 const points = (marker.smooth ? spline(marker.points) : marker.points)
@@ -404,21 +429,22 @@ class MarkerManager {
                     ...(halo ? [L.polyline(points, {color: '#000', opacity: .45, weight: 7, interactive: false})] : []),
                     hoverable(L.polyline(points, {
                         color,
-                        weight: 3 + weight
+                        weight: 3 + weight,
+                        dashArray
                     }), {weight: 5 + weight}, {weight: 3 + weight})
                 ]));
             }
             case 'area':
-                return this.area(marker);
+                return this.area(marker, dashArray);
             default:
                 return null;
         }
     }
 
-    area(marker) {
+    area(marker, dashArray) {
         const {color, minY, maxY} = marker;
         if (!mapManager.isIsometric()) {
-            return this.region(marker, marker.points.map(([x, z]) => mapManager.project(x, 0, z)));
+            return this.region(marker, marker.points.map(([x, z]) => mapManager.project(x, 0, z)), [], dashArray);
         }
 
         const sides = this.grounds.get(groundKey(marker));
@@ -441,7 +467,7 @@ class MarkerManager {
         const bottom = (ground) => Math.min(maxY, Math.max(minY, ground ?? (fullHeight ? FALLBACK_GROUND : minY)));
         const base = sides.map(side => side.map(([x, ground, z]) => mapManager.project(x, bottom(ground), z)));
         if (this.far || fullHeight) {
-            return this.region(marker, base.flat());
+            return this.region(marker, base.flat(), [], dashArray);
         }
         const flat = marker.points.map(([x, z]) => mapManager.project(x, 0, z));
         const winding = Math.sign(signedArea(flat));
@@ -474,13 +500,13 @@ class MarkerManager {
             })] : []),
             L.polygon(groundLine, {
                 color, weight: 2 + this.look.weight, opacity: .9, fill: !marker.hollow, fillOpacity: this.look.ground,
-                interactive: false
+                interactive: false, dashArray
             }),
             ...walls
-        ]);
+        ], dashArray);
     }
 
-    region(marker, face, below = []) {
+    region(marker, face, below = [], dashArray = null) {
         const color = marker.color;
         const {halo, weight, fill, hoverFill} = this.look;
         const parts = [...below,
@@ -492,7 +518,7 @@ class MarkerManager {
                 interactive: false
             })])];
         const stroke = (this.far ? 1 : 2) + weight;
-        const outline = {color, weight: stroke, opacity: this.far ? .7 : 1};
+        const outline = {color, weight: stroke, opacity: this.far ? .7 : 1, dashArray};
         const surface = marker.hollow
             ? hoverable(L.polyline([...face, face[0]], outline),
                 {weight: stroke + 2}, {weight: stroke})
@@ -531,10 +557,10 @@ class MarkerManager {
         return layer;
     }
 
-    pin(marker, pin) {
+    pin(marker, pin, svg) {
         const body = element('div', 'waypoint');
         body.style.color = marker.color;
-        body.innerHTML = PIN_SVG;
+        body.innerHTML = svg;
         if (marker.label) {
             const label = element('span', 'waypoint__label', marker.label);
             body.prepend(label);
@@ -566,7 +592,11 @@ class MarkerManager {
     popup(layer, marker) {
         const content = element('div', 'marker-popup');
         content.style.setProperty('--marker', marker.color);
-        content.append(element('span', 'marker-popup__layer', this.layerLabel(layer)),
+        const layerLabel = element('span', 'marker-popup__layer', this.layerLabel(layer));
+        if (layer.personal) {
+            layerLabel.prepend(personalIcon());
+        }
+        content.append(layerLabel,
             element('strong', 'marker-popup__title', marker.label ?? marker.id),
             element('span', 'marker-popup__facts', facts(marker)));
         if (marker.description) {
@@ -593,9 +623,10 @@ class MarkerManager {
         }
         const point = marker.type === 'point';
         const [x, y, z] = point ? marker.position.map(Math.floor) : [];
+        const personal = layer.id === PERSONAL_LAYER;
         const waypoint = {
-            world: this.world, x, y, z, name: marker.label, color: marker.color,
-            group: layer.id === 'waypoints' ? '' : layer.label, previous: marker.label, id: marker.id,
+            world: this.world, x, y, z, name: marker.label, color: marker.color, personal,
+            group: layer.id === 'waypoints' || personal ? '' : layer.label, previous: marker.label, id: marker.id,
             description: marker.description ?? '',
             ...(point ? {} : {
                 type: marker.type, smooth: marker.smooth,
@@ -611,7 +642,8 @@ class MarkerManager {
         if (point && accountManager.canTeleport()) {
             action('teleport', 'waypoint.teleport');
         }
-        if (marker.id.startsWith('waypoint:') && accountManager.canEditMarkers()) {
+        if (personal ? accountManager.canKeepPersonal()
+            : marker.id.startsWith('waypoint:') && accountManager.canEditMarkers()) {
             if (point) {
                 action('move', 'waypoint.move');
             }
@@ -636,6 +668,9 @@ class MarkerManager {
             const name = element('span', 'layer__name', this.layerLabel(layer));
             if (layer.private) {
                 name.append(privateIcon());
+            }
+            if (layer.personal) {
+                name.append(personalIcon());
             }
             row.append(toggle, name);
             if (layer !== PLAYER_LAYER) {

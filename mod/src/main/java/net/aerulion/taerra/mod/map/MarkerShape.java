@@ -10,6 +10,7 @@ import net.aerulion.taerra.mod.web.model.Marker;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -181,7 +182,12 @@ final class MarkerShape {
           }
         }
       }
-      lines.add(layer.displayName().copy().withStyle(ChatFormatting.DARK_GRAY));
+      final @NotNull MutableComponent where =
+          layer.displayName().copy().withStyle(ChatFormatting.DARK_GRAY);
+      if (layer.personal()) {
+        where.append(Component.literal(" " + MapIcons.GEM).withStyle(ChatFormatting.GOLD));
+      }
+      lines.add(where);
       this.tooltip = lines;
     }
     return this.tooltip;

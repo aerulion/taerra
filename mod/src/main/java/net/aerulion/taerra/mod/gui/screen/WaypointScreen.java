@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import net.aerulion.taerra.mod.gui.widget.ColorPicker;
 import net.aerulion.taerra.mod.gui.widget.DyeSwatches;
+import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.map.Place;
 import net.aerulion.taerra.mod.util.Colors;
 import net.aerulion.taerra.mod.web.WebMap;
@@ -49,6 +50,8 @@ public final class WaypointScreen extends Screen {
   private String group;
   private @NotNull String newGroup = "";
   private boolean privateGroup;
+  private final boolean ownGroup;
+  private final boolean serverGroups;
   private List<WaypointGroup> groups = List.of();
   private @NotNull Component error = Component.empty();
   private boolean saving;
@@ -86,14 +89,20 @@ public final class WaypointScreen extends Screen {
         Colors.isHex(target.color())
             ? target.color().toLowerCase(Locale.ROOT)
             : Waypoint.DEFAULT_COLOR;
-    this.group = target.group();
+    final @Nullable Account account = map.account();
+    this.ownGroup =
+        account != null && account.personal() && (target.personal() || target.previous() == null);
+    this.serverGroups = account != null && account.markers() && !target.personal();
+    this.group = this.ownGroup && target.previous() == null ? Waypoint.PERSONAL : target.group();
     this.description = target.description();
     this.picker = new ColorPicker(WIDTH, this.color, this::showColor);
-    map.waypointGroups(
-        loaded -> {
-          this.groups = loaded;
-          rebuildWidgets();
-        });
+    if (this.serverGroups) {
+      map.waypointGroups(
+          loaded -> {
+            this.groups = loaded;
+            rebuildWidgets();
+          });
+    }
   }
 
   private @NotNull Component groupName(final @NotNull String value) {
@@ -102,6 +111,10 @@ public final class WaypointScreen extends Screen {
     }
     if (value.equals(NEW_GROUP)) {
       return Component.translatable("taerra.waypoint.new_group");
+    }
+    if (value.equals(Waypoint.PERSONAL)) {
+      return Component.translatable("taerra.waypoint.personal")
+          .append(Component.literal(" " + MapIcons.GEM).withStyle(ChatFormatting.GOLD));
     }
     final boolean restricted =
         this.groups.stream().anyMatch(group -> group.label().equals(value) && group.restricted());
@@ -177,12 +190,18 @@ public final class WaypointScreen extends Screen {
     this.hex = hex;
     contents.addChild(this.picker);
 
-    final @NotNull List<String> values = new ArrayList<>(List.of(""));
-    this.groups.forEach(group -> values.add(group.label()));
-    if (!values.contains(this.group) && !this.group.equals(NEW_GROUP)) {
-      values.add(this.group);
+    final @NotNull List<String> values = new ArrayList<>();
+    if (this.ownGroup) {
+      values.add(Waypoint.PERSONAL);
     }
-    values.add(NEW_GROUP);
+    if (this.serverGroups) {
+      values.add("");
+      this.groups.forEach(group -> values.add(group.label()));
+      if (!values.contains(this.group) && !this.group.equals(NEW_GROUP)) {
+        values.add(this.group);
+      }
+      values.add(NEW_GROUP);
+    }
     contents.addChild(
         CycleButton.builder(this::groupName, this.group)
             .withValues(values)
@@ -298,7 +317,12 @@ public final class WaypointScreen extends Screen {
           } else {
             fail(
                 Component.translatable(
-                    status == 409 ? "taerra.waypoint.taken" : "taerra.waypoint.failed", name));
+                    switch (status) {
+                      case 409 -> "taerra.waypoint.taken";
+                      case 422 -> "taerra.waypoint.full";
+                      default -> "taerra.waypoint.failed";
+                    },
+                    name));
           }
         });
   }
@@ -318,6 +342,7 @@ public final class WaypointScreen extends Screen {
     this.map.deleteWaypoint(
         this.target.world(),
         previous,
+        this.target.personal(),
         status -> {
           if (status == 204) {
             onClose();

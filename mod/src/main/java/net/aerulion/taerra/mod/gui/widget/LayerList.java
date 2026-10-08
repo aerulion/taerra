@@ -2,8 +2,10 @@ package net.aerulion.taerra.mod.gui.widget;
 
 import java.util.List;
 import java.util.stream.Stream;
+import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.aerulion.taerra.mod.web.model.Layer;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -55,16 +57,29 @@ public final class LayerList extends ContainerObjectSelectionList<LayerList.Entr
       this.count = layer == Layer.PLAYERS ? "" : String.valueOf(layer.markers().size());
       final @NotNull String name = layer.displayName().getString();
       final int room =
-          getRowWidth() - Checkbox.getBoxSize(font) - 4 - font.width(this.count) - COUNT_GAP;
+          getRowWidth()
+              - Checkbox.getBoxSize(font)
+              - 4
+              - font.width(this.count)
+              - COUNT_GAP
+              - (layer.personal() ? font.width(" " + MapIcons.GEM) : 0);
       final boolean cut = font.width(name) > room;
       final @NotNull String label =
           cut ? font.plainSubstrByWidth(name, room - font.width(ELLIPSIS)) + ELLIPSIS : name;
       final Checkbox.@NotNull Builder checkbox =
-          Checkbox.builder(Component.literal(label), font)
+          Checkbox.builder(
+                  layer.personal()
+                      ? Component.literal(label)
+                          .append(
+                              Component.literal(" " + MapIcons.GEM).withStyle(ChatFormatting.GOLD))
+                      : Component.literal(label),
+                  font)
               .selected(LayerList.this.map.shown(layer))
               .onValueChange((_, shown) -> LayerList.this.map.setShown(layer, shown));
       if (layer.restricted()) {
         checkbox.tooltip(Tooltip.create(Component.translatable("taerra.private")));
+      } else if (layer.personal()) {
+        checkbox.tooltip(Tooltip.create(Component.translatable("taerra.personal")));
       } else if (cut) {
         checkbox.tooltip(Tooltip.create(Component.literal(name)));
       }

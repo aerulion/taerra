@@ -464,10 +464,11 @@ function setupContextMenu() {
             button.textContent = t(button.dataset.i18n);
         }
         menu.querySelector('[data-action="teleport"]').hidden = !accountManager.canTeleport();
-        menu.querySelector('[data-action="waypoint"]').hidden = !accountManager.canEditMarkers();
+        const placing = accountManager.canEditMarkers() || accountManager.canKeepPersonal();
+        menu.querySelector('[data-action="waypoint"]').hidden = !placing;
         menu.querySelector('[data-action="select"]').hidden = !accountManager.canRender() && !accountManager.canHide();
-        menu.querySelector('[data-action="area"]').hidden = !accountManager.canEditMarkers();
-        menu.querySelector('[data-action="line"]').hidden = !accountManager.canEditMarkers();
+        menu.querySelector('[data-action="area"]').hidden = !placing;
+        menu.querySelector('[data-action="line"]').hidden = !placing;
         menu.hidden = false;
         const stage = menu.parentElement.getBoundingClientRect();
         const x = Math.min(event.containerPoint.x, stage.width - menu.offsetWidth - 8);

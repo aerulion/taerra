@@ -55,7 +55,7 @@ public sealed interface WebMap permits WebMapImpl {
 
   void saveWaypoint(Waypoint waypoint, boolean privateGroup, IntConsumer then);
 
-  void deleteWaypoint(String world, String name, IntConsumer then);
+  void deleteWaypoint(String world, String name, boolean personal, IntConsumer then);
 
   void teleport(String world, int x, @Nullable Integer y, int z, IntConsumer then);
 

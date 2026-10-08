@@ -14,9 +14,11 @@ record OverlayItem(
     int[] wallColors,
     double @Nullable [][] path,
     boolean hollow,
-    boolean fullHeight) {
+    boolean fullHeight,
+    boolean dashed) {
 
-  static @Nullable OverlayItem of(final @NotNull Marker marker, final @NotNull MarkerShape shape) {
+  static @Nullable OverlayItem of(
+      final @NotNull Marker marker, final @NotNull MarkerShape shape, final boolean personal) {
     if (shape.face == null && shape.path == null) {
       return null;
     }
@@ -29,7 +31,8 @@ record OverlayItem(
         shape.wallColors.clone(),
         shape.path,
         marker.hollow(),
-        marker.fullHeight());
+        marker.fullHeight(),
+        personal);
   }
 
   double extent() {

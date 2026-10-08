@@ -1,6 +1,8 @@
 package net.aerulion.taerra.marker;
 
+import java.util.Collection;
 import java.util.Set;
+import java.util.UUID;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.Listener;
@@ -11,4 +13,10 @@ public sealed interface MarkerRegistryInternal extends MarkerRegistry, Listener
 
   @NotNull
   Set<NamespacedKey> drainChangedWorlds();
+
+  @NotNull
+  Set<UUID> drainChangedPlayers();
+
+  @NotNull
+  Collection<PlayerMarkerLayerImpl> playerLayers();
 }

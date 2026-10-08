@@ -20,6 +20,7 @@ public record Waypoint(
     String description) {
 
   public static final String DEFAULT_COLOR = "#3ab3da";
+  public static final String PERSONAL = "\u0000personal";
 
   public static @NotNull Waypoint create(
       final String world, final int x, final @Nullable Integer y, final int z) {
@@ -37,7 +38,9 @@ public record Waypoint(
         at == null ? 0 : (int) Math.floor(at.get(2)),
         marker.label(),
         marker.color(),
-        layer.id().equals("waypoints") ? "" : layer.label(),
+        layer.id().equals(Layer.PERSONAL)
+            ? PERSONAL
+            : layer.id().equals("waypoints") ? "" : layer.label(),
         marker.label(),
         marker.type(),
         marker.points() == null
@@ -47,6 +50,10 @@ public record Waypoint(
                 .toList(),
         marker.smooth(),
         marker.description() == null ? "" : marker.description());
+  }
+
+  public boolean personal() {
+    return this.group.equals(PERSONAL);
   }
 
   public @NotNull Waypoint at(final int x, final @Nullable Integer y, final int z) {

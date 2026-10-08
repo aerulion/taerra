@@ -3,8 +3,10 @@ package net.aerulion.taerra.mod.map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.stream.IntStream;
 import net.aerulion.taerra.mod.web.model.MapConfig;
 import net.aerulion.taerra.mod.web.model.Marker;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +20,12 @@ class OverlayRasterTest {
   private static final Projection TOP_DOWN = Projection.topDown(CONFIG);
 
   private static @NotNull OverlayScene scene(final @NotNull Marker marker) {
-    final @Nullable OverlayItem item = OverlayItem.of(marker, new MarkerShape(marker, TOP_DOWN));
+    return scene(marker, false);
+  }
+
+  private static @NotNull OverlayScene scene(final @NotNull Marker marker, final boolean personal) {
+    final @Nullable OverlayItem item =
+        OverlayItem.of(marker, new MarkerShape(marker, TOP_DOWN), personal);
     return new OverlayScene(0, "world", TOP_DOWN, List.of(item), Look.COLOR, 1, 4);
   }
 
@@ -48,6 +55,16 @@ class OverlayRasterTest {
     assertEquals(0x1FFF0000, pixels[64 * 256 + 64], "fill alpha of the color look");
     assertEquals(0xFFFF0000, pixels[64 * 256 + 128], "the right edge, 2 px wide");
     assertEquals(0, pixels[64 * 256 + 200], "outside");
+  }
+
+  @Test
+  void aPersonalRegionHasADashedEdge() {
+    final int @Nullable [] pixels =
+        OverlayRaster.pixels(scene(area(0, 0, 32, 32), true), new OverlayKey(4, 0, 0));
+    assertNotNull(pixels);
+    final long drawn =
+        IntStream.range(8, 120).filter(y -> pixels[y * 256 + 128] == 0xFFFF0000).count();
+    assertTrue(drawn > 50 && drawn < 90, "about five of every eight pixels: " + drawn);
   }
 
   @Test

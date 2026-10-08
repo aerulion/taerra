@@ -1211,7 +1211,8 @@ public final class MapScreen extends Screen {
           Component.translatable("taerra.menu.teleport"),
           item -> teleport(menu, item, world, place.x(), standing, place.z()));
     }
-    if (account != null && account.markers()) {
+    final boolean placing = account != null && (account.markers() || account.personal());
+    if (placing) {
       menu.add(
           Component.translatable("taerra.menu.waypoint"),
           _ ->
@@ -1222,7 +1223,7 @@ public final class MapScreen extends Screen {
                       Waypoint.create(world, place.x(), standing, place.z()),
                       () -> {})));
     }
-    if (account != null && account.markers()) {
+    if (placing) {
       menu.add(
           Component.translatable("taerra.menu.area"),
           _ -> {
@@ -1289,7 +1290,9 @@ public final class MapScreen extends Screen {
           Component.translatable("taerra.waypoint.teleport"),
           item -> teleport(menu, item, world, waypoint.x(), waypoint.y(), waypoint.z()));
     }
-    if (marker.id().startsWith("waypoint:") && account.markers()) {
+    if (waypoint.personal()
+        ? account.personal()
+        : marker.id().startsWith("waypoint:") && account.markers()) {
       if (point) {
         menu.add(
             Component.translatable("taerra.waypoint.move"),
@@ -1438,6 +1441,7 @@ public final class MapScreen extends Screen {
     this.map.deleteWaypoint(
         world,
         editing.previous(),
+        editing.personal(),
         status -> {
           if (status == 204) {
             stopSelecting();

@@ -66,6 +66,10 @@ public enum TaerraPermission {
       "web.markers.private",
       "Lets the user create private marker groups on the map while logged in.",
       PermissionDefault.OP),
+  WEB_MARKERS_PERSONAL(
+      "web.markers.personal",
+      "Lets the user add, edit, move and remove their own markers only they see, while logged in.",
+      PermissionDefault.TRUE),
   HIDE("hide", "Hides the player from the web map.", PermissionDefault.FALSE),
   ;
 

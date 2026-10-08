@@ -2,7 +2,7 @@ import {accountManager} from './account.js';
 import {numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
 import {element, markerManager, spline} from './markers.js';
-import {DEFAULT_COLOR, waypointEditor} from './waypoints.js';
+import {DEFAULT_COLOR, waypointEditor, waypointUrl} from './waypoints.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -628,7 +628,7 @@ class ChunkSelection {
         const previous = this.editing.previous;
         let response = null;
         try {
-            response = await fetch(`/api/waypoints/${encodeURIComponent(previous)}`, {method: 'DELETE'});
+            response = await fetch(waypointUrl(previous, this.editing.personal), {method: 'DELETE'});
         } catch {
         }
         if (response?.ok) {

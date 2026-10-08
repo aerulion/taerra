@@ -1,6 +1,6 @@
 import {t} from './i18n.js';
 import {mapManager} from './map.js';
-import {element, markerManager, PIN_SVG} from './markers.js';
+import {element, markerIcon, markerManager} from './markers.js';
 import {avatar, playerManager} from './players.js';
 
 const $ = (id) => document.getElementById(id);
@@ -129,9 +129,10 @@ class SearchPalette {
             description: marker.description,
             icon: () => {
                 const icon = element('span', `search__icon search__icon--${marker.type}`);
+                icon.classList.toggle('search__icon--personal', Boolean(layer.personal));
                 icon.style.setProperty('--marker', marker.color);
                 if (marker.type === 'point') {
-                    icon.innerHTML = PIN_SVG;
+                    icon.innerHTML = markerIcon(layer);
                 }
                 return icon;
             },

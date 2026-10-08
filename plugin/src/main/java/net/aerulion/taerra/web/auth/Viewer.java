@@ -29,6 +29,10 @@ public record Viewer(@Nullable UUID uuid, @NotNull Set<String> grants) {
     return this.grants.contains(TaerraPermission.WEB_MARKERS_PRIVATE.node());
   }
 
+  public boolean canKeepPersonalMarkers() {
+    return this.uuid != null && this.grants.contains(TaerraPermission.WEB_MARKERS_PERSONAL.node());
+  }
+
   public boolean canRender() {
     return this.grants.contains(TaerraPermission.WEB_RENDER.node());
   }

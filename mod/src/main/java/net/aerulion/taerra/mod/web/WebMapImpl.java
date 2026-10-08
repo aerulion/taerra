@@ -204,7 +204,9 @@ public final class WebMapImpl implements WebMap {
     body.put("name", waypoint.name());
     body.put("color", waypoint.color());
     body.put("description", waypoint.description());
-    if (!waypoint.group().isEmpty()) {
+    if (waypoint.personal()) {
+      body.put("personal", true);
+    } else if (!waypoint.group().isEmpty()) {
       body.put("group", waypoint.group());
     }
     body.put("privateGroup", privateGroup);
@@ -228,9 +230,15 @@ public final class WebMapImpl implements WebMap {
 
   @Override
   public void deleteWaypoint(
-      final @NotNull String world, final @NotNull String name, final @NotNull IntConsumer then) {
+      final @NotNull String world,
+      final @NotNull String name,
+      final boolean personal,
+      final @NotNull IntConsumer then) {
     this.client.send(
-        "DELETE", "/api/waypoints/" + Urls.segment(name), null, refreshing(world, then));
+        "DELETE",
+        "/api/waypoints/" + Urls.segment(name) + (personal ? "?personal=true" : ""),
+        null,
+        refreshing(world, then));
   }
 
   @Override

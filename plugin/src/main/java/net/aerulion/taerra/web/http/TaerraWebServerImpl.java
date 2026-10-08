@@ -14,6 +14,7 @@ import jakarta.servlet.DispatcherType;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -26,6 +27,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import net.aerulion.taerra.api.marker.LineMarker;
@@ -46,6 +48,7 @@ import net.aerulion.taerra.storage.EncodedTile;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.util.HexColors;
 import net.aerulion.taerra.util.Names;
+import net.aerulion.taerra.waypoint.PersonalWaypoints;
 import net.aerulion.taerra.waypoint.Waypoints;
 import net.aerulion.taerra.web.auth.ModHandshake;
 import net.aerulion.taerra.web.auth.Viewer;
@@ -54,6 +57,7 @@ import net.aerulion.taerra.web.marker.MarkerPayloadSerializer;
 import net.aerulion.taerra.web.player.PlayerAvatars;
 import net.aerulion.taerra.web.player.PlayerPositionBroadcaster;
 import net.aerulion.taerra.web.socket.MapWebSocketHandler;
+import net.aerulion.taerra.web.socket.MapWebSocketHandlerImpl;
 import net.aerulion.taerra.web.stats.RenderStatsPayloadSerializer;
 import net.kyori.adventure.audience.Audience;
 import org.bukkit.Bukkit;
@@ -85,6 +89,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private final @NotNull WebSessions sessions;
   private final @NotNull ModHandshake modHandshake;
   private final @NotNull Waypoints waypoints;
+  private final @NotNull PersonalWaypoints personalWaypoints;
   private final @NotNull RenderSubCommand render;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private final @NotNull PlayerAvatars avatars = new PlayerAvatars();
@@ -107,6 +112,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       final @NotNull WebSessions sessions,
       final @NotNull ModHandshake modHandshake,
       final @NotNull Waypoints waypoints,
+      final @NotNull PersonalWaypoints personalWaypoints,
       final @NotNull RenderSubCommand render) {
     super();
     this.plugin = plugin;
@@ -119,6 +125,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     this.sessions = sessions;
     this.modHandshake = modHandshake;
     this.waypoints = waypoints;
+    this.personalWaypoints = personalWaypoints;
     this.render = render;
   }
 
@@ -171,6 +178,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
         "teleport", viewer.canTeleport(),
         "markers", viewer.canEditMarkers(),
         "privateGroups", viewer.canCreatePrivateGroups(),
+        "personal", viewer.canKeepPersonalMarkers(),
         "render", viewer.canRender(),
         "hide", viewer.canHide());
   }
@@ -220,7 +228,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       final @NotNull World world,
       final @NotNull WaypointRequest request,
       final @NotNull String name) {
-    final @NotNull String id = Waypoints.markerId(name);
+    final @NotNull String id =
+        request.personal() ? PersonalWaypoints.markerId(name) : Waypoints.markerId(name);
     final @NotNull NamespacedKey key = world.getKey();
     final @Nullable List<List<Double>> points = request.points();
     if (points == null) {
@@ -521,8 +530,9 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private void publishMarkerChanges() {
     for (final @NotNull NamespacedKey world : this.markers.drainChangedWorlds()) {
       this.wsHandler.broadcastToWorld(
-          world.asString(), "{\"type\":\"markers\",\"world\":\"" + world.asString() + "\"}");
+          world.asString(), MapWebSocketHandlerImpl.markersMessage(world.asString()));
     }
+    this.markers.drainChangedPlayers().forEach(this.wsHandler::refreshMarkers);
   }
 
   private void publishWorldChanges() {
@@ -705,10 +715,6 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       return;
     }
     final @NotNull Viewer viewer = viewer(ctx);
-    if (!viewer.canEditMarkers()) {
-      ctx.status(403).result("Not allowed");
-      return;
-    }
     final @NotNull WaypointRequest request;
     try {
       request = ctx.bodyAsClass(WaypointRequest.class);
@@ -716,8 +722,13 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       ctx.status(400).result("Invalid waypoint");
       return;
     }
+    if (request.personal() ? !viewer.canKeepPersonalMarkers() : !viewer.canEditMarkers()) {
+      ctx.status(403).result("Not allowed");
+      return;
+    }
     final @Nullable String name = Names.of(request.name());
-    final boolean grouped = request.group() != null && !request.group().isBlank();
+    final boolean grouped =
+        !request.personal() && request.group() != null && !request.group().isBlank();
     final @Nullable String group = grouped ? Names.of(request.group()) : null;
     final @NotNull OptionalInt color = HexColors.parseRgb(request.color());
     final boolean point = request.type() == null || "point".equals(request.type());
@@ -734,7 +745,11 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       return;
     }
     final @Nullable String groupId = Waypoints.groupLayerId(group);
-    if (!viewer.canSeeLayer(this.taerraConfig, groupId == null ? Waypoints.LAYER : groupId)) {
+    if (!viewer.canSeeLayer(
+        this.taerraConfig,
+        request.personal()
+            ? PersonalWaypoints.LAYER
+            : groupId == null ? Waypoints.LAYER : groupId)) {
       ctx.status(403).result("Not allowed");
       return;
     }
@@ -755,6 +770,21 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
               shaped
                   .thenAccept(
                       marker -> {
+                        final @NotNull Marker described =
+                            marker
+                                .withColor(Color.fromRGB(color.getAsInt()))
+                                .withDescription(Names.description(request.description()));
+                        if (request.personal()) {
+                          result.complete(
+                              switch (this.personalWaypoints.save(
+                                  viewer.uuid(), described, request.previous())) {
+                                case SAVED -> 204;
+                                case TAKEN -> 409;
+                                case FULL -> 422;
+                                case FAILED -> 500;
+                              });
+                          return;
+                        }
                         if (!canEditWaypoint(viewer, request.previous())) {
                           result.complete(403);
                           return;
@@ -774,11 +804,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                         if (renamed && request.previous() != null) {
                           this.waypoints.remove(request.previous());
                         }
-                        this.waypoints.add(
-                            marker
-                                .withColor(Color.fromRGB(color.getAsInt()))
-                                .withDescription(Names.description(request.description())),
-                            group);
+                        this.waypoints.add(described, group);
                         result.complete(204);
                       })
                   .exceptionally(
@@ -796,7 +822,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       return;
     }
     final @NotNull Viewer viewer = viewer(ctx);
-    if (!viewer.canEditMarkers()) {
+    final boolean personal = "true".equals(ctx.queryParam("personal"));
+    if (personal ? !viewer.canKeepPersonalMarkers() : !viewer.canEditMarkers()) {
       ctx.status(403).result("Not allowed");
       return;
     }
@@ -807,7 +834,11 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
             this.plugin,
             () ->
                 result.complete(
-                    canEditWaypoint(viewer, name) && this.waypoints.remove(name) ? 204 : 404));
+                    (personal
+                            ? this.personalWaypoints.remove(viewer.uuid(), name)
+                            : canEditWaypoint(viewer, name) && this.waypoints.remove(name))
+                        ? 204
+                        : 404));
     ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
   }
 
@@ -899,13 +930,24 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       ctx.status(404).result("Not found");
       return;
     }
-    ctx.header("Cache-Control", "no-cache")
-        .json(
-            MarkerPayloadSerializer.world(
-                this.markers,
-                worldName,
-                layer -> viewer.canSeeLayer(this.taerraConfig, layer),
-                this.taerraConfig::layerPrivate));
+    final @NotNull Predicate<String> visible =
+        layer ->
+            viewer.canSeeLayer(this.taerraConfig, layer)
+                && (viewer.canKeepPersonalMarkers() || !layer.equals(PersonalWaypoints.LAYER));
+    final @NotNull List<Map<String, Object>> layers =
+        new ArrayList<>(
+            viewer.uuid() == null
+                ? List.of()
+                : MarkerPayloadSerializer.player(
+                    this.markers.playerLayers(),
+                    viewer.uuid(),
+                    worldName,
+                    visible,
+                    this.taerraConfig::layerPrivate));
+    layers.addAll(
+        MarkerPayloadSerializer.world(
+            this.markers, worldName, visible, this.taerraConfig::layerPrivate));
+    ctx.header("Cache-Control", "no-cache").json(layers);
   }
 
   private void handleIsoPickRequest(final @NotNull Context ctx) {
@@ -1097,5 +1139,6 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       @Nullable String type,
       @Nullable List<List<Double>> points,
       boolean smooth,
-      @Nullable String description) {}
+      @Nullable String description,
+      boolean personal) {}
 }

@@ -91,6 +91,10 @@ function canEditMarkers() {
     return current?.markers === true;
 }
 
+function canKeepPersonal() {
+    return current?.personal === true;
+}
+
 function canCreatePrivateGroups() {
     return current?.privateGroups === true;
 }
@@ -103,4 +107,6 @@ function canHide() {
     return current?.hide === true;
 }
 
-export const accountManager = {initialize, canTeleport, canEditMarkers, canCreatePrivateGroups, canRender, canHide};
+export const accountManager = {
+    initialize, canTeleport, canEditMarkers, canKeepPersonal, canCreatePrivateGroups, canRender, canHide
+};

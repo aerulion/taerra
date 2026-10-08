@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -85,7 +86,8 @@ public final class WaypointsImpl implements Waypoints, Listener {
     return points;
   }
 
-  private static @Nullable Marker read(final @NotNull Map<?, ?> entry) {
+  private static @Nullable Marker shape(
+      final @NotNull Map<?, ?> entry, final @NotNull String prefix) {
     final @Nullable NamespacedKey world =
         NamespacedKey.fromString(String.valueOf(entry.get("world")));
     if (world == null || !(entry.get("name") instanceof final @NotNull String name)) {
@@ -100,12 +102,18 @@ public final class WaypointsImpl implements Waypoints, Listener {
                   || !(entry.get("max-y") instanceof final @NotNull Number maxY)
               ? null
               : Marker.polygon(
-                  id(name), world, points, minY.doubleValue(), maxY.doubleValue(), name);
+                  prefix + name.toLowerCase(Locale.ROOT),
+                  world,
+                  points,
+                  minY.doubleValue(),
+                  maxY.doubleValue(),
+                  name);
       case "line" -> {
         if (points == null || points.size() < 2) {
           yield null;
         }
-        final @NotNull LineMarker line = Marker.line(id(name), world, points, name);
+        final @NotNull LineMarker line =
+            Marker.line(prefix + name.toLowerCase(Locale.ROOT), world, points, name);
         yield Boolean.TRUE.equals(entry.get("smooth")) ? line.smoothed() : line;
       }
       default ->
@@ -114,11 +122,54 @@ public final class WaypointsImpl implements Waypoints, Listener {
                   || !(entry.get("z") instanceof final @NotNull Number z)
               ? null
               : Marker.point(
-                  id(name),
+                  prefix + name.toLowerCase(Locale.ROOT),
                   world,
                   new Vector(x.doubleValue(), y.doubleValue(), z.doubleValue()),
                   name);
     };
+  }
+
+  static @Nullable Marker read(final @NotNull Map<?, ?> entry, final @NotNull String prefix) {
+    final @Nullable Marker marker = shape(entry, prefix);
+    if (marker == null) {
+      return null;
+    }
+    final @NotNull OptionalInt rgb = HexColors.parseRgb(String.valueOf(entry.get("color")));
+    return marker
+        .withColor(rgb.isPresent() ? Color.fromRGB(rgb.getAsInt()) : DEFAULT_COLOR)
+        .withDescription(
+            entry.get("description") instanceof final @NotNull String description
+                ? description
+                : null);
+  }
+
+  static @NotNull Map<String, Object> entry(final @NotNull Marker marker) {
+    final @NotNull Map<String, Object> entry = new HashMap<>();
+    entry.put("name", marker.label());
+    entry.put("world", marker.world().asString());
+    switch (marker) {
+      case final @NotNull PointMarker point -> {
+        entry.put("x", point.position().getX());
+        entry.put("y", point.position().getY());
+        entry.put("z", point.position().getZ());
+      }
+      case final @NotNull AreaMarker area -> {
+        entry.put("type", "area");
+        entry.put("points", write(area.outline()));
+        entry.put("min-y", area.minY());
+        entry.put("max-y", area.maxY());
+      }
+      case final @NotNull LineMarker line -> {
+        entry.put("type", "line");
+        entry.put("points", write(line.points()));
+        entry.put("smooth", line.smooth());
+      }
+    }
+    entry.put("color", HexColors.format(marker.color().asRGB()));
+    if (marker.description() != null) {
+      entry.put("description", marker.description());
+    }
+    return entry;
   }
 
   private static @NotNull List<List<Double>> write(final @NotNull List<Vector> points) {
@@ -130,20 +181,12 @@ public final class WaypointsImpl implements Waypoints, Listener {
     final @NotNull YamlConfiguration yaml = YamlConfiguration.loadConfiguration(this.file);
     this.hiddenGroups.addAll(yaml.getStringList("hidden-groups"));
     for (final @NotNull Map<?, ?> entry : yaml.getMapList("waypoints")) {
-      final @NotNull OptionalInt rgb = HexColors.parseRgb(String.valueOf(entry.get("color")));
-      final @Nullable Marker marker = read(entry);
+      final @Nullable Marker marker = read(entry, PLACED);
       if (marker == null) {
         this.plugin.getLogger().warning("Skipping a malformed waypoint in waypoints.yml: " + entry);
         continue;
       }
-      layer(entry.get("group") instanceof final @NotNull String group ? group : null)
-          .set(
-              marker
-                  .withColor(rgb.isPresent() ? Color.fromRGB(rgb.getAsInt()) : DEFAULT_COLOR)
-                  .withDescription(
-                      entry.get("description") instanceof final @NotNull String description
-                          ? description
-                          : null));
+      layer(entry.get("group") instanceof final @NotNull String group ? group : null).set(marker);
     }
     Bukkit.getWorlds().forEach(this::placeSpawn);
   }
@@ -287,31 +330,7 @@ public final class WaypointsImpl implements Waypoints, Listener {
     final @NotNull List<Map<String, Object>> entries = new ArrayList<>();
     for (final @NotNull MarkerLayer waypointLayer : layers()) {
       for (final @NotNull Marker marker : placed(waypointLayer)) {
-        final @NotNull Map<String, Object> entry = new HashMap<>();
-        entry.put("name", marker.label());
-        entry.put("world", marker.world().asString());
-        switch (marker) {
-          case final @NotNull PointMarker point -> {
-            entry.put("x", point.position().getX());
-            entry.put("y", point.position().getY());
-            entry.put("z", point.position().getZ());
-          }
-          case final @NotNull AreaMarker area -> {
-            entry.put("type", "area");
-            entry.put("points", write(area.outline()));
-            entry.put("min-y", area.minY());
-            entry.put("max-y", area.maxY());
-          }
-          case final @NotNull LineMarker line -> {
-            entry.put("type", "line");
-            entry.put("points", write(line.points()));
-            entry.put("smooth", line.smooth());
-          }
-        }
-        entry.put("color", HexColors.format(marker.color().asRGB()));
-        if (marker.description() != null) {
-          entry.put("description", marker.description());
-        }
+        final @NotNull Map<String, Object> entry = entry(marker);
         if (waypointLayer != this.layer) {
           entry.put("group", waypointLayer.label());
         }

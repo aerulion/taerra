@@ -64,7 +64,10 @@ public final class WaypointLabels implements LevelRenderEvents.CollectSubmits {
             0);
   }
 
-  private static @NotNull Component icon(final @NotNull Marker marker) {
+  private static @NotNull Component icon(final @NotNull Layer layer, final @NotNull Marker marker) {
+    if (layer.personal()) {
+      return Component.literal(MapIcons.GEM).withColor(Colors.argb(marker.color()) & 0xFFFFFF);
+    }
     return Component.object(
         new AtlasSprite(
             AtlasIds.MAP_DECORATIONS,
@@ -116,7 +119,7 @@ public final class WaypointLabels implements LevelRenderEvents.CollectSubmits {
             context,
             pose,
             font,
-            icon(marker),
+            icon(layer, marker),
             -(font.lineHeight + 2) / ICON - font.lineHeight,
             false);
         pose.popPose();

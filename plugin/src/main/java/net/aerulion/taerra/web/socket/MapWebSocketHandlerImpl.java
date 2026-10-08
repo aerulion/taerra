@@ -7,6 +7,7 @@ import io.javalin.websocket.WsErrorContext;
 import io.javalin.websocket.WsMessageContext;
 import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -84,6 +85,21 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
   @Override
   public void broadcast(final @NotNull Function<Viewer, String> message) {
     this.connections.forEach((ctx, connection) -> send(ctx, message.apply(connection.viewer())));
+  }
+
+  @Override
+  public void refreshMarkers(final @NotNull UUID player) {
+    this.connections.forEach(
+        (ctx, connection) -> {
+          final @Nullable String world = this.subscribedWorlds.get(ctx);
+          if (world != null && player.equals(connection.viewer().uuid())) {
+            send(ctx, markersMessage(world));
+          }
+        });
+  }
+
+  public static @NotNull String markersMessage(final @NotNull String world) {
+    return "{\"type\":\"markers\",\"world\":\"" + world + "\"}";
   }
 
   @Override

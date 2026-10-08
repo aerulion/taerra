@@ -191,6 +191,17 @@ button {
     color: var(--gold);
 }
 
+.personal-icon {
+    display: inline-flex;
+    flex: none;
+    color: var(--accent-hi);
+}
+
+.marker-popup__layer .personal-icon svg {
+    width: 5px;
+    height: 7px;
+}
+
 .world-tab::after {
     content: "";
     position: absolute;
@@ -505,6 +516,14 @@ button {
     background: var(--marker);
     box-shadow: 0 0 0 2px var(--stone-900);
     transform: rotate(-30deg);
+}
+
+.search__icon--personal.search__icon--area::before {
+    border-style: dashed;
+}
+
+.search__icon--personal.search__icon--line::before {
+    background: repeating-linear-gradient(90deg, var(--marker) 0 5px, var(--stone-900) 5px 8px);
 }
 
 .search__icon--world::before,
@@ -1401,6 +1420,11 @@ kbd {
 }
 
 .marker-popup__layer {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-right: 24px;
+    white-space: nowrap;
     color: var(--stone-200);
     font: 700 7.5px/1 var(--font-display);
     letter-spacing: .06em;

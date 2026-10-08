@@ -14,6 +14,8 @@ final class OverlayRaster {
   static final int DETAIL_ZOOM_RANGE = 2;
   static final double TINY = 3;
   private static final int MAX_LINE = 3;
+  private static final double DASH = 5;
+  private static final double GAP = 3;
 
   private OverlayRaster() {}
 
@@ -71,7 +73,7 @@ final class OverlayRaster {
       final boolean tiny) {
     final int color = item.color();
     if (item.path() != null) {
-      canvas.lines(item.path(), false, 2, color);
+      canvas.lines(item.path(), false, 2, color, item.dashed());
       return;
     }
     if (tiny) {
@@ -94,11 +96,11 @@ final class OverlayRaster {
     if (!item.hollow()) {
       canvas.fill(ground, Colors.withAlpha(look.ground(), color));
     }
-    canvas.lines(ground, true, 2, Colors.withAlpha(GROUND_LINE, color));
+    canvas.lines(ground, true, 2, Colors.withAlpha(GROUND_LINE, color), item.dashed());
     for (int i = 0; i < item.walls().size(); i++) {
       final double[][] wall = item.walls().get(i);
       canvas.fill(wall, Colors.withAlpha(look.wall(), item.wallColors()[i]));
-      canvas.lines(wall, true, 1, Colors.withAlpha(look.wallLine(), color));
+      canvas.lines(wall, true, 1, Colors.withAlpha(look.wallLine(), color), false);
     }
     region(canvas, look, item, item.face(), false);
   }
@@ -113,7 +115,8 @@ final class OverlayRaster {
     if (!item.hollow()) {
       canvas.fill(outline, Colors.withAlpha(look.fill(), color));
     }
-    canvas.lines(outline, true, far ? 1 : 2, far ? Colors.withAlpha(FAR_LINE, color) : color);
+    canvas.lines(
+        outline, true, far ? 1 : 2, far ? Colors.withAlpha(FAR_LINE, color) : color, item.dashed());
   }
 
   private static final class Canvas {
@@ -148,10 +151,17 @@ final class OverlayRaster {
     }
 
     private void lines(
-        final double @NotNull [][] points, final boolean closed, final int width, final int color) {
+        final double @NotNull [][] points,
+        final boolean closed,
+        final int width,
+        final int color,
+        final boolean dashed) {
       final int count = closed ? points.length : points.length - 1;
       final double low = -(width / 2) * this.pixels;
       final double high = (width - width / 2) * this.pixels;
+      final double dash = DASH * this.pixels;
+      final double period = (DASH + GAP) * this.pixels;
+      double along = 0;
       for (int i = 0; i < count; i++) {
         final double @NotNull [] a = texel(points[i]);
         final double @NotNull [] b = texel(points[(i + 1) % points.length]);
@@ -159,16 +169,30 @@ final class OverlayRaster {
         if (length == 0) {
           continue;
         }
-        final double normalX = -(b[1] - a[1]) / length;
-        final double normalY = (b[0] - a[0]) / length;
-        fillTexels(
-            new double[][] {
-              {a[0] + normalX * low, a[1] + normalY * low},
-              {b[0] + normalX * low, b[1] + normalY * low},
-              {b[0] + normalX * high, b[1] + normalY * high},
-              {a[0] + normalX * high, a[1] + normalY * high}
-            },
-            color);
+        final double dirX = (b[0] - a[0]) / length;
+        final double dirY = (b[1] - a[1]) / length;
+        double from = 0;
+        while (from < length) {
+          final double phase = dashed ? (along + from) % period : 0;
+          final double to =
+              dashed ? Math.min(length, from + (phase < dash ? dash : period) - phase) : length;
+          if (phase < dash) {
+            final double startX = a[0] + dirX * from;
+            final double startY = a[1] + dirY * from;
+            final double endX = a[0] + dirX * to;
+            final double endY = a[1] + dirY * to;
+            fillTexels(
+                new double[][] {
+                  {startX - dirY * low, startY + dirX * low},
+                  {endX - dirY * low, endY + dirX * low},
+                  {endX - dirY * high, endY + dirX * high},
+                  {startX - dirY * high, startY + dirX * high}
+                },
+                color);
+          }
+          from = to;
+        }
+        along += length;
       }
     }
 

@@ -291,6 +291,7 @@ public final class MapViewImpl implements MapView {
                           layer.label(),
                           layer.shown(),
                           layer.restricted(),
+                          layer.personal(),
                           layer.markers().stream()
                               .filter(marker -> !marker.id().equals(hidden))
                               .toList()))
@@ -782,9 +783,11 @@ public final class MapViewImpl implements MapView {
       if (!shown[i]) {
         continue;
       }
+      final boolean personal = layers.get(i).personal();
       for (final @NotNull Marker marker : layers.get(i).markers()) {
         final MarkerShape shape = this.shapes.get(marker);
-        final @Nullable OverlayItem item = shape == null ? null : OverlayItem.of(marker, shape);
+        final @Nullable OverlayItem item =
+            shape == null ? null : OverlayItem.of(marker, shape, personal);
         if (item != null) {
           items.add(item);
         }
@@ -951,12 +954,15 @@ public final class MapViewImpl implements MapView {
     this.labels.clear();
     for (final @NotNull DrawnPoint drawn : points) {
       final double @NotNull [] at = toScreen(drawn.shape().point);
-      final @NotNull TextureAtlasSprite banner = drawn.shape().banner();
+      final @NotNull MarkerShape shape = drawn.shape();
       icon(
           graphics,
           at,
           0,
-          () -> graphics.blitSprite(RenderPipelines.GUI_TEXTURED, banner, 0, 0, 8, 8));
+          drawn.layer().personal()
+              ? () -> MapIcons.gem(graphics, shape.color)
+              : () ->
+                  graphics.blitSprite(RenderPipelines.GUI_TEXTURED, shape.banner(), 0, 0, 8, 8));
       if (hovers(at, mouse[0], mouse[1])) {
         hovered(drawn.layer(), drawn.marker(), drawn.shape());
       }

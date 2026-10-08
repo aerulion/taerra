@@ -5,7 +5,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.EventHandler;
@@ -17,7 +20,9 @@ import org.jetbrains.annotations.Nullable;
 public final class MarkerRegistryImpl implements MarkerRegistryInternal {
 
   private final @NotNull Map<String, MarkerLayer> layers = new LinkedHashMap<>();
+  private final @NotNull Map<String, PlayerMarkerLayerImpl> playerLayers = new LinkedHashMap<>();
   private final @NotNull Set<NamespacedKey> changedWorlds = ConcurrentHashMap.newKeySet();
+  private final @NotNull Set<UUID> changedPlayers = ConcurrentHashMap.newKeySet();
 
   public MarkerRegistryImpl() {
     super();
@@ -29,6 +34,9 @@ public final class MarkerRegistryImpl implements MarkerRegistryInternal {
       final @NotNull String id,
       final @NotNull String label,
       final boolean shownByDefault) {
+    if (this.playerLayers.containsKey(id)) {
+      throw new IllegalArgumentException("The layer " + id + " is a player layer");
+    }
     final @NotNull MarkerLayer layer =
         this.layers.computeIfAbsent(
             id,
@@ -38,6 +46,34 @@ public final class MarkerRegistryImpl implements MarkerRegistryInternal {
           "The layer " + id + " belongs to " + layer.owner().getName());
     }
     return layer;
+  }
+
+  @Override
+  public synchronized @NotNull PlayerMarkerLayerImpl playerLayer(
+      final @NotNull Plugin owner,
+      final @NotNull String id,
+      final @NotNull String label,
+      final boolean shownByDefault,
+      final @NotNull Function<UUID, ? extends Collection<? extends Marker>> markers) {
+    if (this.layers.containsKey(id)) {
+      throw new IllegalArgumentException("The layer " + id + " is not a player layer");
+    }
+    final @NotNull PlayerMarkerLayerImpl layer =
+        this.playerLayers.computeIfAbsent(
+            id,
+            key ->
+                new PlayerMarkerLayerImpl(
+                    owner, key, label, shownByDefault, markers, this.changedPlayers::add));
+    if (!layer.owner().equals(owner)) {
+      throw new IllegalArgumentException(
+          "The layer " + id + " belongs to " + layer.owner().getName());
+    }
+    return layer;
+  }
+
+  @Override
+  public synchronized @NotNull Collection<PlayerMarkerLayerImpl> playerLayers() {
+    return List.copyOf(this.playerLayers.values());
   }
 
   @Override
@@ -55,6 +91,7 @@ public final class MarkerRegistryImpl implements MarkerRegistryInternal {
     final @Nullable MarkerLayer removed;
     synchronized (this) {
       removed = this.layers.remove(id);
+      this.playerLayers.remove(id);
     }
     if (removed != null) {
       removed.clear();
@@ -72,12 +109,24 @@ public final class MarkerRegistryImpl implements MarkerRegistryInternal {
         removeLayer(layer.id());
       }
     }
+    for (final @NotNull PlayerMarkerLayerImpl layer : playerLayers()) {
+      if (layer.owner().equals(owner)) {
+        removeLayer(layer.id());
+      }
+    }
   }
 
   @Override
   public @NotNull Set<NamespacedKey> drainChangedWorlds() {
     final @NotNull Set<NamespacedKey> drained = Set.copyOf(this.changedWorlds);
     this.changedWorlds.removeAll(drained);
+    return drained;
+  }
+
+  @Override
+  public @NotNull Set<UUID> drainChangedPlayers() {
+    final @NotNull Set<UUID> drained = Set.copyOf(this.changedPlayers);
+    this.changedPlayers.removeAll(drained);
     return drained;
   }
 }

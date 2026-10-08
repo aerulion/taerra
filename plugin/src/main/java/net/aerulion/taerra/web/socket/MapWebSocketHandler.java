@@ -1,6 +1,7 @@
 package net.aerulion.taerra.web.socket;
 
 import io.javalin.websocket.WsConfig;
+import java.util.UUID;
 import java.util.function.Function;
 import net.aerulion.taerra.web.auth.Viewer;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +16,8 @@ public sealed interface MapWebSocketHandler permits MapWebSocketHandlerImpl {
   void broadcast(@NotNull String message);
 
   void broadcast(@NotNull Function<Viewer, String> message);
+
+  void refreshMarkers(@NotNull UUID player);
 
   void publishProgress(
       @Nullable String worldName, @NotNull String message, @NotNull String withoutWorld);
