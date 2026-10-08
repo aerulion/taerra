@@ -149,7 +149,7 @@
   "taerra.menu.line": "Linie zeichnen",
   "taerra.selection.tool.points": "Punkte",
   "taerra.selection.tool.points.tooltip": "Punkte per Klick setzen (%s)",
-  "taerra.selection.points_hint": "Klicken setzt einen Punkt · Ziehen bewegt ihn · Umschalt-Klick oder Rücktaste entfernt · Rechts ziehen verschiebt · Esc bricht ab",
+  "taerra.selection.points_hint": "Klicken setzt einen Punkt, auf einer Linie fügt es einen ein · Ziehen bewegt ihn · Punkt anklicken, Umschalt-Klick oder Rücktaste entfernt · Rechts ziehen verschiebt · Esc bricht ab",
   "taerra.selection.smooth": "Weich",
   "taerra.selection.save": "Speichern…",
   "taerra.map.search": "Suchen",

@@ -152,7 +152,7 @@
   "selection.title.line": "Linie",
   "selection.tool.points": "Punkte",
   "selection.tool.points.tooltip": "Punkte per Klick setzen ({key})",
-  "selection.pointsHint": "Klicken setzt einen Punkt · Ziehen bewegt ihn · Umschalt-Klick oder Rücktaste entfernt · Rechts ziehen verschiebt · Esc bricht ab",
+  "selection.pointsHint": "Klicken setzt einen Punkt, auf einer Linie fügt es einen ein · Ziehen bewegt ihn · Punkt anklicken, Umschalt-Klick oder Rücktaste entfernt · Rechts ziehen verschiebt · Esc bricht ab",
   "selection.save": "Speichern…",
   "selection.cancel": "Abbrechen",
   "selection.smooth.on": "Weich: an",
@@ -161,7 +161,7 @@
   "waypoint.descriptionHint": "Optional, erscheint beim Anklicken des Markers",
   "search.button": "Suchen",
   "search.title": "Suche",
-  "search.placeholder": "Spieler:innen, Marker, Welten oder Koordinaten",
+  "search.placeholder": "Name oder Koordinaten",
   "search.empty": "Nichts gefunden",
   "search.world": "Welt",
   "search.goTo": "Zu {place} springen",
@@ -171,5 +171,7 @@
   "search.group.world": "Welten",
   "search.hint.move": "Auswählen",
   "search.hint.open": "Öffnen",
-  "search.hint.close": "Schließen"
+  "search.hint.close": "Schließen",
+  "selection.hintTouch": "Ziehen malt · Auf einem ausgewählten Chunk beginnen entfernt · Zwei Finger verschieben und zoomen",
+  "selection.pointsHintTouch": "Tippen setzt einen Punkt · Ziehen bewegt ihn · Punkt antippen entfernt ihn · Zwei Finger verschieben und zoomen"
 }

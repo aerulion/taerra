@@ -149,7 +149,7 @@
   "taerra.menu.line": "Draw line",
   "taerra.selection.tool.points": "Points",
   "taerra.selection.tool.points.tooltip": "Click to place points (%s)",
-  "taerra.selection.points_hint": "Click adds a point · Drag moves one · Shift-click or Backspace removes · Right-drag pans · Esc cancels",
+  "taerra.selection.points_hint": "Click adds a point, on a line inserts one · Drag moves one · Click a point, Shift-click or Backspace removes · Right-drag pans · Esc cancels",
   "taerra.selection.smooth": "Smooth",
   "taerra.selection.save": "Save…",
   "taerra.map.search": "Search",

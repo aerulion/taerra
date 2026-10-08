@@ -152,7 +152,7 @@
   "selection.title.line": "Line",
   "selection.tool.points": "Points",
   "selection.tool.points.tooltip": "Click to place points ({key})",
-  "selection.pointsHint": "Click adds a point · Drag moves one · Shift-click or Backspace removes · Right-drag pans · Esc cancels",
+  "selection.pointsHint": "Click adds a point, on a line inserts one · Drag moves one · Click a point, Shift-click or Backspace removes · Right-drag pans · Esc cancels",
   "selection.save": "Save…",
   "selection.cancel": "Cancel",
   "selection.smooth.on": "Smooth: on",
@@ -161,7 +161,7 @@
   "waypoint.descriptionHint": "Optional, shown when the marker is clicked",
   "search.button": "Search",
   "search.title": "Search",
-  "search.placeholder": "Players, markers, worlds or coordinates",
+  "search.placeholder": "Name or coordinates",
   "search.empty": "Nothing found",
   "search.world": "World",
   "search.goTo": "Go to {place}",
@@ -171,5 +171,7 @@
   "search.group.world": "Worlds",
   "search.hint.move": "Move",
   "search.hint.open": "Open",
-  "search.hint.close": "Close"
+  "search.hint.close": "Close",
+  "selection.hintTouch": "Drag paints · Starting on a selected chunk erases · Two fingers pan and zoom",
+  "selection.pointsHintTouch": "Tap adds a point · Drag moves one · Tap a point to remove it · Two fingers pan and zoom"
 }

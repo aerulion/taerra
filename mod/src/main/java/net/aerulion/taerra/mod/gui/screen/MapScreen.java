@@ -120,6 +120,8 @@ public final class MapScreen extends Screen {
   private boolean deleteArmed;
   private @NotNull String color = Waypoint.DEFAULT_COLOR;
   private int vertex = -1;
+  private boolean vertexExisting;
+  private boolean vertexMoved;
   private @Nullable ChunkSelection selection;
   private @NotNull SelectionTool tool = SelectionTool.BRUSH;
   private boolean stroking;
@@ -577,6 +579,8 @@ public final class MapScreen extends Screen {
             this.path.remove(hit);
           }
         } else {
+          this.vertexExisting = hit >= 0;
+          this.vertexMoved = false;
           if (hit < 0) {
             final int segment = this.view.pathSegmentAt(event.x(), event.y());
             hit = segment < 0 ? this.path.size() : segment + 1;
@@ -621,6 +625,10 @@ public final class MapScreen extends Screen {
   @Override
   public boolean mouseReleased(final MouseButtonEvent event) {
     if (this.vertex >= 0 && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
+      if (this.vertexExisting && !this.vertexMoved && this.vertex < this.path.size()) {
+        this.path.remove(this.vertex);
+        selectionChanged();
+      }
       this.vertex = -1;
       return true;
     }
@@ -666,8 +674,12 @@ public final class MapScreen extends Screen {
       final @Nullable Place place =
           overMap(event.x(), event.y()) ? this.view.placeAt(this.map, event.x(), event.y()) : null;
       if (place != null && this.vertex < this.path.size()) {
-        this.path.set(this.vertex, new double[] {place.x() + .5, place.z() + .5});
-        selectionChanged();
+        final double @NotNull [] moved = {place.x() + .5, place.z() + .5};
+        if (!Arrays.equals(moved, this.path.get(this.vertex))) {
+          this.path.set(this.vertex, moved);
+          this.vertexMoved = true;
+          selectionChanged();
+        }
       }
       return true;
     }

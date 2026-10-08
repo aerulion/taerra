@@ -14,6 +14,8 @@ const UNKNOWN_GROUND = 63;
 const LINE = '#ffffff';
 const ERASE_LINE = '#ff5555';
 const HANDLE_PIXELS = 8;
+const TOUCH = matchMedia('(hover: none)');
+const SMALL = matchMedia('(max-width: 720px)');
 const TOOLS = {chunks: ['brush', 'rectangle', 'lasso'], area: ['brush', 'rectangle', 'lasso', 'points'], line: ['points']};
 
 const key = (chunkX, chunkZ) => `${chunkX},${chunkZ}`;
@@ -107,6 +109,10 @@ class ChunkSelection {
         const container = map.getContainer();
         const ignored = (event) => event.target.closest('.leaflet-control, .leaflet-popup');
         container.addEventListener('pointerdown', (event) => {
+            if (this.world && !event.isPrimary && this.stroke) {
+                this.stroke = null;
+                this.changed();
+            }
             if (!this.world || !event.isPrimary || ignored(event)) {
                 return;
             }
@@ -202,6 +208,9 @@ class ChunkSelection {
             button.hidden = !TOOLS[kind].includes(button.dataset.tool);
         }
         $('selection').hidden = false;
+        if (SMALL.matches && $('panel-toggle').getAttribute('aria-expanded') === 'true') {
+            $('panel-toggle').click();
+        }
         this.tool = null;
         this.setTool(editing || kind === 'line' ? 'points' : this.lastTool);
         this.changed();
@@ -301,12 +310,13 @@ class ChunkSelection {
                     this.points.splice(index, 1);
                 }
             } else {
-                if (index < 0) {
+                const existing = index >= 0;
+                if (!existing) {
                     const segment = this.segmentAt(point);
                     index = segment < 0 ? this.points.length : segment + 1;
                     this.points.splice(index, 0, [block.x + .5, block.z + .5]);
                 }
-                this.stroke = {index};
+                this.stroke = {index, existing, moved: false};
             }
             this.changed();
             return;
@@ -323,8 +333,10 @@ class ChunkSelection {
         const stroke = this.stroke;
         if (stroke.index !== undefined) {
             const block = this.blockAt(point);
-            if (block) {
+            const [x, z] = this.points[stroke.index];
+            if (block && (block.x + .5 !== x || block.z + .5 !== z)) {
                 this.points[stroke.index] = [block.x + .5, block.z + .5];
+                stroke.moved = true;
                 this.changed();
             }
             return;
@@ -355,7 +367,9 @@ class ChunkSelection {
             return;
         }
         this.stroke = null;
-        if (this.tool === 'rectangle') {
+        if (stroke.existing && !stroke.moved) {
+            this.points.splice(stroke.index, 1);
+        } else if (this.tool === 'rectangle') {
             const [minX, minZ, maxX, maxZ] = this.box(stroke);
             for (let x = minX; x <= maxX; x++) {
                 for (let z = minZ; z <= maxZ; z++) {
@@ -510,7 +524,7 @@ class ChunkSelection {
         const split = this.kind === 'area' && !points && this.outlines().length > 1;
         $('selection-count').textContent = numbers.format(points ? this.points.length : this.chunks.size);
         $('selection-text').textContent = this.status
-            ?? t(split ? 'selection.split' : points ? 'selection.pointsHint' : 'selection.hint');
+            ?? t(split ? 'selection.split' : `selection.${points ? 'pointsHint' : 'hint'}${TOUCH.matches ? 'Touch' : ''}`);
         $('selection-smooth').setAttribute('aria-pressed', String(this.smooth));
         $('selection-smooth').textContent = t(this.smooth ? 'selection.smooth.on' : 'selection.smooth.off');
         $('selection-save').disabled = this.sending || !this.shape();
