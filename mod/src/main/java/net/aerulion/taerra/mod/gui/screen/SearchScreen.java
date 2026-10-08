@@ -151,6 +151,10 @@ public final class SearchScreen extends Screen {
     this.onPick.accept(result.target());
   }
 
+  private @Nullable Component elsewhere(final @NotNull String world) {
+    return world.equals(this.currentWorld) ? null : worldName(world);
+  }
+
   private @NotNull Component worldName(final @NotNull String name) {
     final @Nullable World world = this.map.world(name);
     return Component.literal(world == null ? name : world.displayName());
@@ -166,7 +170,8 @@ public final class SearchScreen extends Screen {
           new Result(
               player.name(),
               null,
-              worldName(player.world()).copy().append(" · ").append(player.coordinates()),
+              player.coordinates(),
+              elsewhere(player.world()),
               player,
               0,
               new Target(player.world(), player.x(), player.y(), player.z(), player.uuid())));
@@ -187,7 +192,8 @@ public final class SearchScreen extends Screen {
           new Result(
               world.displayName(),
               null,
-              Component.translatable("taerra.search.world"),
+              null,
+              null,
               null,
               0xFF48494A,
               new Target(
@@ -223,7 +229,8 @@ public final class SearchScreen extends Screen {
     return new Result(
         marker.label(),
         marker.description(),
-        layer.displayName().copy().append(" · ").append(worldName(world.name())),
+        layer.displayName(),
+        elsewhere(world.name()),
         null,
         Colors.argb(marker.color()),
         new Target(world.name(), x, y, z, null));
@@ -247,7 +254,8 @@ public final class SearchScreen extends Screen {
           new Result(
               Component.translatable("taerra.search.go_to", typed).getString(),
               null,
-              worldName(this.currentWorld),
+              null,
+              null,
               null,
               0xFF48494A,
               new Target(this.currentWorld, x + .5, y, z + .5, null)));
@@ -300,7 +308,8 @@ public final class SearchScreen extends Screen {
   private record Result(
       String label,
       @Nullable String description,
-      Component detail,
+      @Nullable Component detail,
+      @Nullable Component tag,
       @Nullable Player player,
       int color,
       Target target) {}
@@ -369,21 +378,32 @@ public final class SearchScreen extends Screen {
           graphics.fill(x, y, x + 16, y + 16, 0xFF1E1E1F);
           graphics.fill(x + 2, y + 2, x + 14, y + 14, this.result.color());
         }
+        int room = getContentWidth() - 20;
+        final @Nullable Component tag = this.result.tag();
+        if (tag != null) {
+          final int tagWidth = font.width(tag) + 6;
+          final int tagX = x + getContentWidth() - tagWidth;
+          graphics.fill(tagX, y + 2, tagX + tagWidth, y + 14, 0xFF1E1E1F);
+          graphics.text(font, tag, tagX + 3, y + 4, 0xFFA0A0A0, false);
+          room -= tagWidth + 6;
+        }
+        final int line = this.result.detail() == null ? y + 4 : y;
         graphics.text(
             font,
-            font.substrByWidth(Component.literal(this.result.label()), getContentWidth() - 20)
-                .getString(),
+            font.substrByWidth(Component.literal(this.result.label()), room).getString(),
             x + 20,
-            y,
+            line,
             hovered ? 0xFFFFFF55 : 0xFFFFFFFF,
             true);
-        graphics.text(
-            font,
-            font.substrByWidth(this.result.detail(), getContentWidth() - 20).getString(),
-            x + 20,
-            y + 9,
-            0xFFA0A0A0,
-            false);
+        if (this.result.detail() != null) {
+          graphics.text(
+              font,
+              font.substrByWidth(this.result.detail(), room).getString(),
+              x + 20,
+              y + 9,
+              0xFFA0A0A0,
+              false);
+        }
       }
 
       @Override

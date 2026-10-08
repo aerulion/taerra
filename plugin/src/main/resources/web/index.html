@@ -149,7 +149,7 @@
                 <div aria-hidden="true" class="progress">
                     <div class="progress__fill" id="render-bar"></div>
                 </div>
-                <p class="muted" id="render-detail">—</p>
+                <p class="muted render-detail" id="render-detail">—</p>
             </section>
 
             <section class="panel__section">
@@ -279,7 +279,7 @@
     </div>
     <ul class="search__results" id="search-results" role="listbox"></ul>
     <p class="search__empty" data-i18n="search.empty" hidden id="search-empty">Nothing found</p>
-    <footer aria-hidden="true" class="search__hints">
+    <footer aria-hidden="true" class="search__hints hints">
         <span><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="search.hint.move">Move</span></span>
         <span><kbd>↵</kbd> <span data-i18n="search.hint.open">Open</span></span>
         <span><kbd>Esc</kbd> <span data-i18n="search.hint.close">Close</span></span>
@@ -307,8 +307,8 @@
             <textarea class="editor__input editor__textarea" id="waypoint-description" maxlength="280" rows="3"></textarea>
         </div>
 
-        <fieldset class="editor__section">
-            <legend class="editor__label" data-i18n="waypoint.group">Group</legend>
+        <div aria-labelledby="waypoint-group-label" class="editor__section" role="group">
+            <span class="editor__label" data-i18n="waypoint.group" id="waypoint-group-label">Group</span>
             <div class="chips" id="waypoint-groups"></div>
             <div class="editor__new-group" hidden id="waypoint-new-group">
                 <input aria-label="Group name" autocomplete="off" class="editor__input"
@@ -325,10 +325,10 @@
                     </span>
                 </label>
             </div>
-        </fieldset>
+        </div>
 
-        <fieldset class="editor__section">
-            <legend class="editor__label" data-i18n="waypoint.color">Color</legend>
+        <div aria-labelledby="waypoint-color-label" class="editor__section" role="group">
+            <span class="editor__label" data-i18n="waypoint.color" id="waypoint-color-label">Color</span>
             <div class="swatches" id="waypoint-swatches"></div>
             <div aria-label="Saturation and brightness" class="picker" data-i18n-label="waypoint.shade"
                  id="waypoint-shade" role="slider" tabindex="0">
@@ -341,7 +341,7 @@
                 <input aria-label="Hex color" autocomplete="off" data-i18n-label="waypoint.hex" id="waypoint-hex"
                        maxlength="6" spellcheck="false" type="text">
             </label>
-        </fieldset>
+        </div>
 
         <p class="editor__error" hidden id="waypoint-error" role="alert"></p>
 

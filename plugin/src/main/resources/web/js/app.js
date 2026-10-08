@@ -114,7 +114,7 @@ async function selectWorld(name) {
     }
     currentWorld = world;
     renderWorlds();
-    document.title = `${worldLabel(world)} · ${SERVER_NAME}`;
+    document.title = `${worldLabel(world)} – ${SERVER_NAME}`;
 
     chunkSelection.stop();
     mapManager.setWorld(world);
@@ -384,7 +384,7 @@ function renderProgress({render, queued = 0, inFlight = 0}) {
                 total: numbers.format(render.totalTiles)
             });
             if (Number.isFinite(render.remainingMillis)) {
-                detail += t('render.remaining', {time: formatDuration(render.remainingMillis)});
+                detail += `\n${t('render.remaining', {time: formatDuration(render.remainingMillis)})}`;
             }
         }
         $('render-detail').textContent = detail;

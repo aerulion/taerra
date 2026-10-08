@@ -423,7 +423,7 @@ const en = {
     },
 
     notFound: {
-        title: 'Page not found · TAERRA',
+        title: 'Page not found – TAERRA',
         heading: 'Page not found',
         text: 'This chunk was never rendered: the page you are looking for does not exist.',
         back: 'Back to TAERRA'

@@ -1,7 +1,7 @@
 import {accountManager} from './account.js';
 import {numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
-import {markerManager, spline} from './markers.js';
+import {element, markerManager, spline} from './markers.js';
 import {DEFAULT_COLOR, waypointEditor} from './waypoints.js';
 
 const $ = (id) => document.getElementById(id);
@@ -16,6 +16,12 @@ const ERASE_LINE = '#ff5555';
 const HANDLE_PIXELS = 8;
 const TOUCH = matchMedia('(hover: none)');
 const SMALL = matchMedia('(max-width: 720px)');
+const HINTS = {
+    chunks: [['drag', 'paint'], ['shift', 'erase'], ['rightDrag', 'pan']],
+    points: [['click', 'add'], ['drag', 'move'], ['clickPoint', 'remove'], ['backspace', 'undo'], ['rightDrag', 'pan']],
+    chunksTouch: [['drag', 'paint'], ['startSelected', 'erase'], ['twoFingers', 'panZoom']],
+    pointsTouch: [['tap', 'add'], ['drag', 'move'], ['tapPoint', 'remove'], ['twoFingers', 'panZoom']]
+};
 const TOOLS = {chunks: ['brush', 'rectangle', 'lasso'], area: ['brush', 'rectangle', 'lasso', 'points'], line: ['points']};
 
 const key = (chunkX, chunkZ) => `${chunkX},${chunkZ}`;
@@ -523,13 +529,30 @@ class ChunkSelection {
         const points = this.tool === 'points';
         const split = this.kind === 'area' && !points && this.outlines().length > 1;
         $('selection-count').textContent = numbers.format(points ? this.points.length : this.chunks.size);
-        $('selection-text').textContent = this.status
-            ?? t(split ? 'selection.split' : `selection.${points ? 'pointsHint' : 'hint'}${TOUCH.matches ? 'Touch' : ''}`);
+        const message = this.status ?? (split ? t('selection.split') : null);
+        $('selection-text').classList.toggle('selection__message--keys', !message);
+        if (message) {
+            $('selection-text').textContent = message;
+        } else {
+            $('selection-text').replaceChildren(...this.hints(points));
+        }
         $('selection-smooth').setAttribute('aria-pressed', String(this.smooth));
         $('selection-smooth').textContent = t(this.smooth ? 'selection.smooth.on' : 'selection.smooth.off');
         $('selection-save').disabled = this.sending || !this.shape();
         $('selection').classList.toggle('is-failed', split || (this.status !== null && this.failed));
         $('selection').classList.toggle('is-done', !split && this.status !== null && !this.failed);
+    }
+
+    hints(points) {
+        const pairs = [...HINTS[`${points ? 'points' : 'chunks'}${TOUCH.matches ? 'Touch' : ''}`]];
+        if (!TOUCH.matches) {
+            pairs.push(['esc', this.kind === 'chunks' ? 'exit' : 'cancel']);
+        }
+        return pairs.flatMap(([key, action]) => {
+            const keycap = element('span', 'selection__key');
+            keycap.append(element('kbd', '', t(`hint.key.${key}`)));
+            return [keycap, element('span', 'selection__action', t(`hint.do.${action}`))];
+        });
     }
 
     setSending(sending) {

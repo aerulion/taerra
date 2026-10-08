@@ -389,7 +389,7 @@ export const de: Copy = {
     },
 
     notFound: {
-        title: 'Seite nicht gefunden · TAERRA',
+        title: 'Seite nicht gefunden – TAERRA',
         heading: 'Seite nicht gefunden',
         text: 'Dieser Chunk wurde nie gerendert: Die Seite, die du suchst, gibt es nicht.',
         back: 'Zurück zu TAERRA'

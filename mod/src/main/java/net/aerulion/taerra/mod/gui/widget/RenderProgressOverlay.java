@@ -34,14 +34,14 @@ public final class RenderProgressOverlay {
     final long pending = (long) progress.queued() + progress.inFlight();
     final @NotNull Component title;
     final @NotNull Component detail;
+    @Nullable Component remaining = null;
     double percent = -1;
     if (render != null) {
       percent = Math.clamp(render.percent(), 0, 100);
       title =
           Component.translatable(
               render.kind().equals("area") ? "taerra.render.area" : "taerra.render.full",
-              worldName.apply(render.world()),
-              (int) Math.floor(percent));
+              worldName.apply(render.world()));
       if (render.phase().equals("scanning")) {
         detail =
             render.totalRegions() > 0
@@ -49,11 +49,12 @@ public final class RenderProgressOverlay {
                     "taerra.render.scanning", render.scannedRegions(), render.totalRegions())
                 : Component.translatable("taerra.render.starting");
       } else {
-        final @Nullable Long remaining = render.remainingMillis();
-        final @NotNull Component drawing =
+        detail =
             Component.translatable(
                 "taerra.render.drawing", render.completedTiles(), render.totalTiles());
-        detail = remaining == null ? drawing : drawing.copy().append(remaining(remaining));
+        if (render.remainingMillis() != null) {
+          remaining = remaining(render.remainingMillis());
+        }
       }
     } else if (pending > 0) {
       title = Component.translatable("taerra.render.updating");
@@ -77,9 +78,14 @@ public final class RenderProgressOverlay {
           below,
           (int) Math.round(BAR_WIDTH * percent / 100),
           5);
+      graphics.text(
+          font, (int) Math.floor(percent) + "%", left + BAR_WIDTH + 4, below - 2, 0xFFFFFFFF, true);
       below += 8;
     }
     graphics.centeredText(font, detail, middle, below, 0xFFA0A0A0);
+    if (remaining != null) {
+      graphics.centeredText(font, remaining, middle, below + 10, 0xFFA0A0A0);
+    }
   }
 
   private static @NotNull Component remaining(final long millis) {

@@ -47,7 +47,9 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1089,22 +1091,18 @@ public final class MapScreen extends Screen {
       }
     }
     if (this.moving != null) {
-      graphics.centeredText(
-          this.font,
-          Component.translatable("taerra.waypoint.move_hint", this.moving.name()),
+      drawHints(
+          graphics,
+          hints(
+              "click",
+              Component.translatable("taerra.hint.do.move_waypoint", this.moving.name()),
+              "esc",
+              Component.translatable("taerra.hint.do.cancel")),
           middle,
           bottom - 24,
-          0xFFFFFF55);
+          right - left);
     } else if (this.selection != null) {
-      graphics.centeredText(
-          this.font,
-          Component.translatable(
-              this.tool == SelectionTool.POINTS
-                  ? "taerra.selection.points_hint"
-                  : "taerra.selection.hint"),
-          middle,
-          bottom - 36,
-          0xFFA0A0A0);
+      drawHints(graphics, selectionHints(), middle, bottom - 36, right - left);
       final boolean status =
           this.selectionStatus != null && System.currentTimeMillis() < this.selectionStatusUntil;
       final boolean split =
@@ -1141,6 +1139,56 @@ public final class MapScreen extends Screen {
           bottom - 12,
           0xFFA0A0A0,
           true);
+    }
+  }
+
+  private static @NotNull Component hints(final Object... pairs) {
+    final @NotNull MutableComponent hints = Component.empty();
+    for (int i = 0; i < pairs.length; i += 2) {
+      if (i > 0) {
+        hints.append("   ");
+      }
+      hints
+          .append(
+              Component.translatable("taerra.hint.key." + pairs[i])
+                  .withStyle(ChatFormatting.YELLOW))
+          .append(" ")
+          .append(((Component) pairs[i + 1]).copy().withStyle(ChatFormatting.GRAY));
+    }
+    return hints;
+  }
+
+  private static @NotNull Component action(final @NotNull String action) {
+    return Component.translatable("taerra.hint.do." + action);
+  }
+
+  private @NotNull Component selectionHints() {
+    final @NotNull Component exit = action(this.kind == Kind.CHUNKS ? "exit" : "cancel");
+    return this.tool == SelectionTool.POINTS
+        ? hints(
+            "click", action("add"),
+            "drag", action("move"),
+            "click_point", action("remove"),
+            "backspace", action("undo"),
+            "right_drag", action("pan"),
+            "esc", exit)
+        : hints(
+            "drag", action("paint"),
+            "shift", action("erase"),
+            "right_drag", action("pan"),
+            "esc", exit);
+  }
+
+  private void drawHints(
+      final @NotNull GuiGraphicsExtractor graphics,
+      final @NotNull Component hints,
+      final int middle,
+      final int bottom,
+      final int width) {
+    final @NotNull List<FormattedCharSequence> lines = this.font.split(hints, width - 16);
+    for (int i = 0; i < lines.size(); i++) {
+      graphics.centeredText(
+          this.font, lines.get(i), middle, bottom - (lines.size() - 1 - i) * 10, 0xFFFFFFFF);
     }
   }
 

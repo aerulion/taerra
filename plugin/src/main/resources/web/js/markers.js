@@ -151,7 +151,7 @@ function facts(marker) {
             const xs = marker.points.map(([x]) => x);
             const zs = marker.points.map(([, z]) => z);
             return [Math.max(...xs) - Math.min(...xs), marker.maxY - marker.minY, Math.max(...zs) - Math.min(...zs)]
-                .map(round).join(' × ') + ` · Y ${round(marker.minY)} – ${round(topBlock(marker.maxY))}`;
+                .map(round).join(' × ') + `\nY ${round(marker.minY)} – ${round(topBlock(marker.maxY))}`;
         }
         default:
             return '';

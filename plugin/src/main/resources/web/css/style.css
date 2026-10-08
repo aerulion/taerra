@@ -521,6 +521,22 @@ button {
     background: var(--gold);
 }
 
+.search__tag {
+    flex: none;
+    margin-left: auto;
+    padding: 2px 6px 3px;
+    background: var(--stone-900);
+    border: 1px solid var(--stone-600);
+    color: var(--stone-200);
+    font: 11px/1.2 var(--font-mono);
+}
+
+.search__result[aria-selected="true"] .search__tag {
+    background: var(--accent-lo);
+    border-color: var(--accent-lo);
+    color: var(--white);
+}
+
 .search__text {
     display: grid;
     gap: 2px;
@@ -555,11 +571,20 @@ button {
     text-align: center;
 }
 
-.search__hints {
+.hints {
     display: flex;
-    flex: none;
     flex-wrap: wrap;
-    gap: 6px 18px;
+    gap: 6px 14px;
+}
+
+.hints > span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.search__hints {
+    flex: none;
     padding: 10px 16px;
     background: var(--stone-800);
     border-top: var(--edge);
@@ -567,14 +592,9 @@ button {
     font-size: 12px;
 }
 
-.search__hints > span {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
 .search-button__key,
-.search__hints kbd {
+.hints kbd,
+.selection__key kbd {
     min-width: 18px;
     padding: 2px 4px 4px;
     font-size: 11px;
@@ -669,6 +689,7 @@ button {
 .stage {
     position: relative;
     min-height: 0;
+    overflow: clip;
 }
 
 #map {
@@ -1019,6 +1040,10 @@ kbd {
     background: var(--stone-900);
     font: 600 14px var(--font-mono);
     text-transform: capitalize;
+}
+
+.render-detail {
+    white-space: pre-line;
 }
 
 .render-what {
@@ -1384,7 +1409,8 @@ kbd {
 
 .marker-popup__facts {
     color: var(--stone-100);
-    font: 12px/1.2 var(--font-mono);
+    font: 12px/1.4 var(--font-mono);
+    white-space: pre-line;
 }
 
 .marker-popup__title {
@@ -1507,6 +1533,10 @@ kbd {
 
     .selection__actions .btn {
         flex: 1 1 auto;
+    }
+
+    .selection__message--keys {
+        grid-template-columns: max-content 1fr;
     }
 
     .search__hints {
@@ -1687,11 +1717,6 @@ kbd {
     margin: 0;
     padding: 0;
     border: 0;
-}
-
-.editor__section > legend {
-    float: left;
-    width: 100%;
 }
 
 .editor__label {
@@ -1968,10 +1993,32 @@ kbd {
 }
 
 .selection__message {
-    width: 0;
-    min-width: 100%;
+    margin: 0 calc(-1 * var(--gap)) calc(-1 * var(--gap));
+    padding: 12px var(--gap);
+    background: var(--stone-800);
+    border-top: var(--edge);
     color: var(--stone-200);
     font-size: 12px;
+}
+
+.selection__message:not(.selection__message--keys) {
+    width: 0;
+    min-width: calc(100% + 2 * var(--gap));
+}
+
+.selection__message--keys {
+    display: grid;
+    grid-template-columns: max-content 1fr max-content 1fr;
+    align-items: center;
+    gap: 8px 10px;
+}
+
+.selection__key {
+    display: flex;
+}
+
+.selection__action {
+    color: var(--stone-100);
 }
 
 .selection.is-failed .selection__message {

@@ -100,6 +100,10 @@ class SearchPalette {
         }
     }
 
+    elsewhere(world) {
+        return world === this.app.current() ? null : this.app.worldName(world);
+    }
+
     candidates() {
         const players = [...playerManager.entries.values()]
             .map(entry => entry.player)
@@ -107,7 +111,8 @@ class SearchPalette {
             .map(player => ({
                 kind: 'player',
                 label: player.name,
-                detail: `${this.app.worldName(player.world)} · ${player.x}, ${player.y}, ${player.z}`,
+                detail: `${player.x}, ${player.y}, ${player.z}`,
+                tag: this.elsewhere(player.world),
                 icon: () => avatar(player, 20),
                 run: () => {
                     this.app.selectWorld(player.world);
@@ -119,7 +124,8 @@ class SearchPalette {
             .map(({world, layer, marker}) => ({
             kind: 'marker',
             label: marker.label,
-            detail: `${markerManager.layerLabel(layer)} · ${this.app.worldName(world.name)}`,
+            detail: markerManager.layerLabel(layer),
+            tag: this.elsewhere(world.name),
             description: marker.description,
             icon: () => {
                 const icon = element('span', `search__icon search__icon--${marker.type}`);
@@ -141,7 +147,6 @@ class SearchPalette {
             kind: 'world',
             label: this.app.worldName(world.name),
             icon: () => element('span', 'search__icon search__icon--world'),
-            detail: t('search.world'),
             run: () => this.app.selectWorld(world.name)
         }));
         return [...players, ...markers, ...worlds];
@@ -168,7 +173,6 @@ class SearchPalette {
             results.unshift({
                 kind: 'place',
                 label: t('search.goTo', {place: [x, middle, z].filter(value => value !== undefined).join(', ')}),
-                detail: this.app.worldName(this.app.current()),
                 run: () => mapManager.centerOnBlock(Number(x), Number(z), undefined, y)
             });
         }
@@ -186,8 +190,14 @@ class SearchPalette {
             row.setAttribute('role', 'option');
             row.append(result.icon?.() ?? element('span', 'search__icon search__icon--place'));
             const text = element('span', 'search__text');
-            text.append(element('span', 'search__label', result.label), element('span', 'search__detail', result.detail));
+            text.append(element('span', 'search__label', result.label));
+            if (result.detail) {
+                text.append(element('span', 'search__detail', result.detail));
+            }
             row.append(text);
+            if (result.tag) {
+                row.append(element('span', 'search__tag', result.tag));
+            }
             row.addEventListener('pointermove', () => this.select(index, false));
             row.addEventListener('click', () => this.run(result));
             rows.push(row);

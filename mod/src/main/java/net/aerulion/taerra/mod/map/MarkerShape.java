@@ -118,7 +118,7 @@ final class MarkerShape {
                 + Math.round(marker.maxY() - marker.minY())
                 + " × "
                 + Math.round(maxZ - minZ)
-                + " · Y "
+                + "\nY "
                 + Math.round(marker.minY())
                 + " – "
                 + Math.round(top));
@@ -164,7 +164,9 @@ final class MarkerShape {
       lines.add(Component.literal(marker.label() == null ? marker.id() : marker.label()));
       final @Nullable Component facts = facts(marker, this.length);
       if (facts != null) {
-        lines.add(facts.copy().withStyle(ChatFormatting.GRAY));
+        for (final @NotNull String line : facts.getString().split("\n")) {
+          lines.add(Component.literal(line).withStyle(ChatFormatting.GRAY));
+        }
       }
       if (marker.description() != null) {
         for (final @NotNull String line : marker.description().split("\n")) {
