@@ -465,6 +465,8 @@ function setupContextMenu() {
         menu.querySelector('[data-action="teleport"]').hidden = !accountManager.canTeleport();
         menu.querySelector('[data-action="waypoint"]').hidden = !accountManager.canEditMarkers();
         menu.querySelector('[data-action="select"]').hidden = !accountManager.canRender() && !accountManager.canHide();
+        menu.querySelector('[data-action="area"]').hidden = !accountManager.canEditMarkers();
+        menu.querySelector('[data-action="line"]').hidden = !accountManager.canEditMarkers();
         menu.hidden = false;
         const stage = menu.parentElement.getBoundingClientRect();
         const x = Math.min(event.containerPoint.x, stage.width - menu.offsetWidth - 8);
@@ -489,10 +491,9 @@ function setupContextMenu() {
             await teleport(button, block);
             return;
         }
-        if (action === 'select') {
-            const start = block;
+        if (action === 'select' || action === 'area' || action === 'line') {
             close();
-            chunkSelection.start(currentWorld.name, start);
+            chunkSelection.start(currentWorld.name, action === 'select' ? 'chunks' : action);
             return;
         }
         if (action === 'waypoint') {
@@ -592,6 +593,8 @@ markerManager.onWaypoint = async (action, waypoint, button) => {
     mapManager.getMap().closePopup();
     if (action === 'move') {
         waypointEditor.move(waypoint);
+    } else if (waypoint.type) {
+        chunkSelection.start(waypoint.world, waypoint.type, waypoint);
     } else {
         void waypointEditor.open(waypoint);
     }

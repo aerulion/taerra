@@ -139,5 +139,22 @@
   "selection.busy": "Another render is running, try again once it's done",
   "selection.failed": "That didn't work",
   "selection.title": "Selection",
-  "selection.tool": "Tool"
+  "selection.tool": "Tool",
+  "selection.split": "An area has to be one piece without holes",
+  "area.new": "New area",
+  "area.edit": "Edit area",
+  "line.new": "New line",
+  "line.edit": "Edit line",
+  "waypoint.points": "{count} points",
+  "menu.area": "Draw area",
+  "menu.line": "Draw line",
+  "selection.title.area": "Area",
+  "selection.title.line": "Line",
+  "selection.tool.points": "Points",
+  "selection.tool.points.tooltip": "Click to place points ({key})",
+  "selection.pointsHint": "Click adds a point · Drag moves one · Shift-click or Backspace removes · Right-drag pans · Esc cancels",
+  "selection.save": "Save…",
+  "selection.cancel": "Cancel",
+  "selection.smooth.on": "Smooth: on",
+  "selection.smooth.off": "Smooth: off"
 }

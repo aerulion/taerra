@@ -139,5 +139,22 @@
   "selection.busy": "Es läuft schon ein Render, versuch es danach nochmal",
   "selection.failed": "Das hat nicht geklappt",
   "selection.title": "Auswahl",
-  "selection.tool": "Werkzeug"
+  "selection.tool": "Werkzeug",
+  "selection.split": "Eine Fläche muss ein Stück ohne Löcher sein",
+  "area.new": "Neue Fläche",
+  "area.edit": "Fläche bearbeiten",
+  "line.new": "Neue Linie",
+  "line.edit": "Linie bearbeiten",
+  "waypoint.points": "{count} Punkte",
+  "menu.area": "Fläche zeichnen",
+  "menu.line": "Linie zeichnen",
+  "selection.title.area": "Fläche",
+  "selection.title.line": "Linie",
+  "selection.tool.points": "Punkte",
+  "selection.tool.points.tooltip": "Punkte per Klick setzen ({key})",
+  "selection.pointsHint": "Klicken setzt einen Punkt · Ziehen bewegt ihn · Umschalt-Klick oder Rücktaste entfernt · Rechts ziehen verschiebt · Esc bricht ab",
+  "selection.save": "Speichern…",
+  "selection.cancel": "Abbrechen",
+  "selection.smooth.on": "Weich: an",
+  "selection.smooth.off": "Weich: aus"
 }

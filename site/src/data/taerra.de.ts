@@ -130,8 +130,8 @@ export const de: Copy = {
                         text: 'Angemeldete Spieler:innen mit Berechtigung klicken mit rechts auf eine beliebige Stelle der Karte, um dorthin zu gelangen.'
                     },
                     {
-                        title: 'Wegpunkte',
-                        text: 'In benannten Gruppen und Farben, auch privaten. Spieler:innen mit Berechtigung setzen, verschieben und färben sie direkt auf der Karte, und die Mod zeigt sie als Beschriftung in der Welt selbst.'
+                        title: 'Wegpunkte, Flächen und Linien',
+                        text: 'In benannten Gruppen und Farben, auch privaten. Spieler:innen mit Berechtigung zeichnen, verschieben und färben sie direkt auf der Karte, Flächen aus ausgewählten Chunks oder Punkt für Punkt, Linien gerade oder weich, und die Mod zeigt Wegpunkte als Beschriftung in der Welt selbst.'
                     },
                     {
                         title: 'Datenschutz eingebaut',

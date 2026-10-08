@@ -137,5 +137,19 @@
   "taerra.map.rotate.left": "Gegen den Uhrzeigersinn drehen (%s)",
   "taerra.map.rotate.right": "Im Uhrzeigersinn drehen (%s)",
   "taerra.map.zoom_in": "Hineinzoomen",
-  "taerra.map.zoom_out": "Herauszoomen"
+  "taerra.map.zoom_out": "Herauszoomen",
+  "taerra.selection.points": "%s Punkte",
+  "taerra.selection.split": "Eine Fläche muss ein Stück ohne Löcher sein",
+  "taerra.area.new": "Neue Fläche",
+  "taerra.area.edit": "Fläche bearbeiten",
+  "taerra.line.new": "Neue Linie",
+  "taerra.line.edit": "Linie bearbeiten",
+  "taerra.waypoint.points": "%s Punkte",
+  "taerra.menu.area": "Fläche zeichnen",
+  "taerra.menu.line": "Linie zeichnen",
+  "taerra.selection.tool.points": "Punkte",
+  "taerra.selection.tool.points.tooltip": "Punkte per Klick setzen (%s)",
+  "taerra.selection.points_hint": "Klicken setzt einen Punkt · Ziehen bewegt ihn · Umschalt-Klick oder Rücktaste entfernt · Rechts ziehen verschiebt · Esc bricht ab",
+  "taerra.selection.smooth": "Weich",
+  "taerra.selection.save": "Speichern…"
 }

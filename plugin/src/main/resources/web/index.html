@@ -199,6 +199,8 @@
         <button data-action="waypoint" data-i18n="menu.waypoint" hidden role="menuitem" type="button">Add waypoint
             here
         </button>
+        <button data-action="area" data-i18n="menu.area" hidden role="menuitem" type="button">Draw area</button>
+        <button data-action="line" data-i18n="menu.line" hidden role="menuitem" type="button">Draw line</button>
         <button data-action="select" data-i18n="menu.select" hidden role="menuitem" type="button">Select chunks</button>
         <button data-action="link" data-i18n="menu.link" role="menuitem" type="button">Copy link to this place</button>
         <button data-action="center" data-i18n="menu.center" role="menuitem" type="button">Center map here</button>
@@ -211,8 +213,9 @@
 
     <div aria-label="Chunk selection" class="selection" data-i18n-label="selection.label" hidden id="selection"
          role="toolbar">
-        <h2><span data-i18n="selection.title">Selection</span> <span class="badge" id="selection-count">0</span></h2>
-        <div aria-label="Tool" class="segmented segmented--small" data-i18n-label="selection.tool" role="group">
+        <h2><span id="selection-title">Selection</span> <span class="badge" id="selection-count">0</span></h2>
+        <div aria-label="Tool" class="segmented segmented--small" data-i18n-label="selection.tool" id="selection-tools"
+             role="group">
             <button aria-keyshortcuts="1" aria-pressed="true" class="btn" data-i18n="selection.tool.brush"
                     data-i18n-title="selection.tool.brush.tooltip" data-tool="brush" type="button">Brush
             </button>
@@ -221,6 +224,9 @@
             </button>
             <button aria-keyshortcuts="3" aria-pressed="false" class="btn" data-i18n="selection.tool.lasso"
                     data-i18n-title="selection.tool.lasso.tooltip" data-tool="lasso" type="button">Lasso
+            </button>
+            <button aria-keyshortcuts="4" aria-pressed="false" class="btn" data-i18n="selection.tool.points"
+                    data-i18n-title="selection.tool.points.tooltip" data-tool="points" hidden type="button">Points
             </button>
         </div>
         <div class="selection__actions">
@@ -233,7 +239,14 @@
             <button class="btn" data-action="reveal" data-i18n="selection.reveal" hidden id="selection-reveal"
                     type="button">Show on map
             </button>
-            <button class="btn selection__done" data-action="done" data-i18n="selection.done" type="button">Done</button>
+            <button aria-pressed="false" class="btn" hidden id="selection-smooth" type="button">Smooth: off</button>
+            <button class="btn btn--danger" hidden id="selection-delete" type="button">Delete</button>
+            <button class="btn selection__done" data-action="done" data-i18n="selection.done" id="selection-done"
+                    type="button">Done
+            </button>
+            <button class="btn btn--primary" data-action="save" data-i18n="selection.save" hidden id="selection-save"
+                    type="button">Save…
+            </button>
         </div>
         <p class="selection__message" id="selection-text" role="status"></p>
     </div>

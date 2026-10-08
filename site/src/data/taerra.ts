@@ -172,8 +172,8 @@ const en = {
                         text: 'Logged-in players with permission right-click anywhere on the map to go there.'
                     },
                     {
-                        title: 'Waypoints',
-                        text: 'In named groups and colors, private ones too. Players with permission add, move and recolor them right on the map, and the mod shows them as labels in the world itself.'
+                        title: 'Waypoints, areas and lines',
+                        text: 'In named groups and colors, private ones too. Players with permission draw, move and recolor them right on the map, areas from selected chunks or point by point, lines straight or smooth, and the mod shows waypoints as labels in the world itself.'
                     },
                     {
                         title: 'Privacy built in',

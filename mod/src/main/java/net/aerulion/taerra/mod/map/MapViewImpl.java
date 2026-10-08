@@ -44,6 +44,7 @@ public final class MapViewImpl implements MapView {
   private static final int SELECTION_FILL = 0x40FFFFFF;
   private static final int SELECTION_LINE = 0xC0FFFFFF;
   private static final int ERASE_LINE = 0xFFFF5555;
+  private static final int MARKER_FILL = 0x50;
   private static final int UNKNOWN_GROUND = 63;
   private static final int HOVER_RADIUS = 5;
   private static final int HIT_PIXELS = 3;
@@ -86,9 +87,11 @@ public final class MapViewImpl implements MapView {
   private @Nullable List<Component> tooltip;
   private @Nullable MarkerHover hover;
   private final Map<Long, Integer> surfaces = new HashMap<>();
-  private @Nullable ChunkSelection selection;
-  private double @Nullable [][] outline;
-  private boolean erasing;
+  private @Nullable Drawing drawing;
+  private @Nullable List<Layer> hiddenFrom;
+  private @Nullable String hiddenId;
+  private @NotNull List<Layer> withoutHidden = List.of();
+  private final List<double[]> pathScreen = new ArrayList<>();
   private @Nullable Projection shaped;
   private @Nullable List<Layer> shapedLayers;
   private @Nullable OverlayScene scene;
@@ -246,16 +249,65 @@ public final class MapViewImpl implements MapView {
   }
 
   @Override
-  public void select(
-      final @Nullable ChunkSelection selection,
-      final double @Nullable [][] outline,
-      final boolean erasing) {
-    if (selection != this.selection) {
+  public void select(final @Nullable Drawing drawing) {
+    if (drawing == null || this.drawing == null || drawing.chunks() != this.drawing.chunks()) {
       this.surfaces.clear();
     }
-    this.selection = selection;
-    this.outline = outline;
-    this.erasing = erasing;
+    this.drawing = drawing;
+  }
+
+  @Override
+  public int pathSegmentAt(final double x, final double y) {
+    final double @NotNull [] mouse = unturn(x, y);
+    final int count = this.pathScreen.size();
+    final boolean closed = this.drawing != null && this.drawing.closed() && count >= 3;
+    for (int i = 0; i < count - (closed ? 0 : 1); i++) {
+      if (Geometry.near(
+          this.pathScreen.get(i),
+          this.pathScreen.get((i + 1) % count),
+          mouse[0],
+          mouse[1],
+          HIT_PIXELS)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  private @NotNull List<Layer> without(
+      final @NotNull List<Layer> layers, final @Nullable String hidden) {
+    if (hidden == null) {
+      return layers;
+    }
+    if (layers != this.hiddenFrom || !hidden.equals(this.hiddenId)) {
+      this.hiddenFrom = layers;
+      this.hiddenId = hidden;
+      this.withoutHidden =
+          layers.stream()
+              .map(
+                  layer ->
+                      new Layer(
+                          layer.id(),
+                          layer.label(),
+                          layer.shown(),
+                          layer.restricted(),
+                          layer.markers().stream()
+                              .filter(marker -> !marker.id().equals(hidden))
+                              .toList()))
+              .toList();
+    }
+    return this.withoutHidden;
+  }
+
+  @Override
+  public int pathPointAt(final double x, final double y) {
+    final double @NotNull [] mouse = unturn(x, y);
+    for (int i = this.pathScreen.size() - 1; i >= 0; i--) {
+      if (hovers(this.pathScreen.get(i), mouse[0], mouse[1])) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   @Override
@@ -315,7 +367,8 @@ public final class MapViewImpl implements MapView {
       graphics.fill(x0, y0, x1, y1, world.voidColor());
     }
     drawTiles(graphics, map, world, minZoom, view);
-    final List<Layer> layers = map.markers(world.name());
+    final List<Layer> layers =
+        without(map.markers(world.name()), this.drawing == null ? null : this.drawing.hidden());
     if (layers != this.shapedLayers || !projection.equals(this.shaped)) {
       this.shapes.clear();
       this.shapedLayers = layers;
@@ -387,11 +440,11 @@ public final class MapViewImpl implements MapView {
       highlight(graphics, hovered, far, tiny(hovered.shape(), gui), top, bottom);
       hovered(hovered.layer(), hovered.marker(), hovered.shape());
     }
-    if (this.selection != null) {
+    if (this.drawing != null) {
       drawSelection(
           graphics,
           map,
-          this.selection,
+          this.drawing,
           projection,
           this.spin == 0 ? y0 : 0,
           this.spin == 0 ? y1 : graphics.guiHeight());
@@ -791,11 +844,14 @@ public final class MapViewImpl implements MapView {
   private void drawSelection(
       final @NotNull GuiGraphicsExtractor graphics,
       final @NotNull WebMap map,
-      final @NotNull ChunkSelection selection,
+      final @NotNull Drawing drawing,
       final @NotNull Projection projection,
       final int top,
       final int bottom) {
-    final @NotNull List<int[][]> rings = selection.rings();
+    final int line = drawing.color() == null ? SELECTION_LINE : drawing.color();
+    final int area =
+        drawing.color() == null ? SELECTION_FILL : Colors.withAlpha(MARKER_FILL, drawing.color());
+    final @NotNull List<int[][]> rings = drawing.chunks().rings();
     if (!rings.isEmpty()) {
       final @NotNull List<double[][]> shapes = new ArrayList<>(rings.size());
       int bridged = 0;
@@ -809,26 +865,59 @@ public final class MapViewImpl implements MapView {
         bridged += shape.length + 2;
       }
       final double @NotNull [] anchor = shapes.getFirst()[0];
-      final double @NotNull [][] area = new double[bridged][];
+      final double @NotNull [][] bridge = new double[bridged][];
       int next = 0;
       for (final double @NotNull [][] shape : shapes) {
-        area[next++] = anchor;
-        System.arraycopy(shape, 0, area, next, shape.length);
+        bridge[next++] = anchor;
+        System.arraycopy(shape, 0, bridge, next, shape.length);
         next += shape.length;
-        area[next++] = shape[0];
+        bridge[next++] = shape[0];
       }
-      fill(graphics, area, top, bottom, SELECTION_FILL);
+      fill(graphics, bridge, top, bottom, area);
       for (final double @NotNull [][] shape : shapes) {
-        Geometry.ring(graphics, shape, 1, SELECTION_LINE);
+        Geometry.ring(graphics, shape, 1, line);
       }
     }
-    final double @Nullable [][] outline = this.outline;
+    final double @Nullable [][] outline = drawing.stroke();
     if (outline != null && outline.length > 1) {
       final double @NotNull [][] path = new double[outline.length][];
       for (int i = 0; i < outline.length; i++) {
         path[i] = ground(map, projection, outline[i][0], outline[i][1]);
       }
-      Geometry.ring(graphics, screen(path), 1, this.erasing ? ERASE_LINE : SELECTION_LINE);
+      Geometry.ring(graphics, screen(path), 1, drawing.erasing() ? ERASE_LINE : SELECTION_LINE);
+    }
+    this.pathScreen.clear();
+    for (final double @NotNull [] point : drawing.points()) {
+      this.pathScreen.add(toScreen(ground(map, projection, point[0], point[1])));
+    }
+    if (drawing.closed() && this.pathScreen.size() >= 3) {
+      final double @NotNull [][] face = this.pathScreen.toArray(double[][]::new);
+      fill(graphics, face, top, bottom, area);
+      Geometry.ring(graphics, face, 2, line);
+    } else if (drawing.smooth() && drawing.points().size() > 2) {
+      final @NotNull List<double[]> curve =
+          Spline.through(
+              drawing.points().stream()
+                  .map(point -> new double[] {point[0], 0, point[1]})
+                  .toList());
+      for (int i = 1; i < curve.size(); i++) {
+        Geometry.line(
+            graphics,
+            toScreen(ground(map, projection, curve.get(i - 1)[0], curve.get(i - 1)[2])),
+            toScreen(ground(map, projection, curve.get(i)[0], curve.get(i)[2])),
+            2,
+            line);
+      }
+    } else {
+      for (int i = 1; i < this.pathScreen.size(); i++) {
+        Geometry.line(graphics, this.pathScreen.get(i - 1), this.pathScreen.get(i), 2, line);
+      }
+    }
+    for (final double @NotNull [] at : this.pathScreen) {
+      final int x = (int) Math.round(at[0]);
+      final int y = (int) Math.round(at[1]);
+      graphics.fill(x - 3, y - 3, x + 3, y + 3, 0xFF000000);
+      graphics.fill(x - 2, y - 2, x + 2, y + 2, 0xFFFFFFFF);
     }
   }
 

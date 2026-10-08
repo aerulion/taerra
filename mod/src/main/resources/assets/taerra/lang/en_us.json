@@ -137,5 +137,19 @@
   "taerra.map.rotate.left": "Rotate counter-clockwise (%s)",
   "taerra.map.rotate.right": "Rotate clockwise (%s)",
   "taerra.map.zoom_in": "Zoom in",
-  "taerra.map.zoom_out": "Zoom out"
+  "taerra.map.zoom_out": "Zoom out",
+  "taerra.selection.points": "%s points",
+  "taerra.selection.split": "An area has to be one piece without holes",
+  "taerra.area.new": "New Area",
+  "taerra.area.edit": "Edit Area",
+  "taerra.line.new": "New Line",
+  "taerra.line.edit": "Edit Line",
+  "taerra.waypoint.points": "%s points",
+  "taerra.menu.area": "Draw area",
+  "taerra.menu.line": "Draw line",
+  "taerra.selection.tool.points": "Points",
+  "taerra.selection.tool.points.tooltip": "Click to place points (%s)",
+  "taerra.selection.points_hint": "Click adds a point · Drag moves one · Shift-click or Backspace removes · Right-drag pans · Esc cancels",
+  "taerra.selection.smooth": "Smooth",
+  "taerra.selection.save": "Save…"
 }

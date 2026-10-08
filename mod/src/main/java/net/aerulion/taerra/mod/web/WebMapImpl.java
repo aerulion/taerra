@@ -208,11 +208,17 @@ public final class WebMapImpl implements WebMap {
     }
     body.put("privateGroup", privateGroup);
     body.put("world", waypoint.world());
-    body.put("x", waypoint.x());
-    if (waypoint.y() != null) {
-      body.put("y", waypoint.y());
+    if (waypoint.points() == null) {
+      body.put("x", waypoint.x());
+      if (waypoint.y() != null) {
+        body.put("y", waypoint.y());
+      }
+      body.put("z", waypoint.z());
+    } else {
+      body.put("type", waypoint.type());
+      body.put("points", waypoint.points());
+      body.put("smooth", waypoint.smooth());
     }
-    body.put("z", waypoint.z());
     if (waypoint.previous() != null) {
       body.put("previous", waypoint.previous());
     }

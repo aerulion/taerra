@@ -39,6 +39,7 @@ public final class WaypointScreen extends Screen {
   private final Screen parent;
   private final @NotNull WebMap map;
   private final @NotNull Waypoint target;
+  private final @NotNull Runnable saved;
   private final @NotNull ColorPicker picker;
   private String name;
   private String color;
@@ -64,13 +65,19 @@ public final class WaypointScreen extends Screen {
   }
 
   public WaypointScreen(
-      final Screen parent, final @NotNull WebMap map, final @NotNull Waypoint target) {
+      final Screen parent,
+      final @NotNull WebMap map,
+      final @NotNull Waypoint target,
+      final @NotNull Runnable saved) {
     super(
         Component.translatable(
-            target.previous() == null ? "taerra.waypoint.new" : "taerra.waypoint.edit"));
+            "taerra."
+                + (target.points() == null ? "waypoint" : target.type())
+                + (target.previous() == null ? ".new" : ".edit")));
     this.parent = parent;
     this.map = map;
     this.target = target;
+    this.saved = saved;
     this.name = target.name();
     this.color =
         Colors.isHex(target.color())
@@ -115,8 +122,9 @@ public final class WaypointScreen extends Screen {
         new StringWidget(
             WIDTH,
             9,
-            new Place(this.target.x(), this.target.y(), this.target.z())
-                .describe()
+            (this.target.points() == null
+                    ? new Place(this.target.x(), this.target.y(), this.target.z()).describe()
+                    : Component.translatable("taerra.waypoint.points", this.target.points().size()))
                 .copy()
                 .withStyle(ChatFormatting.GRAY),
             this.font));
@@ -271,6 +279,7 @@ public final class WaypointScreen extends Screen {
         status -> {
           if (status == 204) {
             onClose();
+            this.saved.run();
           } else {
             fail(
                 Component.translatable(
@@ -297,6 +306,7 @@ public final class WaypointScreen extends Screen {
         status -> {
           if (status == 204) {
             onClose();
+            this.saved.run();
           } else {
             fail(Component.translatable("taerra.waypoint.failed", previous));
           }

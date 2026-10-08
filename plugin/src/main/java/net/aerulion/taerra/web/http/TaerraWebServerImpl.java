@@ -28,6 +28,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import net.aerulion.taerra.api.marker.LineMarker;
+import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.command.Messages;
 import net.aerulion.taerra.command.RenderSubCommand;
 import net.aerulion.taerra.config.TaerraConfig;
@@ -58,10 +60,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -69,6 +73,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
 
   private static final int MAX_QUEUED_FRAMES = 64;
   private static final int MAX_AREA_CHUNKS = 16384;
+  private static final int MAX_SHAPE_POINTS = 4096;
 
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig taerraConfig;
@@ -187,6 +192,76 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
 
   private static boolean insideBorder(final @NotNull World world, final int x, final int z) {
     return world.getWorldBorder().isInside(new org.bukkit.Location(world, x + .5, 0, z + .5));
+  }
+
+  private static boolean nearBorder(final @NotNull World world, final double x, final double z) {
+    final @NotNull WorldBorder border = world.getWorldBorder();
+    final double reach = border.getSize() / 2 + 1;
+    return Math.abs(x - border.getCenter().getX()) <= reach
+        && Math.abs(z - border.getCenter().getZ()) <= reach;
+  }
+
+  private static boolean validPoints(final @Nullable List<List<Double>> points, final int fewest) {
+    return points != null
+        && points.size() >= fewest
+        && points.size() <= MAX_SHAPE_POINTS
+        && points.stream()
+            .allMatch(
+                point ->
+                    point != null
+                        && point.size() == 3
+                        && point.get(0) != null
+                        && point.get(2) != null
+                        && point.stream()
+                            .allMatch(value -> value == null || Double.isFinite(value)));
+  }
+
+  private static @Nullable CompletableFuture<Marker> shape(
+      final @NotNull World world,
+      final @NotNull WaypointRequest request,
+      final @NotNull String name) {
+    final @NotNull String id = Waypoints.markerId(name);
+    final @NotNull NamespacedKey key = world.getKey();
+    final @Nullable List<List<Double>> points = request.points();
+    if (points == null) {
+      return insideBorder(world, request.x(), request.z())
+          ? standingY(world, request.x(), request.y(), request.z())
+              .thenApply(
+                  y ->
+                      Marker.point(
+                          id, key, new Vector(request.x() + .5, y, request.z() + .5), name))
+          : null;
+    }
+    if (points.stream().anyMatch(point -> !nearBorder(world, point.get(0), point.get(2)))) {
+      return null;
+    }
+    if ("area".equals(request.type())) {
+      final @NotNull List<Vector> outline =
+          Waypoints.outline(
+              points.stream().map(point -> new Vector(point.get(0), 0, point.get(2))).toList());
+      return outline.size() < 3
+          ? null
+          : CompletableFuture.completedFuture(
+              Marker.polygon(id, key, outline, world.getMinHeight(), world.getMaxHeight(), name));
+    }
+    final @NotNull List<CompletableFuture<Vector>> placed =
+        points.stream()
+            .map(
+                point ->
+                    standingY(
+                            world,
+                            (int) Math.floor(point.get(0)),
+                            point.get(1) == null ? null : (int) Math.floor(point.get(1)),
+                            (int) Math.floor(point.get(2)))
+                        .thenApply(y -> new Vector(point.get(0), y, point.get(2))))
+            .toList();
+    return CompletableFuture.allOf(placed.toArray(CompletableFuture[]::new))
+        .thenApply(
+            _ -> {
+              final @NotNull LineMarker line =
+                  Marker.line(id, key, placed.stream().map(CompletableFuture::join).toList(), name);
+              return request.smooth() ? line.smoothed() : line;
+            });
   }
 
   private static @NotNull CompletableFuture<Integer> standingY(
@@ -645,12 +720,15 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     final boolean grouped = request.group() != null && !request.group().isBlank();
     final @Nullable String group = grouped ? Names.of(request.group()) : null;
     final @NotNull OptionalInt color = HexColors.parseRgb(request.color());
+    final boolean point = request.type() == null || "point".equals(request.type());
     if (name == null
         || (grouped && group == null)
         || color.isEmpty()
         || request.world() == null
-        || request.x() == null
-        || request.z() == null
+        || (point
+            ? request.x() == null || request.z() == null
+            : !validPoints(request.points(), "area".equals(request.type()) ? 3 : 2)
+                || !"area".equals(request.type()) && !"line".equals(request.type()))
         || !viewer.canSee(this.taerraConfig, request.world())) {
       ctx.status(400).result("Invalid waypoint");
       return;
@@ -668,13 +746,15 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
             this.plugin,
             () -> {
               final @Nullable World world = WorldKeys.resolve(request.world());
-              if (world == null || !insideBorder(world, request.x(), request.z())) {
+              final @Nullable CompletableFuture<Marker> shaped =
+                  world == null ? null : shape(world, request, name);
+              if (shaped == null) {
                 result.complete(400);
                 return;
               }
-              standingY(world, request.x(), request.y(), request.z())
+              shaped
                   .thenAccept(
-                      y -> {
+                      marker -> {
                         if (!canEditWaypoint(viewer, request.previous())) {
                           result.complete(403);
                           return;
@@ -695,10 +775,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                           this.waypoints.remove(request.previous());
                         }
                         this.waypoints.add(
-                            name,
-                            new org.bukkit.Location(world, request.x(), y, request.z()),
-                            Color.fromRGB(color.getAsInt()),
-                            group);
+                            marker.withColor(Color.fromRGB(color.getAsInt())), group);
                         result.complete(204);
                       })
                   .exceptionally(
@@ -1013,5 +1090,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       @Nullable Integer x,
       @Nullable Integer y,
       @Nullable Integer z,
-      @Nullable String previous) {}
+      @Nullable String previous,
+      @Nullable String type,
+      @Nullable List<List<Double>> points,
+      boolean smooth) {}
 }

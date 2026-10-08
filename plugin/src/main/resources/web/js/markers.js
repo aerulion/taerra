@@ -46,7 +46,7 @@ export function element(tag, className, text) {
     return node;
 }
 
-function spline(points) {
+export function spline(points) {
     const out = [points[0]];
     for (let i = 0; i < points.length - 1; i++) {
         const p0 = points[Math.max(0, i - 1)];
@@ -175,6 +175,7 @@ class MarkerManager {
         this.cullTimer = 0;
         this.visibility = {};
         this.onWaypoint = null;
+        this.hidden = null;
         this.onPlayers = null;
         this.list = document.getElementById('layer-list');
     }
@@ -274,6 +275,13 @@ class MarkerManager {
         this.cull();
     }
 
+    hide(id) {
+        if (id !== this.hidden) {
+            this.hidden = id;
+            this.redraw();
+        }
+    }
+
     setMapStyle(style) {
         this.look = LOOKS[style] ?? LOOKS.color;
         this.redraw();
@@ -291,6 +299,9 @@ class MarkerManager {
                 group.addTo(mapManager.getMap());
             }
             for (const marker of layer.markers) {
+                if (marker.id === this.hidden) {
+                    continue;
+                }
                 this.entries.push({
                     layer,
                     marker,
@@ -553,13 +564,18 @@ class MarkerManager {
 
     waypointActions(layer, marker) {
         const actions = element('div', 'marker-popup__actions');
-        if (!isWaypointLayer(layer) || marker.type !== 'point') {
+        if (!isWaypointLayer(layer)) {
             return actions;
         }
-        const [x, y, z] = marker.position.map(Math.floor);
+        const point = marker.type === 'point';
+        const [x, y, z] = point ? marker.position.map(Math.floor) : [];
         const waypoint = {
             world: this.world, x, y, z, name: marker.label, color: marker.color,
-            group: layer.id === 'waypoints' ? '' : layer.label, previous: marker.label
+            group: layer.id === 'waypoints' ? '' : layer.label, previous: marker.label, id: marker.id,
+            ...(point ? {} : {
+                type: marker.type, smooth: marker.smooth,
+                points: marker.type === 'area' ? marker.points.map(([px, pz]) => [px, null, pz]) : marker.points
+            })
         };
         const action = (name, label) => {
             const button = element('button', 'marker-popup__action', t(label));
@@ -567,11 +583,13 @@ class MarkerManager {
             button.addEventListener('click', () => this.onWaypoint?.(name, waypoint, button));
             actions.append(button);
         };
-        if (accountManager.canTeleport()) {
+        if (point && accountManager.canTeleport()) {
             action('teleport', 'waypoint.teleport');
         }
         if (marker.id.startsWith('waypoint:') && accountManager.canEditMarkers()) {
-            action('move', 'waypoint.move');
+            if (point) {
+                action('move', 'waypoint.move');
+            }
             action('edit', 'waypoint.editShort');
         }
         return actions;

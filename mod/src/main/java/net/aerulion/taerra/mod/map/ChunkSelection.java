@@ -110,6 +110,20 @@ public final class ChunkSelection {
     };
   }
 
+  public static @NotNull List<double[]> corners(final int @NotNull [][] ring) {
+    final @NotNull List<double[]> kept = new ArrayList<>();
+    for (int i = 0; i < ring.length; i++) {
+      final int[] previous = ring[Math.floorMod(i - 1, ring.length)];
+      final int[] point = ring[i];
+      final int[] next = ring[(i + 1) % ring.length];
+      if ((long) (point[0] - previous[0]) * (next[1] - point[1])
+          != (long) (point[1] - previous[1]) * (next[0] - point[0])) {
+        kept.add(new double[] {point[0], point[1]});
+      }
+    }
+    return kept;
+  }
+
   private void apply(final int chunkX, final int chunkZ, final boolean erase) {
     final boolean changed =
         erase

@@ -1,11 +1,14 @@
 package net.aerulion.taerra.waypoint;
 
 import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import net.aerulion.taerra.api.marker.Marker;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,6 +16,33 @@ public sealed interface Waypoints permits WaypointsImpl {
 
   String LAYER = "waypoints";
   String GROUP_LAYER = "waypoints.";
+  String PLACED = "waypoint:";
+
+  static @NotNull String markerId(final @NotNull String name) {
+    return PLACED + name.toLowerCase(Locale.ROOT);
+  }
+
+  static @NotNull List<Vector> outline(final @NotNull List<Vector> points) {
+    final @NotNull List<Vector> kept = new ArrayList<>(points);
+    boolean changed = true;
+    while (changed && kept.size() >= 3) {
+      changed = false;
+      for (int i = 0; i < kept.size() && kept.size() >= 3; i++) {
+        final @NotNull Vector previous = kept.get(Math.floorMod(i - 1, kept.size()));
+        final @NotNull Vector point = kept.get(i);
+        final @NotNull Vector next = kept.get((i + 1) % kept.size());
+        final double cross =
+            (point.getX() - previous.getX()) * (next.getZ() - point.getZ())
+                - (point.getZ() - previous.getZ()) * (next.getX() - point.getX());
+        if (cross == 0) {
+          kept.remove(i);
+          changed = true;
+          i--;
+        }
+      }
+    }
+    return List.copyOf(kept);
+  }
 
   static @Nullable String groupLayerId(final @Nullable String group) {
     if (group == null) {
@@ -36,6 +66,8 @@ public sealed interface Waypoints permits WaypointsImpl {
       @NotNull Location location,
       @NotNull Color color,
       @Nullable String group);
+
+  void add(@NotNull Marker marker, @Nullable String group);
 
   void hideByDefault(@NotNull String group);
 

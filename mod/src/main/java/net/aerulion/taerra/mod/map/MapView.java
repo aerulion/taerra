@@ -44,7 +44,11 @@ public sealed interface MapView permits MapViewImpl {
   @Nullable
   MarkerHover hover();
 
-  void select(@Nullable ChunkSelection selection, double @Nullable [][] outline, boolean erasing);
+  void select(@Nullable Drawing drawing);
+
+  int pathPointAt(double x, double y);
+
+  int pathSegmentAt(double x, double y);
 
   void draw(
       GuiGraphicsExtractor graphics,
