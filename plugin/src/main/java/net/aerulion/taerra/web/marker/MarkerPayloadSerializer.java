@@ -67,6 +67,7 @@ public final class MarkerPayloadSerializer {
             .map(row -> List.of(row.getKey(), row.getValue()))
             .toList());
     data.put("color", HexColors.format(marker.color().asRGB()));
+    data.put("description", marker.description());
     switch (marker) {
       case final @NotNull PointMarker point -> {
         data.put("type", "point");

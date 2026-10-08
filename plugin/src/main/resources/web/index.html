@@ -52,6 +52,13 @@
     <span class="server-name" hidden id="server-name"></span>
     <nav aria-label="Worlds" class="worlds" data-i18n-label="worlds" id="world-list"></nav>
     <div aria-label="Worlds" class="world-menu" data-i18n-label="worlds" id="world-menu" popover></div>
+    <button class="search-button" id="search-button" type="button">
+        <svg aria-hidden="true" class="search-button__icon" shape-rendering="crispEdges" viewBox="0 0 8 8">
+            <path d="M1 0h4v1H1zM0 1h1v4H0zM5 1h1v4H5zM1 5h4v1H1zM5 5h1v1H5zM6 6h1v1H6zM7 7h1v1H7z" fill="currentColor"/>
+        </svg>
+        <span class="search-button__text" data-i18n="search.button">Search</span>
+        <kbd class="search-button__key">/</kbd>
+    </button>
     <div class="status" id="connection-status">
         <span class="status__dot" data-state="connecting"></span>
         <span id="status-text" role="status"></span>
@@ -175,6 +182,8 @@
                     <dd data-i18n="style.cycle">Switch map colors</dd>
                     <dt><kbd>P</kbd></dt>
                     <dd data-i18n="panel.toggle">Show or hide the side panel</dd>
+                    <dt><kbd>/</kbd></dt>
+                    <dd data-i18n="search.title">Search</dd>
                 </dl>
             </details>
         </div>
@@ -259,6 +268,24 @@
 
 </main>
 
+<dialog aria-label="Search" class="search" data-i18n-label="search.title" id="search">
+    <div class="search__field">
+        <svg aria-hidden="true" class="search__glass" shape-rendering="crispEdges" viewBox="0 0 8 8">
+            <path d="M1 0h4v1H1zM0 1h1v4H0zM5 1h1v4H5zM1 5h4v1H1zM5 5h1v1H5zM6 6h1v1H6zM7 7h1v1H7z" fill="currentColor"/>
+        </svg>
+        <input aria-autocomplete="list" aria-controls="search-results" aria-expanded="true" autocomplete="off"
+               class="search__input" data-i18n-label="search.title" id="search-input" role="combobox"
+               spellcheck="false" type="text">
+    </div>
+    <ul class="search__results" id="search-results" role="listbox"></ul>
+    <p class="search__empty" data-i18n="search.empty" hidden id="search-empty">Nothing found</p>
+    <footer aria-hidden="true" class="search__hints">
+        <span><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="search.hint.move">Move</span></span>
+        <span><kbd>↵</kbd> <span data-i18n="search.hint.open">Open</span></span>
+        <span><kbd>Esc</kbd> <span data-i18n="search.hint.close">Close</span></span>
+    </footer>
+</dialog>
+
 <dialog aria-labelledby="waypoint-title" class="editor" id="waypoint-editor">
     <form class="editor__form" id="waypoint-form" novalidate>
         <header class="editor__header">
@@ -273,6 +300,11 @@
             <label class="editor__label" data-i18n="waypoint.name" for="waypoint-name">Name</label>
             <input autocomplete="off" class="editor__input" id="waypoint-name" maxlength="32" spellcheck="false"
                    type="text">
+        </div>
+
+        <div class="editor__section">
+            <label class="editor__label" data-i18n="waypoint.description" for="waypoint-description">Description</label>
+            <textarea class="editor__input editor__textarea" id="waypoint-description" maxlength="280" rows="3"></textarea>
         </div>
 
         <fieldset class="editor__section">

@@ -24,6 +24,7 @@ public final class TaerraKeys {
   public static final KeyMapping ROTATE = key("key.taerra.map.rotate", InputConstants.KEY_R);
   public static final KeyMapping COLORS = key("key.taerra.map.colors", InputConstants.KEY_G);
   public static final KeyMapping PANELS = key("key.taerra.map.panels", InputConstants.KEY_P);
+  public static final KeyMapping SEARCH = key("key.taerra.map.search", InputConstants.KEY_K);
 
   private TaerraKeys() {}
 
@@ -43,7 +44,8 @@ public final class TaerraKeys {
           ISOMETRIC,
           ROTATE,
           COLORS,
-          PANELS
+          PANELS,
+          SEARCH
         }) {
       KeyMappingHelper.registerKeyMapping(key);
     }

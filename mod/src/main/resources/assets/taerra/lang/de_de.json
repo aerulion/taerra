@@ -151,5 +151,15 @@
   "taerra.selection.tool.points.tooltip": "Punkte per Klick setzen (%s)",
   "taerra.selection.points_hint": "Klicken setzt einen Punkt · Ziehen bewegt ihn · Umschalt-Klick oder Rücktaste entfernt · Rechts ziehen verschiebt · Esc bricht ab",
   "taerra.selection.smooth": "Weich",
-  "taerra.selection.save": "Speichern…"
+  "taerra.selection.save": "Speichern…",
+  "taerra.map.search": "Suchen",
+  "taerra.map.search.tooltip": "Spieler:innen, Marker, Welten oder Koordinaten finden (%s)",
+  "taerra.search": "Suche",
+  "taerra.search.hint": "Spieler:innen, Marker, Welten oder Koordinaten",
+  "taerra.search.world": "Welt",
+  "taerra.search.go_to": "Zu %s springen",
+  "taerra.search.empty": "Nichts gefunden",
+  "taerra.waypoint.description": "Beschreibung",
+  "taerra.waypoint.description.hint": "Optional, erscheint beim Drüberfahren",
+  "key.taerra.map.search": "Karte durchsuchen"
 }

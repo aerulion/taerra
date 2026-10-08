@@ -22,4 +22,13 @@ class NamesTest {
     assertNull(Names.of("   "));
     assertNull(Names.of(null));
   }
+
+  @Test
+  @DisplayName("descriptions keep line breaks, drop control characters and stop at 280")
+  void description() {
+    assertEquals("Shop\n\nOpen daily", Names.description("  Shop\r\n\n\n\tOpen daily \u0007"));
+    assertEquals("x".repeat(280), Names.description("x".repeat(300)));
+    assertNull(Names.description(" \n "));
+    assertNull(Names.description(null));
+  }
 }

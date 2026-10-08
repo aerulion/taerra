@@ -5,6 +5,7 @@ import org.bukkit.Color;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** A single position, drawn as a pin. Create one with {@link Marker#point}. */
 @ApiStatus.NonExtendable
@@ -37,4 +38,14 @@ public sealed interface PointMarker extends Marker permits PointMarkerImpl {
   @Override
   @NotNull
   PointMarker withDetails(@NotNull Map<String, String> details);
+
+  /**
+   * Returns a copy with another description.
+   *
+   * @param description the text shown in the popup, or {@code null} for none
+   * @return the copy
+   */
+  @Override
+  @NotNull
+  PointMarker withDescription(@Nullable String description);
 }

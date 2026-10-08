@@ -16,6 +16,7 @@ record LineMarkerImpl(
     boolean smooth,
     @Nullable String label,
     @NotNull Map<String, String> details,
+    @Nullable String description,
     @NotNull Color color)
     implements LineMarker {
 
@@ -35,18 +36,52 @@ record LineMarkerImpl(
   @Override
   public @NotNull LineMarker smoothed() {
     return new LineMarkerImpl(
-        this.id, this.world, this.points, true, this.label, this.details, this.color);
+        this.id,
+        this.world,
+        this.points,
+        true,
+        this.label,
+        this.details,
+        this.description,
+        this.color);
   }
 
   @Override
   public @NotNull LineMarker withColor(final @NotNull Color color) {
     return new LineMarkerImpl(
-        this.id, this.world, this.points, this.smooth, this.label, this.details, color);
+        this.id,
+        this.world,
+        this.points,
+        this.smooth,
+        this.label,
+        this.details,
+        this.description,
+        color);
   }
 
   @Override
   public @NotNull LineMarker withDetails(final @NotNull Map<String, String> details) {
     return new LineMarkerImpl(
-        this.id, this.world, this.points, this.smooth, this.label, details, this.color);
+        this.id,
+        this.world,
+        this.points,
+        this.smooth,
+        this.label,
+        details,
+        this.description,
+        this.color);
+  }
+
+  @Override
+  public @NotNull LineMarker withDescription(final @Nullable String description) {
+    return new LineMarkerImpl(
+        this.id,
+        this.world,
+        this.points,
+        this.smooth,
+        this.label,
+        this.details,
+        description,
+        this.color);
   }
 }

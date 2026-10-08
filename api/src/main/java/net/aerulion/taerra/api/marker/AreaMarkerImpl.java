@@ -18,6 +18,7 @@ record AreaMarkerImpl(
     boolean hollow,
     @Nullable String label,
     @NotNull Map<String, String> details,
+    @Nullable String description,
     @NotNull Color color)
     implements AreaMarker {
 
@@ -48,6 +49,7 @@ record AreaMarkerImpl(
         true,
         this.label,
         this.details,
+        this.description,
         this.color);
   }
 
@@ -62,6 +64,7 @@ record AreaMarkerImpl(
         this.hollow,
         this.label,
         this.details,
+        this.description,
         color);
   }
 
@@ -76,6 +79,22 @@ record AreaMarkerImpl(
         this.hollow,
         this.label,
         details,
+        this.description,
+        this.color);
+  }
+
+  @Override
+  public @NotNull AreaMarker withDescription(final @Nullable String description) {
+    return new AreaMarkerImpl(
+        this.id,
+        this.world,
+        this.outline,
+        this.minY,
+        this.maxY,
+        this.hollow,
+        this.label,
+        this.details,
+        description,
         this.color);
   }
 }

@@ -28,6 +28,7 @@ class OverlayRasterTest {
         "region",
         "Region",
         "#ff0000",
+        null,
         "area",
         null,
         null,

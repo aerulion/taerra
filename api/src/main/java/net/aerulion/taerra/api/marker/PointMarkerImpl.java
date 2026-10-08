@@ -14,6 +14,7 @@ record PointMarkerImpl(
     @NotNull Vector position,
     @Nullable String label,
     @NotNull Map<String, String> details,
+    @Nullable String description,
     @NotNull Color color)
     implements PointMarker {
 
@@ -32,11 +33,19 @@ record PointMarkerImpl(
 
   @Override
   public @NotNull PointMarker withColor(final @NotNull Color color) {
-    return new PointMarkerImpl(this.id, this.world, this.position, this.label, this.details, color);
+    return new PointMarkerImpl(
+        this.id, this.world, this.position, this.label, this.details, this.description, color);
   }
 
   @Override
   public @NotNull PointMarker withDetails(final @NotNull Map<String, String> details) {
-    return new PointMarkerImpl(this.id, this.world, this.position, this.label, details, this.color);
+    return new PointMarkerImpl(
+        this.id, this.world, this.position, this.label, details, this.description, this.color);
+  }
+
+  @Override
+  public @NotNull PointMarker withDescription(final @Nullable String description) {
+    return new PointMarkerImpl(
+        this.id, this.world, this.position, this.label, this.details, description, this.color);
   }
 }

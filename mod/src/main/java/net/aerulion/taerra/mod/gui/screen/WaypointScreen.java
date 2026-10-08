@@ -18,6 +18,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.MultiLineEditBox;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
@@ -31,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 public final class WaypointScreen extends Screen {
 
   private static final int MAX_NAME = 32;
+  private static final int MAX_DESCRIPTION = 280;
   private static final Pattern NOT_NAME = Pattern.compile("[^\\p{L}\\p{N} _.,:'&()#!?+-]");
   private static final int WIDTH = 200;
   private static final String NEW_GROUP = "\u0000new";
@@ -43,6 +45,7 @@ public final class WaypointScreen extends Screen {
   private final @NotNull ColorPicker picker;
   private String name;
   private String color;
+  private String description;
   private String group;
   private @NotNull String newGroup = "";
   private boolean privateGroup;
@@ -84,6 +87,7 @@ public final class WaypointScreen extends Screen {
             ? target.color().toLowerCase(Locale.ROOT)
             : Waypoint.DEFAULT_COLOR;
     this.group = target.group();
+    this.description = target.description();
     this.picker = new ColorPicker(WIDTH, this.color, this::showColor);
     map.waypointGroups(
         loaded -> {
@@ -135,6 +139,17 @@ public final class WaypointScreen extends Screen {
     cleanName(name, value -> this.name = value);
     name.setValue(this.name);
     name.setHint(Component.translatable("taerra.waypoint.name"));
+    final @NotNull MultiLineEditBox description =
+        contents.addChild(
+            MultiLineEditBox.builder()
+                .setPlaceholder(
+                    Component.translatable("taerra.waypoint.description.hint")
+                        .withStyle(ChatFormatting.DARK_GRAY))
+                .build(
+                    this.font, WIDTH, 40, Component.translatable("taerra.waypoint.description")));
+    description.setCharacterLimit(MAX_DESCRIPTION);
+    description.setValue(this.description);
+    description.setValueListener(value -> this.description = value);
 
     final @NotNull LinearLayout colors = contents.addChild(LinearLayout.horizontal().spacing(4));
     colors.addChild(new DyeSwatches(() -> this.color, this::pickColor));
@@ -274,7 +289,7 @@ public final class WaypointScreen extends Screen {
     this.saving = true;
     rebuildWidgets();
     this.map.saveWaypoint(
-        this.target.with(name, this.color, group),
+        this.target.with(name, this.color, group, this.description.strip()),
         creating && this.privateGroup,
         status -> {
           if (status == 204) {

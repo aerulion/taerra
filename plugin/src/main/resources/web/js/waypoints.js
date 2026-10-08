@@ -52,6 +52,7 @@ class WaypointEditor {
     initialize() {
         $('waypoint-preview').innerHTML = PIN_SVG;
         $('waypoint-group-name').placeholder = t('waypoint.groupName');
+        $('waypoint-description').placeholder = t('waypoint.descriptionHint');
         $('waypoint-private-title').append(privateIcon());
         $('placing-cancel').addEventListener('click', () => this.stopMoving());
         mapManager.getMap().on('click', (event) => void this.place(event.latlng));
@@ -203,7 +204,8 @@ class WaypointEditor {
 
     async open({
                    world, x, y, z, type = 'point', points = null, smooth = false,
-                   name = '', color = DEFAULT_COLOR, group = '', previous = null, onSaved = null, onColor = null
+                   name = '', description = '', color = DEFAULT_COLOR, group = '', previous = null,
+                   onSaved = null, onColor = null
                }) {
         this.target = {world, x, y, z, type, points, smooth, previous, onSaved, onColor};
         const kind = type === 'point' ? 'waypoint' : type;
@@ -213,6 +215,7 @@ class WaypointEditor {
             ? t('waypoint.points', {count: numbers.format(points.length)})
             : `${x}, ${Number.isFinite(y) ? y : '—'}, ${z}`;
         $('waypoint-name').value = cleanName(name);
+        $('waypoint-description').value = description;
         $('waypoint-delete').hidden = !previous;
         this.disarm();
         this.showError(null);
@@ -249,7 +252,7 @@ class WaypointEditor {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                name, color: this.hex, group: group || null,
+                name, color: this.hex, group: group || null, description: $('waypoint-description').value,
                 privateGroup: creating && $('waypoint-private').checked,
                 world, previous,
                 ...(points ? {type, points, smooth} : {x, y: Number.isFinite(y) ? y : null, z})
@@ -309,6 +312,7 @@ class WaypointEditor {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 name: waypoint.name, color: waypoint.color, group: waypoint.group || null,
+                description: waypoint.description,
                 world, x, y: Number.isFinite(y) ? y + 1 : null, z, previous: waypoint.previous
             })
         });

@@ -6,6 +6,7 @@ import org.bukkit.Color;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** A line through two or more points. Create one with {@link Marker#line}. */
 @ApiStatus.NonExtendable
@@ -54,4 +55,14 @@ public sealed interface LineMarker extends Marker permits LineMarkerImpl {
   @Override
   @NotNull
   LineMarker withDetails(@NotNull Map<String, String> details);
+
+  /**
+   * Returns a copy with another description.
+   *
+   * @param description the text shown in the popup, or {@code null} for none
+   * @return the copy
+   */
+  @Override
+  @NotNull
+  LineMarker withDescription(@Nullable String description);
 }

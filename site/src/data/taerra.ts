@@ -173,7 +173,7 @@ const en = {
                     },
                     {
                         title: 'Waypoints, areas and lines',
-                        text: 'In named groups and colors, private ones too. Players with permission draw, move and recolor them right on the map, areas from selected chunks or point by point, lines straight or smooth, and the mod shows waypoints as labels in the world itself.'
+                        text: 'In named groups and colors, private ones too, each with an optional description. Players with permission draw, move and recolor them right on the map, areas from selected chunks or point by point, lines straight or smooth, and the mod shows waypoints as labels in the world itself.'
                     },
                     {
                         title: 'Privacy built in',
@@ -186,6 +186,10 @@ const en = {
                     {
                         title: 'Share any place',
                         text: 'Right-click to copy coordinates, or a link that opens the map right there.'
+                    },
+                    {
+                        title: 'Search everything',
+                        text: 'Press / to find players, markers, worlds and coordinates across every world. The mod has the same search on a key of its own.'
                     },
                     {
                         title: 'Hide what is not ready',
@@ -230,7 +234,7 @@ const en = {
         title: 'The same map, in game',
         lede: 'The optional Fabric mod brings your server’s map to your players. Join a server running TAERRA and it connects by itself, already logged in, so no /taerra login is needed in game.',
         points: [
-            'A full world map that does everything the web map does: both views and all four rotations, layers, players and follow mode, waypoints, teleporting, chunk selection and render progress',
+            'A full world map that does everything the web map does: both views and all four rotations, layers, players and follow mode, waypoints, search, teleporting, chunk selection and render progress',
             'A minimap you can size, zoom, place on either side and turn with the player',
             'Waypoints in the world, as labels where they are'
         ],

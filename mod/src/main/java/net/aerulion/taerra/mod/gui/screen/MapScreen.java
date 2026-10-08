@@ -306,6 +306,10 @@ public final class MapScreen extends Screen {
       selectionChanged();
       return true;
     }
+    if (this.selection == null && TaerraKeys.SEARCH.matches(event) && !event.hasAltDown()) {
+      openSearch();
+      return true;
+    }
     if (TaerraKeys.OPEN_MAP.matches(event)) {
       onClose();
       return true;
@@ -340,6 +344,15 @@ public final class MapScreen extends Screen {
                 .width(PANEL_BUTTON_WIDTH)
                 .build(),
             settings -> settings.align(0, .5f).paddingLeft(8));
+    this.layout.addToHeader(
+        Button.builder(Component.translatable("taerra.map.search"), _ -> openSearch())
+            .tooltip(
+                Tooltip.create(
+                    Component.translatable(
+                        "taerra.map.search.tooltip", TaerraKeys.SEARCH.getTranslatedKeyMessage())))
+            .width(SPAWN_BUTTON_WIDTH)
+            .build(),
+        settings -> settings.align(0, .5f).paddingLeft(8 + PANEL_BUTTON_WIDTH + 4));
     this.layout.addToHeader(
         Button.builder(Component.translatable("taerra.map.spawn"), _ -> goToSpawn())
             .tooltip(Tooltip.create(Component.translatable("taerra.map.spawn.tooltip")))
@@ -761,6 +774,32 @@ public final class MapScreen extends Screen {
       this.view.centerOn(config, world.spawn().x(), world.spawn().y(), world.spawn().z());
       zoomNear();
     }
+  }
+
+  private void openSearch() {
+    closeMenu();
+    this.minecraft.setScreenAndShow(
+        new SearchScreen(this, this.map, this.view.world(), this::jump));
+  }
+
+  private void jump(final SearchScreen.@NotNull Target target) {
+    final @Nullable MapConfig config = this.map.config();
+    final @Nullable World world = this.map.world(target.world());
+    if (config == null || world == null) {
+      return;
+    }
+    setFollowed(null);
+    final @Nullable Player player =
+        target.player() == null ? null : this.map.player(target.player());
+    if (player != null) {
+      follow(player);
+      return;
+    }
+    if (!world.name().equals(this.view.world())) {
+      selectWorld(world);
+    }
+    this.view.centerOn(config, target.x(), target.y() == null ? 64 : target.y(), target.z());
+    zoomNear();
   }
 
   private void goToSpawn() {

@@ -775,7 +775,10 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                           this.waypoints.remove(request.previous());
                         }
                         this.waypoints.add(
-                            marker.withColor(Color.fromRGB(color.getAsInt())), group);
+                            marker
+                                .withColor(Color.fromRGB(color.getAsInt()))
+                                .withDescription(Names.description(request.description())),
+                            group);
                         result.complete(204);
                       })
                   .exceptionally(
@@ -1093,5 +1096,6 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       @Nullable String previous,
       @Nullable String type,
       @Nullable List<List<Double>> points,
-      boolean smooth) {}
+      boolean smooth,
+      @Nullable String description) {}
 }

@@ -6,6 +6,7 @@ import org.bukkit.Color;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * An outline extruded between two heights. Create one with {@link Marker#cuboid} or {@link
@@ -73,4 +74,14 @@ public sealed interface AreaMarker extends Marker permits AreaMarkerImpl {
   @Override
   @NotNull
   AreaMarker withDetails(@NotNull Map<String, String> details);
+
+  /**
+   * Returns a copy with another description.
+   *
+   * @param description the text shown in the popup, or {@code null} for none
+   * @return the copy
+   */
+  @Override
+  @NotNull
+  AreaMarker withDescription(@Nullable String description);
 }

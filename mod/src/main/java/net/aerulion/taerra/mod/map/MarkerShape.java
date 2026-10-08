@@ -166,6 +166,11 @@ final class MarkerShape {
       if (facts != null) {
         lines.add(facts.copy().withStyle(ChatFormatting.GRAY));
       }
+      if (marker.description() != null) {
+        for (final @NotNull String line : marker.description().split("\n")) {
+          lines.add(Component.literal(line));
+        }
+      }
       if (marker.details() != null) {
         for (final @NotNull List<String> row : marker.details()) {
           if (row.size() >= 2) {

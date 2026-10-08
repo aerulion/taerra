@@ -156,5 +156,20 @@
   "selection.save": "Speichern…",
   "selection.cancel": "Abbrechen",
   "selection.smooth.on": "Weich: an",
-  "selection.smooth.off": "Weich: aus"
+  "selection.smooth.off": "Weich: aus",
+  "waypoint.description": "Beschreibung",
+  "waypoint.descriptionHint": "Optional, erscheint beim Anklicken des Markers",
+  "search.button": "Suchen",
+  "search.title": "Suche",
+  "search.placeholder": "Spieler:innen, Marker, Welten oder Koordinaten",
+  "search.empty": "Nichts gefunden",
+  "search.world": "Welt",
+  "search.goTo": "Zu {place} springen",
+  "search.group.place": "Ort",
+  "search.group.player": "Spieler:innen",
+  "search.group.marker": "Marker",
+  "search.group.world": "Welten",
+  "search.hint.move": "Auswählen",
+  "search.hint.open": "Öffnen",
+  "search.hint.close": "Schließen"
 }

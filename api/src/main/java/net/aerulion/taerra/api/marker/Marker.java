@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * MarkerLayer}.
  *
  * <p>Coordinates are block coordinates in the marker's world. Clicking a marker opens a popup with
- * its label, or its id if it has none, and its details as plain text.
+ * its label, or its id if it has none, its description and its details, all as plain text.
  */
 @ApiStatus.NonExtendable
 public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
@@ -51,7 +51,7 @@ public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
       final @NotNull NamespacedKey world,
       final @NotNull Vector position,
       final @Nullable String label) {
-    return new PointMarkerImpl(id, world, position, label, Map.of(), DEFAULT_COLOR);
+    return new PointMarkerImpl(id, world, position, label, Map.of(), null, DEFAULT_COLOR);
   }
 
   /**
@@ -69,7 +69,7 @@ public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
       final @NotNull NamespacedKey world,
       final @NotNull List<Vector> points,
       final @Nullable String label) {
-    return new LineMarkerImpl(id, world, points, false, label, Map.of(), DEFAULT_COLOR);
+    return new LineMarkerImpl(id, world, points, false, label, Map.of(), null, DEFAULT_COLOR);
   }
 
   /**
@@ -99,6 +99,7 @@ public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
         false,
         label,
         Map.of(),
+        null,
         DEFAULT_COLOR);
   }
 
@@ -123,7 +124,7 @@ public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
       final double maxY,
       final @Nullable String label) {
     return new AreaMarkerImpl(
-        id, world, outline, minY, maxY, false, label, Map.of(), DEFAULT_COLOR);
+        id, world, outline, minY, maxY, false, label, Map.of(), null, DEFAULT_COLOR);
   }
 
   /**
@@ -159,6 +160,14 @@ public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
   Map<String, String> details();
 
   /**
+   * Returns the text shown in the marker's popup above its details.
+   *
+   * @return the description, or {@code null} for none
+   */
+  @Nullable
+  String description();
+
+  /**
    * Returns the marker's color.
    *
    * @return the color
@@ -183,4 +192,13 @@ public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
    */
   @NotNull
   Marker withDetails(@NotNull Map<String, String> details);
+
+  /**
+   * Returns a copy with another description.
+   *
+   * @param description the text shown in the popup, or {@code null} for none
+   * @return the copy
+   */
+  @NotNull
+  Marker withDescription(@Nullable String description);
 }

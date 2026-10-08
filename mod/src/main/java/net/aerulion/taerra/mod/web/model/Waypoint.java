@@ -16,13 +16,14 @@ public record Waypoint(
     @Nullable String previous,
     String type,
     @Nullable List<List<Double>> points,
-    boolean smooth) {
+    boolean smooth,
+    String description) {
 
   public static final String DEFAULT_COLOR = "#3ab3da";
 
   public static @NotNull Waypoint create(
       final String world, final int x, final @Nullable Integer y, final int z) {
-    return new Waypoint(world, x, y, z, "", DEFAULT_COLOR, "", null, "point", null, false);
+    return new Waypoint(world, x, y, z, "", DEFAULT_COLOR, "", null, "point", null, false, "");
   }
 
   public static @NotNull Waypoint of(
@@ -44,7 +45,8 @@ public record Waypoint(
             : marker.points().stream()
                 .map(point -> area ? Arrays.asList(point.get(0), null, point.get(1)) : point)
                 .toList(),
-        marker.smooth());
+        marker.smooth(),
+        marker.description() == null ? "" : marker.description());
   }
 
   public @NotNull Waypoint at(final int x, final @Nullable Integer y, final int z) {
@@ -59,10 +61,12 @@ public record Waypoint(
         this.previous,
         this.type,
         this.points,
-        this.smooth);
+        this.smooth,
+        this.description);
   }
 
-  public @NotNull Waypoint with(final String name, final String color, final String group) {
+  public @NotNull Waypoint with(
+      final String name, final String color, final String group, final String description) {
     return new Waypoint(
         this.world,
         this.x,
@@ -74,7 +78,8 @@ public record Waypoint(
         this.previous,
         this.type,
         this.points,
-        this.smooth);
+        this.smooth,
+        this.description);
   }
 
   public @NotNull Waypoint shaped(
@@ -90,6 +95,7 @@ public record Waypoint(
         this.previous,
         type,
         points,
-        smooth);
+        smooth,
+        this.description);
   }
 }

@@ -131,7 +131,7 @@ export const de: Copy = {
                     },
                     {
                         title: 'Wegpunkte, Flächen und Linien',
-                        text: 'In benannten Gruppen und Farben, auch privaten. Spieler:innen mit Berechtigung zeichnen, verschieben und färben sie direkt auf der Karte, Flächen aus ausgewählten Chunks oder Punkt für Punkt, Linien gerade oder weich, und die Mod zeigt Wegpunkte als Beschriftung in der Welt selbst.'
+                        text: 'In benannten Gruppen und Farben, auch privaten, jeweils mit optionaler Beschreibung. Spieler:innen mit Berechtigung zeichnen, verschieben und färben sie direkt auf der Karte, Flächen aus ausgewählten Chunks oder Punkt für Punkt, Linien gerade oder weich, und die Mod zeigt Wegpunkte als Beschriftung in der Welt selbst.'
                     },
                     {
                         title: 'Datenschutz eingebaut',
@@ -144,6 +144,10 @@ export const de: Copy = {
                     {
                         title: 'Jeden Ort teilen',
                         text: 'Rechtsklick, um Koordinaten zu kopieren oder einen Link, der die Karte genau dort öffnet.'
+                    },
+                    {
+                        title: 'Alles durchsuchen',
+                        text: 'Drück /, um Spieler:innen, Marker, Welten und Koordinaten in jeder Welt zu finden. Die Mod hat dieselbe Suche auf einer eigenen Taste.'
                     },
                     {
                         title: 'Verstecken, was noch nicht fertig ist',
@@ -188,7 +192,7 @@ export const de: Copy = {
         title: 'Dieselbe Karte im Spiel',
         lede: 'Die optionale Fabric-Mod bringt die Karte deines Servers zu deinen Spieler:innen. Betritt einen Server mit TAERRA, und sie verbindet sich von selbst, schon angemeldet, ganz ohne /taerra login.',
         points: [
-            'Eine ganze Weltkarte, die alles kann, was die Web-Karte kann: beide Ansichten und alle vier Drehungen, Ebenen, Spieler:innen und Folgemodus, Wegpunkte, Teleport, Chunk-Auswahl und Render-Fortschritt',
+            'Eine ganze Weltkarte, die alles kann, was die Web-Karte kann: beide Ansichten und alle vier Drehungen, Ebenen, Spieler:innen und Folgemodus, Wegpunkte, Suche, Teleport, Chunk-Auswahl und Render-Fortschritt',
             'Eine Minikarte, die du in Größe und Zoom anpassen, links oder rechts platzieren und mit deiner Blickrichtung drehen kannst',
             'Wegpunkte in der Welt, als Beschriftung dort, wo sie sind'
         ],

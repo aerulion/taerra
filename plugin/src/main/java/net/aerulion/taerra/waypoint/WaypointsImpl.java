@@ -137,7 +137,13 @@ public final class WaypointsImpl implements Waypoints, Listener {
         continue;
       }
       layer(entry.get("group") instanceof final @NotNull String group ? group : null)
-          .set(marker.withColor(rgb.isPresent() ? Color.fromRGB(rgb.getAsInt()) : DEFAULT_COLOR));
+          .set(
+              marker
+                  .withColor(rgb.isPresent() ? Color.fromRGB(rgb.getAsInt()) : DEFAULT_COLOR)
+                  .withDescription(
+                      entry.get("description") instanceof final @NotNull String description
+                          ? description
+                          : null));
     }
     Bukkit.getWorlds().forEach(this::placeSpawn);
   }
@@ -303,6 +309,9 @@ public final class WaypointsImpl implements Waypoints, Listener {
           }
         }
         entry.put("color", HexColors.format(marker.color().asRGB()));
+        if (marker.description() != null) {
+          entry.put("description", marker.description());
+        }
         if (waypointLayer != this.layer) {
           entry.put("group", waypointLayer.label());
         }

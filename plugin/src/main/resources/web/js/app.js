@@ -3,6 +3,7 @@ import {defaultLanguage, hashLanguage, language, LANGUAGES, numbers, setLanguage
 import {mapManager} from './map.js';
 import {element, markerManager, privateIcon} from './markers.js';
 import {playerManager} from './players.js';
+import {searchPalette} from './search.js';
 import {chunkSelection} from './selection.js';
 import {waypointEditor} from './waypoints.js';
 import {wsManager} from './websocket.js';
@@ -580,6 +581,12 @@ await mapManager.initialize();
 markerManager.initialize();
 waypointEditor.initialize();
 chunkSelection.initialize();
+searchPalette.initialize({
+    worlds: () => worlds,
+    current: () => currentWorld?.name,
+    worldName,
+    selectWorld: (name) => void selectWorld(name)
+});
 playerManager.worldLabel = worldName;
 playerManager.onWorld = selectWorld;
 markerManager.onPlayers = () => playerManager.showAll();

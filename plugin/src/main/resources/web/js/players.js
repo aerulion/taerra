@@ -17,7 +17,7 @@ const FACING_SVG = `<svg viewBox="0 0 24 24" width="48" height="48" aria-hidden=
 <g class="player-marker__corner"><path d="${pixelPath([[19, 0, 4, 1], [18, 1, 6, 1], [19, 2, 5, 1], [20, 3, 4, 1], [21, 4, 3, 1], [22, 5, 1, 1]])}" fill="#111"/>
 <path d="${pixelPath([[19, 1, 4, 1], [20, 2, 3, 1], [21, 3, 2, 1], [22, 4, 1, 1]])}" fill="currentColor"/></g></svg>`;
 
-function avatar(player, size) {
+export function avatar(player, size) {
     const img = new Image(size, size);
     img.alt = '';
     img.src = player.anonymous ? FALLBACK_AVATAR : `/api/avatars/${player.uuid}.png`;

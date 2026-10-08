@@ -151,5 +151,15 @@
   "taerra.selection.tool.points.tooltip": "Click to place points (%s)",
   "taerra.selection.points_hint": "Click adds a point · Drag moves one · Shift-click or Backspace removes · Right-drag pans · Esc cancels",
   "taerra.selection.smooth": "Smooth",
-  "taerra.selection.save": "Save…"
+  "taerra.selection.save": "Save…",
+  "taerra.map.search": "Search",
+  "taerra.map.search.tooltip": "Find players, markers, worlds or coordinates (%s)",
+  "taerra.search": "Search",
+  "taerra.search.hint": "Players, markers, worlds or coordinates",
+  "taerra.search.world": "World",
+  "taerra.search.go_to": "Go to %s",
+  "taerra.search.empty": "Nothing found",
+  "taerra.waypoint.description": "Description",
+  "taerra.waypoint.description.hint": "Optional, shown when the marker is hovered",
+  "key.taerra.map.search": "Search the map"
 }

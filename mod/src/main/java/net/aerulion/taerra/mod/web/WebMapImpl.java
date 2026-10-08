@@ -203,6 +203,7 @@ public final class WebMapImpl implements WebMap {
     final @NotNull Map<String, Object> body = new HashMap<>();
     body.put("name", waypoint.name());
     body.put("color", waypoint.color());
+    body.put("description", waypoint.description());
     if (!waypoint.group().isEmpty()) {
       body.put("group", waypoint.group());
     }

@@ -176,6 +176,7 @@ class MarkerManager {
         this.visibility = {};
         this.onWaypoint = null;
         this.hidden = null;
+        this.pending = null;
         this.onPlayers = null;
         this.list = document.getElementById('layer-list');
     }
@@ -234,6 +235,7 @@ class MarkerManager {
 
     setLayers(layers) {
         this.layers = layers;
+        this.showPending();
         this.redraw();
         this.renderControls();
     }
@@ -273,6 +275,20 @@ class MarkerManager {
             this.onPlayers?.();
         }
         this.cull();
+    }
+
+    reveal(layerId, id) {
+        this.pending = {layerId, id};
+        this.showPending();
+        this.cull();
+    }
+
+    showPending() {
+        const layer = this.pending && this.layers.find(candidate => candidate.id === this.pending.layerId);
+        if (layer && !this.isShown(layer)) {
+            this.setShown(layer, true);
+            this.renderControls();
+        }
     }
 
     hide(id) {
@@ -340,6 +356,11 @@ class MarkerManager {
                 } else {
                     group.removeLayer(entry.drawn);
                 }
+            }
+            if (inView && entry.drawn && entry.layer.id === this.pending?.layerId
+                && entry.marker.id === this.pending.id) {
+                this.pending = null;
+                entry.drawn.openPopup();
             }
         }
         this.placeLabels();
@@ -548,6 +569,9 @@ class MarkerManager {
         content.append(element('span', 'marker-popup__layer', this.layerLabel(layer)),
             element('strong', 'marker-popup__title', marker.label ?? marker.id),
             element('span', 'marker-popup__facts', facts(marker)));
+        if (marker.description) {
+            content.append(element('p', 'marker-popup__description', marker.description));
+        }
         if (marker.details?.length) {
             const rows = element('dl', 'marker-popup__details');
             for (const [key, value] of marker.details) {
@@ -572,6 +596,7 @@ class MarkerManager {
         const waypoint = {
             world: this.world, x, y, z, name: marker.label, color: marker.color,
             group: layer.id === 'waypoints' ? '' : layer.label, previous: marker.label, id: marker.id,
+            description: marker.description ?? '',
             ...(point ? {} : {
                 type: marker.type, smooth: marker.smooth,
                 points: marker.type === 'area' ? marker.points.map(([px, pz]) => [px, null, pz]) : marker.points

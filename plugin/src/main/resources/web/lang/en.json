@@ -156,5 +156,20 @@
   "selection.save": "Save…",
   "selection.cancel": "Cancel",
   "selection.smooth.on": "Smooth: on",
-  "selection.smooth.off": "Smooth: off"
+  "selection.smooth.off": "Smooth: off",
+  "waypoint.description": "Description",
+  "waypoint.descriptionHint": "Optional, shown when the marker is clicked",
+  "search.button": "Search",
+  "search.title": "Search",
+  "search.placeholder": "Players, markers, worlds or coordinates",
+  "search.empty": "Nothing found",
+  "search.world": "World",
+  "search.goTo": "Go to {place}",
+  "search.group.place": "Place",
+  "search.group.player": "Players",
+  "search.group.marker": "Markers",
+  "search.group.world": "Worlds",
+  "search.hint.move": "Move",
+  "search.hint.open": "Open",
+  "search.hint.close": "Close"
 }

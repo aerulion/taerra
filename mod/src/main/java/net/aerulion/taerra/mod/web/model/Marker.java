@@ -7,6 +7,7 @@ public record Marker(
     String id,
     String label,
     String color,
+    @Nullable String description,
     String type,
     @Nullable List<List<String>> details,
     @Nullable List<Double> position,

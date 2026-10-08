@@ -44,10 +44,11 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 - **Logins without passwords.** Players run `/taerra login` in game and click the link it sends. Their browser stays logged in for 30 days. The link works once, for five minutes, and players are told in game whenever a browser logs in as them. There are no accounts to create and no passwords to leak. Banned players are logged out of the web map on their own, and `/taerra logout <player>` logs anyone out by hand, say after taking their permissions away.
 - **Private worlds and layers.** Keep a world, or a layer hidden from everyone except logged-in players with the right permission.
 - **Teleport from the map.** Logged-in players with permission right-click the map to teleport there.
-- **Waypoints, areas, and lines** in named groups and colors, private ones too. Players with permission draw, move, and recolor them right on the map, in the browser or in game, with areas traced from selected chunks or clicked point by point, and lines straight or smooth. The mod shows waypoints as labels in the world itself.
+- **Waypoints, areas, and lines** in named groups and colors, private ones too, each with an optional description. Players with permission draw, move, and recolor them right on the map, in the browser or in game, with areas traced from selected chunks or clicked point by point, and lines straight or smooth. The mod shows waypoints as labels in the world itself.
 - **Privacy built in.** Players in spectator mode, invisible or vanished, don't appear, and neither does anyone with `taerra.hide`. Staff with `taerra.web.see-hidden` still see them, marked as hidden. Players who turned off server listings in their client show as an anonymous gray dot. Player heads are served by your server, so viewing the map never reveals a visitor's address to Mojang.
 - **One jar.** No external database, no CDN, and no web admin panel: everything is configured in game.
 - **Right-click any place** to copy its coordinates, or a link straight to it.
+- **Search everything.** Press `/` to find players, markers, worlds, or coordinates across every world, and jump there. The mod has the same search on a key of its own.
 - **Limit the map** to a circle, square, or rectangle, so it ends where your playable area does.
 - **Select chunks on the map**, in the browser or in game, to render them again, or to hide them behind caution stripes while staff build there. Players inside a hidden area are hidden too.
 - **Export the map as images** with `/taerra render image`.
@@ -70,7 +71,7 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 
 The optional Fabric mod brings the server's map into the game. Join a server running TAERRA, and it connects by itself, already logged in, so no `/taerra login` is needed in game:
 
-- a **full world map** that does everything the web map does: both views and all four rotations, layers, players and follow mode, waypoints, teleporting, chunk selection, and render progress
+- a **full world map** that does everything the web map does: both views and all four rotations, layers, players and follow mode, waypoints, search, teleporting, chunk selection, and render progress
 - a **minimap** you can size, zoom, place on either side, and turn with the player
 - **waypoints in the world** as labels where they are
 
