@@ -1813,7 +1813,7 @@ h2 .badge {
 }
 
 [data-action="navigate"] {
-    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M3 0h2v1H3zM2 1h1v1H2zM5 1h1v1H5zM1 2h1v1H1zM6 2h1v1H6zM0 3h3v1H0zM5 3h3v1H5zM2 4h1v1H2zM5 4h1v1H5zM2 5h1v1H2zM5 5h1v1H5zM2 6h1v1H2zM5 6h1v1H5zM2 7h4v1H2z'/></svg>");
+    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M6 0h2v1H6zM4 1h4v1H4zM2 2h5v1H2zM0 3h7v1H0zM4 4h2v1H4zM4 5h2v1H4zM4 6h1v1H4zM4 7h1v1H4z'/></svg>");
 }
 
 [data-action="teleport"] {
