@@ -20,6 +20,8 @@ class NamesTest {
     assertNull(Names.of("<b>Home</b>"));
     assertNull(Names.of("§cHome"));
     assertNull(Names.of("   "));
+    assertNull(Names.of(".."));
+    assertNull(Names.of("?!"));
     assertNull(Names.of(null));
   }
 

@@ -297,11 +297,11 @@ public final class WaypointScreen extends Screen {
     final @NotNull String name = this.name.strip();
     final boolean creating = this.group.equals(NEW_GROUP);
     final @NotNull String group = creating ? this.newGroup.strip() : this.group;
-    if (name.isEmpty()) {
+    if (name.codePoints().noneMatch(Character::isLetterOrDigit)) {
       fail(Component.translatable("taerra.waypoint.no_name"));
       return;
     }
-    if (creating && group.isEmpty()) {
+    if (creating && group.codePoints().noneMatch(Character::isLetterOrDigit)) {
       fail(Component.translatable("taerra.waypoint.no_group_name"));
       return;
     }

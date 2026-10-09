@@ -262,12 +262,12 @@ class WaypointEditor {
         const creating = this.selectedGroup() === NEW_GROUP;
         const personal = this.selectedGroup() === PERSONAL;
         const group = creating ? $('waypoint-group-name').value.trim() : personal ? '' : this.selectedGroup();
-        if (!name) {
+        if (!/[\p{L}\p{N}]/u.test(name)) {
             this.showError(t('waypoint.noName'));
             $('waypoint-name').focus();
             return;
         }
-        if (creating && !group) {
+        if (creating && !/[\p{L}\p{N}]/u.test(group)) {
             this.showError(t('waypoint.noGroupName'));
             $('waypoint-group-name').focus();
             return;

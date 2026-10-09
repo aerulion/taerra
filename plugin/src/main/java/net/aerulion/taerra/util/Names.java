@@ -11,7 +11,7 @@ public final class Names {
   public static final int MAX_DESCRIPTION = 280;
   public static final @NotNull String CHARACTERS = "\\p{L}\\p{N} _.,:'&()#!?+-";
   private static final @NotNull Pattern NAME =
-      Pattern.compile("[" + CHARACTERS + "]{1," + MAX_LENGTH + "}");
+      Pattern.compile("(?=.*[\\p{L}\\p{N}])[" + CHARACTERS + "]{1," + MAX_LENGTH + "}");
 
   private Names() {
     super();
