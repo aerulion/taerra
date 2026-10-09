@@ -53,7 +53,7 @@ public final class TileCacheImpl implements TileCache {
         }
       }
       return image;
-    } catch (final IOException e) {
+    } catch (final IOException | RuntimeException e) {
       LOGGER.warn("TAERRA: unreadable tile {}: {}", key, e.toString());
       return null;
     }
