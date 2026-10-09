@@ -84,16 +84,27 @@
             <button data-i18n="account.newCode" hidden id="pair-new" type="button">New code</button>
         </div>
         <div hidden id="account-in">
-            <p class="account-menu__title"><span data-i18n="account.as">Logged in as</span> <b id="account-name"></b>
-            </p>
+            <div class="account-profile">
+                <img alt="" class="account-profile__head" hidden id="account-avatar">
+                <div>
+                    <p class="account-profile__label" data-i18n="account.as">Logged in as</p>
+                    <p class="account-profile__name" id="account-name"></p>
+                </div>
+            </div>
             <p class="account-menu__label" data-i18n="account.devices">Logged in on</p>
             <ul class="devices" id="device-list"></ul>
-            <button data-i18n="account.device" id="device-button" type="button">Log in on another device</button>
-            <div class="account-qr" hidden id="device-qr">
-                <div class="account-qr__code" id="device-qr-code"></div>
-                <p class="account-menu__note" id="device-qr-status" role="status"></p>
+            <div class="account-actions">
+                <button class="account-action" data-i18n="account.device" data-icon="phone" id="device-button"
+                        type="button">Log in on another device
+                </button>
+                <div class="account-qr" hidden id="device-qr">
+                    <div class="account-qr__code" id="device-qr-code"></div>
+                    <p class="account-menu__note" id="device-qr-status" role="status"></p>
+                </div>
+                <button class="account-action account-action--danger" data-i18n="account.logout" data-icon="logout"
+                        id="logout-button" type="button">Log out
+                </button>
             </div>
-            <button data-i18n="account.logout" id="logout-button" type="button">Log out</button>
         </div>
     </div>
 </header>

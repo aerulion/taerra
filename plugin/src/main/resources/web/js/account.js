@@ -40,8 +40,10 @@ function show(account) {
     $('account-button').setAttribute('aria-label', label);
     $('account-button').title = label;
     $('account-head').hidden = true;
+    $('account-avatar').hidden = true;
     if (account) {
         $('account-head').src = `/api/account/avatar.png?uuid=${account.uuid}`;
+        $('account-avatar').src = $('account-head').src;
     }
 }
 
@@ -240,9 +242,19 @@ function deviceName(device) {
     return device.os ? t('account.on', {browser, os: device.os}) : browser;
 }
 
+function deviceIcon(device) {
+    if (device.game) {
+        return 'game';
+    }
+    return device.os === 'iPad' ? 'tablet' : device.os === 'iPhone' || device.os === 'Android' ? 'phone' : 'desktop';
+}
+
 function ago(time) {
     const since = Date.now() - time;
-    const [unit, size] = AGO.find(([, size]) => since >= size) ?? ['minute', 60000];
+    if (since < 60000) {
+        return t('account.justNow');
+    }
+    const [unit, size] = AGO.find(([, size]) => since >= size);
     return relative.format(-Math.floor(since / size), unit);
 }
 
@@ -256,6 +268,8 @@ async function loadDevices() {
     $('device-list').replaceChildren(...devices.map(device => {
         const row = document.createElement('li');
         row.className = 'device';
+        row.dataset.icon = deviceIcon(device);
+        row.classList.toggle('is-current', device.current || device.game);
         const text = document.createElement('span');
         text.className = 'device__text';
         const name = document.createElement('span');
@@ -263,7 +277,6 @@ async function loadDevices() {
         name.textContent = deviceName(device);
         const meta = document.createElement('span');
         meta.className = 'device__meta';
-        meta.classList.toggle('is-current', device.current || device.game);
         meta.textContent = device.current ? t('account.thisDevice')
             : device.game ? t('account.inGame') : ago(device.seen);
         text.append(name, meta);
@@ -272,8 +285,8 @@ async function loadDevices() {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'device__logout';
-            button.textContent = t('account.endDevice');
             button.setAttribute('aria-label', t('account.endDeviceLabel', {device: name.textContent}));
+            button.title = button.getAttribute('aria-label');
             button.addEventListener('click', async () => {
                 button.disabled = true;
                 try {
@@ -307,6 +320,7 @@ async function initialize() {
         }
     });
     $('account-head').addEventListener('load', () => $('account-head').hidden = false);
+    $('account-avatar').addEventListener('load', () => $('account-avatar').hidden = false);
     $('account-menu').addEventListener('toggle', (event) => {
         if (event.newState === 'closed') {
             $('login-error').hidden = true;
