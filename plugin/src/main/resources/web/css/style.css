@@ -913,7 +913,7 @@ button {
 }
 
 [data-icon="game"] {
-    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M3 0h2v1H3zM3 1h2v1H3zM3 2h2v1H3zM3 3h2v1H3zM3 4h2v1H3zM1 5h6v1H1zM3 6h2v1H3zM2 7h4v1H2z'/></svg>");
+    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M6 0h2v1H6zM5 1h1v1H5zM7 1h1v1H7zM4 2h1v1H4zM6 2h1v1H6zM1 3h1v1H1zM3 3h1v1H3zM5 3h1v1H5zM2 4h1v1H2zM4 4h1v1H4zM2 5h2v1H2zM1 6h1v1H1zM4 6h1v1H4zM0 7h1v1H0z'/></svg>");
 }
 
 [data-icon="logout"] {
@@ -2909,7 +2909,7 @@ footer.manager__buttons .btn--danger {
 }
 
 .manager__action[data-action="hide"] {
-    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M7 1h1v1H7zM2 2h3v1H2zM6 2h1v1H6zM1 3h1v1H1zM3 3h1v1H3zM5 3h1v1H5zM0 4h1v1H0zM4 4h1v1H4zM7 4h1v1H7zM1 5h1v1H1zM3 5h1v1H3zM6 5h1v1H6zM2 6h1v1H2zM5 6h2v1H5zM1 7h1v1H1z'/></svg>");
+    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M0 0h1v1H0zM1 1h1v1H1zM2 2h1v1H2zM4 2h2v1H4zM1 3h1v1H1zM3 3h1v1H3zM6 3h1v1H6zM0 4h1v1H0zM4 4h1v1H4zM7 4h1v1H7zM1 5h1v1H1zM5 5h1v1H5zM2 6h3v1H2zM6 6h1v1H6zM7 7h1v1H7z'/></svg>");
 }
 
 .manager__action[data-action="delete"] {
