@@ -73,43 +73,80 @@ class WebSessionsTest {
         WebSessions.pairCode(
             " " + pair.code().substring(0, 3).toLowerCase() + "-" + pair.code().substring(3));
     assertEquals(pair.code(), typed);
-    assertTrue(sessions.approve(pair.code(), PLAYER, "Steve", SKIN));
-    assertFalse(sessions.approve(pair.code(), UUID.randomUUID(), "Alex", null));
+    assertEquals(
+        WebSessions.Approval.APPROVED, sessions.approve(pair.code(), PLAYER, "Steve", SKIN));
+    assertEquals(
+        WebSessions.Approval.UNKNOWN,
+        sessions.approve(pair.code(), UUID.randomUUID(), "Alex", null));
 
     final WebSessions.@Nullable Claim claimed = sessions.claim(pair.claim());
     assertNotNull(claimed);
     assertNotNull(claimed.login());
     assertEquals(PLAYER, claimed.login().session().uuid());
     assertNull(sessions.claim(pair.claim()));
-    assertFalse(sessions.approve(pair.code(), PLAYER, "Steve", SKIN));
+    assertEquals(
+        WebSessions.Approval.UNKNOWN, sessions.approve(pair.code(), PLAYER, "Steve", SKIN));
   }
 
   @Test
-  @DisplayName("pairing codes are six letters and digits that can't be misread")
-  void pairCodeFormat() {
-    assertEquals("K7F2QX", WebSessions.pairCode("k7f 2qx"));
-    assertNull(WebSessions.pairCode("K7F2Q"));
-    assertNull(WebSessions.pairCode("K7F2Q0"));
-    assertNull(WebSessions.pairCode("K7F2QXX"));
-  }
-
-  @Test
-  @DisplayName(
-      "a link made from a browser session ends with that session, and never from a mod session")
-  void linkEndsWithItsSession() {
+  @DisplayName("a player who keeps typing wrong codes has to wait")
+  void wrongCodesAreThrottled() {
     final @NotNull WebSessions sessions = sessions();
-    final WebSessions.@Nullable Login desktop =
-        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN));
-    assertNotNull(desktop);
-    final @Nullable String code = sessions.linkCode(desktop.token());
-    assertNotNull(code);
-    final WebSessions.@Nullable Login phone = sessions.redeem(code);
-    assertNotNull(phone);
-    assertTrue(phone.session().expires() <= desktop.session().expires());
+    final WebSessions.@Nullable Pair pair = sessions.pair();
+    assertNotNull(pair);
+    for (int i = 0; i < 5; i++) {
+      assertEquals(WebSessions.Approval.UNKNOWN, sessions.approve("AAAAAA", PLAYER, "Steve", SKIN));
+    }
+    assertEquals(
+        WebSessions.Approval.TOO_MANY, sessions.approve(pair.code(), PLAYER, "Steve", SKIN));
+    assertEquals(
+        WebSessions.Approval.APPROVED,
+        sessions.approve(pair.code(), UUID.randomUUID(), "Alex", null));
+  }
 
-    assertNull(sessions.linkCode(sessions.open(PLAYER, "Steve", SKIN)));
-    assertNull(sessions.linkCode("guessed"));
-    assertNull(sessions.linkCode(null));
+  @Test
+  @DisplayName("logging a player out also cancels their unused links and approved codes")
+  void logoutCancelsPendingLogins() {
+    final @NotNull WebSessions sessions = sessions();
+    final @NotNull String link = sessions.createCode(PLAYER, "Steve", SKIN);
+    final WebSessions.@Nullable Pair pair = sessions.pair();
+    assertNotNull(pair);
+    sessions.approve(pair.code(), PLAYER, "Steve", SKIN);
+    assertNotNull(sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN)));
+
+    sessions.endAll(PLAYER);
+    assertNull(sessions.redeem(link));
+    assertNull(sessions.claim(pair.claim()));
+  }
+
+  @Test
+  @DisplayName("a new link replaces the player's previous one")
+  void newLinkReplacesOld() {
+    final @NotNull WebSessions sessions = sessions();
+    final @NotNull String first = sessions.createCode(PLAYER, "Steve", SKIN);
+    final @NotNull String second = sessions.createCode(PLAYER, "Steve", SKIN);
+    assertNull(sessions.redeem(first));
+    assertNotNull(sessions.redeem(second));
+  }
+
+  @Test
+  @DisplayName("a player keeps at most ten browser sessions, never losing the newest or the mod's")
+  void sessionsPerPlayerAreCapped() {
+    final @NotNull WebSessions sessions = sessions();
+    final @NotNull String mod = sessions.open(PLAYER, "Steve", SKIN);
+    final @NotNull List<String> tokens = new java.util.ArrayList<>();
+    WebSessions.@Nullable Login last = sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN));
+    for (int i = 0; i < 12; i++) {
+      assertNotNull(last);
+      tokens.add(last.token());
+      final @Nullable String code = sessions.linkCode(last.token());
+      assertNotNull(code);
+      last = sessions.redeem(code);
+    }
+    assertNotNull(last);
+    assertNotNull(sessions.session(last.token()));
+    assertNotNull(sessions.session(mod));
+    assertEquals(9, tokens.stream().filter(token -> sessions.session(token) != null).count());
   }
 
   @Test

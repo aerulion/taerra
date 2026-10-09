@@ -34,13 +34,17 @@ public final class WebSessions {
   private static final int TOKEN_BYTES = 32;
   private static final @NotNull String PAIR_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   private static final int PAIR_LENGTH = 6;
-  private static final int MAX_PAIRINGS = 512;
+  private static final int MAX_PAIRINGS = 10_000;
+  private static final int MAX_SESSIONS = 10;
+  private static final int MAX_FAILED_APPROVALS = 5;
+  private static final @NotNull Duration APPROVAL_WINDOW = Duration.ofMinutes(1);
 
   private final @NotNull File file;
   private final @NotNull Logger logger;
   private final @NotNull SecureRandom random = new SecureRandom();
   private final @NotNull Map<String, Code> codes = new HashMap<>();
   private final @NotNull Map<String, Pairing> pairings = new HashMap<>();
+  private final @NotNull Map<UUID, Failures> failures = new HashMap<>();
   private final @NotNull Map<String, Session> sessions = new HashMap<>();
   private final @NotNull Map<UUID, Set<String>> grants = new HashMap<>();
   private final @NotNull Set<String> unsaved = new HashSet<>();
@@ -120,7 +124,9 @@ public final class WebSessions {
 
   private @NotNull String createCode(final @NotNull Session who, final long until) {
     final long now = System.currentTimeMillis();
-    this.codes.values().removeIf(code -> code.expires() < now);
+    this.codes
+        .values()
+        .removeIf(code -> code.expires() < now || code.who().uuid().equals(who.uuid()));
     final @NotNull String code = token();
     this.codes.put(hash(code), new Code(who, now + CODE_LIFETIME.toMillis(), until));
     return code;
@@ -145,7 +151,18 @@ public final class WebSessions {
   private @NotNull Login login(final @NotNull Session who, final long expires) {
     final @NotNull String token = token();
     final @NotNull Session session = new Session(who.uuid(), who.name(), who.skin(), expires);
-    this.sessions.put(hash(token), session);
+    final @NotNull String key = hash(token);
+    this.sessions.entrySet().stream()
+        .filter(
+            entry ->
+                entry.getValue().uuid().equals(who.uuid())
+                    && !this.unsaved.contains(entry.getKey()))
+        .sorted(Comparator.comparingLong(entry -> -entry.getValue().expires()))
+        .skip(MAX_SESSIONS - 1)
+        .map(Map.Entry::getKey)
+        .toList()
+        .forEach(this.sessions::remove);
+    this.sessions.put(key, session);
     save();
     return new Login(token, session);
   }
@@ -169,20 +186,29 @@ public final class WebSessions {
     return new Pair(code, claim);
   }
 
-  public synchronized boolean approve(
-      final @NotNull String code,
+  public synchronized @NotNull Approval approve(
+      final @Nullable String code,
       final @NotNull UUID uuid,
       final @NotNull String name,
       final @Nullable String skin) {
-    final @Nullable Pairing pairing = this.pairings.get(code);
-    if (pairing == null
-        || pairing.expires() < System.currentTimeMillis()
-        || pairing.who() != null) {
-      return false;
+    final long now = System.currentTimeMillis();
+    this.failures.values().removeIf(failed -> failed.until() < now);
+    final @Nullable Failures failed = this.failures.get(uuid);
+    if (failed != null && failed.count() >= MAX_FAILED_APPROVALS) {
+      return Approval.TOO_MANY;
+    }
+    final @Nullable Pairing pairing = code == null ? null : this.pairings.get(code);
+    if (pairing == null || pairing.expires() < now || pairing.who() != null) {
+      this.failures.put(
+          uuid,
+          failed == null
+              ? new Failures(1, now + APPROVAL_WINDOW.toMillis())
+              : new Failures(failed.count() + 1, failed.until()));
+      return Approval.UNKNOWN;
     }
     this.pairings.put(
         code, new Pairing(pairing.claim(), pairing.expires(), new Session(uuid, name, skin, 0)));
-    return true;
+    return Approval.APPROVED;
   }
 
   public synchronized @Nullable Claim claim(final @NotNull String claim) {
@@ -275,6 +301,10 @@ public final class WebSessions {
   }
 
   public synchronized int endAll(final @NotNull UUID uuid) {
+    this.codes.values().removeIf(code -> code.who().uuid().equals(uuid));
+    this.pairings
+        .values()
+        .removeIf(pairing -> pairing.who() != null && pairing.who().uuid().equals(uuid));
     final int before = this.sessions.size();
     this.sessions.values().removeIf(session -> session.uuid().equals(uuid));
     final int ended = before - this.sessions.size();
@@ -295,7 +325,10 @@ public final class WebSessions {
             uuid ->
                 this.sessions.values().stream().noneMatch(session -> session.uuid().equals(uuid))
                     && this.codes.values().stream()
-                        .noneMatch(code -> code.who().uuid().equals(uuid)));
+                        .noneMatch(code -> code.who().uuid().equals(uuid))
+                    && this.pairings.values().stream()
+                        .noneMatch(
+                            pairing -> pairing.who() != null && pairing.who().uuid().equals(uuid)));
     final @NotNull YamlConfiguration yaml = new YamlConfiguration();
     this.grants.forEach(
         (uuid, granted) -> yaml.set("grants." + uuid, granted.stream().sorted().toList()));
@@ -328,4 +361,12 @@ public final class WebSessions {
   private record Code(@NotNull Session who, long expires, long until) {}
 
   private record Pairing(@NotNull String claim, long expires, @Nullable Session who) {}
+
+  private record Failures(int count, long until) {}
+
+  public enum Approval {
+    APPROVED,
+    UNKNOWN,
+    TOO_MANY
+  }
 }

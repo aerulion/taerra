@@ -80,7 +80,7 @@
   "account.expired": "This code has expired.",
   "account.copy": "Copy command",
   "account.newCode": "New code",
-  "account.pairFailed": "Couldn't get a code. Try again in a moment.",
+  "account.pairFailed": "Couldn't get a code right now. Run /taerra login in game for a login link instead.",
   "account.device": "Log in on another device",
   "account.scan": "Scan this with your phone. It works once, for 5 minutes.",
   "account.linkFailed": "That didn't work.",

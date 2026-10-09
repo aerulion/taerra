@@ -65,10 +65,15 @@ public final class LoginSubCommand implements TaerraSubCommand {
     }
     final @NotNull String typed = StringArgumentType.getString(context, "code").strip();
     final @Nullable String code = WebSessions.pairCode(typed);
-    if (code == null
-        || !this.sessions.approve(
-            code, player.getUniqueId(), player.getName(), PlayerAvatars.skin(player))) {
-      feedback(context, Messages.error("login.unknown_code", Messages.value(typed)));
+    final WebSessions.@NotNull Approval approval =
+        this.sessions.approve(
+            code, player.getUniqueId(), player.getName(), PlayerAvatars.skin(player));
+    if (approval != WebSessions.Approval.APPROVED) {
+      feedback(
+          context,
+          approval == WebSessions.Approval.TOO_MANY
+              ? Messages.error("login.too_many_codes")
+              : Messages.error("login.unknown_code", Messages.value(typed)));
       return SUCCESS;
     }
     this.sessions.grant(player.getUniqueId(), WebGrants.of(player, this.config));

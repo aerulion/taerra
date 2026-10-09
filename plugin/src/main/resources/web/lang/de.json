@@ -80,7 +80,7 @@
   "account.expired": "Dieser Code ist abgelaufen.",
   "account.copy": "Befehl kopieren",
   "account.newCode": "Neuer Code",
-  "account.pairFailed": "Gerade gibt es keinen Code. Versuch es gleich nochmal.",
+  "account.pairFailed": "Gerade gibt es keinen Code. Hol dir im Spiel mit /taerra login einen Anmeldelink.",
   "account.device": "Auf einem anderen Gerät anmelden",
   "account.scan": "Scanne das mit deinem Handy. Es funktioniert einmal innerhalb von 5 Minuten.",
   "account.linkFailed": "Das hat nicht geklappt.",
