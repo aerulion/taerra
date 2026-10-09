@@ -6,6 +6,11 @@ import {wsManager} from './websocket.js';
 
 const $ = (id) => document.getElementById(id);
 
+export const FALLBACK_AVATAR = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" shape-rendering="crispEdges">
+<rect width="8" height="8" fill="#7a7a7a"/><rect width="8" height="2" fill="#4a4a4a"/><rect y="2" width="1" height="1" fill="#4a4a4a"/><rect x="7" y="2" width="1" height="1" fill="#4a4a4a"/>
+<rect x="1" y="4" width="1" height="1" fill="#e0e0e0"/><rect x="2" y="4" width="1" height="1" fill="#333"/><rect x="5" y="4" width="1" height="1" fill="#333"/><rect x="6" y="4" width="1" height="1" fill="#e0e0e0"/>
+<rect x="3" y="6" width="2" height="1" fill="#5a5a5a"/></svg>`);
+
 const tabs = new BroadcastChannel('taerra-account');
 const POLL_MILLIS = 2000;
 const QUIET_ZONE = 4;
@@ -319,8 +324,14 @@ async function initialize() {
             void login(code);
         }
     });
-    $('account-head').addEventListener('load', () => $('account-head').hidden = false);
-    $('account-avatar').addEventListener('load', () => $('account-avatar').hidden = false);
+    for (const head of [$('account-head'), $('account-avatar')]) {
+        head.addEventListener('load', () => head.hidden = false);
+        head.addEventListener('error', () => {
+            if (current && head.getAttribute('src') !== FALLBACK_AVATAR) {
+                head.src = FALLBACK_AVATAR;
+            }
+        });
+    }
     $('account-menu').addEventListener('toggle', (event) => {
         if (event.newState === 'closed') {
             $('login-error').hidden = true;

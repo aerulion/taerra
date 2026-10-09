@@ -1,13 +1,8 @@
-import {accountManager} from './account.js';
+import {accountManager, FALLBACK_AVATAR} from './account.js';
 import {numbers, t} from './i18n.js';
 import {mapManager, pixelPath} from './map.js';
 import {element, markerManager, PLAYER_LAYER} from './markers.js';
 import {navigationManager} from './navigation.js';
-
-const FALLBACK_AVATAR = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" shape-rendering="crispEdges">
-<rect width="8" height="8" fill="#7a7a7a"/><rect width="8" height="2" fill="#4a4a4a"/><rect y="2" width="1" height="1" fill="#4a4a4a"/><rect x="7" y="2" width="1" height="1" fill="#4a4a4a"/>
-<rect x="1" y="4" width="1" height="1" fill="#e0e0e0"/><rect x="2" y="4" width="1" height="1" fill="#333"/><rect x="5" y="4" width="1" height="1" fill="#333"/><rect x="6" y="4" width="1" height="1" fill="#e0e0e0"/>
-<rect x="3" y="6" width="2" height="1" fill="#5a5a5a"/></svg>`);
 
 const GLIDE_MILLIS = 1000;
 const TELEPORT_BLOCKS = 48;
