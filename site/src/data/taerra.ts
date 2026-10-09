@@ -161,7 +161,7 @@ const en = {
                 features: [
                     {
                         title: 'Logins without passwords',
-                        text: 'Players run /taerra login and click the link it sends. The link works once, the browser stays logged in for 30 days, and players are told in game whenever a browser logs in as them.'
+                        text: 'The map shows a short code to type after /taerra login in game, and the browser logs in by itself. A logged-in browser shows a QR code for your phone. Codes work once, browsers stay logged in for 30 days, and players are told in game whenever a browser logs in as them.'
                     },
                     {
                         title: 'Private worlds and layers',
@@ -344,7 +344,7 @@ const en = {
                 {command: '/taerra config …', text: 'Change settings, enable worlds, make worlds and layers private'},
                 {command: '/taerra waypoint add|remove …', text: 'Add or remove waypoints'},
                 {command: '/taerra import dynmap <file>', text: 'Import markers from dynmap'},
-                {command: '/taerra login', text: 'Log in to the web map'},
+                {command: '/taerra login [code]', text: 'Log in to the web map'},
                 {command: '/taerra logout [player]', text: 'Log out of the web map in every browser'}
             ] satisfies Command[]
         },

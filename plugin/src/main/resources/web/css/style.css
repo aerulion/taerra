@@ -689,6 +689,57 @@ button {
     color: var(--red);
 }
 
+.account-menu__note {
+    padding: 0 8px 6px;
+    color: var(--stone-200);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.account-menu__note.is-expired {
+    color: var(--red);
+}
+
+.account-pair__command {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 8px 6px;
+    padding: 8px 10px;
+    background: var(--stone-900);
+    color: var(--stone-200);
+    font: 600 12px/1 var(--font-mono);
+    user-select: all;
+}
+
+.account-pair__command b {
+    color: var(--white);
+    font-size: 18px;
+    letter-spacing: .12em;
+}
+
+.account-pair__command.is-expired b {
+    color: var(--stone-500);
+    text-decoration: line-through;
+}
+
+.account-qr__code {
+    display: grid;
+    place-items: center;
+    margin: 4px 8px 8px;
+}
+
+.account-qr__code svg {
+    display: block;
+    width: 100%;
+    max-width: 224px;
+    height: auto;
+}
+
+.account-qr.is-expired .account-qr__code {
+    opacity: .2;
+}
+
 .account-menu button {
     width: 100%;
     padding: 8px;

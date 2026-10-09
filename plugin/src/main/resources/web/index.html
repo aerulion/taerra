@@ -76,13 +76,21 @@
         <div hidden id="account-out">
             <p class="account-menu__title" data-i18n="account.login">Log in</p>
             <p class="account-menu__error" data-i18n="account.invalid" hidden id="login-error" role="alert">That
-                login link was already used or has expired. Run /taerra login for a new one.</p>
-            <p class="account-menu__text" data-i18n="account.hint">Run /taerra login in game and click the link it
-                sends you.</p>
+                login link was already used or has expired. Log in with the code below instead.</p>
+            <p class="account-menu__text" data-i18n="account.pair">Type this in game:</p>
+            <p class="account-pair__command" id="pair-command"><span>/taerra login</span> <b id="pair-code"></b></p>
+            <p class="account-menu__note" id="pair-status" role="status"></p>
+            <button data-i18n="account.copy" hidden id="pair-copy" type="button">Copy command</button>
+            <button data-i18n="account.newCode" hidden id="pair-new" type="button">New code</button>
         </div>
         <div hidden id="account-in">
             <p class="account-menu__title"><span data-i18n="account.as">Logged in as</span> <b id="account-name"></b>
             </p>
+            <button data-i18n="account.device" id="device-button" type="button">Log in on another device</button>
+            <div class="account-qr" hidden id="device-qr">
+                <div class="account-qr__code" id="device-qr-code"></div>
+                <p class="account-menu__note" id="device-qr-status" role="status"></p>
+            </div>
             <button data-i18n="account.logout" id="logout-button" type="button">Log out</button>
         </div>
     </div>

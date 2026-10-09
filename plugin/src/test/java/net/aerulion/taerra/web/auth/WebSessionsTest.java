@@ -58,6 +58,61 @@ class WebSessionsTest {
   }
 
   @Test
+  @DisplayName("a pairing code waits until a player approves it, then logs in its browser once")
+  void pairingLogsInOnce() {
+    final @NotNull WebSessions sessions = sessions();
+    final WebSessions.@Nullable Pair pair = sessions.pair();
+    assertNotNull(pair);
+
+    final WebSessions.@Nullable Claim waiting = sessions.claim(pair.claim());
+    assertNotNull(waiting);
+    assertNull(waiting.login());
+    assertNull(sessions.claim("guessed"));
+
+    final @Nullable String typed =
+        WebSessions.pairCode(
+            " " + pair.code().substring(0, 3).toLowerCase() + "-" + pair.code().substring(3));
+    assertEquals(pair.code(), typed);
+    assertTrue(sessions.approve(pair.code(), PLAYER, "Steve", SKIN));
+    assertFalse(sessions.approve(pair.code(), UUID.randomUUID(), "Alex", null));
+
+    final WebSessions.@Nullable Claim claimed = sessions.claim(pair.claim());
+    assertNotNull(claimed);
+    assertNotNull(claimed.login());
+    assertEquals(PLAYER, claimed.login().session().uuid());
+    assertNull(sessions.claim(pair.claim()));
+    assertFalse(sessions.approve(pair.code(), PLAYER, "Steve", SKIN));
+  }
+
+  @Test
+  @DisplayName("pairing codes are six letters and digits that can't be misread")
+  void pairCodeFormat() {
+    assertEquals("K7F2QX", WebSessions.pairCode("k7f 2qx"));
+    assertNull(WebSessions.pairCode("K7F2Q"));
+    assertNull(WebSessions.pairCode("K7F2Q0"));
+    assertNull(WebSessions.pairCode("K7F2QXX"));
+  }
+
+  @Test
+  @DisplayName(
+      "a link made from a browser session ends with that session, and never from a mod session")
+  void linkEndsWithItsSession() {
+    final @NotNull WebSessions sessions = sessions();
+    final WebSessions.@Nullable Login desktop =
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN));
+    assertNotNull(desktop);
+    final @Nullable String code = sessions.linkCode(desktop.token());
+    assertNotNull(code);
+    final WebSessions.@Nullable Login phone = sessions.redeem(code);
+    assertNotNull(phone);
+    assertTrue(phone.session().expires() <= desktop.session().expires());
+
+    assertNull(sessions.linkCode(sessions.open(PLAYER, "Steve", SKIN)));
+    assertNull(sessions.linkCode("guessed"));
+    assertNull(sessions.linkCode(null));
+  }
+
+  @Test
   @DisplayName("a mod session works but never reaches the disk")
   void modSessionStaysInMemory() {
     final @NotNull WebSessions sessions = sessions();

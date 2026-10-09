@@ -468,6 +468,9 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 config.routes.get("/api/account/avatar.png", this::handleAccountAvatarRequest);
                 config.routes.post("/api/login", this::handleLoginRequest);
                 config.routes.post("/api/logout", this::handleLogoutRequest);
+                config.routes.post("/api/login/pair", this::handlePairRequest);
+                config.routes.post("/api/login/claim", this::handleClaimRequest);
+                config.routes.post("/api/login/link", this::handleLinkRequest);
                 config.routes.post("/api/teleport", this::handleTeleportRequest);
                 config.routes.get("/api/waypoints/groups", this::handleWaypointGroupsRequest);
                 config.routes.put("/api/waypoints", this::handleWaypointSaveRequest);
@@ -618,12 +621,16 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       ctx.status(401).result("Invalid or expired code");
       return;
     }
+    logIn(ctx, login);
+  }
+
+  private void logIn(final @NotNull Context ctx, final WebSessions.@NotNull Login login) {
     ctx.cookie(
         new Cookie(
             WebSessions.COOKIE,
             login.token(),
             "/",
-            (int) WebSessions.SESSION_LIFETIME.toSeconds(),
+            (int) ((login.session().expires() - System.currentTimeMillis()) / 1000),
             secure(ctx),
             true,
             null,
@@ -639,6 +646,64 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
             });
     ctx.header("Cache-Control", "no-store")
         .json(account(login.session(), this.sessions.viewer(login.token())));
+  }
+
+  private void handlePairRequest(final @NotNull Context ctx) {
+    if (!sameOrigin(ctx)) {
+      ctx.status(403).result("Cross-site request");
+      return;
+    }
+    final WebSessions.@Nullable Pair pair = this.sessions.pair();
+    if (pair == null) {
+      ctx.status(503).result("Too many logins waiting");
+      return;
+    }
+    ctx.header("Cache-Control", "no-store")
+        .json(
+            Map.of(
+                "code", pair.code(),
+                "claim", pair.claim(),
+                "seconds", WebSessions.CODE_LIFETIME.toSeconds()));
+  }
+
+  private void handleClaimRequest(final @NotNull Context ctx) {
+    if (!sameOrigin(ctx)) {
+      ctx.status(403).result("Cross-site request");
+      return;
+    }
+    final WebSessions.@Nullable Claim claim = this.sessions.claim(ctx.body().strip());
+    if (claim == null) {
+      ctx.header("Cache-Control", "no-store").status(410).result("Expired");
+    } else if (claim.login() == null) {
+      ctx.header("Cache-Control", "no-store").status(202);
+    } else {
+      logIn(ctx, claim.login());
+    }
+  }
+
+  private void handleLinkRequest(final @NotNull Context ctx) {
+    if (!sameOrigin(ctx)) {
+      ctx.status(403).result("Cross-site request");
+      return;
+    }
+    final @Nullable String code = this.sessions.linkCode(ctx.cookie(WebSessions.COOKIE));
+    if (code == null) {
+      ctx.status(403).result("Not allowed");
+      return;
+    }
+    ctx.header("Cache-Control", "no-store")
+        .json(
+            Map.of(
+                "code",
+                code,
+                "base",
+                this.plugin
+                    .getConfig()
+                    .getString("web.public-url", "")
+                    .strip()
+                    .replaceAll("/+$", ""),
+                "seconds",
+                WebSessions.CODE_LIFETIME.toSeconds()));
   }
 
   private void handleLogoutRequest(final @NotNull Context ctx) {

@@ -119,7 +119,7 @@ export const de: Copy = {
                 features: [
                     {
                         title: 'Anmelden ohne Passwort',
-                        text: 'Spieler:innen geben /taerra login ein und klicken auf den Link, den sie bekommen. Der Link funktioniert einmal, der Browser bleibt 30 Tage angemeldet, und Spieler:innen erfahren im Spiel, wann immer sich ein Browser als sie anmeldet.'
+                        text: 'Die Karte zeigt einen kurzen Code, den Spieler:innen im Spiel nach /taerra login eingeben, und der Browser meldet sich von selbst an. Ein angemeldeter Browser zeigt einen QR-Code fürs Handy. Codes funktionieren einmal, Browser bleiben 30 Tage angemeldet, und Spieler:innen erfahren im Spiel, wann immer sich ein Browser als sie anmeldet.'
                     },
                     {
                         title: 'Private Welten und Ebenen',
@@ -305,7 +305,7 @@ export const de: Copy = {
                 },
                 {command: '/taerra waypoint add|remove …', text: 'Wegpunkte hinzufügen oder entfernen'},
                 {command: '/taerra import dynmap <datei>', text: 'Markierungen aus dynmap importieren'},
-                {command: '/taerra login', text: 'Bei der Web-Karte anmelden'},
+                {command: '/taerra login [code]', text: 'Bei der Web-Karte anmelden'},
                 {command: '/taerra logout [name]', text: 'In jedem Browser von der Web-Karte abmelden'}
             ]
         },

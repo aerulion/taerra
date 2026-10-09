@@ -1,4 +1,5 @@
 import {accountManager} from './account.js';
+import {copyText} from './clipboard.js';
 import {defaultLanguage, hashLanguage, language, LANGUAGES, numbers, setLanguage, t, translatePage} from './i18n.js';
 import {mapManager} from './map.js';
 import {navigationManager} from './navigation.js';
@@ -422,22 +423,6 @@ async function teleportButton(button, {world, x, y, z}) {
 
 function placeLink(block) {
     return `${location.origin}${location.pathname}#${placeParams(block)}`;
-}
-
-async function copyText(text) {
-    try {
-        await navigator.clipboard.writeText(text);
-        return;
-    } catch {
-    }
-    const field = document.createElement('textarea');
-    field.value = text;
-    field.style.position = 'fixed';
-    field.style.opacity = '0';
-    document.body.append(field);
-    field.select();
-    document.execCommand('copy');
-    field.remove();
 }
 
 function setupContextMenu() {

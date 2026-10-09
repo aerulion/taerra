@@ -1,14 +1,25 @@
+import qrcode from '../vendor/qrcode/qrcode.js';
+import {copyText} from './clipboard.js';
 import {t} from './i18n.js';
+import {pixelPath} from './map.js';
 import {wsManager} from './websocket.js';
 
 const $ = (id) => document.getElementById(id);
 
 const tabs = new BroadcastChannel('taerra-account');
+const POLL_MILLIS = 2000;
+const QUIET_ZONE = 4;
 
 let current = null;
+let pairing = null;
+let pollTimer = 0;
+let linkTimer = 0;
 
 function show(account) {
     current = account;
+    if (account) {
+        stopPairing();
+    }
     $('account-in').hidden = !account;
     $('account-out').hidden = Boolean(account);
     $('account-name').textContent = account?.name ?? '';
@@ -36,17 +47,149 @@ async function changed() {
     wsManager.reconnect();
 }
 
+function loggedInHere(account) {
+    show(account);
+    tabs.postMessage('changed');
+    wsManager.reconnect();
+}
+
 async function login(code) {
     const response = await fetch('/api/login', {method: 'POST', body: code});
     if (response.ok) {
-        show(await response.json());
-        tabs.postMessage('changed');
-        wsManager.reconnect();
+        loggedInHere(await response.json());
         return;
     }
     await refresh();
     $('login-error').hidden = false;
     $('account-menu').showPopover();
+}
+
+function showPairing(code, status, expired = false) {
+    $('pair-code').textContent = code;
+    $('pair-command').hidden = !code;
+    $('pair-command').classList.toggle('is-expired', expired);
+    $('pair-status').textContent = status;
+    $('pair-status').classList.toggle('is-expired', expired);
+    $('pair-new').hidden = !expired;
+    $('pair-copy').hidden = expired || !code;
+    $('pair-copy').textContent = t('account.copy');
+}
+
+function stopPairing() {
+    clearTimeout(pollTimer);
+    pairing = null;
+}
+
+function expirePairing() {
+    const code = pairing?.code ?? '';
+    stopPairing();
+    showPairing(code, t('account.expired'), true);
+}
+
+async function startPairing() {
+    stopPairing();
+    showPairing('', '');
+    const started = {};
+    pairing = started;
+    let response = null;
+    try {
+        response = await fetch('/api/login/pair', {method: 'POST'});
+    } catch {
+    }
+    if (pairing !== started) {
+        return;
+    }
+    if (!response?.ok) {
+        pairing = null;
+        showPairing('', t('account.pairFailed'), true);
+        return;
+    }
+    const {code, claim, seconds} = await response.json();
+    Object.assign(started, {code, claim, until: Date.now() + seconds * 1000});
+    showPairing(code, t('account.pairTime'));
+    pollTimer = setTimeout(pollPairing, POLL_MILLIS);
+}
+
+async function pollPairing() {
+    const waiting = pairing;
+    if (!waiting?.claim) {
+        return;
+    }
+    if (Date.now() >= waiting.until) {
+        expirePairing();
+        return;
+    }
+    let response = null;
+    try {
+        response = await fetch('/api/login/claim', {method: 'POST', body: waiting.claim});
+    } catch {
+    }
+    if (pairing !== waiting) {
+        return;
+    }
+    if (response?.status === 200) {
+        stopPairing();
+        loggedInHere(await response.json());
+    } else if (response?.status === 410) {
+        expirePairing();
+    } else {
+        pollTimer = setTimeout(pollPairing, POLL_MILLIS);
+    }
+}
+
+function qrSvg(text) {
+    const qr = qrcode(0, 'M');
+    qr.addData(text);
+    qr.make();
+    const count = qr.getModuleCount();
+    const size = count + QUIET_ZONE * 2;
+    const dark = [];
+    for (let row = 0; row < count; row++) {
+        for (let col = 0; col < count; col++) {
+            if (qr.isDark(row, col)) {
+                dark.push([col + QUIET_ZONE, row + QUIET_ZONE, 1, 1]);
+            }
+        }
+    }
+    return `<svg viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges" role="img" aria-label="${t('account.device')}">
+<rect width="${size}" height="${size}" fill="#fff"/><path d="${pixelPath(dark)}" fill="#000"/></svg>`;
+}
+
+async function showDeviceLink() {
+    clearTimeout(linkTimer);
+    const panel = $('device-qr');
+    let response = null;
+    try {
+        response = await fetch('/api/login/link', {method: 'POST'});
+    } catch {
+    }
+    panel.hidden = false;
+    if (!response?.ok) {
+        panel.classList.add('is-expired');
+        $('device-qr-code').replaceChildren();
+        $('device-qr-status').textContent = t('account.linkFailed');
+        $('device-qr-status').classList.add('is-expired');
+        return;
+    }
+    const {code, base, seconds} = await response.json();
+    const page = base || `${location.origin}${location.pathname.replace(/\/$/, '')}`;
+    $('device-qr-code').innerHTML = qrSvg(`${page}/#login=${code}`);
+    panel.classList.remove('is-expired');
+    $('device-qr-status').textContent = t('account.scan');
+    $('device-qr-status').classList.remove('is-expired');
+    $('device-button').textContent = t('account.newCode');
+    linkTimer = setTimeout(() => {
+        panel.classList.add('is-expired');
+        $('device-qr-status').textContent = t('account.expired');
+        $('device-qr-status').classList.add('is-expired');
+    }, seconds * 1000);
+}
+
+function hideDeviceLink() {
+    clearTimeout(linkTimer);
+    $('device-qr').hidden = true;
+    $('device-qr-code').replaceChildren();
+    $('device-button').textContent = t('account.device');
 }
 
 function takeHashCode() {
@@ -71,8 +214,17 @@ async function initialize() {
     $('account-menu').addEventListener('toggle', (event) => {
         if (event.newState === 'closed') {
             $('login-error').hidden = true;
+            hideDeviceLink();
+        } else if (!current && !pairing) {
+            void startPairing();
         }
     });
+    $('pair-new').addEventListener('click', () => void startPairing());
+    $('pair-copy').addEventListener('click', async () => {
+        await copyText(`/taerra login ${$('pair-code').textContent}`);
+        $('pair-copy').textContent = t('menu.copied');
+    });
+    $('device-button').addEventListener('click', () => void showDeviceLink());
     $('logout-button').addEventListener('click', async () => {
         await fetch('/api/logout', {method: 'POST'});
         $('account-menu').hidePopover();

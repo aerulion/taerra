@@ -1,8 +1,10 @@
 package net.aerulion.taerra.command;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.web.auth.WebGrants;
@@ -12,6 +14,7 @@ import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class LoginSubCommand implements TaerraSubCommand {
 
@@ -42,7 +45,9 @@ public final class LoginSubCommand implements TaerraSubCommand {
 
   @Override
   public @NotNull LiteralArgumentBuilder<CommandSourceStack> command() {
-    return builder().executes(this::login);
+    return builder()
+        .executes(this::login)
+        .then(Commands.argument("code", StringArgumentType.greedyString()).executes(this::pair));
   }
 
   private @NotNull String localUrl() {
@@ -51,6 +56,24 @@ public final class LoginSubCommand implements TaerraSubCommand {
         + (ip.isBlank() ? "localhost" : ip)
         + ":"
         + this.plugin.getConfig().getInt("web.port", 8100);
+  }
+
+  private int pair(final @NotNull CommandContext<CommandSourceStack> context) {
+    if (!(sender(context) instanceof final @NotNull Player player)) {
+      feedback(context, Messages.error("error.player_only"));
+      return SUCCESS;
+    }
+    final @NotNull String typed = StringArgumentType.getString(context, "code").strip();
+    final @Nullable String code = WebSessions.pairCode(typed);
+    if (code == null
+        || !this.sessions.approve(
+            code, player.getUniqueId(), player.getName(), PlayerAvatars.skin(player))) {
+      feedback(context, Messages.error("login.unknown_code", Messages.value(typed)));
+      return SUCCESS;
+    }
+    this.sessions.grant(player.getUniqueId(), WebGrants.of(player, this.config));
+    feedback(context, Messages.success("login.paired", Messages.value(code)));
+    return SUCCESS;
   }
 
   private int login(final @NotNull CommandContext<CommandSourceStack> context) {

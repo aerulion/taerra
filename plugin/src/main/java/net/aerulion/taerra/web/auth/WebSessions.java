@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -29,13 +30,17 @@ public final class WebSessions {
 
   public static final @NotNull String COOKIE = "taerra_session";
   public static final @NotNull Duration SESSION_LIFETIME = Duration.ofDays(30);
-  private static final @NotNull Duration CODE_LIFETIME = Duration.ofMinutes(5);
+  public static final @NotNull Duration CODE_LIFETIME = Duration.ofMinutes(5);
   private static final int TOKEN_BYTES = 32;
+  private static final @NotNull String PAIR_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  private static final int PAIR_LENGTH = 6;
+  private static final int MAX_PAIRINGS = 512;
 
   private final @NotNull File file;
   private final @NotNull Logger logger;
   private final @NotNull SecureRandom random = new SecureRandom();
-  private final @NotNull Map<String, Session> codes = new HashMap<>();
+  private final @NotNull Map<String, Code> codes = new HashMap<>();
+  private final @NotNull Map<String, Pairing> pairings = new HashMap<>();
   private final @NotNull Map<String, Session> sessions = new HashMap<>();
   private final @NotNull Map<UUID, Set<String>> grants = new HashMap<>();
   private final @NotNull Set<String> unsaved = new HashSet<>();
@@ -100,28 +105,103 @@ public final class WebSessions {
     }
   }
 
+  public static @Nullable String pairCode(final @NotNull String typed) {
+    final @NotNull String code = typed.replaceAll("[\\s-]", "").toUpperCase(Locale.ROOT);
+    return code.length() == PAIR_LENGTH
+            && code.chars().allMatch(character -> PAIR_ALPHABET.indexOf(character) >= 0)
+        ? code
+        : null;
+  }
+
   public synchronized @NotNull String createCode(
       final @NotNull UUID uuid, final @NotNull String name, final @Nullable String skin) {
+    return createCode(new Session(uuid, name, skin, 0), Long.MAX_VALUE);
+  }
+
+  private @NotNull String createCode(final @NotNull Session who, final long until) {
     final long now = System.currentTimeMillis();
     this.codes.values().removeIf(code -> code.expires() < now);
     final @NotNull String code = token();
-    this.codes.put(hash(code), new Session(uuid, name, skin, now + CODE_LIFETIME.toMillis()));
+    this.codes.put(hash(code), new Code(who, now + CODE_LIFETIME.toMillis(), until));
     return code;
+  }
+
+  public synchronized @Nullable String linkCode(final @Nullable String token) {
+    final @Nullable Session session = session(token);
+    return session == null || this.unsaved.contains(hash(token))
+        ? null
+        : createCode(session, session.expires());
   }
 
   public synchronized @Nullable Login redeem(final @NotNull String code) {
     final long now = System.currentTimeMillis();
-    final @Nullable Session pending = this.codes.remove(hash(code));
+    final @Nullable Code pending = this.codes.remove(hash(code));
     if (pending == null || pending.expires() < now) {
       return null;
     }
+    return login(pending.who(), Math.min(now + SESSION_LIFETIME.toMillis(), pending.until()));
+  }
+
+  private @NotNull Login login(final @NotNull Session who, final long expires) {
     final @NotNull String token = token();
-    final @NotNull Session session =
-        new Session(
-            pending.uuid(), pending.name(), pending.skin(), now + SESSION_LIFETIME.toMillis());
+    final @NotNull Session session = new Session(who.uuid(), who.name(), who.skin(), expires);
     this.sessions.put(hash(token), session);
     save();
     return new Login(token, session);
+  }
+
+  public synchronized @Nullable Pair pair() {
+    final long now = System.currentTimeMillis();
+    this.pairings.values().removeIf(pairing -> pairing.expires() < now);
+    if (this.pairings.size() >= MAX_PAIRINGS) {
+      return null;
+    }
+    @NotNull String code;
+    do {
+      final @NotNull StringBuilder built = new StringBuilder(PAIR_LENGTH);
+      for (int i = 0; i < PAIR_LENGTH; i++) {
+        built.append(PAIR_ALPHABET.charAt(this.random.nextInt(PAIR_ALPHABET.length())));
+      }
+      code = built.toString();
+    } while (this.pairings.containsKey(code));
+    final @NotNull String claim = token();
+    this.pairings.put(code, new Pairing(hash(claim), now + CODE_LIFETIME.toMillis(), null));
+    return new Pair(code, claim);
+  }
+
+  public synchronized boolean approve(
+      final @NotNull String code,
+      final @NotNull UUID uuid,
+      final @NotNull String name,
+      final @Nullable String skin) {
+    final @Nullable Pairing pairing = this.pairings.get(code);
+    if (pairing == null
+        || pairing.expires() < System.currentTimeMillis()
+        || pairing.who() != null) {
+      return false;
+    }
+    this.pairings.put(
+        code, new Pairing(pairing.claim(), pairing.expires(), new Session(uuid, name, skin, 0)));
+    return true;
+  }
+
+  public synchronized @Nullable Claim claim(final @NotNull String claim) {
+    final long now = System.currentTimeMillis();
+    final @NotNull String hashed = hash(claim);
+    final @Nullable Map.Entry<String, Pairing> entry =
+        this.pairings.entrySet().stream()
+            .filter(pairing -> pairing.getValue().claim().equals(hashed))
+            .findFirst()
+            .orElse(null);
+    if (entry == null || entry.getValue().expires() < now) {
+      return null;
+    }
+    final @Nullable Session who = entry.getValue().who();
+    if (who == null) {
+      return new Claim(null);
+    }
+    this.pairings.remove(entry.getKey());
+    return new Claim(login(who, now + SESSION_LIFETIME.toMillis()));
   }
 
   public synchronized @NotNull String open(
@@ -214,7 +294,8 @@ public final class WebSessions {
         .removeIf(
             uuid ->
                 this.sessions.values().stream().noneMatch(session -> session.uuid().equals(uuid))
-                    && this.codes.values().stream().noneMatch(code -> code.uuid().equals(uuid)));
+                    && this.codes.values().stream()
+                        .noneMatch(code -> code.who().uuid().equals(uuid)));
     final @NotNull YamlConfiguration yaml = new YamlConfiguration();
     this.grants.forEach(
         (uuid, granted) -> yaml.set("grants." + uuid, granted.stream().sorted().toList()));
@@ -239,4 +320,12 @@ public final class WebSessions {
       @NotNull UUID uuid, @NotNull String name, @Nullable String skin, long expires) {}
 
   public record Login(@NotNull String token, @NotNull Session session) {}
+
+  public record Pair(@NotNull String code, @NotNull String claim) {}
+
+  public record Claim(@Nullable Login login) {}
+
+  private record Code(@NotNull Session who, long expires, long until) {}
+
+  private record Pairing(@NotNull String claim, long expires, @Nullable Session who) {}
 }
