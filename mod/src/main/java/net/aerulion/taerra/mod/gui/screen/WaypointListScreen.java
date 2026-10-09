@@ -59,6 +59,7 @@ public final class WaypointListScreen extends Screen {
   private static final int ROW = 26;
   private static final int ICON = 16;
   private static final int TOOLS_Y = 24;
+  private static final int FOOTER_ROW = 24;
   private static final long STATUS_MILLIS = 6000;
   private static final String ALL = "";
 
@@ -99,6 +100,7 @@ public final class WaypointListScreen extends Screen {
   private boolean statusFailed;
   private long statusUntil;
   private @Nullable WaypointList list;
+  private int footerRows = 1;
 
   public WaypointListScreen(final @NotNull MapScreen parent, final @NotNull WebMap map) {
     super(Component.translatable("taerra.waypoints"));
@@ -175,10 +177,10 @@ public final class WaypointListScreen extends Screen {
                   this.byDistance = distance;
                   refresh();
                 }));
+    this.footerRows = addFooter(left);
     final int top = TOOLS_Y + 26;
-    final int bottom = this.height - 52;
+    final int bottom = this.height - 52 - FOOTER_ROW * (this.footerRows - 1);
     this.list = addRenderableWidget(new WaypointList(top, Math.max(ROW, bottom - top)));
-    addFooter(left);
     if (this.loaded) {
       refresh();
     } else {
@@ -186,72 +188,88 @@ public final class WaypointListScreen extends Screen {
     }
   }
 
-  private void addFooter(final int left) {
-    final int y = this.height - 26;
-    final int right = left + rowWidth();
+  private int addFooter(final int left) {
+    final @NotNull List<Button> buttons = new ArrayList<>();
     if (this.incoming != null) {
       final @NotNull Incoming incoming = this.incoming;
-      int x = right;
-      x -= 120;
-      addRenderableWidget(
-          Button.builder(
-                  Component.translatable("taerra.waypoints.import.add"),
-                  _ -> importFile(incoming, "add"))
-              .bounds(x, y, 120, 20)
-              .build());
-      if (!this.waypoints.isEmpty()) {
-        x -= 124;
-        addRenderableWidget(
-            Button.builder(
-                    Component.translatable(
-                        "taerra.waypoints.import.replace", this.waypoints.size()),
-                    _ -> importFile(incoming, "replace"))
-                .bounds(x, y, 120, 20)
-                .build());
-      }
-      x -= 84;
-      addRenderableWidget(
+      buttons.add(
           Button.builder(
                   CommonComponents.GUI_CANCEL,
                   _ -> {
                     this.incoming = null;
                     rebuildWidgets();
                   })
-              .bounds(x, y, 80, 20)
+              .width(80)
               .build());
-      return;
-    }
-    if (!this.selected.isEmpty()) {
-      addRenderableWidget(
+      if (!this.waypoints.isEmpty()) {
+        buttons.add(
+            Button.builder(
+                    Component.translatable(
+                        "taerra.waypoints.import.replace", this.waypoints.size()),
+                    _ -> importFile(incoming, "replace"))
+                .width(120)
+                .build());
+      }
+      buttons.add(
           Button.builder(
-                  this.armedSelection
-                      ? Component.translatable("taerra.waypoint.confirm_delete")
-                          .withStyle(ChatFormatting.RED)
-                      : Component.translatable("taerra.waypoints.delete", this.selected.size()),
-                  _ -> deleteSelected())
-              .bounds(left, y, 100, 20)
+                  Component.translatable("taerra.waypoints.import.add"),
+                  _ -> importFile(incoming, "add"))
+              .width(120)
               .build());
+    } else {
+      if (!this.selected.isEmpty()) {
+        buttons.add(
+            Button.builder(
+                    this.armedSelection
+                        ? Component.translatable("taerra.waypoint.confirm_delete")
+                            .withStyle(ChatFormatting.RED)
+                        : Component.translatable("taerra.waypoints.delete", this.selected.size()),
+                    _ -> deleteSelected())
+                .width(100)
+                .build());
+      }
+      buttons.add(
+          Button.builder(Component.translatable("taerra.waypoints.import"), _ -> pickFile())
+              .tooltip(Tooltip.create(Component.translatable("taerra.waypoints.import.tooltip")))
+              .width(80)
+              .build());
+      final @NotNull Button export =
+          Button.builder(
+                  this.selected.isEmpty()
+                      ? Component.translatable("taerra.waypoints.export.all")
+                      : Component.translatable(
+                          "taerra.waypoints.export.some", this.selected.size()),
+                  _ -> exportFile())
+              .width(100)
+              .build();
+      export.active = !this.waypoints.isEmpty();
+      buttons.add(export);
+      buttons.add(Button.builder(CommonComponents.GUI_DONE, _ -> onClose()).width(80).build());
     }
-    addRenderableWidget(
-        Button.builder(CommonComponents.GUI_DONE, _ -> onClose())
-            .bounds(right - 80, y, 80, 20)
-            .build());
-    addRenderableWidget(
-                Button.builder(
-                        this.selected.isEmpty()
-                            ? Component.translatable("taerra.waypoints.export.all")
-                            : Component.translatable(
-                                "taerra.waypoints.export.some", this.selected.size()),
-                        _ -> exportFile())
-                    .bounds(right - 80 - 4 - 100, y, 100, 20)
-                    .build())
-            .active =
-        !this.waypoints.isEmpty();
-    addRenderableWidget(
-        Button.builder(Component.translatable("taerra.waypoints.import"), _ -> pickFile())
-            .tooltip(Tooltip.create(Component.translatable("taerra.waypoints.import.tooltip")))
-            .bounds(right - 80 - 4 - 100 - 4 - 80, y, 80, 20)
-            .build());
+    final @NotNull List<List<Button>> rows = new ArrayList<>();
+    for (final @NotNull Button button : buttons) {
+      final @Nullable List<Button> last = rows.isEmpty() ? null : rows.getLast();
+      if (last == null
+          || last.stream().mapToInt(Button::getWidth).sum() + 4 * last.size() + button.getWidth()
+              > rowWidth()) {
+        rows.add(new ArrayList<>(List.of(button)));
+      } else {
+        last.add(button);
+      }
+    }
+    for (int i = 0; i < rows.size(); i++) {
+      final @NotNull List<Button> row = rows.get(i);
+      int x = left + rowWidth();
+      final int y = this.height - 26 - FOOTER_ROW * (rows.size() - 1 - i);
+      for (int j = row.size() - 1; j >= 0; j--) {
+        final @NotNull Button button = row.get(j);
+        x -= button.getWidth();
+        button.setPosition(x, y);
+        addRenderableWidget(button);
+        x -= 4;
+      }
+    }
+    return rows.size();
   }
 
   private @NotNull Component worldLabel(final @NotNull String name) {
@@ -601,7 +619,7 @@ public final class WaypointListScreen extends Screen {
           this.font,
           this.status,
           this.width / 2,
-          this.height - 44,
+          this.height - 44 - FOOTER_ROW * (this.footerRows - 1),
           this.statusFailed ? 0xFFFF5555 : 0xFF55FF55);
     }
   }

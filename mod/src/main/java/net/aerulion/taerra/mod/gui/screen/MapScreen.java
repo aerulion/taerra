@@ -379,65 +379,67 @@ public final class MapScreen extends Screen {
     this.worldButton = null;
     if (this.selection != null) {
       addSelectionButtons(footer);
-    } else if (world == null) {
-      footer.addChild(
-                  Button.builder(Component.translatable("taerra.map.loading"), _ -> {})
-                      .width(2 * BUTTON_WIDTH + 6)
-                      .build())
-              .active =
-          false;
     } else {
-      this.worldButton =
-          footer.addChild(
-              Button.builder(world.label(), _ -> openWorlds(!this.worldPicker.isOpen()))
-                  .tooltip(Tooltip.create(Component.translatable("taerra.map.world.tooltip")))
-                  .width(BUTTON_WIDTH)
-                  .build());
-      footer.addChild(
-          Button.builder(
-                  viewName(this.view.isometric() ? this.view.rotation() : TOP_DOWN),
-                  _ -> {
-                    setView(this.view.isometric() ? TOP_DOWN : this.view.rotation());
-                    rebuildWidgets();
-                  })
-              .tooltip(Tooltip.create(viewTooltip()))
-              .width(BUTTON_WIDTH)
-              .build());
-      footer.addChild(
-                  iconButton(
-                      20,
-                      IconButton.COUNTER_CLOCKWISE,
-                      Component.translatable(
-                          "taerra.map.rotate.left",
-                          Component.literal("Shift+")
-                              .append(TaerraKeys.ROTATE.getTranslatedKeyMessage())),
-                      () -> rotate(1)))
-              .active =
-          this.view.isometric();
-      footer.addChild(
-                  iconButton(
-                      20,
-                      IconButton.CLOCKWISE,
-                      Component.translatable(
-                          "taerra.map.rotate.right", TaerraKeys.ROTATE.getTranslatedKeyMessage()),
-                      () -> rotate(-1)))
-              .active =
-          this.view.isometric();
-    }
-    final @Nullable Account account = this.map.account();
-    if (this.selection == null && account != null && account.personal()) {
-      footer.addChild(
-          Button.builder(Component.translatable("taerra.waypoints"), _ -> openWaypointList())
-              .tooltip(
-                  Tooltip.create(
-                      Component.translatable(
-                          "taerra.waypoints.tooltip",
-                          TaerraKeys.WAYPOINT_LIST.getTranslatedKeyMessage())))
-              .width(BUTTON_WIDTH)
-              .build());
-    }
-    if (this.selection == null) {
-      footer.addChild(
+      final @NotNull List<AbstractWidget> view = new ArrayList<>();
+      if (world == null) {
+        final @NotNull Button loading =
+            Button.builder(Component.translatable("taerra.map.loading"), _ -> {})
+                .width(2 * BUTTON_WIDTH + 6)
+                .build();
+        loading.active = false;
+        view.add(loading);
+      } else {
+        this.worldButton =
+            Button.builder(world.label(), _ -> openWorlds(!this.worldPicker.isOpen()))
+                .tooltip(Tooltip.create(Component.translatable("taerra.map.world.tooltip")))
+                .width(BUTTON_WIDTH)
+                .build();
+        view.add(this.worldButton);
+        view.add(
+            Button.builder(
+                    viewName(this.view.isometric() ? this.view.rotation() : TOP_DOWN),
+                    _ -> {
+                      setView(this.view.isometric() ? TOP_DOWN : this.view.rotation());
+                      rebuildWidgets();
+                    })
+                .tooltip(Tooltip.create(viewTooltip()))
+                .width(BUTTON_WIDTH)
+                .build());
+        final @NotNull IconButton left =
+            iconButton(
+                20,
+                IconButton.COUNTER_CLOCKWISE,
+                Component.translatable(
+                    "taerra.map.rotate.left",
+                    Component.literal("Shift+")
+                        .append(TaerraKeys.ROTATE.getTranslatedKeyMessage())),
+                () -> rotate(1));
+        left.active = this.view.isometric();
+        view.add(left);
+        final @NotNull IconButton right =
+            iconButton(
+                20,
+                IconButton.CLOCKWISE,
+                Component.translatable(
+                    "taerra.map.rotate.right", TaerraKeys.ROTATE.getTranslatedKeyMessage()),
+                () -> rotate(-1));
+        right.active = this.view.isometric();
+        view.add(right);
+      }
+      final @NotNull List<AbstractWidget> menu = new ArrayList<>();
+      final @Nullable Account account = this.map.account();
+      if (account != null && account.personal()) {
+        menu.add(
+            Button.builder(Component.translatable("taerra.waypoints"), _ -> openWaypointList())
+                .tooltip(
+                    Tooltip.create(
+                        Component.translatable(
+                            "taerra.waypoints.tooltip",
+                            TaerraKeys.WAYPOINT_LIST.getTranslatedKeyMessage())))
+                .width(BUTTON_WIDTH)
+                .build());
+      }
+      menu.add(
           Button.builder(
                   Component.translatable("menu.options"),
                   _ ->
@@ -445,10 +447,16 @@ public final class MapScreen extends Screen {
                           new SettingsScreen(this, this.settings, this.map)))
               .width(BUTTON_WIDTH)
               .build());
-      footer.addChild(
+      menu.add(
           Button.builder(Component.translatable("gui.done"), _ -> onClose())
               .width(BUTTON_WIDTH)
               .build());
+      if (wanted(view) + 6 + wanted(menu) <= this.width - 16) {
+        view.forEach(footer::addChild);
+        menu.forEach(footer::addChild);
+      } else {
+        addRows(footer, view, menu);
+      }
     }
 
     if (this.worldButton == null && this.worldPicker.isOpen()) {
@@ -534,7 +542,7 @@ public final class MapScreen extends Screen {
 
   @Override
   protected void repositionElements() {
-    if (this.selection != null && this.footerWidth != this.width) {
+    if (this.footerWidth != this.width) {
       rebuildWidgets();
     }
     this.layout.arrangeElements();
@@ -1699,10 +1707,21 @@ public final class MapScreen extends Screen {
     }
     fit(tools);
     fit(actions);
+    addRows(footer, tools, actions);
+  }
+
+  private void addRows(
+      final @NotNull LinearLayout footer,
+      final @NotNull List<? extends AbstractWidget> first,
+      final @NotNull List<? extends AbstractWidget> second) {
     final @NotNull LinearLayout rows = footer.addChild(LinearLayout.vertical().spacing(4));
-    tools.forEach(rows.addChild(LinearLayout.horizontal().spacing(6))::addChild);
-    actions.forEach(rows.addChild(LinearLayout.horizontal().spacing(6))::addChild);
+    first.forEach(rows.addChild(LinearLayout.horizontal().spacing(6))::addChild);
+    second.forEach(rows.addChild(LinearLayout.horizontal().spacing(6))::addChild);
     this.layout.setFooterHeight(HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT + 24);
+  }
+
+  private static int wanted(final @NotNull List<? extends AbstractWidget> row) {
+    return row.stream().mapToInt(AbstractWidget::getWidth).sum() + 6 * Math.max(0, row.size() - 1);
   }
 
   private boolean fit(final @NotNull List<? extends AbstractWidget> row) {
