@@ -45,6 +45,7 @@ import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.rendering.iso.IsoTileGeometry;
 import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
+import net.aerulion.taerra.rendering.sample.ColumnRunSampler;
 import net.aerulion.taerra.storage.EncodedTile;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.util.HexColors;
@@ -281,9 +282,37 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     return y != null
         ? CompletableFuture.completedFuture(
             Math.clamp(y, world.getMinHeight(), world.getMaxHeight()))
-        : world
-            .getChunkAtAsync(x >> 4, z >> 4)
-            .thenApply(chunk -> world.getHighestBlockYAt(x, z) + 1);
+        : world.getChunkAtAsync(x >> 4, z >> 4).thenApply(_ -> surfaceY(world, x, z));
+  }
+
+  private static @NotNull CompletableFuture<Integer> clearY(
+      final @NotNull World world, final int x, final @Nullable Integer y, final int z) {
+    return world
+        .getChunkAtAsync(x >> 4, z >> 4)
+        .thenApply(
+            _ -> {
+              if (y != null) {
+                final int feet = Math.clamp(y, world.getMinHeight(), world.getMaxHeight());
+                if (!world.getBlockAt(x, feet, z).isSolid()
+                    && !world.getBlockAt(x, feet + 1, z).isSolid()) {
+                  return feet;
+                }
+              }
+              return surfaceY(world, x, z);
+            });
+  }
+
+  private static int surfaceY(final @NotNull World world, final int x, final int z) {
+    if (world.hasCeiling()) {
+      for (int y = ColumnRunSampler.ceilingY(world); y > world.getMinHeight(); y--) {
+        if (world.getBlockAt(x, y - 1, z).isSolid()
+            && !world.getBlockAt(x, y, z).isSolid()
+            && !world.getBlockAt(x, y + 1, z).isSolid()) {
+          return y;
+        }
+      }
+    }
+    return world.getHighestBlockYAt(x, z) + 1;
   }
 
   private @NotNull Viewer viewer(final @NotNull Context ctx) {
@@ -512,7 +541,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   @Override
   public void refreshMarkers() {
     for (final @NotNull String world : this.taerraConfig.enabledWorlds()) {
-      this.wsHandler.broadcastToWorld(world, "{\"type\":\"markers\",\"world\":\"" + world + "\"}");
+      this.wsHandler.broadcastToWorld(world, MapWebSocketHandlerImpl.markersMessage(world));
     }
   }
 
@@ -674,7 +703,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 result.complete(400);
                 return;
               }
-              standingY(world, x, request.y(), z)
+              clearY(world, x, request.y(), z)
                   .thenCompose(
                       y ->
                           player
