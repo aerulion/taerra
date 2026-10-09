@@ -633,6 +633,7 @@ class MarkerManager {
         const action = (name, label) => {
             const button = element('button', 'marker-popup__action', t(label));
             button.type = 'button';
+            button.dataset.action = name;
             button.addEventListener('click', () => this.onWaypoint?.(name, waypoint, button));
             actions.append(button);
         };

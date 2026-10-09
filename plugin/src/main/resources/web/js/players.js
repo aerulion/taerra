@@ -224,6 +224,7 @@ class PlayerManager {
             const actions = element('div', 'marker-popup__actions');
             const navigate = element('button', 'marker-popup__action', t('waypoint.navigate'));
             navigate.type = 'button';
+            navigate.dataset.action = 'navigate';
             navigate.addEventListener('click', () => {
                 mapManager.getMap().closePopup();
                 void navigationManager.navigate({
