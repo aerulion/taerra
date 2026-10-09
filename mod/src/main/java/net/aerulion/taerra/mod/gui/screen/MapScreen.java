@@ -41,6 +41,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
@@ -63,6 +64,8 @@ public final class MapScreen extends Screen {
   private static final int BUTTON_WIDTH = 74;
   private static final int PANEL_BUTTON_WIDTH = 74;
   private static final int SPAWN_BUTTON_WIDTH = 50;
+  private static final int TITLE_GAP = 6;
+  private static final int MIN_TITLE = 24;
   private static final int SCOPE_HEIGHT = 24;
   private static final double CLICK_SLOP = 3;
   private static final int COMPASS_MARGIN = 6;
@@ -341,7 +344,11 @@ public final class MapScreen extends Screen {
     if (this.map.world(this.view.world()) == null && !worlds.isEmpty()) {
       selectWorld(worlds.getFirst());
     }
-    this.layout.addTitleHeader(this.title, this.font);
+    final int titleRoom =
+        this.width - 2 * (8 + PANEL_BUTTON_WIDTH + 4 + SPAWN_BUTTON_WIDTH + TITLE_GAP);
+    if (titleRoom >= MIN_TITLE) {
+      this.layout.addToHeader(new StringWidget(this.title, this.font).setMaxWidth(titleRoom));
+    }
     this.playersButton =
         this.layout.addToHeader(
             Button.builder(
