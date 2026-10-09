@@ -126,6 +126,7 @@
   "dye.pink": "Rosa",
   "waypoint.teleport": "Teleportieren",
   "waypoint.navigate": "Navigieren",
+  "waypoint.link": "Link kopieren",
   "waypoint.move": "Verschieben",
   "waypoint.editShort": "Bearbeiten",
   "waypoint.moveHint": "Klick auf die Karte, um {name} zu verschieben",

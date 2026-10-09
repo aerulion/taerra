@@ -126,6 +126,7 @@
   "dye.pink": "Pink",
   "waypoint.teleport": "Teleport",
   "waypoint.navigate": "Navigate",
+  "waypoint.link": "Copy link",
   "waypoint.move": "Move",
   "waypoint.editShort": "Edit",
   "waypoint.moveHint": "Click the map to move {name}",

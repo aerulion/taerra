@@ -624,6 +624,12 @@ markerManager.onWaypoint = async (action, waypoint, button) => {
         });
         return;
     }
+    if (action === 'link') {
+        await copyText(placeLink(waypoint));
+        button.textContent = t('menu.copied');
+        button.classList.add('is-done');
+        return;
+    }
     if (action === 'teleport') {
         if (await teleportButton(button, waypoint)) {
             setTimeout(() => mapManager.getMap().closePopup(), 700);

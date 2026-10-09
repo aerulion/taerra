@@ -640,14 +640,14 @@ class MarkerManager {
         if (point && accountManager.usesMod()) {
             action('navigate', 'waypoint.navigate');
         }
-        if (!isWaypointLayer(layer)) {
-            return actions;
-        }
-        if (point && accountManager.canTeleport()) {
+        if (point && isWaypointLayer(layer) && accountManager.canTeleport()) {
             action('teleport', 'waypoint.teleport');
         }
-        if (personal ? accountManager.canKeepPersonal()
-            : marker.id.startsWith('waypoint:') && accountManager.canEditMarkers()) {
+        if (point) {
+            action('link', 'waypoint.link');
+        }
+        if (isWaypointLayer(layer) && (personal ? accountManager.canKeepPersonal()
+            : marker.id.startsWith('waypoint:') && accountManager.canEditMarkers())) {
             if (point) {
                 action('move', 'waypoint.move');
             }
