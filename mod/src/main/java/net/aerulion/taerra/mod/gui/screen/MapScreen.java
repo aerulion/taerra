@@ -779,17 +779,21 @@ public final class MapScreen extends Screen {
 
   private void selectWorld(final @NotNull World world) {
     final @Nullable MapConfig config = this.map.config();
-    this.view.setWorld(world.name());
+    switchWorld(world.name());
+    if (config != null) {
+      this.view.centerOn(config, world.spawn().x(), world.spawn().y(), world.spawn().z());
+      zoomNear();
+    }
+  }
+
+  private void switchWorld(final @NotNull String world) {
+    this.view.setWorld(world);
     this.moving = null;
     this.selection = null;
     this.stroking = false;
     this.path.clear();
     this.editing = null;
     this.view.select(null);
-    if (config != null) {
-      this.view.centerOn(config, world.spawn().x(), world.spawn().y(), world.spawn().z());
-      zoomNear();
-    }
   }
 
   private void openSearch() {
@@ -850,8 +854,7 @@ public final class MapScreen extends Screen {
       return;
     }
     if (!world.name().equals(this.view.world())) {
-      this.view.setWorld(world.name());
-      this.moving = null;
+      switchWorld(world.name());
       rebuildWidgets();
     }
     if (this.minecraft.player != null
