@@ -7,7 +7,7 @@ const $ = (id) => document.getElementById(id);
 
 const LIMIT = 30;
 const KINDS = ['place', 'player', 'marker', 'world'];
-const COORDINATES = /^(-?\d+)(?:[\s,]+(-?\d+))?[\s,]+(-?\d+)$/;
+const COORDINATES = /^(-?\d+(?:\.\d+)?)(?:[\s,]+(-?\d+(?:\.\d+)?))?[\s,]+(-?\d+(?:\.\d+)?)$/;
 const MAC = /Mac|iPhone|iPad/.test(navigator.platform);
 
 const fold = (text) => text.normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase();
@@ -169,12 +169,11 @@ class SearchPalette {
             .slice(0, LIMIT)
             .map(({result}) => result);
         if (place) {
-            const [, x, middle, z] = place;
-            const y = middle === undefined ? undefined : Number(middle);
+            const [x, y, z] = place.slice(1).map(value => value === undefined ? undefined : Math.floor(Number(value)));
             results.unshift({
                 kind: 'place',
-                label: t('search.goTo', {place: [x, middle, z].filter(value => value !== undefined).join(', ')}),
-                run: () => mapManager.centerOnBlock(Number(x), Number(z), undefined, y)
+                label: t('search.goTo', {place: [x, y, z].filter(value => value !== undefined).join(', ')}),
+                run: () => mapManager.centerOnBlock(x, z, undefined, y)
             });
         }
         results = KINDS.flatMap(kind => results.filter(result => result.kind === kind));

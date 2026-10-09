@@ -39,7 +39,8 @@ public final class SearchScreen extends Screen {
   private static final int ROW = 24;
   private static final int LIMIT = 30;
   private static final Pattern COORDINATES =
-      Pattern.compile("(-?\\d+)(?:[\\s,]+(-?\\d+))?[\\s,]+(-?\\d+)");
+      Pattern.compile(
+          "(-?\\d+(?:\\.\\d+)?)(?:[\\s,]+(-?\\d+(?:\\.\\d+)?))?[\\s,]+(-?\\d+(?:\\.\\d+)?)");
   private static final Pattern WORD = Pattern.compile("[\\s_.,:'&()#!?+-]+");
 
   private final Screen parent;
@@ -247,9 +248,10 @@ public final class SearchScreen extends Screen {
     final @NotNull List<Result> found = new ArrayList<>();
     final @NotNull Matcher place = COORDINATES.matcher(typed);
     if (place.matches() && this.currentWorld != null) {
-      final double x = Double.parseDouble(place.group(1));
-      final @Nullable Double y = place.group(2) == null ? null : Double.parseDouble(place.group(2));
-      final double z = Double.parseDouble(place.group(3));
+      final double x = Math.floor(Double.parseDouble(place.group(1)));
+      final @Nullable Double y =
+          place.group(2) == null ? null : Math.floor(Double.parseDouble(place.group(2)));
+      final double z = Math.floor(Double.parseDouble(place.group(3)));
       found.add(
           new Result(
               Component.translatable("taerra.search.go_to", typed).getString(),
