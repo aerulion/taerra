@@ -702,22 +702,44 @@ button {
     color: var(--red);
 }
 
-.account-pair__command {
+.account-menu .account-pair__command {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
+    width: calc(100% - 16px);
     margin: 0 8px 6px;
-    padding: 8px 10px;
+    padding: 9px 10px;
     background: var(--stone-900);
+    border: 1px solid var(--stone-600);
     color: var(--stone-200);
-    font: 600 12px/1 var(--font-mono);
-    user-select: all;
+    font: 500 13px/1 var(--font-mono);
+}
+
+.account-menu .account-pair__command:is(:hover, :focus-visible) {
+    background: var(--stone-900);
+    border-color: var(--stone-200);
+    color: var(--white);
+}
+
+.account-pair__command::before {
+    content: "";
+    flex: none;
+    width: 16px;
+    height: 16px;
+    background: currentColor;
+    mask: var(--icon) center / 16px 16px no-repeat;
 }
 
 .account-pair__command b {
     color: var(--white);
-    font-size: 18px;
-    letter-spacing: .12em;
+    font-weight: 700;
+    letter-spacing: .1em;
+}
+
+.account-menu .account-pair__command.is-copied {
+    border-color: var(--green);
+    color: var(--green);
+    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M6 1h2v1H6zM5 2h2v1H5zM4 3h2v1H4zM0 3h2v1H0zM3 4h2v1H3zM1 4h2v1H1zM2 5h2v1H2z'/></svg>");
 }
 
 .account-pair__command.is-expired b {
@@ -1666,7 +1688,8 @@ h2 .badge {
     background: currentColor;
 }
 
-[data-action="coordinates"] {
+[data-action="coordinates"],
+.account-pair__command {
     --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M0 0h6v1H0zM0 1h1v5H0zM5 1h1v1H5zM1 5h1v1H1zM2 2h6v1H2zM2 7h6v1H2zM2 3h1v4H2zM7 3h1v4H7z'/></svg>");
 }
 

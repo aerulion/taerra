@@ -15,14 +15,22 @@ const relative = new Intl.RelativeTimeFormat(language, {numeric: 'auto'});
 let current = null;
 let pairing = null;
 let pollTimer = 0;
+let pairTimer = 0;
 let linkTimer = 0;
+let copiedTimer = 0;
 
 function show(account) {
     current = account;
+    const open = $('account-menu').matches(':popover-open');
     if (account) {
         stopPairing();
-        if ($('account-menu').matches(':popover-open')) {
+        if (open) {
             void loadDevices();
+        }
+    } else if (!pairing) {
+        showPairing('', '');
+        if (open) {
+            void startPairing();
         }
     }
     $('account-in').hidden = !account;
@@ -69,20 +77,37 @@ async function login(code) {
     $('account-menu').showPopover();
 }
 
+function clock(millis) {
+    const seconds = Math.max(0, Math.ceil(millis / 1000));
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
 function showPairing(code, status, expired = false) {
     $('pair-code').textContent = code;
     $('pair-command').hidden = !code;
+    $('pair-command').disabled = expired;
     $('pair-command').classList.toggle('is-expired', expired);
     $('pair-status').textContent = status;
     $('pair-status').classList.toggle('is-expired', expired);
     $('pair-new').hidden = !expired;
-    $('pair-copy').hidden = expired || !code;
-    $('pair-copy').textContent = t('account.copy');
 }
 
 function stopPairing() {
     clearTimeout(pollTimer);
+    clearInterval(pairTimer);
     pairing = null;
+}
+
+function tickPairing() {
+    if (!pairing?.until) {
+        return;
+    }
+    const left = pairing.until - Date.now();
+    if (left <= 0) {
+        expirePairing();
+    } else {
+        $('pair-status').textContent = t('account.pairTime', {time: clock(left)});
+    }
 }
 
 function expirePairing() {
@@ -111,7 +136,9 @@ async function startPairing() {
     }
     const {code, claim, seconds} = await response.json();
     Object.assign(started, {code, claim, until: Date.now() + seconds * 1000});
-    showPairing(code, t('account.pairTime'));
+    showPairing(code, '');
+    tickPairing();
+    pairTimer = setInterval(tickPairing, 1000);
     pollTimer = setTimeout(pollPairing, POLL_MILLIS);
 }
 
@@ -161,7 +188,7 @@ function qrSvg(text) {
 }
 
 async function showDeviceLink() {
-    clearTimeout(linkTimer);
+    clearInterval(linkTimer);
     const panel = $('device-qr');
     let response = null;
     try {
@@ -180,18 +207,26 @@ async function showDeviceLink() {
     const page = base || `${location.origin}${location.pathname.replace(/\/$/, '')}`;
     $('device-qr-code').innerHTML = qrSvg(`${page}/#login=${code}`);
     panel.classList.remove('is-expired');
-    $('device-qr-status').textContent = t('account.scan');
     $('device-qr-status').classList.remove('is-expired');
     $('device-button').textContent = t('account.newCode');
-    linkTimer = setTimeout(() => {
+    const until = Date.now() + seconds * 1000;
+    const tick = () => {
+        const left = until - Date.now();
+        if (left > 0) {
+            $('device-qr-status').textContent = t('account.scan', {time: clock(left)});
+            return;
+        }
+        clearInterval(linkTimer);
         panel.classList.add('is-expired');
         $('device-qr-status').textContent = t('account.expired');
         $('device-qr-status').classList.add('is-expired');
-    }, seconds * 1000);
+    };
+    tick();
+    linkTimer = setInterval(tick, 1000);
 }
 
 function hideDeviceLink() {
-    clearTimeout(linkTimer);
+    clearInterval(linkTimer);
     $('device-qr').hidden = true;
     $('device-qr-code').replaceChildren();
     $('device-button').textContent = t('account.device');
@@ -283,9 +318,11 @@ async function initialize() {
         }
     });
     $('pair-new').addEventListener('click', () => void startPairing());
-    $('pair-copy').addEventListener('click', async () => {
+    $('pair-command').addEventListener('click', async () => {
         await copyText(`/taerra login ${$('pair-code').textContent}`);
-        $('pair-copy').textContent = t('menu.copied');
+        clearTimeout(copiedTimer);
+        $('pair-command').classList.add('is-copied');
+        copiedTimer = setTimeout(() => $('pair-command').classList.remove('is-copied'), 1500);
     });
     $('device-button').addEventListener('click', () => void showDeviceLink());
     $('logout-button').addEventListener('click', async () => {

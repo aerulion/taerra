@@ -78,9 +78,9 @@
             <p class="account-menu__error" data-i18n="account.invalid" hidden id="login-error" role="alert">That
                 login link was already used or has expired. Log in with the code below instead.</p>
             <p class="account-menu__text" data-i18n="account.pair">Type this in game:</p>
-            <p class="account-pair__command" id="pair-command"><span>/taerra login</span> <b id="pair-code"></b></p>
+            <button class="account-pair__command" data-i18n-title="account.copy" id="pair-command" type="button">
+                <span>/taerra login</span><b id="pair-code"></b></button>
             <p class="account-menu__note" id="pair-status" role="status"></p>
-            <button data-i18n="account.copy" hidden id="pair-copy" type="button">Copy command</button>
             <button data-i18n="account.newCode" hidden id="pair-new" type="button">New code</button>
         </div>
         <div hidden id="account-in">
