@@ -10,15 +10,7 @@ import org.jetbrains.annotations.NotNull;
 public final class IconButton extends AbstractButton {
 
   public static final String[] CLOCKWISE = {
-    "....#....",
-    "..####...",
-    ".#..#....",
-    "#........",
-    "#.......#",
-    "#.......#",
-    "#.......#",
-    ".#.....#.",
-    "..#####.."
+    "..####.#", ".#....##", "#....###", "#.......", "#......#", "#......#", ".#....#.", "..####.."
   };
   public static final String[] COUNTER_CLOCKWISE = mirrored(CLOCKWISE);
   public static final String[] PLUS = {
