@@ -67,7 +67,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
-import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.Plugin;
@@ -80,7 +79,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
 
   private static final int MAX_QUEUED_FRAMES = 64;
   private static final int MAX_AREA_CHUNKS = 16384;
-  private static final int MAX_SHAPE_POINTS = 4096;
+  private static final int MAX_IMPORT = 1000;
 
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig taerraConfig;
@@ -203,21 +202,10 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     ctx.contentType("application/octet-stream").result(pick.get());
   }
 
-  private static boolean insideBorder(final @NotNull World world, final int x, final int z) {
-    return world.getWorldBorder().isInside(new org.bukkit.Location(world, x + .5, 0, z + .5));
-  }
-
-  private static boolean nearBorder(final @NotNull World world, final double x, final double z) {
-    final @NotNull WorldBorder border = world.getWorldBorder();
-    final double reach = border.getSize() / 2 + 1;
-    return Math.abs(x - border.getCenter().getX()) <= reach
-        && Math.abs(z - border.getCenter().getZ()) <= reach;
-  }
-
   private static boolean validPoints(final @Nullable List<List<Double>> points, final int fewest) {
     return points != null
         && points.size() >= fewest
-        && points.size() <= MAX_SHAPE_POINTS
+        && points.size() <= WaypointTransfer.MAX_SHAPE_POINTS
         && points.stream()
             .allMatch(
                 point ->
@@ -238,7 +226,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     final @NotNull NamespacedKey key = world.getKey();
     final @Nullable List<List<Double>> points = request.points();
     if (points == null) {
-      return insideBorder(world, request.x(), request.z())
+      return WaypointTransfer.insideBorder(world, request.x(), request.z())
           ? standingY(world, request.x(), request.y(), request.z())
               .thenApply(
                   y ->
@@ -246,7 +234,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                           id, key, new Vector(request.x() + .5, y, request.z() + .5), name))
           : null;
     }
-    if (points.stream().anyMatch(point -> !nearBorder(world, point.get(0), point.get(2)))) {
+    if (points.stream()
+        .anyMatch(point -> !WaypointTransfer.nearBorder(world, point.get(0), point.get(2)))) {
       return null;
     }
     if ("area".equals(request.type())) {
@@ -477,6 +466,11 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 config.routes.post("/api/teleport", this::handleTeleportRequest);
                 config.routes.get("/api/waypoints/groups", this::handleWaypointGroupsRequest);
                 config.routes.put("/api/waypoints", this::handleWaypointSaveRequest);
+                config.routes.get("/api/waypoints/personal", this::handlePersonalListRequest);
+                config.routes.put(
+                    "/api/waypoints/personal/hidden", this::handlePersonalHiddenRequest);
+                config.routes.post(
+                    "/api/waypoints/personal/import", this::handlePersonalImportRequest);
                 config.routes.delete("/api/waypoints/{name}", this::handleWaypointDeleteRequest);
                 config.routes.get("/api/navigation", this::handleNavigationRequest);
                 config.routes.put("/api/navigation", this::handleNavigationSaveRequest);
@@ -818,7 +812,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
               }
               final int x = request.x();
               final int z = request.z();
-              if (!insideBorder(world, x, z)) {
+              if (!WaypointTransfer.insideBorder(world, x, z)) {
                 result.complete(400);
                 return;
               }
@@ -994,6 +988,124 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                         ? 204
                         : 404));
     ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
+  }
+
+  private void handlePersonalListRequest(final @NotNull Context ctx) {
+    final @NotNull Viewer viewer = viewer(ctx);
+    if (!viewer.canKeepPersonalMarkers()) {
+      ctx.status(403).result("Not allowed");
+      return;
+    }
+    ctx.header("Cache-Control", "no-store")
+        .json(
+            this.personalWaypoints.all(viewer.uuid()).stream()
+                .map(WaypointTransfer::json)
+                .toList());
+  }
+
+  private void handlePersonalHiddenRequest(final @NotNull Context ctx) {
+    if (!sameOrigin(ctx)) {
+      ctx.status(403).result("Cross-site request");
+      return;
+    }
+    final @NotNull Viewer viewer = viewer(ctx);
+    if (!viewer.canKeepPersonalMarkers()) {
+      ctx.status(403).result("Not allowed");
+      return;
+    }
+    final @NotNull HiddenRequest request;
+    try {
+      request = ctx.bodyAsClass(HiddenRequest.class);
+    } catch (final Exception e) {
+      ctx.status(400).result("Invalid request");
+      return;
+    }
+    if (request.names() == null
+        || request.names().size() > PersonalWaypoints.MAX
+        || request.names().stream().anyMatch(java.util.Objects::isNull)) {
+      ctx.status(400).result("Invalid request");
+      return;
+    }
+    final @NotNull CompletableFuture<Integer> result = new CompletableFuture<>();
+    Bukkit.getScheduler()
+        .runTask(
+            this.plugin,
+            () ->
+                result.complete(
+                    this.personalWaypoints.setHidden(
+                        viewer.uuid(), request.names(), request.hidden())));
+    ctx.future(
+        () ->
+            result.thenAccept(
+                changed ->
+                    ctx.header("Cache-Control", "no-store").json(Map.of("changed", changed))));
+  }
+
+  private void handlePersonalImportRequest(final @NotNull Context ctx) {
+    if (!sameOrigin(ctx)) {
+      ctx.status(403).result("Cross-site request");
+      return;
+    }
+    final @NotNull Viewer viewer = viewer(ctx);
+    if (!viewer.canKeepPersonalMarkers()) {
+      ctx.status(403).result("Not allowed");
+      return;
+    }
+    final @NotNull ImportRequest request;
+    try {
+      request = ctx.bodyAsClass(ImportRequest.class);
+    } catch (final Exception e) {
+      ctx.status(400).result("Invalid file");
+      return;
+    }
+    final boolean replace = "replace".equals(request.mode());
+    if ((!replace && !"add".equals(request.mode()))
+        || request.waypoints() == null
+        || request.waypoints().size() > MAX_IMPORT) {
+      ctx.status(400).result("Invalid file");
+      return;
+    }
+    final @NotNull CompletableFuture<Map<String, Object>> result = new CompletableFuture<>();
+    Bukkit.getScheduler()
+        .runTask(
+            this.plugin,
+            () -> {
+              final @NotNull List<PersonalWaypoints.Saved> valid = new ArrayList<>();
+              int invalid = 0;
+              for (final @Nullable Map<String, Object> entry : request.waypoints()) {
+                final @Nullable World world =
+                    entry == null ? null : WaypointTransfer.resolve(WaypointTransfer.world(entry));
+                final PersonalWaypoints.@Nullable Saved saved =
+                    world == null || !viewer.canSee(this.taerraConfig, WorldKeys.id(world))
+                        ? null
+                        : WaypointTransfer.saved(entry, world);
+                if (saved == null) {
+                  invalid++;
+                } else {
+                  valid.add(saved);
+                }
+              }
+              final PersonalWaypoints.@Nullable Imported imported =
+                  this.personalWaypoints.importAll(viewer.uuid(), valid, replace);
+              result.complete(
+                  imported == null
+                      ? null
+                      : Map.of(
+                          "added", imported.added(),
+                          "taken", imported.taken(),
+                          "full", imported.full(),
+                          "invalid", invalid));
+            });
+    ctx.future(
+        () ->
+            result.thenAccept(
+                counts -> {
+                  if (counts == null) {
+                    ctx.status(500).result("Failed to save");
+                  } else {
+                    ctx.header("Cache-Control", "no-store").json(counts);
+                  }
+                }));
   }
 
   private void handleNavigationRequest(final @NotNull Context ctx) {
@@ -1367,6 +1479,11 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       double z,
       @Nullable String color,
       @Nullable String player) {}
+
+  private record HiddenRequest(@Nullable List<String> names, boolean hidden) {}
+
+  private record ImportRequest(
+      @Nullable String mode, @Nullable List<Map<String, Object>> waypoints) {}
 
   private record AreaRequest(
       @Nullable String action, @Nullable String world, @Nullable List<int[]> chunks) {}

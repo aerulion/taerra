@@ -41,6 +41,7 @@ function show(account) {
     $('account-in').hidden = !account;
     $('account-out').hidden = Boolean(account);
     $('account-name').textContent = account?.name ?? '';
+    $('manager-open').hidden = account?.personal !== true;
     const label = account ? `${t('account.as')} ${account.name}` : t('account.login');
     $('account-button').setAttribute('aria-label', label);
     $('account-button').title = label;

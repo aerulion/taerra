@@ -1,5 +1,6 @@
 import {accountManager} from './account.js';
 import {copyText} from './clipboard.js';
+import {waypointManager} from './manager.js';
 import {defaultLanguage, hashLanguage, language, LANGUAGES, numbers, setLanguage, t, translatePage} from './i18n.js';
 import {mapManager} from './map.js';
 import {navigationManager} from './navigation.js';
@@ -592,6 +593,12 @@ navigationManager.onShow = (target) => {
 waypointEditor.initialize();
 chunkSelection.initialize();
 searchPalette.initialize({
+    worlds: () => worlds,
+    current: () => currentWorld?.name,
+    worldName,
+    selectWorld: (name) => void selectWorld(name)
+});
+waypointManager.initialize({
     worlds: () => worlds,
     current: () => currentWorld?.name,
     worldName,

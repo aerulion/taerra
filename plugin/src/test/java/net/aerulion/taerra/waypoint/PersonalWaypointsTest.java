@@ -18,6 +18,7 @@ import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -72,5 +73,64 @@ class PersonalWaypointsTest {
     assertEquals(PersonalWaypoints.Result.FULL, waypoints.save(ALEX, point("One more", 0), null));
     assertEquals(
         PersonalWaypoints.Result.SAVED, waypoints.save(ALEX, point("W0", 9), "W0"), "moving fits");
+  }
+
+  @Test
+  @DisplayName(
+      "a hidden waypoint stays in the list but leaves the map, and keeps hiding when edited")
+  void hidesWaypoints(final @TempDir Path directory) {
+    final @NotNull PersonalWaypoints waypoints =
+        new PersonalWaypoints(
+            TestPlugins.named("TAERRA"), new MarkerRegistryImpl(), directory.toFile());
+    waypoints.save(ALEX, point("Home", 1), null);
+    waypoints.save(ALEX, point("Mine", 2), null);
+
+    assertEquals(1, waypoints.setHidden(ALEX, List.of("home", "Nowhere"), true));
+    assertEquals(0, waypoints.setHidden(ALEX, List.of("Home"), true));
+    assertEquals(List.of("Mine"), waypoints.markers(ALEX).stream().map(Marker::label).toList());
+    assertEquals(2, waypoints.all(ALEX).size());
+
+    waypoints.save(ALEX, point("Home", 5), "Home");
+    assertTrue(waypoints.all(ALEX).stream().filter(saved -> saved.hidden()).count() == 1);
+    assertEquals(1, waypoints.setHidden(ALEX, List.of("Home"), false));
+    assertEquals(2, waypoints.markers(ALEX).size());
+  }
+
+  @Test
+  @DisplayName("importing adds new names, skips taken ones and stops at the limit, or replaces all")
+  void importsWaypoints(final @TempDir Path directory) {
+    final @NotNull PersonalWaypoints waypoints =
+        new PersonalWaypoints(
+            TestPlugins.named("TAERRA"), new MarkerRegistryImpl(), directory.toFile());
+    waypoints.save(ALEX, point("Home", 1), null);
+
+    final PersonalWaypoints.@Nullable Imported added =
+        waypoints.importAll(
+            ALEX,
+            List.of(
+                new PersonalWaypoints.Saved(point("home", 7), false),
+                new PersonalWaypoints.Saved(point("Farm", 8), true),
+                new PersonalWaypoints.Saved(point("FARM", 9), false)),
+            false);
+    assertEquals(new PersonalWaypoints.Imported(1, 2, 0), added);
+    assertEquals(
+        List.of(new Vector(1.5, 64, .5), new Vector(8.5, 64, .5)),
+        waypoints.all(ALEX).stream()
+            .map(saved -> ((PointMarker) saved.marker()).position())
+            .toList());
+    assertTrue(waypoints.all(ALEX).get(1).hidden());
+
+    final @NotNull List<PersonalWaypoints.Saved> many =
+        java.util.stream.IntStream.range(0, PersonalWaypoints.MAX + 5)
+            .mapToObj(i -> new PersonalWaypoints.Saved(point("W" + i, i), false))
+            .toList();
+    assertEquals(
+        new PersonalWaypoints.Imported(PersonalWaypoints.MAX - 2, 0, 7),
+        waypoints.importAll(ALEX, many, false));
+    assertEquals(
+        new PersonalWaypoints.Imported(PersonalWaypoints.MAX, 0, 5),
+        waypoints.importAll(ALEX, many, true));
+    assertFalse(
+        waypoints.all(ALEX).stream().anyMatch(saved -> saved.marker().label().equals("Home")));
   }
 }

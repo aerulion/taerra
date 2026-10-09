@@ -5,9 +5,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import net.aerulion.taerra.api.marker.Marker;
@@ -44,45 +49,114 @@ public final class PersonalWaypoints {
   }
 
   public @NotNull List<Marker> markers(final @NotNull UUID player) {
+    return all(player).stream().filter(saved -> !saved.hidden()).map(Saved::marker).toList();
+  }
+
+  public @NotNull List<Saved> all(final @NotNull UUID player) {
     final @NotNull File file = file(player);
     if (!file.isFile()) {
       return List.of();
     }
     return YamlConfiguration.loadConfiguration(file).getMapList("waypoints").stream()
-        .map(entry -> WaypointsImpl.read(entry, PREFIX))
+        .map(
+            entry -> {
+              final @Nullable Marker marker = WaypointsImpl.read(entry, PREFIX);
+              return marker == null
+                  ? null
+                  : new Saved(marker, Boolean.TRUE.equals(entry.get("hidden")));
+            })
         .filter(Objects::nonNull)
         .toList();
   }
 
   public synchronized @NotNull Result save(
       final @NotNull UUID player, final @NotNull Marker marker, final @Nullable String previous) {
-    final @NotNull List<Marker> markers = new ArrayList<>(markers(player));
+    final @NotNull List<Saved> saved = new ArrayList<>(all(player));
+    final boolean hidden =
+        previous != null
+            && saved.stream()
+                .anyMatch(
+                    known -> known.marker().id().equals(markerId(previous)) && known.hidden());
     if (previous != null) {
-      markers.removeIf(known -> known.id().equals(markerId(previous)));
+      saved.removeIf(known -> known.marker().id().equals(markerId(previous)));
     }
-    if (markers.stream().anyMatch(known -> known.id().equals(marker.id()))) {
+    if (saved.stream().anyMatch(known -> known.marker().id().equals(marker.id()))) {
       return Result.TAKEN;
     }
-    if (markers.size() >= MAX) {
+    if (saved.size() >= MAX) {
       return Result.FULL;
     }
-    markers.add(marker);
-    return write(player, markers) ? Result.SAVED : Result.FAILED;
+    saved.add(new Saved(marker, hidden));
+    return write(player, saved) ? Result.SAVED : Result.FAILED;
   }
 
   public synchronized boolean remove(final @NotNull UUID player, final @NotNull String name) {
-    final @NotNull List<Marker> markers = new ArrayList<>(markers(player));
-    return markers.removeIf(known -> known.id().equals(markerId(name))) && write(player, markers);
+    final @NotNull List<Saved> saved = new ArrayList<>(all(player));
+    return saved.removeIf(known -> known.marker().id().equals(markerId(name)))
+        && write(player, saved);
   }
 
-  private boolean write(final @NotNull UUID player, final @NotNull List<Marker> markers) {
+  public synchronized int setHidden(
+      final @NotNull UUID player, final @NotNull Collection<String> names, final boolean hidden) {
+    final @NotNull Set<String> ids = new HashSet<>();
+    names.forEach(name -> ids.add(markerId(name)));
+    int changed = 0;
+    final @NotNull List<Saved> saved = new ArrayList<>();
+    for (final @NotNull Saved known : all(player)) {
+      if (ids.contains(known.marker().id()) && known.hidden() != hidden) {
+        saved.add(new Saved(known.marker(), hidden));
+        changed++;
+      } else {
+        saved.add(known);
+      }
+    }
+    return changed > 0 && !write(player, saved) ? 0 : changed;
+  }
+
+  public synchronized @Nullable Imported importAll(
+      final @NotNull UUID player, final @NotNull List<Saved> incoming, final boolean replace) {
+    final @NotNull List<Saved> saved = new ArrayList<>(replace ? List.of() : all(player));
+    final @NotNull Map<String, Saved> known = new HashMap<>();
+    saved.forEach(entry -> known.put(entry.marker().id(), entry));
+    int added = 0;
+    int taken = 0;
+    int full = 0;
+    for (final @NotNull Saved entry : incoming) {
+      if (known.containsKey(entry.marker().id())) {
+        taken++;
+      } else if (saved.size() >= MAX) {
+        full++;
+      } else {
+        saved.add(entry);
+        known.put(entry.marker().id(), entry);
+        added++;
+      }
+    }
+    return (added > 0 || replace) && !write(player, saved)
+        ? null
+        : new Imported(added, taken, full);
+  }
+
+  private boolean write(final @NotNull UUID player, final @NotNull List<Saved> saved) {
     final @NotNull File file = file(player);
     try {
-      if (markers.isEmpty()) {
+      if (saved.isEmpty()) {
         Files.deleteIfExists(file.toPath());
       } else {
         final @NotNull YamlConfiguration yaml = new YamlConfiguration();
-        yaml.set("waypoints", markers.stream().map(WaypointsImpl::entry).toList());
+        yaml.set(
+            "waypoints",
+            saved.stream()
+                .map(
+                    entry -> {
+                      final @NotNull Map<String, Object> written =
+                          WaypointsImpl.entry(entry.marker());
+                      if (entry.hidden()) {
+                        written.put("hidden", true);
+                      }
+                      return written;
+                    })
+                .toList());
         AtomicFiles.write(file, yaml.saveToString().getBytes(StandardCharsets.UTF_8));
       }
     } catch (final IOException e) {
@@ -103,4 +177,8 @@ public final class PersonalWaypoints {
     FULL,
     FAILED
   }
+
+  public record Saved(@NotNull Marker marker, boolean hidden) {}
+
+  public record Imported(int added, int taken, int full) {}
 }

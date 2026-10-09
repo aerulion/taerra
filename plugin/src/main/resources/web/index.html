@@ -94,6 +94,9 @@
             <p class="account-menu__label" data-i18n="account.devices">Logged in on</p>
             <ul class="devices" id="device-list"></ul>
             <div class="account-actions">
+                <button aria-keyshortcuts="W" class="account-action" data-i18n="manager.title" data-icon="pin" hidden
+                        id="manager-open" type="button">My waypoints
+                </button>
                 <button class="account-action" data-i18n="account.device" data-icon="phone" id="device-button"
                         type="button">Log in on another device
                 </button>
@@ -203,6 +206,8 @@
                     <dd data-i18n="panel.toggle">Show or hide the side panel</dd>
                     <dt><kbd>/</kbd></dt>
                     <dd data-i18n="search.title">Search</dd>
+                    <dt><kbd>W</kbd></dt>
+                    <dd data-i18n="manager.title">My waypoints</dd>
                 </dl>
             </details>
         </div>
@@ -381,6 +386,47 @@
             <button class="btn btn--primary" data-i18n="waypoint.save" type="submit">Save</button>
         </footer>
     </form>
+</dialog>
+
+<dialog aria-labelledby="manager-title" class="manager" id="manager">
+    <header class="manager__header">
+        <h2 class="manager__title" data-i18n="manager.title" id="manager-title">My waypoints</h2>
+        <span class="badge" id="manager-count"></span>
+        <button aria-label="Close" class="manager__close" data-i18n-label="manager.close" id="manager-close"
+                type="button"></button>
+    </header>
+    <div class="manager__tools">
+        <input aria-label="Filter" autocomplete="off" class="editor__input manager__filter" data-i18n-label="manager.filter"
+               id="manager-filter" spellcheck="false" type="search">
+        <select aria-label="World" class="manager__select" data-i18n-label="manager.world" id="manager-world"></select>
+        <select aria-label="Sort" class="manager__select" data-i18n-label="manager.sort" id="manager-sort">
+            <option data-i18n="manager.sort.name" value="name">Name</option>
+            <option data-i18n="manager.sort.distance" value="distance">Distance</option>
+        </select>
+    </div>
+    <label class="manager__all">
+        <input id="manager-all" type="checkbox">
+        <span data-i18n="manager.selectAll">Select all</span>
+    </label>
+    <ul class="manager__list" id="manager-list"></ul>
+    <p class="manager__empty" hidden id="manager-empty"></p>
+    <div class="manager__import" hidden id="manager-importing">
+        <p id="manager-import-text"></p>
+        <div class="manager__buttons">
+            <button class="btn" data-i18n="manager.cancel" id="manager-import-cancel" type="button">Cancel</button>
+            <button class="btn btn--danger" id="manager-import-replace" type="button"></button>
+            <button class="btn btn--primary" data-i18n="manager.add" id="manager-import-add" type="button">Add to
+                mine
+            </button>
+        </div>
+    </div>
+    <p class="manager__status" id="manager-status" role="status"></p>
+    <footer class="manager__buttons">
+        <button class="btn btn--danger" hidden id="manager-delete" type="button"></button>
+        <button class="btn" data-i18n="manager.import" id="manager-import" type="button">Import…</button>
+        <button class="btn btn--primary" id="manager-export" type="button"></button>
+        <input accept=".json,application/json" hidden id="manager-file" type="file">
+    </footer>
 </dialog>
 </body>
 </html>
