@@ -424,6 +424,18 @@ public final class MapScreen extends Screen {
               .active =
           this.view.isometric();
     }
+    final @Nullable Account account = this.map.account();
+    if (this.selection == null && account != null && account.personal()) {
+      footer.addChild(
+          Button.builder(Component.translatable("taerra.waypoints"), _ -> openWaypointList())
+              .tooltip(
+                  Tooltip.create(
+                      Component.translatable(
+                          "taerra.waypoints.tooltip",
+                          TaerraKeys.WAYPOINT_LIST.getTranslatedKeyMessage())))
+              .width(BUTTON_WIDTH)
+              .build());
+    }
     if (this.selection == null) {
       footer.addChild(
           Button.builder(
@@ -804,7 +816,7 @@ public final class MapScreen extends Screen {
         new SearchScreen(this, this.map, this.view.world(), this::jump));
   }
 
-  private void jump(final SearchScreen.@NotNull Target target) {
+  void jump(final SearchScreen.@NotNull Target target) {
     final @Nullable MapConfig config = this.map.config();
     final @Nullable World world = this.map.world(target.world());
     if (config == null || world == null) {
@@ -939,6 +951,9 @@ public final class MapScreen extends Screen {
     } else if (TaerraKeys.COLORS.matches(event)) {
       this.settings.setGrayMap(!this.settings.grayMap());
       this.settings.save();
+      return true;
+    } else if (TaerraKeys.WAYPOINT_LIST.matches(event)) {
+      openWaypointList();
       return true;
     } else if (TaerraKeys.PANELS.matches(event)) {
       final boolean open = !this.playersOpen && !this.layersOpen;
@@ -1374,17 +1389,35 @@ public final class MapScreen extends Screen {
           Component.translatable("taerra.waypoint.edit_short"),
           _ -> {
             closeMenu();
-            if (point) {
-              this.minecraft.setScreenAndShow(
-                  new WaypointScreen(this, this.map, waypoint, () -> {}));
-            } else {
-              startDrawing(
-                  waypoint.type().equals("line") ? Kind.LINE : Kind.AREA, waypoint, marker.id());
-            }
+            editWaypoint(waypoint);
           });
     }
     if (!menu.isEmpty()) {
       showMenu(menu, mouseX, mouseY);
+    }
+  }
+
+  void editWaypoint(final @NotNull Waypoint waypoint) {
+    if ("point".equals(waypoint.type())) {
+      this.minecraft.setScreenAndShow(new WaypointScreen(this, this.map, waypoint, () -> {}));
+      return;
+    }
+    final @Nullable World world = this.map.world(waypoint.world());
+    if (world != null && !world.name().equals(this.view.world())) {
+      selectWorld(world);
+    }
+    startDrawing(
+        waypoint.type().equals("line") ? Kind.LINE : Kind.AREA,
+        waypoint,
+        (waypoint.personal() ? "personal:" : "waypoint:")
+            + waypoint.name().toLowerCase(java.util.Locale.ROOT));
+  }
+
+  public void openWaypointList() {
+    final @Nullable Account account = this.map.account();
+    if (account != null && account.personal()) {
+      closeMenu();
+      this.minecraft.setScreenAndShow(new WaypointListScreen(this, this.map));
     }
   }
 

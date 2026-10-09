@@ -86,6 +86,16 @@ public final class TaerraClient implements ClientModInitializer {
     while (TaerraKeys.STOP_NAVIGATION.consumeClick()) {
       NAVIGATION.stop();
     }
+    while (TaerraKeys.WAYPOINT_LIST.consumeClick()) {
+      final @Nullable WebMap map = this.session.map();
+      if (map != null && map.account() != null && map.account().personal()) {
+        final @NotNull MapScreen screen = new MapScreen(map, this.screenView, settings());
+        minecraft.setScreenAndShow(screen);
+        screen.openWaypointList();
+      } else if (minecraft.player != null) {
+        minecraft.player.sendOverlayMessage(this.session.unavailable());
+      }
+    }
     while (TaerraKeys.OPEN_MAP.consumeClick()) {
       final @Nullable WebMap map = this.session.map();
       if (map != null) {

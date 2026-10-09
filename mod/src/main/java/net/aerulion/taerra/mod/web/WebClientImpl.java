@@ -14,6 +14,7 @@ import java.net.http.WebSocket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.zip.GZIPInputStream;
@@ -111,6 +112,33 @@ public final class WebClientImpl implements WebClient {
         .sendAsync(request, HttpResponse.BodyHandlers.discarding())
         .handle((response, error) -> error == null ? response.statusCode() : 0)
         .thenAccept(status -> execute(() -> then.accept(status)));
+  }
+
+  @Override
+  public void request(
+      final String method,
+      final String path,
+      final @Nullable Object body,
+      final @NotNull BiConsumer<Integer, @Nullable String> then) {
+    final HttpRequest request =
+        request(path)
+            .header("Content-Type", "application/json")
+            .method(
+                method,
+                body == null
+                    ? HttpRequest.BodyPublishers.noBody()
+                    : HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
+            .build();
+    this.http
+        .sendAsync(request, BODY)
+        .handle(
+            (response, error) ->
+                error == null
+                    ? new Object[] {
+                      response.statusCode(), new String(response.body(), StandardCharsets.UTF_8)
+                    }
+                    : new Object[] {0, null})
+        .thenAccept(result -> execute(() -> then.accept((Integer) result[0], (String) result[1])));
   }
 
   @Override

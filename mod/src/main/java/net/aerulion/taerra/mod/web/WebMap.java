@@ -1,7 +1,9 @@
 package net.aerulion.taerra.mod.web;
 
+import com.google.gson.JsonArray;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import net.aerulion.taerra.mod.pick.PickCache;
@@ -11,6 +13,7 @@ import net.aerulion.taerra.mod.web.model.Device;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.MapConfig;
 import net.aerulion.taerra.mod.web.model.NavigationTarget;
+import net.aerulion.taerra.mod.web.model.PersonalWaypoint;
 import net.aerulion.taerra.mod.web.model.Player;
 import net.aerulion.taerra.mod.web.model.Progress;
 import net.aerulion.taerra.mod.web.model.Waypoint;
@@ -69,6 +72,13 @@ public sealed interface WebMap permits WebMapImpl {
   void teleport(String world, int x, @Nullable Integer y, int z, IntConsumer then);
 
   void devices(Consumer<@Nullable List<Device>> then);
+
+  void personalWaypoints(Consumer<@Nullable List<PersonalWaypoint>> then);
+
+  void setHidden(List<String> names, boolean hidden, IntConsumer then);
+
+  void importWaypoints(
+      String mode, JsonArray waypoints, BiConsumer<Integer, @Nullable String> then);
 
   void logOutDevice(String id, IntConsumer then);
 

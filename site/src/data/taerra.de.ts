@@ -135,7 +135,7 @@ export const de: Copy = {
                     },
                     {
                         title: 'Eigene Wegpunkte',
-                        text: 'Alle angemeldeten Spieler:innen haben bis zu 100 Wegpunkte, Flächen und Linien, die nur sie sehen, im Browser und im Spiel, gezeichnet als Edelsteine und gestrichelte Linien, damit sie nie mit denen des Servers verwechselt werden. Andere Plugins zeigen Spieler:innen so auch ihre eigenen Markierungen, etwa ihre Homes.'
+                        text: 'Alle angemeldeten Spieler:innen haben bis zu 100 Wegpunkte, Flächen und Linien, die nur sie sehen, im Browser und im Spiel, gezeichnet als Edelsteine und gestrichelte Linien, damit sie nie mit denen des Servers verwechselt werden. Eine Liste, im Browser und in der Mod, sortiert sie nach Name oder Entfernung, verbirgt einzelne und exportiert sie als JSON-Datei zum Teilen oder Sichern. Andere Plugins zeigen Spieler:innen so auch ihre eigenen Markierungen, etwa ihre Homes.'
                     },
                     {
                         title: 'Datenschutz eingebaut',

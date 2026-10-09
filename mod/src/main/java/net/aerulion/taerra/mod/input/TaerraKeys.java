@@ -25,6 +25,8 @@ public final class TaerraKeys {
   public static final KeyMapping COLORS = key("key.taerra.map.colors", InputConstants.KEY_G);
   public static final KeyMapping PANELS = key("key.taerra.map.panels", InputConstants.KEY_P);
   public static final KeyMapping SEARCH = key("key.taerra.map.search", InputConstants.KEY_K);
+  public static final KeyMapping WAYPOINT_LIST =
+      key("key.taerra.waypoint_list", InputConstants.KEY_J);
   public static final KeyMapping STOP_NAVIGATION =
       key("key.taerra.navigation.stop", InputConstants.UNKNOWN.getValue());
 
@@ -48,6 +50,7 @@ public final class TaerraKeys {
           COLORS,
           PANELS,
           SEARCH,
+          WAYPOINT_LIST,
           STOP_NAVIGATION
         }) {
       KeyMappingHelper.registerKeyMapping(key);

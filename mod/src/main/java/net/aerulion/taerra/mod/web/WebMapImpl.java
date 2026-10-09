@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletionStage;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import net.aerulion.taerra.mod.config.Settings;
@@ -34,6 +35,7 @@ import net.aerulion.taerra.mod.web.model.Device;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.MapConfig;
 import net.aerulion.taerra.mod.web.model.NavigationTarget;
+import net.aerulion.taerra.mod.web.model.PersonalWaypoint;
 import net.aerulion.taerra.mod.web.model.Player;
 import net.aerulion.taerra.mod.web.model.Progress;
 import net.aerulion.taerra.mod.web.model.Waypoint;
@@ -54,6 +56,7 @@ public final class WebMapImpl implements WebMap {
   private static final Type LAYERS = new TypeToken<List<Layer>>() {}.getType();
   private static final Type GROUPS = new TypeToken<List<WaypointGroup>>() {}.getType();
   private static final Type DEVICES = new TypeToken<List<Device>>() {}.getType();
+  private static final Type PERSONAL = new TypeToken<List<PersonalWaypoint>>() {}.getType();
   private static final long KEEP_ALIVE_MILLIS = 20_000;
   private static final long RECONNECT_MILLIS = 5_000;
   private static final long UNREACHABLE_RETRY_MILLIS = 10_000;
@@ -285,6 +288,43 @@ public final class WebMapImpl implements WebMap {
               this.client.execute(() -> then.accept(found));
               return null;
             });
+  }
+
+  @Override
+  public void personalWaypoints(final @NotNull Consumer<@Nullable List<PersonalWaypoint>> then) {
+    this.client.request(
+        "GET",
+        "/api/waypoints/personal",
+        null,
+        (status, body) -> {
+          @Nullable List<PersonalWaypoint> waypoints = null;
+          if (status == 200 && body != null) {
+            try {
+              waypoints = GSON.fromJson(body, PERSONAL);
+            } catch (final RuntimeException e) {
+              LOGGER.warn("TAERRA: unreadable waypoint list: {}", e.toString());
+            }
+          }
+          then.accept(waypoints);
+        });
+  }
+
+  @Override
+  public void setHidden(
+      final @NotNull List<String> names, final boolean hidden, final @NotNull IntConsumer then) {
+    this.client.send(
+        "PUT", "/api/waypoints/personal/hidden", Map.of("names", names, "hidden", hidden), then);
+  }
+
+  @Override
+  public void importWaypoints(
+      final @NotNull String mode,
+      final @NotNull JsonArray waypoints,
+      final @NotNull BiConsumer<Integer, @Nullable String> then) {
+    final @NotNull JsonObject body = new JsonObject();
+    body.addProperty("mode", mode);
+    body.add("waypoints", waypoints);
+    this.client.request("POST", "/api/waypoints/personal/import", body, then);
   }
 
   @Override

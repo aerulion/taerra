@@ -177,7 +177,7 @@ const en = {
                     },
                     {
                         title: 'Waypoints of your own',
-                        text: "Every logged-in player keeps up to 100 waypoints, areas and lines only they see, in the browser and in game, drawn as gems and dashed lines so they never pass for the server's. Other plugins can show players their own markers the same way, like their homes."
+                        text: "Every logged-in player keeps up to 100 waypoints, areas and lines only they see, in the browser and in game, drawn as gems and dashed lines so they never pass for the server's. A list, in the browser and in the mod, sorts them by name or distance, hides single ones and exports them as a JSON file to share or back up. Other plugins can show players their own markers the same way, like their homes."
                     },
                     {
                         title: 'Privacy built in',
