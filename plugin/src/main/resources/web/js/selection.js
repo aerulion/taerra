@@ -530,7 +530,9 @@ class ChunkSelection {
         const points = this.tool === 'points';
         const split = this.kind === 'area' && !points && this.outlines().length > 1;
         $('selection-count').textContent = numbers.format(points ? this.points.length : this.chunks.size);
-        const message = this.status ?? (split ? t('selection.split') : null);
+        const full = !points && this.chunks.size >= MAX_CHUNKS;
+        const message = this.status ?? (split ? t('selection.split')
+            : full ? t('selection.full', {count: numbers.format(MAX_CHUNKS)}) : null);
         $('selection-text').classList.toggle('selection__message--keys', !message);
         if (message) {
             $('selection-text').textContent = message;
@@ -540,8 +542,8 @@ class ChunkSelection {
         $('selection-smooth').setAttribute('aria-pressed', String(this.smooth));
         $('selection-smooth').textContent = t(this.smooth ? 'selection.smooth.on' : 'selection.smooth.off');
         $('selection-save').disabled = this.sending || !this.shape();
-        $('selection').classList.toggle('is-failed', split || (this.status !== null && this.failed));
-        $('selection').classList.toggle('is-done', !split && this.status !== null && !this.failed);
+        $('selection').classList.toggle('is-failed', split || full || (this.status !== null && this.failed));
+        $('selection').classList.toggle('is-done', !split && !full && this.status !== null && !this.failed);
     }
 
     hints(points) {

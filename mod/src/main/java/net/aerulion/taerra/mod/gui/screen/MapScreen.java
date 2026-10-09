@@ -1111,24 +1111,30 @@ public final class MapScreen extends Screen {
           this.kind == Kind.AREA
               && this.tool != SelectionTool.POINTS
               && this.selection.rings().size() > 1;
+      final boolean full =
+          this.tool != SelectionTool.POINTS && this.selection.size() >= ChunkSelection.MAX_CHUNKS;
       graphics.centeredText(
           this.font,
           split
               ? Component.translatable("taerra.selection.split")
               : status
                   ? this.selectionStatus
-                  : this.tool == SelectionTool.POINTS
-                      ? Component.translatable("taerra.selection.points", this.path.size())
-                      : this.selection.isEmpty()
-                          ? Component.translatable("taerra.selection.empty")
-                          : Component.translatable(
-                              this.selection.size() == 1
-                                  ? "taerra.selection.count.one"
-                                  : "taerra.selection.count",
-                              this.selection.size()),
+                  : full
+                      ? Component.translatable("taerra.selection.full", ChunkSelection.MAX_CHUNKS)
+                      : this.tool == SelectionTool.POINTS
+                          ? Component.translatable("taerra.selection.points", this.path.size())
+                          : this.selection.isEmpty()
+                              ? Component.translatable("taerra.selection.empty")
+                              : Component.translatable(
+                                  this.selection.size() == 1
+                                      ? "taerra.selection.count.one"
+                                      : "taerra.selection.count",
+                                  this.selection.size()),
           middle,
           bottom - 24,
-          split || status && this.selectionFailed ? 0xFFFF5555 : status ? 0xFF55FF55 : 0xFFFFFF55);
+          split || full && !status || status && this.selectionFailed
+              ? 0xFFFF5555
+              : status ? 0xFF55FF55 : 0xFFFFFF55);
     } else if (this.notice != null && System.currentTimeMillis() < this.noticeUntil) {
       graphics.centeredText(this.font, this.notice, middle, bottom - 24, 0xFFFF5555);
     }

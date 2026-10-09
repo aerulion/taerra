@@ -148,6 +148,7 @@
   "taerra.map.zoom_in": "Hineinzoomen",
   "taerra.map.zoom_out": "Herauszoomen",
   "taerra.selection.points": "%s Punkte",
+  "taerra.selection.full": "Mehr Chunks passen nicht in eine Auswahl (%s)",
   "taerra.selection.split": "Eine Fläche muss ein Stück ohne Löcher sein",
   "taerra.area.new": "Neue Fläche",
   "taerra.area.edit": "Fläche bearbeiten",

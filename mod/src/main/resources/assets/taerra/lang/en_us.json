@@ -148,6 +148,7 @@
   "taerra.map.zoom_in": "Zoom in",
   "taerra.map.zoom_out": "Zoom out",
   "taerra.selection.points": "%s points",
+  "taerra.selection.full": "That's as many chunks as one selection holds (%s)",
   "taerra.selection.split": "An area has to be one piece without holes",
   "taerra.area.new": "New Area",
   "taerra.area.edit": "Edit Area",

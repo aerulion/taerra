@@ -152,6 +152,7 @@
   "selection.failed": "Das hat nicht geklappt",
   "selection.title": "Auswahl",
   "selection.tool": "Werkzeug",
+  "selection.full": "Mehr Chunks passen nicht in eine Auswahl ({count})",
   "selection.split": "Eine Fläche muss ein Stück ohne Löcher sein",
   "area.new": "Neue Fläche",
   "area.edit": "Fläche bearbeiten",

@@ -152,6 +152,7 @@
   "selection.failed": "That didn't work",
   "selection.title": "Selection",
   "selection.tool": "Tool",
+  "selection.full": "That's as many chunks as one selection holds ({count})",
   "selection.split": "An area has to be one piece without holes",
   "area.new": "New area",
   "area.edit": "Edit area",
