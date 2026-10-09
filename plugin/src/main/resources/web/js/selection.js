@@ -195,6 +195,7 @@ class ChunkSelection {
         this.smooth = editing?.smooth ?? false;
         this.color = editing?.color ?? DEFAULT_COLOR;
         this.grounds.clear();
+        map.closePopup();
         map.dragging.disable();
         map.boxZoom.disable();
         const chunks = kind === 'chunks';

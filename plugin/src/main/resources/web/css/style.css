@@ -407,7 +407,7 @@ button {
     display: flex;
     flex: none;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
     padding: 0 16px;
     background: var(--stone-900);
     border-bottom: var(--edge);
@@ -421,6 +421,7 @@ button {
 
 .search__glass {
     flex: none;
+    margin-inline: 4px;
     width: 16px;
     height: 16px;
 }
@@ -467,7 +468,7 @@ button {
     align-items: center;
     gap: 12px;
     min-height: 44px;
-    padding: 6px 10px 8px;
+    padding: 6px 8px 8px;
     cursor: pointer;
 }
 
@@ -654,7 +655,7 @@ button {
 }
 
 .account-menu {
-    inset: calc(var(--topbar-h) - 4px) var(--gap) auto auto;
+    inset: var(--topbar-h) var(--gap) auto auto;
     width: 260px;
     margin: 0;
     padding: 6px;
@@ -750,6 +751,14 @@ button {
     image-rendering: pixelated;
 }
 
+.leaflet-right .leaflet-control {
+    margin-right: var(--gap);
+}
+
+.leaflet-top .leaflet-control:first-child {
+    margin-top: var(--gap);
+}
+
 .leaflet-bar,
 .leaflet-touch .leaflet-bar {
     border: var(--edge);
@@ -784,7 +793,7 @@ button {
     color: var(--stone-500);
 }
 
-.shortcuts {
+.panel__section.shortcuts {
     display: block;
 }
 
@@ -925,13 +934,29 @@ kbd {
     background: var(--stone-700);
     border: var(--edge);
     border-left: 0;
+    color: var(--stone-100);
     cursor: pointer;
     transition: transform .2s ease;
 }
 
+.panel__toggle::before,
+.rotation .btn::before {
+    content: "";
+    display: block;
+    margin: auto;
+    background: currentColor;
+    mask: var(--icon) center / contain no-repeat;
+}
+
 .panel__toggle::before {
-    content: "◀";
-    font-size: 12px;
+    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 7' shape-rendering='crispEdges'><path d='M3 0h1v7H3zM2 1h1v5H2zM1 2h1v3H1zM0 3h1v1H0z'/></svg>");
+    width: 8px;
+    height: 14px;
+}
+
+.panel__toggle:hover {
+    background: var(--stone-600);
+    color: var(--white);
 }
 
 .panel.is-collapsed .panel__toggle {
@@ -940,7 +965,7 @@ kbd {
 }
 
 .panel.is-collapsed .panel__toggle::before {
-    content: "▶";
+    rotate: 180deg;
 }
 
 .panel__body {
@@ -973,6 +998,10 @@ kbd {
     font: 700 10px/1.2 var(--font-display);
     letter-spacing: .04em;
     text-transform: uppercase;
+}
+
+h2 .badge {
+    margin: -3px 0;
 }
 
 .badge {
@@ -1051,6 +1080,16 @@ kbd {
 .rotation {
     display: grid;
     grid-template-columns: 48px 1fr 48px;
+}
+
+.rotation .btn::before {
+    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M4 0h1v1H4zM2 1h4v1H2zM1 2h1v1H1zM4 2h1v1H4zM7 2h1v4H7zM0 3h1v3H0zM1 6h1v1H1zM6 6h1v1H6zM2 7h4v1H2z'/></svg>");
+    width: 16px;
+    height: 16px;
+}
+
+.rotation .btn[data-turn="1"]::before {
+    scale: -1 1;
 }
 
 .rotation output {
@@ -1685,7 +1724,7 @@ kbd {
     }
 
     .panel__toggle::before {
-        content: "▼";
+        rotate: -90deg;
     }
 
     .panel.is-collapsed .panel__toggle {
@@ -1693,7 +1732,7 @@ kbd {
     }
 
     .panel.is-collapsed .panel__toggle::before {
-        content: "▲";
+        rotate: 90deg;
     }
 
     .hud {
@@ -1920,6 +1959,7 @@ kbd {
     position: sticky;
     bottom: -16px;
     display: flex;
+    justify-content: flex-end;
     gap: 8px;
     margin: 0 -16px -16px;
     padding: 14px 16px 16px;
@@ -2137,7 +2177,7 @@ kbd {
     .navigation,
     .selection {
         left: var(--gap);
-        right: calc(54px + var(--gap));
+        right: calc(44px + 2 * var(--gap));
         width: auto;
         max-width: none;
         translate: none;
@@ -2154,8 +2194,8 @@ kbd {
 
 @media (min-width: 721px) {
     .stage:has(.panel:not(.is-collapsed)) :is(.placing, .navigation, .selection) {
-        left: calc(50% + (var(--panel-w) - 54px) / 2);
-        max-width: calc(100% - var(--panel-w) - 54px - 2 * var(--gap));
+        left: calc(50% + (var(--panel-w) - 16px) / 2);
+        max-width: calc(100% - var(--panel-w) - 72px - 4 * var(--gap));
     }
 }
 

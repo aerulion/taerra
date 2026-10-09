@@ -585,7 +585,7 @@ class MarkerManager {
             html: body,
             iconSize: [18, 22],
             iconAnchor: [9, 22],
-            popupAnchor: [0, -24]
+            popupAnchor: [0, marker.label ? -42 : -24]
         });
     }
 
