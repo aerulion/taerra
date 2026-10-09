@@ -7,6 +7,7 @@ import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.session.MapSession;
 import net.aerulion.taerra.mod.util.Colors;
 import net.aerulion.taerra.mod.util.Dimensions;
+import net.aerulion.taerra.mod.util.Distances;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.Marker;
@@ -76,7 +77,7 @@ public final class WaypointLabels implements LevelRenderEvents.CollectSubmits {
 
   private static @NotNull Component text(final @NotNull Marker marker, final double distance) {
     return Component.literal((marker.label() == null ? marker.id() : marker.label()) + " ")
-        .append(Component.literal(Math.round(distance) + "m").withStyle(ChatFormatting.GRAY));
+        .append(Component.literal(Distances.format(distance)).withStyle(ChatFormatting.GRAY));
   }
 
   @Override

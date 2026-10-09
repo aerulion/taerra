@@ -4,6 +4,7 @@ import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.navigation.Navigation;
 import net.aerulion.taerra.mod.session.MapSession;
 import net.aerulion.taerra.mod.util.Dimensions;
+import net.aerulion.taerra.mod.util.Distances;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.aerulion.taerra.mod.web.model.World;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
@@ -71,7 +72,7 @@ public final class NavigationHud {
       final double dx = at[0] - position.x;
       final double dz = at[2] - position.z;
       text.append(
-          Component.literal("  " + Math.round(Math.hypot(dx, dz)) + "m")
+          Component.literal("  " + Distances.format(Math.hypot(dx, dz)))
               .withStyle(ChatFormatting.GRAY));
       if (!target.world().equals(here)) {
         text.append(
