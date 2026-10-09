@@ -12,11 +12,13 @@ class WebSocketManager {
         this.listeners = new Map();
         setInterval(() => this.send({type: 'ping'}), KEEP_ALIVE_MILLIS);
 
-        document.addEventListener('visibilitychange', () => {
+        const retry = () => {
             if (!document.hidden && !this.connected) {
                 this.connect();
             }
-        });
+        };
+        document.addEventListener('visibilitychange', retry);
+        addEventListener('online', retry);
     }
 
     get connected() {
