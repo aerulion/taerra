@@ -7,6 +7,7 @@ import java.util.function.IntConsumer;
 import net.aerulion.taerra.mod.pick.PickCache;
 import net.aerulion.taerra.mod.tile.TileCache;
 import net.aerulion.taerra.mod.web.model.Account;
+import net.aerulion.taerra.mod.web.model.Device;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.MapConfig;
 import net.aerulion.taerra.mod.web.model.NavigationTarget;
@@ -66,6 +67,10 @@ public sealed interface WebMap permits WebMapImpl {
   void deleteWaypoint(String world, String name, boolean personal, IntConsumer then);
 
   void teleport(String world, int x, @Nullable Integer y, int z, IntConsumer then);
+
+  void devices(Consumer<@Nullable List<Device>> then);
+
+  void logOutDevice(String id, IntConsumer then);
 
   void area(String action, String world, Collection<Long> chunks, IntConsumer then);
 

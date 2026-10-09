@@ -30,6 +30,7 @@ import net.aerulion.taerra.mod.tile.TileKey;
 import net.aerulion.taerra.mod.util.Toasts;
 import net.aerulion.taerra.mod.util.Urls;
 import net.aerulion.taerra.mod.web.model.Account;
+import net.aerulion.taerra.mod.web.model.Device;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.MapConfig;
 import net.aerulion.taerra.mod.web.model.NavigationTarget;
@@ -52,6 +53,7 @@ public final class WebMapImpl implements WebMap {
   private static final Type PLAYERS = new TypeToken<List<Player>>() {}.getType();
   private static final Type LAYERS = new TypeToken<List<Layer>>() {}.getType();
   private static final Type GROUPS = new TypeToken<List<WaypointGroup>>() {}.getType();
+  private static final Type DEVICES = new TypeToken<List<Device>>() {}.getType();
   private static final long KEEP_ALIVE_MILLIS = 20_000;
   private static final long RECONNECT_MILLIS = 5_000;
   private static final long UNREACHABLE_RETRY_MILLIS = 10_000;
@@ -262,6 +264,32 @@ public final class WebMapImpl implements WebMap {
         "/api/waypoints/" + Urls.segment(name) + (personal ? "?personal=true" : ""),
         null,
         refreshing(world, then));
+  }
+
+  @Override
+  public void devices(final @NotNull Consumer<@Nullable List<Device>> then) {
+    this.client
+        .get("/api/account/sessions", null)
+        .handle(
+            (response, error) -> {
+              @Nullable List<Device> devices = null;
+              if (error == null && response.statusCode() == 200) {
+                try {
+                  devices =
+                      GSON.fromJson(new String(response.body(), StandardCharsets.UTF_8), DEVICES);
+                } catch (final RuntimeException e) {
+                  LOGGER.warn("TAERRA: unreadable device list: {}", e.toString());
+                }
+              }
+              final @Nullable List<Device> found = devices;
+              this.client.execute(() -> then.accept(found));
+              return null;
+            });
+  }
+
+  @Override
+  public void logOutDevice(final @NotNull String id, final @NotNull IntConsumer then) {
+    this.client.send("DELETE", "/api/account/sessions/" + Urls.segment(id), null, then);
   }
 
   @Override

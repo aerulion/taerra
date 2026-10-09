@@ -6,6 +6,7 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import net.aerulion.taerra.api.TaerraApi;
 import net.aerulion.taerra.command.ConfigSubCommand;
+import net.aerulion.taerra.command.DevicesSubCommand;
 import net.aerulion.taerra.command.ImportSubCommand;
 import net.aerulion.taerra.command.LimitSubCommand;
 import net.aerulion.taerra.command.LoginSubCommand;
@@ -343,6 +344,7 @@ public final class Taerra extends JavaPlugin {
             new ConfigSubCommand(this, configuration, webServer, markers),
             new ImportSubCommand(this, waypoints),
             new LoginSubCommand(this, configuration, webSessions),
-            new LogoutSubCommand(webSessions)));
+            new LogoutSubCommand(webSessions),
+            new DevicesSubCommand(webSessions)));
   }
 }

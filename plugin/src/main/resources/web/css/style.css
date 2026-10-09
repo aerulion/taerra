@@ -657,6 +657,8 @@ button {
 .account-menu {
     inset: var(--topbar-h) var(--gap) auto auto;
     width: 260px;
+    max-height: calc(100dvh - var(--topbar-h) - var(--gap));
+    overflow-y: auto;
     margin: 0;
     padding: 6px;
     background: var(--stone-700);
@@ -721,6 +723,64 @@ button {
 .account-pair__command.is-expired b {
     color: var(--stone-500);
     text-decoration: line-through;
+}
+
+.account-menu__label {
+    padding: 2px 8px 4px;
+    color: var(--stone-200);
+    font: 600 11px/1.3 var(--font-mono);
+}
+
+.devices {
+    margin: 0 0 4px;
+    padding: 0;
+    list-style: none;
+}
+
+.device {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+}
+
+.device__text {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+}
+
+.device__name {
+    overflow: hidden;
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.device__meta {
+    color: var(--stone-200);
+    font-size: 12px;
+}
+
+.device__meta.is-current {
+    color: var(--green);
+}
+
+.account-menu .device__logout {
+    flex: none;
+    width: auto;
+    padding: 4px 8px;
+    border: 1px solid var(--stone-500);
+    color: var(--stone-100);
+    font-size: 12px;
+}
+
+.account-menu .device__logout:is(:hover, :focus-visible) {
+    border-color: var(--red);
+    background: none;
+    color: var(--red);
 }
 
 .account-qr__code {

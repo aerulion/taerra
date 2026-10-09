@@ -161,7 +161,7 @@ const en = {
                 features: [
                     {
                         title: 'Logins without passwords',
-                        text: 'The map shows a short code to type after /taerra login in game, and the browser logs in by itself. A logged-in browser shows a QR code for your phone. Codes work once, browsers stay logged in for 30 days, and players are told in game whenever a browser logs in as them.'
+                        text: 'The map shows a short code to type after /taerra login in game, and the browser logs in by itself. A logged-in browser shows a QR code for your phone. Codes work once, browsers stay logged in for 30 days, and players are told in game whenever a browser logs in as them and can log out any device.'
                     },
                     {
                         title: 'Private worlds and layers',
@@ -345,7 +345,8 @@ const en = {
                 {command: '/taerra waypoint add|remove …', text: 'Add or remove waypoints'},
                 {command: '/taerra import dynmap <file>', text: 'Import markers from dynmap'},
                 {command: '/taerra login [code]', text: 'Log in to the web map'},
-                {command: '/taerra logout [player]', text: 'Log out of the web map in every browser'}
+                {command: '/taerra logout [player]', text: 'Log out of the web map in every browser'},
+                {command: '/taerra devices', text: 'See and log out your web map devices'}
             ] satisfies Command[]
         },
         permissions: {
@@ -355,7 +356,7 @@ const en = {
                 {
                     permission: 'taerra.command.login',
                     standard: 'everyone',
-                    text: '`/taerra login` and `/taerra logout`'
+                    text: '`/taerra login`, `/taerra logout` and `/taerra devices`'
                 },
                 {permission: 'taerra.command.status', standard: 'op', text: '`/taerra status`'},
                 {permission: 'taerra.command.render', standard: 'op', text: '`/taerra render`'},

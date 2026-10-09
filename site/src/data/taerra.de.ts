@@ -119,7 +119,7 @@ export const de: Copy = {
                 features: [
                     {
                         title: 'Anmelden ohne Passwort',
-                        text: 'Die Karte zeigt einen kurzen Code, den Spieler:innen im Spiel nach /taerra login eingeben, und der Browser meldet sich von selbst an. Ein angemeldeter Browser zeigt einen QR-Code fürs Handy. Codes funktionieren einmal, Browser bleiben 30 Tage angemeldet, und Spieler:innen erfahren im Spiel, wann immer sich ein Browser als sie anmeldet.'
+                        text: 'Die Karte zeigt einen kurzen Code, den Spieler:innen im Spiel nach /taerra login eingeben, und der Browser meldet sich von selbst an. Ein angemeldeter Browser zeigt einen QR-Code fürs Handy. Codes funktionieren einmal, Browser bleiben 30 Tage angemeldet, und Spieler:innen erfahren im Spiel, wann immer sich ein Browser als sie anmeldet, und können jedes Gerät abmelden.'
                     },
                     {
                         title: 'Private Welten und Ebenen',
@@ -306,14 +306,19 @@ export const de: Copy = {
                 {command: '/taerra waypoint add|remove …', text: 'Wegpunkte hinzufügen oder entfernen'},
                 {command: '/taerra import dynmap <datei>', text: 'Markierungen aus dynmap importieren'},
                 {command: '/taerra login [code]', text: 'Bei der Web-Karte anmelden'},
-                {command: '/taerra logout [name]', text: 'In jedem Browser von der Web-Karte abmelden'}
+                {command: '/taerra logout [name]', text: 'In jedem Browser von der Web-Karte abmelden'},
+                {command: '/taerra devices', text: 'Deine Geräte auf der Web-Karte sehen und abmelden'}
             ]
         },
         permissions: {
             title: 'Berechtigungen',
             head: ['Berechtigung', 'Standard', 'Erlaubt'],
             rows: [
-                {permission: 'taerra.command.login', standard: 'alle', text: '`/taerra login` und `/taerra logout`'},
+                {
+                    permission: 'taerra.command.login',
+                    standard: 'alle',
+                    text: '`/taerra login`, `/taerra logout` und `/taerra devices`'
+                },
                 {permission: 'taerra.command.status', standard: 'OP', text: '`/taerra status`'},
                 {permission: 'taerra.command.render', standard: 'OP', text: '`/taerra render`'},
                 {permission: 'taerra.command.limit', standard: 'OP', text: '`/taerra limit`'},

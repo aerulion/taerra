@@ -187,5 +187,18 @@
   "taerra.hint.do.move": "Punkt bewegen",
   "taerra.hint.do.remove": "Punkt entfernen",
   "taerra.hint.do.undo": "Letzten entfernen",
-  "taerra.hint.do.move_waypoint": "%s hierher verschieben"
+  "taerra.hint.do.move_waypoint": "%s hierher verschieben",
+  "taerra.devices": "Geräte auf der Webkarte",
+  "taerra.devices.open": "Geräte auf der Webkarte…",
+  "taerra.devices.loading": "Deine Geräte werden geladen…",
+  "taerra.devices.unavailable": "Dieser Server kann noch keine Geräte anzeigen.",
+  "taerra.devices.game": "Dieses Spiel",
+  "taerra.devices.browser": "Browser",
+  "taerra.devices.on": "%s auf %s",
+  "taerra.devices.here": "Gerade in Benutzung",
+  "taerra.devices.now": "Gerade eben benutzt",
+  "taerra.devices.minutes": "Vor %s Min. benutzt",
+  "taerra.devices.hours": "Vor %s Std. benutzt",
+  "taerra.devices.days": "Vor %s Tagen benutzt",
+  "taerra.devices.logout": "Abmelden"
 }

@@ -428,7 +428,9 @@ public final class MapScreen extends Screen {
       footer.addChild(
           Button.builder(
                   Component.translatable("menu.options"),
-                  _ -> this.minecraft.setScreenAndShow(new SettingsScreen(this, this.settings)))
+                  _ ->
+                      this.minecraft.setScreenAndShow(
+                          new SettingsScreen(this, this.settings, this.map)))
               .width(BUTTON_WIDTH)
               .build());
       footer.addChild(

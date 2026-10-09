@@ -41,7 +41,7 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 
 ### Made for servers
 
-- **Logins without passwords.** The map's login menu shows a short code: type `/taerra login <code>` in game and that browser logs in by itself. `/taerra login` on its own sends a link instead, and a browser that is logged in shows a QR code that logs in a phone. Browsers stay logged in for 30 days, codes and links work once, for five minutes, and players are told in game whenever a browser logs in as them. There are no accounts to create and no passwords to leak. Banned players are logged out of the web map on their own, and `/taerra logout <player>` logs anyone out by hand, say after taking their permissions away.
+- **Logins without passwords.** The map's login menu shows a short code: type `/taerra login <code>` in game and that browser logs in by itself. `/taerra login` on its own sends a link instead, and a browser that is logged in shows a QR code that logs in a phone. Browsers stay logged in for 30 days, codes and links work once, for five minutes, and players are told in game whenever a browser logs in as them. `/taerra devices`, the map's account menu and the mod list every device that is logged in and log out any one of them. There are no accounts to create and no passwords to leak. Banned players are logged out of the web map on their own, and `/taerra logout <player>` logs anyone out by hand, say after taking their permissions away.
 - **Private worlds and layers.** Keep a world, or a layer hidden from everyone except logged-in players with the right permission.
 - **Teleport from the map.** Logged-in players with permission right-click the map to teleport there.
 - **Waypoints, areas, and lines** in named groups and colors, private ones too, each with an optional description. Players with permission draw, move, and recolor them right on the map, in the browser or in game, with areas traced from selected chunks or clicked point by point, and lines straight or smooth. The mod shows waypoints as labels in the world itself.
@@ -105,12 +105,13 @@ Every setting can also be changed in game with `/taerra config`.
 | `/taerra import dynmap <file>` | Import markers from dynmap |
 | `/taerra login [code]` | Log in to the web map |
 | `/taerra logout [player]` | Log out of the web map in every browser |
+| `/taerra devices` | See and log out your web map devices |
 
 ![Permissions](https://assets.corpium.net/taerra/section-permissions.png?v=f1574e7f)
 
 | Permission | Default | Allows |
 |---|---|---|
-| `taerra.command.login` | everyone | `/taerra login` and `/taerra logout` |
+| `taerra.command.login` | everyone | `/taerra login`, `/taerra logout` and `/taerra devices` |
 | `taerra.command.status` | op | `/taerra status` |
 | `taerra.command.render` | op | `/taerra render` |
 | `taerra.command.limit` | op | `/taerra limit` |

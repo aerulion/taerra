@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -38,6 +39,9 @@ public final class WebSessions {
   private static final int MAX_SESSIONS = 10;
   private static final int MAX_FAILED_APPROVALS = 5;
   private static final @NotNull Duration APPROVAL_WINDOW = Duration.ofMinutes(1);
+  private static final @NotNull Duration SEEN_STEP = Duration.ofMinutes(1);
+  private static final @NotNull Duration SEEN_SAVE = Duration.ofMinutes(10);
+  private static final int ID_LENGTH = 12;
 
   private final @NotNull File file;
   private final @NotNull Logger logger;
@@ -48,6 +52,8 @@ public final class WebSessions {
   private final @NotNull Map<String, Session> sessions = new HashMap<>();
   private final @NotNull Map<UUID, Set<String>> grants = new HashMap<>();
   private final @NotNull Set<String> unsaved = new HashSet<>();
+  private final @NotNull Map<String, Long> seen = new HashMap<>();
+  private long seenSaved;
   private @NotNull Runnable onChange = () -> {};
 
   public WebSessions(final @NotNull File file, final @NotNull Logger logger) {
@@ -101,8 +107,18 @@ public final class WebSessions {
       if (uuid == null || name == null || expires < now) {
         continue;
       }
+      final long created = section.getLong(key + ".created", expires - SESSION_LIFETIME.toMillis());
       try {
-        this.sessions.put(key, new Session(UUID.fromString(uuid), name, skin, expires));
+        this.sessions.put(
+            key,
+            new Session(
+                UUID.fromString(uuid),
+                name,
+                skin,
+                expires,
+                created,
+                new Device(section.getString(key + ".browser"), section.getString(key + ".os"))));
+        this.seen.put(key, section.getLong(key + ".seen", created));
       } catch (final IllegalArgumentException e) {
         this.logger.warning("Skipping a malformed session in sessions.yml: " + key);
       }
@@ -119,7 +135,7 @@ public final class WebSessions {
 
   public synchronized @NotNull String createCode(
       final @NotNull UUID uuid, final @NotNull String name, final @Nullable String skin) {
-    return createCode(new Session(uuid, name, skin, 0), Long.MAX_VALUE);
+    return createCode(new Session(uuid, name, skin, 0, 0, null), Long.MAX_VALUE);
   }
 
   private @NotNull String createCode(final @NotNull Session who, final long until) {
@@ -139,18 +155,23 @@ public final class WebSessions {
         : createCode(session, session.expires());
   }
 
-  public synchronized @Nullable Login redeem(final @NotNull String code) {
+  public synchronized @Nullable Login redeem(
+      final @NotNull String code, final @NotNull Device device) {
     final long now = System.currentTimeMillis();
     final @Nullable Code pending = this.codes.remove(hash(code));
     if (pending == null || pending.expires() < now) {
       return null;
     }
-    return login(pending.who(), Math.min(now + SESSION_LIFETIME.toMillis(), pending.until()));
+    return login(
+        pending.who(), Math.min(now + SESSION_LIFETIME.toMillis(), pending.until()), device);
   }
 
-  private @NotNull Login login(final @NotNull Session who, final long expires) {
+  private @NotNull Login login(
+      final @NotNull Session who, final long expires, final @NotNull Device device) {
     final @NotNull String token = token();
-    final @NotNull Session session = new Session(who.uuid(), who.name(), who.skin(), expires);
+    final long now = System.currentTimeMillis();
+    final @NotNull Session session =
+        new Session(who.uuid(), who.name(), who.skin(), expires, now, device);
     final @NotNull String key = hash(token);
     this.sessions.entrySet().stream()
         .filter(
@@ -163,6 +184,7 @@ public final class WebSessions {
         .toList()
         .forEach(this.sessions::remove);
     this.sessions.put(key, session);
+    this.seen.put(key, now);
     save();
     return new Login(token, session);
   }
@@ -207,11 +229,13 @@ public final class WebSessions {
       return Approval.UNKNOWN;
     }
     this.pairings.put(
-        code, new Pairing(pairing.claim(), pairing.expires(), new Session(uuid, name, skin, 0)));
+        code,
+        new Pairing(pairing.claim(), pairing.expires(), new Session(uuid, name, skin, 0, 0, null)));
     return Approval.APPROVED;
   }
 
-  public synchronized @Nullable Claim claim(final @NotNull String claim) {
+  public synchronized @Nullable Claim claim(
+      final @NotNull String claim, final @NotNull Device device) {
     final long now = System.currentTimeMillis();
     final @NotNull String hashed = hash(claim);
     final @Nullable Map.Entry<String, Pairing> entry =
@@ -227,16 +251,17 @@ public final class WebSessions {
       return new Claim(null);
     }
     this.pairings.remove(entry.getKey());
-    return new Claim(login(who, now + SESSION_LIFETIME.toMillis()));
+    return new Claim(login(who, now + SESSION_LIFETIME.toMillis(), device));
   }
 
   public synchronized @NotNull String open(
       final @NotNull UUID uuid, final @NotNull String name, final @Nullable String skin) {
     final @NotNull String token = token();
     final @NotNull String key = hash(token);
+    final long now = System.currentTimeMillis();
     this.sessions.put(
-        key,
-        new Session(uuid, name, skin, System.currentTimeMillis() + SESSION_LIFETIME.toMillis()));
+        key, new Session(uuid, name, skin, now + SESSION_LIFETIME.toMillis(), now, null));
+    this.seen.put(key, now);
     this.unsaved.add(key);
     return token;
   }
@@ -245,8 +270,64 @@ public final class WebSessions {
     if (token == null) {
       return null;
     }
-    final @Nullable Session session = this.sessions.get(hash(token));
-    return session == null || session.expires() < System.currentTimeMillis() ? null : session;
+    final @NotNull String key = hash(token);
+    final @Nullable Session session = this.sessions.get(key);
+    final long now = System.currentTimeMillis();
+    if (session == null || session.expires() < now) {
+      return null;
+    }
+    if (now - this.seen.getOrDefault(key, 0L) >= SEEN_STEP.toMillis()) {
+      this.seen.put(key, now);
+      if (!this.unsaved.contains(key) && now - this.seenSaved >= SEEN_SAVE.toMillis()) {
+        save();
+      }
+    }
+    return session;
+  }
+
+  public synchronized @NotNull List<Active> devices(
+      final @NotNull UUID uuid, final @Nullable String token) {
+    final @Nullable String current = token == null ? null : hash(token);
+    final long now = System.currentTimeMillis();
+    return this.sessions.entrySet().stream()
+        .filter(entry -> entry.getValue().uuid().equals(uuid) && entry.getValue().expires() >= now)
+        .map(
+            entry ->
+                new Active(
+                    entry.getKey().substring(0, ID_LENGTH),
+                    this.unsaved.contains(entry.getKey()),
+                    entry.getValue().device(),
+                    entry.getValue().created(),
+                    this.seen.getOrDefault(entry.getKey(), entry.getValue().created()),
+                    entry.getKey().equals(current)))
+        .sorted(
+            Comparator.comparing(Active::current)
+                .thenComparing(Active::game)
+                .thenComparingLong(Active::seen)
+                .reversed())
+        .toList();
+  }
+
+  public synchronized boolean endDevice(final @NotNull UUID uuid, final @NotNull String id) {
+    final @Nullable String key =
+        id.length() != ID_LENGTH
+            ? null
+            : this.sessions.entrySet().stream()
+                .filter(
+                    entry ->
+                        entry.getKey().startsWith(id)
+                            && entry.getValue().uuid().equals(uuid)
+                            && !this.unsaved.contains(entry.getKey()))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+    if (key == null) {
+      return false;
+    }
+    this.sessions.remove(key);
+    save();
+    this.onChange.run();
+    return true;
   }
 
   public synchronized @NotNull Viewer viewer(final @Nullable String token) {
@@ -319,6 +400,8 @@ public final class WebSessions {
     final long now = System.currentTimeMillis();
     this.sessions.values().removeIf(session -> session.expires() < now);
     this.unsaved.retainAll(this.sessions.keySet());
+    this.seen.keySet().retainAll(this.sessions.keySet());
+    this.seenSaved = now;
     this.grants
         .keySet()
         .removeIf(
@@ -341,6 +424,12 @@ public final class WebSessions {
           yaml.set("sessions." + key + ".name", session.name());
           yaml.set("sessions." + key + ".skin", session.skin());
           yaml.set("sessions." + key + ".expires", session.expires());
+          yaml.set("sessions." + key + ".created", session.created());
+          yaml.set("sessions." + key + ".seen", this.seen.get(key));
+          if (session.device() != null) {
+            yaml.set("sessions." + key + ".browser", session.device().browser());
+            yaml.set("sessions." + key + ".os", session.device().os());
+          }
         });
     try {
       AtomicFiles.write(this.file, yaml.saveToString().getBytes(StandardCharsets.UTF_8));
@@ -350,7 +439,20 @@ public final class WebSessions {
   }
 
   public record Session(
-      @NotNull UUID uuid, @NotNull String name, @Nullable String skin, long expires) {}
+      @NotNull UUID uuid,
+      @NotNull String name,
+      @Nullable String skin,
+      long expires,
+      long created,
+      @Nullable Device device) {}
+
+  public record Active(
+      @NotNull String id,
+      boolean game,
+      @Nullable Device device,
+      long created,
+      long seen,
+      boolean current) {}
 
   public record Login(@NotNull String token, @NotNull Session session) {}
 

@@ -187,5 +187,18 @@
   "taerra.hint.do.move": "Move point",
   "taerra.hint.do.remove": "Remove point",
   "taerra.hint.do.undo": "Remove last",
-  "taerra.hint.do.move_waypoint": "Move %s here"
+  "taerra.hint.do.move_waypoint": "Move %s here",
+  "taerra.devices": "Web Map Devices",
+  "taerra.devices.open": "Web Map Devices…",
+  "taerra.devices.loading": "Loading your devices…",
+  "taerra.devices.unavailable": "This server can't list devices yet.",
+  "taerra.devices.game": "This game",
+  "taerra.devices.browser": "Browser",
+  "taerra.devices.on": "%s on %s",
+  "taerra.devices.here": "In use now",
+  "taerra.devices.now": "Used just now",
+  "taerra.devices.minutes": "Used %s min ago",
+  "taerra.devices.hours": "Used %s h ago",
+  "taerra.devices.days": "Used %s d ago",
+  "taerra.devices.logout": "Log Out"
 }

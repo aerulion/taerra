@@ -1,21 +1,46 @@
 package net.aerulion.taerra.mod.gui.screen;
 
 import net.aerulion.taerra.mod.config.Settings;
+import net.aerulion.taerra.mod.web.WebMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class SettingsScreen extends OptionsSubScreen {
 
   private final Settings settings;
+  private final @Nullable WebMap map;
 
-  public SettingsScreen(final @NotNull Screen lastScreen, final Settings settings) {
+  public SettingsScreen(
+      final @NotNull Screen lastScreen, final Settings settings, final @Nullable WebMap map) {
     super(lastScreen, Minecraft.getInstance().options, Component.translatable("taerra.options"));
     this.settings = settings;
+    this.map = map;
+  }
+
+  @Override
+  protected void addFooter() {
+    final @Nullable WebMap map = this.map;
+    if (map == null || map.account() == null) {
+      super.addFooter();
+      return;
+    }
+    final @NotNull LinearLayout footer =
+        this.layout.addToFooter(LinearLayout.horizontal().spacing(8));
+    footer.addChild(
+        Button.builder(
+                Component.translatable("taerra.devices.open"),
+                _ -> this.minecraft.setScreenAndShow(new DevicesScreen(this, map)))
+            .build());
+    footer.addChild(Button.builder(CommonComponents.GUI_DONE, _ -> onClose()).build());
   }
 
   @Override

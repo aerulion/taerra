@@ -1,6 +1,6 @@
 import qrcode from '../vendor/qrcode/qrcode.js';
 import {copyText} from './clipboard.js';
-import {t} from './i18n.js';
+import {language, t} from './i18n.js';
 import {pixelPath} from './map.js';
 import {wsManager} from './websocket.js';
 
@@ -9,6 +9,8 @@ const $ = (id) => document.getElementById(id);
 const tabs = new BroadcastChannel('taerra-account');
 const POLL_MILLIS = 2000;
 const QUIET_ZONE = 4;
+const AGO = [['day', 86400000], ['hour', 3600000], ['minute', 60000]];
+const relative = new Intl.RelativeTimeFormat(language, {numeric: 'auto'});
 
 let current = null;
 let pairing = null;
@@ -19,6 +21,9 @@ function show(account) {
     current = account;
     if (account) {
         stopPairing();
+        if ($('account-menu').matches(':popover-open')) {
+            void loadDevices();
+        }
     }
     $('account-in').hidden = !account;
     $('account-out').hidden = Boolean(account);
@@ -192,6 +197,62 @@ function hideDeviceLink() {
     $('device-button').textContent = t('account.device');
 }
 
+function deviceName(device) {
+    if (device.game) {
+        return t('account.game');
+    }
+    const browser = device.browser ?? t('account.browser');
+    return device.os ? t('account.on', {browser, os: device.os}) : browser;
+}
+
+function ago(time) {
+    const since = Date.now() - time;
+    const [unit, size] = AGO.find(([, size]) => since >= size) ?? ['minute', 60000];
+    return relative.format(-Math.floor(since / size), unit);
+}
+
+async function loadDevices() {
+    let devices = [];
+    try {
+        const response = await fetch('/api/account/sessions');
+        devices = response.ok ? await response.json() : [];
+    } catch {
+    }
+    $('device-list').replaceChildren(...devices.map(device => {
+        const row = document.createElement('li');
+        row.className = 'device';
+        const text = document.createElement('span');
+        text.className = 'device__text';
+        const name = document.createElement('span');
+        name.className = 'device__name';
+        name.textContent = deviceName(device);
+        const meta = document.createElement('span');
+        meta.className = 'device__meta';
+        meta.classList.toggle('is-current', device.current || device.game);
+        meta.textContent = device.current ? t('account.thisDevice')
+            : device.game ? t('account.inGame') : ago(device.seen);
+        text.append(name, meta);
+        row.append(text);
+        if (!device.current && !device.game) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'device__logout';
+            button.textContent = t('account.endDevice');
+            button.setAttribute('aria-label', t('account.endDeviceLabel', {device: name.textContent}));
+            button.addEventListener('click', async () => {
+                button.disabled = true;
+                try {
+                    await fetch(`/api/account/sessions/${encodeURIComponent(device.id)}`, {method: 'DELETE'});
+                } catch {
+                }
+                await loadDevices();
+            });
+            row.append(button);
+        }
+        return row;
+    }));
+}
+
 function takeHashCode() {
     const params = new URLSearchParams(location.hash.slice(1));
     const code = params.get('login');
@@ -217,6 +278,8 @@ async function initialize() {
             hideDeviceLink();
         } else if (!current && !pairing) {
             void startPairing();
+        } else if (current) {
+            void loadDevices();
         }
     });
     $('pair-new').addEventListener('click', () => void startPairing());

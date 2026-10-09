@@ -144,6 +144,18 @@ public final class Messages {
         .clickEvent(ClickEvent.runCommand(command));
   }
 
+  static @NotNull Component button(
+      final @NotNull String command, final @NotNull ComponentLike label) {
+    return Component.text()
+        .color(GOLD)
+        .append(Component.text("["))
+        .append(label)
+        .append(Component.text("]"))
+        .hoverEvent(tr("click.run", Component.text(command, GOLD)).color(TEXT))
+        .clickEvent(ClickEvent.runCommand(command))
+        .build();
+  }
+
   static @NotNull Component suggest(
       final @NotNull String command, final @NotNull ComponentLike hover) {
     return Component.text(command, GOLD)

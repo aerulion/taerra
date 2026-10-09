@@ -25,6 +25,7 @@ class WebSessionsTest {
 
   private static final @NotNull UUID PLAYER = UUID.randomUUID();
   private static final @NotNull String SKIN = "https://textures.minecraft.net/texture/abc";
+  private static final @NotNull Device PHONE = new Device("Safari", "iPhone");
 
   @TempDir Path folder;
 
@@ -39,10 +40,10 @@ class WebSessionsTest {
     final @NotNull WebSessions sessions = sessions();
     final @NotNull String code = sessions.createCode(PLAYER, "Steve", SKIN);
 
-    final WebSessions.@Nullable Login login = sessions.redeem(code);
+    final WebSessions.@Nullable Login login = sessions.redeem(code, PHONE);
     assertNotNull(login);
-    assertNull(sessions.redeem(code));
-    assertNull(sessions.redeem("guessed"));
+    assertNull(sessions.redeem(code, PHONE));
+    assertNull(sessions.redeem("guessed", PHONE));
     assertNull(sessions.session(code));
 
     final @NotNull WebSessions restarted = sessions();
@@ -64,10 +65,10 @@ class WebSessionsTest {
     final WebSessions.@Nullable Pair pair = sessions.pair();
     assertNotNull(pair);
 
-    final WebSessions.@Nullable Claim waiting = sessions.claim(pair.claim());
+    final WebSessions.@Nullable Claim waiting = sessions.claim(pair.claim(), PHONE);
     assertNotNull(waiting);
     assertNull(waiting.login());
-    assertNull(sessions.claim("guessed"));
+    assertNull(sessions.claim("guessed", PHONE));
 
     final @Nullable String typed =
         WebSessions.pairCode(
@@ -79,11 +80,11 @@ class WebSessionsTest {
         WebSessions.Approval.UNKNOWN,
         sessions.approve(pair.code(), UUID.randomUUID(), "Alex", null));
 
-    final WebSessions.@Nullable Claim claimed = sessions.claim(pair.claim());
+    final WebSessions.@Nullable Claim claimed = sessions.claim(pair.claim(), PHONE);
     assertNotNull(claimed);
     assertNotNull(claimed.login());
     assertEquals(PLAYER, claimed.login().session().uuid());
-    assertNull(sessions.claim(pair.claim()));
+    assertNull(sessions.claim(pair.claim(), PHONE));
     assertEquals(
         WebSessions.Approval.UNKNOWN, sessions.approve(pair.code(), PLAYER, "Steve", SKIN));
   }
@@ -112,11 +113,11 @@ class WebSessionsTest {
     final WebSessions.@Nullable Pair pair = sessions.pair();
     assertNotNull(pair);
     sessions.approve(pair.code(), PLAYER, "Steve", SKIN);
-    assertNotNull(sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN)));
+    assertNotNull(sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), PHONE));
 
     sessions.endAll(PLAYER);
-    assertNull(sessions.redeem(link));
-    assertNull(sessions.claim(pair.claim()));
+    assertNull(sessions.redeem(link, PHONE));
+    assertNull(sessions.claim(pair.claim(), PHONE));
   }
 
   @Test
@@ -125,8 +126,8 @@ class WebSessionsTest {
     final @NotNull WebSessions sessions = sessions();
     final @NotNull String first = sessions.createCode(PLAYER, "Steve", SKIN);
     final @NotNull String second = sessions.createCode(PLAYER, "Steve", SKIN);
-    assertNull(sessions.redeem(first));
-    assertNotNull(sessions.redeem(second));
+    assertNull(sessions.redeem(first, PHONE));
+    assertNotNull(sessions.redeem(second, PHONE));
   }
 
   @Test
@@ -135,18 +136,54 @@ class WebSessionsTest {
     final @NotNull WebSessions sessions = sessions();
     final @NotNull String mod = sessions.open(PLAYER, "Steve", SKIN);
     final @NotNull List<String> tokens = new java.util.ArrayList<>();
-    WebSessions.@Nullable Login last = sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN));
+    WebSessions.@Nullable Login last =
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), PHONE);
     for (int i = 0; i < 12; i++) {
       assertNotNull(last);
       tokens.add(last.token());
       final @Nullable String code = sessions.linkCode(last.token());
       assertNotNull(code);
-      last = sessions.redeem(code);
+      last = sessions.redeem(code, PHONE);
     }
     assertNotNull(last);
     assertNotNull(sessions.session(last.token()));
     assertNotNull(sessions.session(mod));
     assertEquals(9, tokens.stream().filter(token -> sessions.session(token) != null).count());
+  }
+
+  @Test
+  @DisplayName("a player sees their own devices and can log out a browser, but not the game")
+  void devices() {
+    final @NotNull WebSessions sessions = sessions();
+    final @NotNull Device firefox = new Device("Firefox", "Windows");
+    final WebSessions.@Nullable Login phone =
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), PHONE);
+    final WebSessions.@Nullable Login desktop =
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), firefox);
+    final @NotNull String game = sessions.open(PLAYER, "Steve", SKIN);
+    sessions.redeem(sessions.createCode(UUID.randomUUID(), "Alex", null), PHONE);
+    assertNotNull(phone);
+    assertNotNull(desktop);
+
+    final @NotNull List<WebSessions.Active> devices = sessions.devices(PLAYER, desktop.token());
+    assertEquals(3, devices.size());
+    assertTrue(devices.get(0).current());
+    assertEquals(firefox, devices.get(0).device());
+    assertTrue(devices.get(1).game());
+    assertEquals(PHONE, devices.get(2).device());
+
+    assertFalse(sessions.endDevice(UUID.randomUUID(), devices.get(2).id()));
+    assertFalse(sessions.endDevice(PLAYER, devices.get(1).id()));
+    assertFalse(sessions.endDevice(PLAYER, devices.get(2).id().substring(1)));
+    assertTrue(sessions.endDevice(PLAYER, devices.get(2).id()));
+    assertNull(sessions.session(phone.token()));
+    assertNotNull(sessions.session(game));
+
+    final @NotNull WebSessions restarted = sessions();
+    restarted.load();
+    final @NotNull List<WebSessions.Active> saved = restarted.devices(PLAYER, desktop.token());
+    assertEquals(1, saved.size());
+    assertEquals(firefox, saved.getFirst().device());
   }
 
   @Test
@@ -158,7 +195,7 @@ class WebSessionsTest {
     assertFalse(Files.exists(this.folder.resolve("sessions.yml")), "opening writes nothing");
 
     final WebSessions.@Nullable Login saved =
-        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN));
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), PHONE);
     assertNotNull(saved);
     final @NotNull WebSessions restarted = sessions();
     restarted.load();
@@ -176,11 +213,11 @@ class WebSessionsTest {
     final @NotNull AtomicInteger ends = new AtomicInteger();
     sessions.onChange(ends::incrementAndGet);
     final WebSessions.@Nullable Login first =
-        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN));
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), PHONE);
     final WebSessions.@Nullable Login second =
-        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN));
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), PHONE);
     final WebSessions.@Nullable Login other =
-        sessions.redeem(sessions.createCode(UUID.randomUUID(), "Alex", null));
+        sessions.redeem(sessions.createCode(UUID.randomUUID(), "Alex", null), PHONE);
     assertNotNull(first);
     assertNotNull(second);
     assertNotNull(other);
@@ -208,7 +245,7 @@ class WebSessionsTest {
     sessions.grant(PLAYER, Set.of("taerra.web.world.minecraft.the_end"));
     assertEquals(1, changes.get());
 
-    final WebSessions.@Nullable Login login = sessions.redeem(code);
+    final WebSessions.@Nullable Login login = sessions.redeem(code, PHONE);
     assertNotNull(login);
     assertEquals(Viewer.ANONYMOUS, sessions.viewer(null));
     assertEquals(Viewer.ANONYMOUS, sessions.viewer("guessed"));

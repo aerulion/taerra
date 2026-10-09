@@ -10,6 +10,6 @@ public final class ModMenuIntegration implements ModMenuApi {
 
   @Override
   public @NotNull ConfigScreenFactory<?> getModConfigScreenFactory() {
-    return parent -> new SettingsScreen(parent, TaerraClient.settings());
+    return parent -> new SettingsScreen(parent, TaerraClient.settings(), null);
   }
 }
