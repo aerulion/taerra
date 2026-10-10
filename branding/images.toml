@@ -8,10 +8,13 @@
 #   thumbnail           lockup, a huge headline and the world spilling off the right, for video thumbnails
 #   live-map            lockup over drawn cubes, no world: the web map's preview, the same on every server
 #   featured            lockup, tagline and the whole world at gallery proportions: the featured gallery image
+#   poster              lockup, a huge headline and the world below, for portrait posts and stories
+#   triptych            the banner for three pinned posts: lockup on the first, the world over the other two
+#   mark                the logo alone on transparent, for emoji; copper = true colours it in the accent
 #   section             a slim strip heading one section of a description, with these options:
 #                         title = "Features"   the heading
 #                         spot = "meadow"      where it looks: meadow, village, coast, wide, bay, top-down, peaks, cherry, nether, end
-#   gallery-isometric   the whole overworld
+#   gallery-isometric   the whole overworld (every gallery stacks its pictures when portrait)
 #   gallery-detail      a close-up at full detail
 #   gallery-top-down    the top-down map
 #   gallery-rotations   the overworld from all four sides
@@ -149,6 +152,84 @@ size = [1280, 640]
 file = "youtube/thumbnail.png"
 layout = "thumbnail"
 size = [1280, 720]
+
+# Instagram: three 3:4 posts to pin as the profile's top row, a carousel of 4:5 posts with the cover first, and a story
+
+[[image]]
+file = "instagram/pinned.png"
+layout = "triptych"
+size = [3240, 1440]
+split = 3
+
+[[image]]
+file = "instagram/post-0-cover.png"
+layout = "poster"
+size = [1080, 1350]
+
+[[image]]
+file = "instagram/post-1-isometric.png"
+layout = "gallery-isometric"
+size = [1080, 1350]
+
+[[image]]
+file = "instagram/post-2-detail.png"
+layout = "gallery-detail"
+size = [1080, 1350]
+
+[[image]]
+file = "instagram/post-3-top-down.png"
+layout = "gallery-top-down"
+size = [1080, 1350]
+
+[[image]]
+file = "instagram/post-4-rotations.png"
+layout = "gallery-rotations"
+size = [1080, 1350]
+
+[[image]]
+file = "instagram/post-5-dimensions.png"
+layout = "gallery-dimensions"
+size = [1080, 1350]
+
+[[image]]
+file = "instagram/story.png"
+layout = "poster"
+size = [1080, 1920]
+
+[[image]]
+file = "instagram/profile.png"
+layout = "icon"
+size = [320, 320]
+
+# Discord emoji: 128 px, named as the emoji
+
+[[image]]
+file = "discord/taerra.png"
+layout = "mark"
+size = [128, 128]
+
+[[image]]
+file = "discord/taerra_copper.png"
+layout = "mark"
+size = [128, 128]
+copper = true
+
+[[image]]
+file = "discord/taerra_icon.png"
+layout = "icon"
+size = [128, 128]
+
+[[image]]
+file = "discord/taerra_overworld.png"
+layout = "view"
+size = [128, 128]
+spot = "whole-overworld"
+
+[[image]]
+file = "discord/taerra_nether.png"
+layout = "view"
+size = [128, 128]
+spot = "whole-nether"
 
 # Hangar
 

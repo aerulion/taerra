@@ -249,7 +249,113 @@
         position: relative;
     }
 
-    html:has(.view), html:has(.view) body {
+    /* portrait: the gallery's pictures stacked rather than side by side */
+    .portrait .gallery .stage {
+        grid-auto-flow: row;
+        grid-auto-rows: 1fr;
+    }
+
+    .portrait .gallery .stage .grid {
+        grid-template-rows: auto auto;
+        align-content: center;
+        gap: calc(3.7 * var(--min));
+    }
+
+    .portrait .gallery .stage .grid .fill {
+        aspect-ratio: 2;
+    }
+
+    .portrait .gallery .stage figure {
+        align-self: stretch;
+        grid-template-rows: 1fr auto;
+    }
+
+    .portrait .gallery .stage figure .fill {
+        aspect-ratio: auto;
+    }
+
+    /* poster: the thumbnail stood upright, for Instagram posts and stories, kept clear of a story's top bar */
+    .poster .shade {
+        background: linear-gradient(180deg, rgb(0 0 0 / .92) 20%, rgb(0 0 0 / .4) 55%, rgb(0 0 0 / .6));
+    }
+
+    .poster .copy {
+        position: absolute;
+        left: calc(7.4 * var(--min));
+        right: calc(7.4 * var(--min));
+        top: calc(13 * var(--h));
+        display: grid;
+        gap: calc(4.5 * var(--min));
+    }
+
+    .poster .lockup {
+        font-size: calc(6 * var(--min));
+    }
+
+    .poster .kicker {
+        font-size: calc(3.6 * var(--min));
+    }
+
+    .poster h1 {
+        font-size: calc(13 * var(--min));
+        font-weight: 900;
+        line-height: .98;
+        letter-spacing: -.025em;
+        text-shadow: 0 calc(.6 * var(--min)) calc(3 * var(--min)) rgb(0 0 0 / .7);
+    }
+
+    .poster h1 em {
+        color: var(--accent-hi);
+        font-style: normal;
+    }
+
+    .poster .world {
+        position: absolute;
+        left: -10%;
+        right: -10%;
+        top: 53%;
+        bottom: 6%;
+    }
+
+    /* triptych: the banner across three pinned posts, the lockup on the first and the world on the other two */
+    .triptych .copy {
+        width: 25%;
+    }
+
+    .triptych .lockup {
+        font-size: calc(6 * var(--min));
+    }
+
+    .triptych .tagline {
+        font-size: calc(4 * var(--min));
+    }
+
+    .triptych .world {
+        width: 62%;
+    }
+
+    /* mark: the logo alone on transparent, for emoji; outlined so it reads on light and dark themes */
+    .mark {
+        display: grid;
+        place-items: center;
+    }
+
+    .mark i {
+        width: 88%;
+        aspect-ratio: 1;
+        background: #fff;
+        mask: url("../plugin/src/main/resources/web/images/icon.svg") center / contain no-repeat;
+    }
+
+    .mark:not(.copper) {
+        filter: drop-shadow(0 0 calc(2 * var(--min)) rgb(0 0 0 / .8)) drop-shadow(0 0 calc(.8 * var(--min)) #000);
+    }
+
+    .mark.copper i {
+        background: var(--accent-hi);
+    }
+
+    html:has(.view, .mark), html:has(.view, .mark) body {
         background: transparent;
     }
 
@@ -273,7 +379,7 @@
     const OVERWORLD = {world: 'minecraft_overworld', level: 3, fit: true};
     const DETAIL = {world: 'minecraft_overworld', level: 0, at: [23, -2.3]};
     const BACKDROP = {world: 'minecraft_overworld', level: 2, at: [-1, -2]};
-    const TOP_DOWN = {world: 'minecraft_overworld', view: 'top', level: 1, at: [2, 0]};
+    const TOP_DOWN = {world: 'minecraft_overworld', view: 'top', level: 1, at: [9, -5.4]};
 
     // Places a section image can show, picked with `spot` in images.toml.
     const SPOTS = {
@@ -289,6 +395,7 @@
         end: {world: 'minecraft_the_end', level: 1, at: [-1.6, -.4]},
         overworld: {world: 'minecraft_overworld', level: 2, centred: true},
         'overworld-top': {world: 'minecraft_overworld', level: 2, centred: true, view: 'top'},
+        'whole-overworld': OVERWORLD,
         'whole-nether': {...OVERWORLD, world: 'minecraft_the_nether'},
         'whole-end': {...OVERWORLD, world: 'minecraft_the_end'},
     };
@@ -502,6 +609,24 @@
             <div class="edge"></div>
         </div>`, {backdrop: BACKDROP, world: {...OVERWORLD, level: 2}}],
 
+        poster: [`<div class="poster fill">
+            <div class="fill blur" data-view="backdrop"></div>
+            <div class="fill shade"></div>
+            <div class="world float" data-view="world"></div>
+            <div class="copy">${lockup}<h1>Your world,<br><em>live</em> in 3D</h1><div class="kicker pixel">Paper + Fabric</div></div>
+            <div class="edge"></div>
+        </div>`, {backdrop: BACKDROP, world: {...OVERWORLD, level: 2}}],
+
+        triptych: [`<div class="banner triptych fill">
+            <div class="fill blur" data-view="backdrop"></div>
+            <div class="fill shade"></div>
+            <div class="world float" data-view="world"></div>
+            <div class="copy">${lockup}<p class="tagline">${TAGLINE}</p></div>
+            <div class="edge"></div>
+        </div>`, {backdrop: BACKDROP, world: {...OVERWORLD, level: 2}}],
+
+        mark: [`<div class="mark fill ${params.has('copper') ? 'copper' : ''}"><i></i></div>`, {}],
+
         card: [`<div class="card fill">
             <div class="fill blur" data-view="backdrop"></div>
             <div class="fill shade"></div>
@@ -561,6 +686,9 @@
     for (const [name, value] of [['w', width], ['h', height], ['min', Math.min(width, height)]]) {
         document.documentElement.style.setProperty(`--${name}`, `${value / 100}px`);
     }
+    document.documentElement.classList.toggle('portrait', height > width);
+    // A split image is screenshotted one part at a time, the page shifted left by the part's start.
+    document.body.style.translate = `-${params.get('left') ?? 0}px`;
     const [html, views] = LAYOUTS[params.get('layout')];
     document.body.innerHTML = html;
     await document.fonts.ready;

@@ -25,6 +25,10 @@ layout = "icon"
 size = [400, 400]
 ```
 
+`split = 3` cuts one picture into three side by side, written as `<file>-1` to `-3`: `instagram/pinned-*.png` are
+the profile's three pinned posts, one picture across its top row. Portrait sizes stack a gallery's pictures. The
+`discord/` emoji are 128 px and named as the emoji: the white mark is for dark themes, the copper one reads on both.
+
 The layouts are in `render.html`. Where each picture looks is set by the constants at the top of its script
 (`OVERWORLD`, `DETAIL`, `BACKDROP`, `TOP_DOWN`), in tile coordinates. Rerun with a filter to iterate on one image.
 
