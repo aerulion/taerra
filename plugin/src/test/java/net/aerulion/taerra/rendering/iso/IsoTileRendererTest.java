@@ -107,9 +107,17 @@ class IsoTileRendererTest {
   private static int[] wall(final int sideColor, final int face) {
     return new int[] {
       Lighting.face(sideColor, face, 0, false, Lighting.NO_CONTACT),
-      Lighting.face(sideColor, face, 0, false, Lighting.CONTACT_NEAR),
-      Lighting.face(sideColor, face, 0, false, Lighting.CONTACT_FOOT)
+      foot(sideColor, face, Lighting.CONTACT_NEAR),
+      foot(sideColor, face, Lighting.CONTACT_FOOT)
     };
+  }
+
+  private static int foot(final int sideColor, final int face, final int contact) {
+    return Lighting.bounce(
+        Lighting.face(sideColor, face, 0, false, contact),
+        sideColor,
+        Lighting.face(STONE_TOP, Lighting.TOP, 0, face == Lighting.POSITIVE_Z, Lighting.NO_CONTACT),
+        contact);
   }
 
   private static boolean containsWall(
@@ -423,8 +431,8 @@ class IsoTileRendererTest {
     final int[] pixels = renderTileAt(world, SUBJECT_X, SUBJECT_Z, GROUND_Y + 1);
     final int wetWall =
         MapStyle.underwater(
-            Lighting.face(STONE_SIDE, Lighting.POSITIVE_X, 0, false, Lighting.CONTACT_FOOT),
-            Lighting.face(STONE_TOP, Lighting.TOP, 0, false, Lighting.NO_CONTACT),
+            foot(STONE_SIDE, Lighting.POSITIVE_X, Lighting.CONTACT_FOOT),
+            Lighting.face(STONE_TOP, Lighting.WATER, 0, false, Lighting.NO_CONTACT),
             1);
     assertTrue(
         contains(pixels, wetWall), "the shore's underwater side should be drawn through the water");

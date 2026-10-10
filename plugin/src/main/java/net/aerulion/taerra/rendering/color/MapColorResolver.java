@@ -10,4 +10,8 @@ public interface MapColorResolver {
   int topColor(@NotNull Material material, @Nullable Biome biome, int blockX, int blockZ);
 
   int sideColor(@NotNull Material material, @Nullable Biome biome, int blockX, int blockZ);
+
+  default boolean emitsLight(final @NotNull Material material) {
+    return false;
+  }
 }

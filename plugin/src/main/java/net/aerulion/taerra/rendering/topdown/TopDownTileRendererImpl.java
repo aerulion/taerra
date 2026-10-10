@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
+import net.aerulion.taerra.rendering.block.Fluids;
 import net.aerulion.taerra.rendering.color.MapColorResolver;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
 import net.aerulion.taerra.rendering.style.Lighting;
@@ -69,24 +70,32 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
         final int @NotNull [] shadingHeights =
             underwater ? surface.floorHeights() : surface.surfaceHeights();
         final int taller = surface.tallerNeighbors(shadingHeights, x, z);
+        final @NotNull Material topMaterial = cap == null ? material : cap;
+        final boolean glows = this.colors.emitsLight(topMaterial);
         final boolean shadowed =
-            this.shadowDistance > 0
+            !glows
+                && this.shadowDistance > 0
                 && SunShadow.isShadowed(
                     surface, x, z, surface.surfaceY(index), this.shadowDistance);
+        final int topFace =
+            glows
+                ? Lighting.EMISSIVE
+                : Fluids.isClearWater(material) ? Lighting.WATER : Lighting.TOP;
         int shaded =
             applyEdgeShading(
-                Lighting.face(baseRgb, Lighting.TOP, taller, shadowed, Lighting.NO_CONTACT),
+                Lighting.face(baseRgb, topFace, taller, shadowed, Lighting.NO_CONTACT),
                 this.colors.sideColor(
                     material, surface.biome(index), startBlockX + x, startBlockZ + z),
                 taller,
+                glows ? Lighting.EMISSIVE : -1,
                 shadowed,
                 surface,
                 shadingHeights,
                 x,
                 z);
         if (underwater) {
-
-          shaded = MapStyle.depthTinted(shaded, surface.surfaceY(index) - surface.floorY(index));
+          final int depth = surface.surfaceY(index) - surface.floorY(index);
+          shaded = MapStyle.shallow(MapStyle.depthTinted(shaded, depth), depth);
         }
         pixels[z * tileSize + x] = shaded;
         pickDepth[z * tileSize + x] = 0;
@@ -121,6 +130,7 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
       final int litTop,
       final int sideRgb,
       final int taller,
+      final int sideFace,
       final boolean shadowed,
       final @NotNull SurfaceGrid surface,
       final int @NotNull [] heights,
@@ -134,8 +144,18 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
     }
     return MapStyle.blendFaces(
         litTop,
-        Lighting.face(sideRgb, Lighting.POSITIVE_X, taller, shadowed, Lighting.NO_CONTACT),
-        Lighting.face(sideRgb, Lighting.POSITIVE_Z, taller, shadowed, Lighting.NO_CONTACT),
+        Lighting.face(
+            sideRgb,
+            sideFace < 0 ? Lighting.POSITIVE_X : sideFace,
+            taller,
+            shadowed,
+            Lighting.NO_CONTACT),
+        Lighting.face(
+            sideRgb,
+            sideFace < 0 ? Lighting.POSITIVE_Z : sideFace,
+            taller,
+            shadowed,
+            Lighting.NO_CONTACT),
         dropX,
         dropZ,
         this.topFaceWeight);

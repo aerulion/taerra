@@ -113,4 +113,13 @@ class MapStyleTest {
     assertEquals(0xFFAABBCC, MapStyle.blend(0xFF102030, 0xFFAABBCC, 1.0f));
     assertEquals(0x80000000, MapStyle.blend(0x80000000, 0xFF000000, 0.5f) & 0xFF000000);
   }
+
+  @Test
+  @DisplayName("only water one block deep gets the shallow glint")
+  void shallowGlintOnlyAtOneBlock() {
+    final int water = 0xFF3F76E4;
+    assertTrue(MapStyle.shallow(water, 1) != water);
+    assertEquals(water, MapStyle.shallow(water, 2));
+    assertEquals(water, MapStyle.shallow(water, 0));
+  }
 }

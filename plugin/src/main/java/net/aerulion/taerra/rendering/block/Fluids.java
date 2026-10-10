@@ -62,6 +62,10 @@ public final class Fluids {
                 + " (add any that can reach the surface to Fluids)");
   }
 
+  public static boolean isClearWater(final @NotNull Material material) {
+    return material == Material.WATER || material == Material.BUBBLE_COLUMN;
+  }
+
   public static boolean isFluid(final @NotNull Material material) {
     return material == Material.WATER
         || material == Material.LAVA

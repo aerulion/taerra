@@ -1,6 +1,7 @@
 package net.aerulion.taerra.rendering.style;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.DisplayName;
@@ -71,5 +72,48 @@ class LightingTest {
     final int first = lit(Lighting.POSITIVE_Z, 3, true, Lighting.CONTACT_FOOT);
     assertEquals(0xFF, first >>> 24);
     assertEquals(first, lit(Lighting.POSITIVE_Z, 3, true, Lighting.CONTACT_FOOT));
+  }
+
+  @Test
+  @DisplayName(
+      "bright surfaces roll off into white instead of clipping, so shading on snow survives")
+  void highlightsRollOffInsteadOfClipping() {
+    final int snow = 0xFFF9FEFE;
+    final int open = Lighting.face(snow, Lighting.TOP, 0, false, Lighting.NO_CONTACT);
+    final int nook = Lighting.face(snow, Lighting.TOP, 2, false, Lighting.NO_CONTACT);
+    assertNotEquals(open, nook, "the first occlusion step must still show on snow in full sun");
+    assertTrue(blue(open) > 225, "sunlit snow should stay close to white, not turn cream");
+  }
+
+  @Test
+  @DisplayName("light sources glow the same on every face, in shadow or in a corner")
+  void emittersIgnoreShadowAndOcclusion() {
+    final int lava = 0xFFD4550F;
+    final int glow = Lighting.face(lava, Lighting.EMISSIVE, 0, false, Lighting.NO_CONTACT);
+    assertEquals(glow, Lighting.face(lava, Lighting.EMISSIVE, 8, true, Lighting.CONTACT_FOOT));
+    assertEquals(glow, Lighting.face(lava, Lighting.TOP, 0, false, Lighting.NO_CONTACT));
+  }
+
+  @Test
+  @DisplayName("the foot of a wall picks up the colour of the ground it stands on")
+  void wallFootBouncesTheGround() {
+    final int litFoot = lit(Lighting.POSITIVE_X, 0, false, Lighting.CONTACT_FOOT);
+    final int grass = 0xFF40C040;
+    final int bounced = Lighting.bounce(litFoot, GRAY, grass, Lighting.CONTACT_FOOT);
+    assertTrue(green(bounced) > green(litFoot), "grass should tint the wall green");
+    assertTrue(green(bounced) - green(litFoot) >= red(bounced) - red(litFoot));
+    assertEquals(litFoot, Lighting.bounce(litFoot, GRAY, grass, Lighting.NO_CONTACT));
+  }
+
+  @Test
+  @DisplayName("sunlit water carries a sheen that shadow takes away")
+  void waterShinesOnlyInTheSun() {
+    final int water = 0xFF3F76E4;
+    assertTrue(
+        brightness(Lighting.face(water, Lighting.WATER, 0, false, Lighting.NO_CONTACT))
+            > brightness(Lighting.face(water, Lighting.TOP, 0, false, Lighting.NO_CONTACT)));
+    assertEquals(
+        Lighting.face(water, Lighting.TOP, 0, true, Lighting.NO_CONTACT),
+        Lighting.face(water, Lighting.WATER, 0, true, Lighting.NO_CONTACT));
   }
 }

@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
+import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,7 +19,10 @@ public final class MapColorResolverImpl implements MapColorResolver {
   private final @NotNull BlockDataStore blockData;
   private final @NotNull BiomeTintMapper biomeTints;
 
+  private static final int MIN_GLOWING_LIGHT = 3;
+
   private final BlockType @NotNull [] blockTypesByMaterial;
+  private final boolean @NotNull [] emitsLightByMaterial;
 
   public MapColorResolverImpl(
       final @NotNull Logger logger,
@@ -28,10 +32,17 @@ public final class MapColorResolverImpl implements MapColorResolver {
     this.blockData = blockData;
     this.biomeTints = biomeTints;
     this.blockTypesByMaterial = new BlockType[Material.values().length];
+    this.emitsLightByMaterial = new boolean[Material.values().length];
     RegistryAccess.registryAccess()
         .getRegistry(RegistryKey.BLOCK)
         .forEach(
-            blockType -> this.blockTypesByMaterial[blockType.asMaterial().ordinal()] = blockType);
+            blockType -> {
+              final @NotNull Material material = blockType.asMaterial();
+              this.blockTypesByMaterial[material.ordinal()] = blockType;
+              this.emitsLightByMaterial[material.ordinal()] =
+                  CraftBlockType.bukkitToMinecraft(material).defaultBlockState().getLightEmission()
+                      >= MIN_GLOWING_LIGHT;
+            });
     reconcileTints(logger);
   }
 
@@ -78,6 +89,11 @@ public final class MapColorResolverImpl implements MapColorResolver {
       final int blockZ) {
     return this.biomeTints.applyBiomeTint(
         this.blockData.dataFor(material).topRgb(), blockType(material), biome, blockX, blockZ);
+  }
+
+  @Override
+  public boolean emitsLight(final @NotNull Material material) {
+    return this.emitsLightByMaterial[material.ordinal()];
   }
 
   @Override

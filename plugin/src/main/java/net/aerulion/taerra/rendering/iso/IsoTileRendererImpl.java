@@ -130,10 +130,6 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
     return chunks.stream().mapToLong(Long::longValue).toArray();
   }
 
-  private static boolean isClearWater(final @NotNull Material material) {
-    return material == Material.WATER || material == Material.BUBBLE_COLUMN;
-  }
-
   private static int enclosure(
       final @NotNull IsoRenderPass pass,
       final int @NotNull [] rays,
@@ -327,17 +323,19 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       }
       final int taller = tallerThan(neighborTops, runTopY);
       final @NotNull Material material = chunk.runMaterial(runIndex);
-      final boolean water = isClearWater(material);
+      final boolean water = Fluids.isClearWater(material);
+      final boolean glows = this.colors.emitsLight(material);
 
       final @NotNull Material topMaterial = runIndex == firstRun && cap != null ? cap : material;
       final int rawSideColor = this.colors.sideColor(material, biome, blockX, blockZ);
       final boolean openAbove =
           runIndex == firstRun
               || chunk.runBottomY(runIndex - 1) > runTopY + 1
-              || (!water && isClearWater(chunk.runMaterial(runIndex - 1)));
+              || (!water && Fluids.isClearWater(chunk.runMaterial(runIndex - 1)));
 
       if (openAbove) {
-        final boolean shadowed = sunBlocked(pass, blockX, runTopY + 1, blockZ);
+        final boolean topGlows = this.colors.emitsLight(topMaterial);
+        final boolean shadowed = !topGlows && sunBlocked(pass, blockX, runTopY + 1, blockZ);
 
         final int topColor = this.colors.topColor(topMaterial, biome, blockX, blockZ);
         final int faceColor =
@@ -356,7 +354,11 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
             originColumn,
             runTopRow,
             Lighting.face(
-                faceColor, Lighting.TOP, water ? 0 : taller, shadowed, Lighting.NO_CONTACT),
+                faceColor,
+                topGlows ? Lighting.EMISSIVE : water ? Lighting.WATER : Lighting.TOP,
+                water ? 0 : taller,
+                shadowed,
+                Lighting.NO_CONTACT),
             rotatedX + rotatedZ,
             runTopY,
             water);
@@ -376,6 +378,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
           rawSideColor,
           taller,
           water,
+          glows,
           frontXX,
           frontXZ);
       drawSideFace(
@@ -391,6 +394,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
           rawSideColor,
           taller,
           water,
+          glows,
           frontZX,
           frontZZ);
     }
@@ -440,12 +444,14 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       final int rawColor,
       final int taller,
       final boolean water,
+      final boolean glows,
       final int frontX,
       final int frontZ) {
 
     final int firstOffset = positiveX ? 0 : this.projection.firstColumnOffset();
     final int lastOffset = positiveX ? this.projection.lastColumnOffset() : -1;
-    final int face = positiveX ? Lighting.POSITIVE_X : Lighting.POSITIVE_Z;
+    final int face =
+        glows ? Lighting.EMISSIVE : positiveX ? Lighting.POSITIVE_X : Lighting.POSITIVE_Z;
 
     final int lastOccluder = neighbor == null ? 0 : neighbor.runEnd(neighborColumn);
     int occluder = neighbor == null ? 0 : neighbor.runStart(neighborColumn);
@@ -453,7 +459,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
     while (y >= runBottomY) {
       while (occluder < lastOccluder
           && (neighbor.runBottomY(occluder) > y
-              || (!water && isClearWater(neighbor.runMaterial(occluder))))) {
+              || (!water && Fluids.isClearWater(neighbor.runMaterial(occluder))))) {
         occluder++;
       }
       if (occluder < lastOccluder && neighbor.runTopY(occluder) >= y) {
@@ -466,7 +472,20 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
               ? Math.max(runBottomY, neighbor.runTopY(occluder) + 1)
               : runBottomY;
       int spanBottomY = exposedBottomY;
-      if (!water && occluder < lastOccluder && neighbor.runTopY(occluder) + 1 == exposedBottomY) {
+      if (!water
+          && !glows
+          && occluder < lastOccluder
+          && neighbor.runTopY(occluder) + 1 == exposedBottomY) {
+        final int ground =
+            groundLight(
+                pass,
+                neighbor,
+                neighborColumn,
+                occluder,
+                positiveX,
+                frontX,
+                exposedBottomY,
+                frontZ);
 
         drawLitSpan(
             pass,
@@ -481,6 +500,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
             face,
             taller,
             Lighting.CONTACT_FOOT,
+            ground,
             false,
             frontX,
             frontZ);
@@ -498,6 +518,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
               face,
               taller,
               Lighting.CONTACT_NEAR,
+              ground,
               false,
               frontX,
               frontZ);
@@ -518,6 +539,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
             face,
             taller,
             Lighting.NO_CONTACT,
+            0,
             water,
             frontX,
             frontZ);
@@ -528,15 +550,45 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
 
   private boolean sunBlocked(
       final @NotNull IsoRenderPass pass, final int blockX, final int openY, final int blockZ) {
-    return this.shadowDistance > 0
-        && SunShadow.isShadowedThrough(
+    if (this.shadowDistance <= 0) {
+      return false;
+    }
+    if (pass.isLastSun(blockX, openY, blockZ)) {
+      return pass.lastSunBlocked();
+    }
+    return pass.rememberSun(
+        blockX,
+        openY,
+        blockZ,
+        SunShadow.isShadowedThrough(
             pass.solids(),
             blockX,
             openY,
             blockZ,
             this.shadowDistance,
             pass.sunStepX(),
-            pass.sunStepZ());
+            pass.sunStepZ()));
+  }
+
+  private int groundLight(
+      final @NotNull IsoRenderPass pass,
+      final @NotNull ChunkColumns neighbor,
+      final int neighborColumn,
+      final int run,
+      final boolean sunward,
+      final int frontX,
+      final int openY,
+      final int frontZ) {
+    final @Nullable Material cap =
+        run == neighbor.runStart(neighborColumn) ? neighbor.capMaterial(neighborColumn) : null;
+    final @NotNull Material material = cap == null ? neighbor.runMaterial(run) : cap;
+    final boolean glows = this.colors.emitsLight(material);
+    return Lighting.face(
+        this.colors.topColor(material, neighbor.columnBiome(neighborColumn), frontX, frontZ),
+        glows ? Lighting.EMISSIVE : Lighting.TOP,
+        0,
+        !glows && (!sunward || sunBlocked(pass, frontX, openY, frontZ)),
+        Lighting.NO_CONTACT);
   }
 
   private void drawLitSpan(
@@ -552,10 +604,11 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       final int face,
       final int taller,
       final int contact,
+      final int ground,
       final boolean water,
       final int frontX,
       final int frontZ) {
-    if (water) {
+    if (water || face == Lighting.EMISSIVE) {
       drawSideSpan(
           pass,
           originColumn,
@@ -566,7 +619,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
           firstOffset,
           lastOffset,
           Lighting.face(rawColor, face, taller, false, contact),
-          true);
+          water);
       return;
     }
     final int firstX = Math.max(0, originColumn + firstOffset);
@@ -593,12 +646,16 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       final int color =
           bandRow + this.projection.blockScreenHeight() < 0 && y != topY
               ? spanColor
-              : Lighting.face(
+              : Lighting.bounce(
+                  Lighting.face(
+                      rawColor,
+                      face,
+                      enclosure(pass, rays, frontX, y, frontZ),
+                      face == Lighting.POSITIVE_X && sunBlocked(pass, frontX, y, frontZ),
+                      contact),
                   rawColor,
-                  face,
-                  enclosure(pass, rays, frontX, y, frontZ),
-                  face == Lighting.POSITIVE_X && sunBlocked(pass, frontX, y, frontZ),
-                  contact);
+                  ground,
+                  ground == 0 ? Lighting.NO_CONTACT : contact);
       if (y == topY) {
         spanColor = color;
       } else if (color != spanColor) {

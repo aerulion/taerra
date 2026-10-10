@@ -11,6 +11,10 @@ public final class Lighting {
 
   public static final int POSITIVE_Z = 2;
 
+  public static final int EMISSIVE = 3;
+
+  public static final int WATER = 4;
+
   public static final int NO_CONTACT = 0;
 
   public static final int CONTACT_FOOT = 1;
@@ -20,20 +24,19 @@ public final class Lighting {
   private static final float @NotNull [] SUN = {0.95f, 0.80f, 0.52f};
   private static final float @NotNull [] SKY = {0.20f, 0.28f, 0.50f};
 
-  private static final float @NotNull [] SUN_ON_FACE = {1.00f, 0.70f, 0.00f};
-  private static final float @NotNull [] SKY_ON_FACE = {1.00f, 0.60f, 1.05f};
+  private static final float @NotNull [] SUN_ON_FACE = {1.00f, 0.70f, 0.00f, 1.00f, 1.00f};
+  private static final float @NotNull [] SKY_ON_FACE = {1.00f, 0.60f, 1.05f, 1.00f, 1.00f};
   private static final float @NotNull [] CONTACT_SKY = {1.00f, 0.45f, 0.72f};
+  private static final float @NotNull [] BOUNCE = {0.00f, 0.25f, 0.12f};
   private static final float SATURATION = 1.20f;
+  private static final float WATER_SHEEN = 0.04f;
+  private static final double SHOULDER_KNEE = 0.85;
 
   private static final float @NotNull [] TO_LINEAR = new float[256];
   private static final @NotNull ThreadLocal<Long2IntOpenHashMap> CACHE =
-      ThreadLocal.withInitial(
-          () -> {
-            final @NotNull Long2IntOpenHashMap cache = new Long2IntOpenHashMap();
-
-            cache.defaultReturnValue(0);
-            return cache;
-          });
+      ThreadLocal.withInitial(Lighting::newCache);
+  private static final @NotNull ThreadLocal<Long2IntOpenHashMap> BOUNCE_CACHE =
+      ThreadLocal.withInitial(Lighting::newCache);
 
   static {
     for (int i = 0; i < 256; i++) {
@@ -46,6 +49,12 @@ public final class Lighting {
     super();
   }
 
+  private static @NotNull Long2IntOpenHashMap newCache() {
+    final @NotNull Long2IntOpenHashMap cache = new Long2IntOpenHashMap();
+    cache.defaultReturnValue(0);
+    return cache;
+  }
+
   public static int face(
       final int argb,
       final int face,
@@ -55,17 +64,50 @@ public final class Lighting {
     final long key =
         (argb & 0xFFFFFFFFL)
             | (long) face << 32
-            | (long) Math.min(15, tallerNeighbors) << 34
-            | (shadowed ? 1L << 38 : 0L)
-            | (long) contact << 39;
+            | (long) Math.min(15, tallerNeighbors) << 35
+            | (shadowed ? 1L << 39 : 0L)
+            | (long) contact << 41;
 
     final @NotNull Long2IntOpenHashMap cache = CACHE.get();
     int lit = cache.get(key);
     if (lit == 0) {
-      lit = light(argb, face, MapStyle.occlusion(tallerNeighbors), shadowed, CONTACT_SKY[contact]);
+      lit =
+          face == EMISSIVE
+              ? light(argb, TOP, 1.0f, false, 1.0f)
+              : light(
+                  argb, face, MapStyle.occlusion(tallerNeighbors), shadowed, CONTACT_SKY[contact]);
       cache.put(key, lit);
     }
     return lit;
+  }
+
+  public static int bounce(
+      final int litArgb, final int albedoArgb, final int groundArgb, final int contact) {
+    if (BOUNCE[contact] == 0.0f) {
+      return litArgb;
+    }
+    final long key = (litArgb & 0xFFFFFFFFL) | (long) (groundArgb & 0x00FFFFFF) << 32;
+    final @NotNull Long2IntOpenHashMap cache = BOUNCE_CACHE.get();
+    final long levelKey = key ^ (long) contact << 56;
+    int bounced = cache.get(levelKey);
+    if (bounced == 0) {
+      final float amount = BOUNCE[contact];
+      bounced =
+          clamped(
+              litArgb,
+              TO_LINEAR[(litArgb >> 16) & 0xFF]
+                  + amount
+                      * TO_LINEAR[(albedoArgb >> 16) & 0xFF]
+                      * TO_LINEAR[(groundArgb >> 16) & 0xFF],
+              TO_LINEAR[(litArgb >> 8) & 0xFF]
+                  + amount
+                      * TO_LINEAR[(albedoArgb >> 8) & 0xFF]
+                      * TO_LINEAR[(groundArgb >> 8) & 0xFF],
+              TO_LINEAR[litArgb & 0xFF]
+                  + amount * TO_LINEAR[albedoArgb & 0xFF] * TO_LINEAR[groundArgb & 0xFF]);
+      cache.put(levelKey, bounced);
+    }
+    return bounced;
   }
 
   private static int light(
@@ -75,11 +117,14 @@ public final class Lighting {
       final boolean shadowed,
       final float contact) {
     final float sun =
-        shadowed ? 0.0f : SUN_ON_FACE[face] * (0.5f + 0.5f * occlusion) * contactSun(contact);
+        (shadowed ? 0.0f : SUN_ON_FACE[face]) * (0.5f + 0.5f * occlusion) * contactSun(contact);
     final float sky = SKY_ON_FACE[face] * occlusion * contact;
-    final float red = TO_LINEAR[(argb >> 16) & 0xFF] * (SUN[0] * sun + SKY[0] * sky);
-    final float green = TO_LINEAR[(argb >> 8) & 0xFF] * (SUN[1] * sun + SKY[1] * sky);
-    final float blue = TO_LINEAR[argb & 0xFF] * (SUN[2] * sun + SKY[2] * sky);
+    final float sheen = face == WATER ? (shadowed ? 0.0f : WATER_SHEEN) : 0.0f;
+    final float red =
+        TO_LINEAR[(argb >> 16) & 0xFF] * (SUN[0] * sun + SKY[0] * sky) + SUN[0] * sheen;
+    final float green =
+        TO_LINEAR[(argb >> 8) & 0xFF] * (SUN[1] * sun + SKY[1] * sky) + SUN[1] * sheen;
+    final float blue = TO_LINEAR[argb & 0xFF] * (SUN[2] * sun + SKY[2] * sky) + SUN[2] * sheen;
 
     final double l = Math.cbrt(0.4122214708 * red + 0.5363325363 * green + 0.0514459929 * blue);
     final double m = Math.cbrt(0.2119034982 * red + 0.6806995451 * green + 0.1073969566 * blue);
@@ -90,10 +135,32 @@ public final class Lighting {
     final double l2 = Math.pow(lightness + 0.3963377774 * a + 0.2158037573 * b, 3);
     final double m2 = Math.pow(lightness - 0.1055613458 * a - 0.0638541728 * b, 3);
     final double s2 = Math.pow(lightness - 0.0894841775 * a - 1.2914855480 * b, 3);
-    final int outRed = toSrgb(4.0767416621 * l2 - 3.3077115913 * m2 + 0.2309699292 * s2);
-    final int outGreen = toSrgb(-1.2684380046 * l2 + 2.6097574011 * m2 - 0.3413193965 * s2);
-    final int outBlue = toSrgb(-0.0041960863 * l2 - 0.7034186147 * m2 + 1.7076147010 * s2);
-    return (argb & 0xFF000000) | (outRed << 16) | (outGreen << 8) | outBlue;
+    return encode(
+        argb,
+        4.0767416621 * l2 - 3.3077115913 * m2 + 0.2309699292 * s2,
+        -1.2684380046 * l2 + 2.6097574011 * m2 - 0.3413193965 * s2,
+        -0.0041960863 * l2 - 0.7034186147 * m2 + 1.7076147010 * s2);
+  }
+
+  private static int encode(
+      final int argb, final double red, final double green, final double blue) {
+    return (argb & 0xFF000000)
+        | (toSrgb(shoulder(red)) << 16)
+        | (toSrgb(shoulder(green)) << 8)
+        | toSrgb(shoulder(blue));
+  }
+
+  private static int clamped(
+      final int argb, final double red, final double green, final double blue) {
+    return (argb & 0xFF000000) | (toSrgb(red) << 16) | (toSrgb(green) << 8) | toSrgb(blue);
+  }
+
+  private static double shoulder(final double linear) {
+    if (linear <= SHOULDER_KNEE) {
+      return linear;
+    }
+    final double range = 1.0 - SHOULDER_KNEE;
+    return SHOULDER_KNEE + range * (1.0 - Math.exp(-(linear - SHOULDER_KNEE) / range));
   }
 
   private static float contactSun(final float contactSky) {

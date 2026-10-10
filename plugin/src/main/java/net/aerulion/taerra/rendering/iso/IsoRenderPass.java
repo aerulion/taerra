@@ -31,6 +31,10 @@ final class IsoRenderPass {
   private final int @NotNull [] skyRaysZ;
   private final int sunStepX;
   private final int sunStepZ;
+  private int lastSunX = Integer.MIN_VALUE;
+  private int lastSunY;
+  private int lastSunZ;
+  private boolean lastSunBlocked;
 
   IsoRenderPass(
       final int size,
@@ -97,6 +101,22 @@ final class IsoRenderPass {
     return positiveX ? this.skyRaysX : this.skyRaysZ;
   }
 
+  boolean isLastSun(final int blockX, final int openY, final int blockZ) {
+    return blockX == this.lastSunX && openY == this.lastSunY && blockZ == this.lastSunZ;
+  }
+
+  boolean lastSunBlocked() {
+    return this.lastSunBlocked;
+  }
+
+  boolean rememberSun(final int blockX, final int openY, final int blockZ, final boolean blocked) {
+    this.lastSunX = blockX;
+    this.lastSunY = openY;
+    this.lastSunZ = blockZ;
+    this.lastSunBlocked = blocked;
+    return blocked;
+  }
+
   int sunStepX() {
     return this.sunStepX;
   }
@@ -156,8 +176,12 @@ final class IsoRenderPass {
     this.pixels[index] =
         surfaceY == NO_WATER
             ? color
-            : MapStyle.underwater(
-                color, this.waterColor[index], surfaceY - blockY + submergedExtra);
+            : submergedExtra == 0
+                ? MapStyle.shallow(
+                    MapStyle.underwater(color, this.waterColor[index], surfaceY - blockY),
+                    surfaceY - blockY)
+                : MapStyle.underwater(
+                    color, this.waterColor[index], surfaceY - blockY + submergedExtra);
     if (this.pickDepth != null && this.pickHeight != null) {
       this.pickDepth[index] = depth;
       this.pickHeight[index] = blockY;

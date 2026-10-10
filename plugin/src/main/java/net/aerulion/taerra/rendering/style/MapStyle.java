@@ -35,6 +35,8 @@ public final class MapStyle {
 
   public static final float WATER_CLARITY = 0.5f;
   public static final float WATER_MAX_OPACITY = 0.8f;
+  public static final float SHALLOW_GLINT = 0.10f;
+  public static final int SHALLOW_TINT = 0xFFCDEDE6;
   private static final int WATER_OPACITY_STEPS = 32;
   private static final float @NotNull [] WATER_OPACITY = buildWaterOpacity();
   private static final float @NotNull [] @NotNull [] DEPTH_FACTORS = buildDepthFactors();
@@ -96,6 +98,10 @@ public final class MapStyle {
         | (Math.min(255, red) << 16)
         | (Math.min(255, green) << 8)
         | Math.min(255, blue);
+  }
+
+  public static int shallow(final int argb, final int depth) {
+    return depth == 1 ? blend(argb, SHALLOW_TINT, SHALLOW_GLINT) : argb;
   }
 
   private static float @NotNull [] buildWaterOpacity() {
