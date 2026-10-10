@@ -160,7 +160,8 @@ public final class Lighting {
       return linear;
     }
     final double range = 1.0 - SHOULDER_KNEE;
-    return SHOULDER_KNEE + range * (1.0 - Math.exp(-(linear - SHOULDER_KNEE) / range));
+    final double over = Math.min(linear - SHOULDER_KNEE, 2.0 * range);
+    return SHOULDER_KNEE + over - over * over / (4.0 * range);
   }
 
   private static float contactSun(final float contactSky) {

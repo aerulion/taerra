@@ -82,7 +82,9 @@ class LightingTest {
     final int open = Lighting.face(snow, Lighting.TOP, 0, false, Lighting.NO_CONTACT);
     final int nook = Lighting.face(snow, Lighting.TOP, 2, false, Lighting.NO_CONTACT);
     assertNotEquals(open, nook, "the first occlusion step must still show on snow in full sun");
-    assertTrue(blue(open) > 225, "sunlit snow should stay close to white, not turn cream");
+    assertTrue(
+        Math.min(red(open), Math.min(green(open), blue(open))) >= 248,
+        "sunlit snow should stay white, not turn cream");
   }
 
   @Test
