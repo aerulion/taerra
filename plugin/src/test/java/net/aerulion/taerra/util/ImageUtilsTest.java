@@ -2,7 +2,6 @@ package net.aerulion.taerra.util;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.image.BufferedImage;
 import org.jetbrains.annotations.NotNull;
@@ -64,8 +63,8 @@ class ImageUtilsTest {
   }
 
   @Test
-  @DisplayName("downsampling invents no colors, so the pixel-art palette is preserved")
-  void combineTilesKeepsExactColors() {
+  @DisplayName("downsampling averages in linear light, so a black and white checker turns mid grey")
+  void combineTilesAveragesInLinearLight() {
     final int size = 8;
     final @NotNull BufferedImage source =
         new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
@@ -80,12 +79,30 @@ class ImageUtilsTest {
 
     for (int y = 0; y < size; y++) {
       for (int x = 0; x < size; x++) {
-        final int argb = combined.getRGB(x, y);
-        assertTrue(
-            argb == 0xFF000000 || argb == 0xFFFFFFFF,
-            "downsampling produced a blended color: " + Integer.toHexString(argb));
+        assertEquals(0xFFBCBCBC, combined.getRGB(x, y));
       }
     }
+  }
+
+  @Test
+  @DisplayName("a solid color survives downsampling unchanged, for every channel value")
+  void combineTilesKeepsSolidColors() {
+    for (int value = 0; value < 256; value++) {
+      final int argb = 0xFF000000 | value << 16 | (255 - value) << 8 | value / 2;
+      assertEquals(argb, ImageUtils.combineTiles(solid(argb, 4), null, null, null, 4).getRGB(0, 0));
+    }
+  }
+
+  @Test
+  @DisplayName("transparent pixels lower coverage but never darken the color they border")
+  void combineTilesWeighsByAlpha() {
+    final @NotNull BufferedImage source = new BufferedImage(4, 4, BufferedImage.TYPE_INT_ARGB);
+    source.setRGB(0, 0, 0xFFC03010);
+    source.setRGB(1, 1, 0xFFC03010);
+
+    final int argb = ImageUtils.combineTiles(source, null, null, null, 4).getRGB(0, 0);
+
+    assertEquals(0x80C03010, argb);
   }
 
   @Test

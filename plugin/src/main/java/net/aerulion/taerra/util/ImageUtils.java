@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.zip.CRC32;
 import java.util.zip.Deflater;
@@ -29,6 +30,27 @@ public final class ImageUtils {
   };
 
   private static final int PNG_DEFLATE_LEVEL = 4;
+
+  private static final int LINEAR_MAX = 0xFFFF;
+  private static final int @NotNull [] TO_LINEAR = new int[256];
+  private static final byte @NotNull [] TO_SRGB = new byte[LINEAR_MAX + 1];
+
+  static {
+    for (int i = 0; i < TO_LINEAR.length; i++) {
+      final double c = i / 255.0;
+      TO_LINEAR[i] =
+          (int)
+              Math.round(
+                  (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)) * LINEAR_MAX);
+    }
+    for (int i = 0; i <= LINEAR_MAX; i++) {
+      final double c = (double) i / LINEAR_MAX;
+      TO_SRGB[i] =
+          (byte)
+              Math.round(
+                  (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055) * 255.0);
+    }
+  }
 
   private ImageUtils() {
     super();
@@ -224,7 +246,7 @@ public final class ImageUtils {
   }
 
   private static void downsampleInto(
-      final int[] target,
+      final int @NotNull [] target,
       final int targetStride,
       final int targetX,
       final int targetY,
@@ -234,53 +256,87 @@ public final class ImageUtils {
     }
 
     final int half = targetStride / 2;
-    final int sourceWidth = source.getWidth();
-    final int sourceHeight = source.getHeight();
-    final int @NotNull [] columns = new int[half];
-    for (int x = 0; x < half; x++) {
-      columns[x] = x * sourceWidth / half;
+    final int sourceSize = source.getWidth();
+    final int @NotNull [] pixels = argbOf(source);
+    if (sourceSize <= half) {
+      for (int y = 0; y < half; y++) {
+        final int sourceRow = y * sourceSize / half * sourceSize;
+        final int targetRow = (targetY + y) * targetStride + targetX;
+        for (int x = 0; x < half; x++) {
+          target[targetRow + x] = pixels[sourceRow + x * sourceSize / half];
+        }
+      }
+      return;
     }
 
+    final int scale = sourceSize / half;
+    final int area = scale * scale;
+    final long @NotNull [] sums = new long[half * 4];
+    for (int y = 0; y < half; y++) {
+      Arrays.fill(sums, 0L);
+      for (int sourceY = y * scale; sourceY < (y + 1) * scale; sourceY++) {
+        final int sourceRow = sourceY * sourceSize;
+        for (int sourceX = 0; sourceX < half * scale; sourceX++) {
+          final int pixel = pixels[sourceRow + sourceX];
+          final int alpha = pixel >>> 24;
+          if (alpha == 0) {
+            continue;
+          }
+          final int at = sourceX / scale * 4;
+          sums[at] += alpha;
+          sums[at + 1] += (long) TO_LINEAR[(pixel >> 16) & 0xFF] * alpha;
+          sums[at + 2] += (long) TO_LINEAR[(pixel >> 8) & 0xFF] * alpha;
+          sums[at + 3] += (long) TO_LINEAR[pixel & 0xFF] * alpha;
+        }
+      }
+      final int targetRow = (targetY + y) * targetStride + targetX;
+      for (int x = 0; x < half; x++) {
+        final long alpha = sums[x * 4];
+        target[targetRow + x] =
+            alpha == 0
+                ? 0
+                : (int) ((alpha + area / 2) / area) << 24
+                    | toSrgb(sums[x * 4 + 1], alpha) << 16
+                    | toSrgb(sums[x * 4 + 2], alpha) << 8
+                    | toSrgb(sums[x * 4 + 3], alpha);
+      }
+    }
+  }
+
+  private static int toSrgb(final long weighted, final long alpha) {
+    return TO_SRGB[(int) ((weighted + alpha / 2) / alpha)] & 0xFF;
+  }
+
+  private static int @NotNull [] argbOf(final @NotNull BufferedImage source) {
+    final int width = source.getWidth();
+    final int height = source.getHeight();
+    if (source.getType() == BufferedImage.TYPE_INT_ARGB) {
+      return argbPixels(source);
+    }
     if (source.getType() == BufferedImage.TYPE_BYTE_INDEXED
         && source.getColorModel() instanceof final @NotNull IndexColorModel indexed) {
       final int @NotNull [] colors = new int[indexed.getMapSize()];
       indexed.getRGBs(colors);
       final byte[] indices = ((DataBufferByte) source.getRaster().getDataBuffer()).getData();
-      for (int y = 0; y < half; y++) {
-        final int sourceRow = y * sourceHeight / half * sourceWidth;
-        final int targetRow = (targetY + y) * targetStride + targetX;
-        for (int x = 0; x < half; x++) {
-          target[targetRow + x] = colors[indices[sourceRow + columns[x]] & 0xFF];
-        }
+      final int @NotNull [] argb = new int[width * height];
+      for (int i = 0; i < argb.length; i++) {
+        argb[i] = colors[indices[i] & 0xFF];
       }
-      return;
+      return argb;
     }
     if (source.getType() == BufferedImage.TYPE_4BYTE_ABGR) {
       final byte[] bytes = ((DataBufferByte) source.getRaster().getDataBuffer()).getData();
-      for (int y = 0; y < half; y++) {
-        final int sourceRow = y * sourceHeight / half * sourceWidth;
-        final int targetRow = (targetY + y) * targetStride + targetX;
-        for (int x = 0; x < half; x++) {
-          final int at = (sourceRow + columns[x]) * 4;
-          target[targetRow + x] =
-              (bytes[at] & 0xFF) << 24
-                  | (bytes[at + 3] & 0xFF) << 16
-                  | (bytes[at + 2] & 0xFF) << 8
-                  | (bytes[at + 1] & 0xFF);
-        }
+      final int @NotNull [] argb = new int[width * height];
+      for (int i = 0; i < argb.length; i++) {
+        final int at = i * 4;
+        argb[i] =
+            (bytes[at] & 0xFF) << 24
+                | (bytes[at + 3] & 0xFF) << 16
+                | (bytes[at + 2] & 0xFF) << 8
+                | (bytes[at + 1] & 0xFF);
       }
-      return;
+      return argb;
     }
-    final int[] sourcePixels =
-        source.getType() == BufferedImage.TYPE_INT_ARGB
-            ? argbPixels(source)
-            : source.getRGB(0, 0, sourceWidth, sourceHeight, null, 0, sourceWidth);
-    for (int y = 0; y < half; y++) {
-      final int sourceRow = y * sourceHeight / half * sourceWidth;
-      final int targetRow = (targetY + y) * targetStride + targetX;
-      for (int x = 0; x < half; x++) {
-        target[targetRow + x] = sourcePixels[sourceRow + columns[x]];
-      }
-    }
+    return source.getRGB(0, 0, width, height, null, 0, width);
   }
 }
