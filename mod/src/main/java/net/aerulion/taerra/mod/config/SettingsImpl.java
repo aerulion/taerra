@@ -7,6 +7,9 @@ import com.mojang.logging.LogUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -25,6 +28,7 @@ public final class SettingsImpl implements Settings {
   private boolean grayMap;
   private boolean allWorldPlayers;
   private boolean waypointLabels = true;
+  private Set<String> minimapInfo = new LinkedHashSet<>(List.of(MinimapInfo.COORDINATES.id()));
 
   private SettingsImpl() {}
 
@@ -39,6 +43,9 @@ public final class SettingsImpl implements Settings {
           settings.saved = json;
           settings.setMinimapSize(settings.minimapSize);
           settings.setMinimapZoom(settings.minimapZoom);
+          if (settings.minimapInfo == null) {
+            settings.minimapInfo = new LinkedHashSet<>();
+          }
         }
       } catch (final IOException | JsonParseException e) {
         LOGGER.warn("TAERRA: could not read {}, using the defaults: {}", file, e.toString());
@@ -126,6 +133,20 @@ public final class SettingsImpl implements Settings {
   @Override
   public void setWaypointLabels(final boolean labels) {
     this.waypointLabels = labels;
+  }
+
+  @Override
+  public boolean minimapInfo(final @NotNull MinimapInfo info) {
+    return this.minimapInfo.contains(info.id());
+  }
+
+  @Override
+  public void setMinimapInfo(final @NotNull MinimapInfo info, final boolean shown) {
+    if (shown) {
+      this.minimapInfo.add(info.id());
+    } else {
+      this.minimapInfo.remove(info.id());
+    }
   }
 
   @Override

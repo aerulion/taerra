@@ -39,5 +39,9 @@ public sealed interface Settings permits SettingsImpl {
 
   void setWaypointLabels(boolean labels);
 
+  boolean minimapInfo(MinimapInfo info);
+
+  void setMinimapInfo(MinimapInfo info, boolean shown);
+
   void save();
 }

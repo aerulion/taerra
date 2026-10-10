@@ -235,5 +235,13 @@
   "taerra.waypoints.show_on_map": "Show on Map",
   "taerra.waypoints.type.area": "Area",
   "taerra.waypoints.type.line": "Line",
-  "taerra.waypoints.teleported": "Teleported"
+  "taerra.waypoints.teleported": "Teleported",
+  "taerra.minimap.day": "Day %s",
+  "taerra.minimap.light": "Light %s",
+  "taerra.options.info": "Below the Minimap",
+  "taerra.options.info.coordinates": "Coordinates",
+  "taerra.options.info.biome": "Biome",
+  "taerra.options.info.time": "Time of Day",
+  "taerra.options.info.day": "Day",
+  "taerra.options.info.light": "Block Light"
 }

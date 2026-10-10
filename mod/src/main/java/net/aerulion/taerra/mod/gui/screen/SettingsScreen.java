@@ -1,5 +1,7 @@
 package net.aerulion.taerra.mod.gui.screen;
 
+import java.util.Arrays;
+import net.aerulion.taerra.mod.config.MinimapInfo;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.gui.hud.Minimap;
 import net.aerulion.taerra.mod.web.WebMap;
@@ -94,6 +96,16 @@ public final class SettingsScreen extends OptionsSubScreen {
                 Component.translatable("taerra.options.waypoints.tooltip")),
             settings.waypointLabels(),
             settings::setWaypointLabels));
+    this.list.addHeader(Component.translatable("taerra.options.info"));
+    this.list.addSmall(
+        Arrays.stream(MinimapInfo.values())
+            .map(
+                info ->
+                    OptionInstance.createBoolean(
+                        "taerra.options.info." + info.id(),
+                        settings.minimapInfo(info),
+                        shown -> settings.setMinimapInfo(info, shown)))
+            .toArray(OptionInstance<?>[]::new));
   }
 
   @Override

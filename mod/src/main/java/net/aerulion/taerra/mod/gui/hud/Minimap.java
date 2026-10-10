@@ -1,5 +1,12 @@
 package net.aerulion.taerra.mod.gui.hud;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import net.aerulion.taerra.mod.config.MinimapInfo;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.gui.widget.CompassButton;
 import net.aerulion.taerra.mod.map.MapView;
@@ -13,11 +20,21 @@ import net.aerulion.taerra.mod.web.model.World;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.timeline.Timeline;
+import net.minecraft.world.timeline.Timelines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +44,9 @@ public final class Minimap implements HudElement {
       Identifier.withDefaultNamespace("container/inventory/effect_background");
   private static final int MARGIN = 4;
   private static final int INSET = 3;
-  private static final int COORDINATES = 12;
+  private static final int GAP = 3;
+  private static final int LINE = 10;
+  private static final int PADDING = 2;
   private static final int NEEDLE_INSET = 9;
 
   private final MapSession session;
@@ -67,13 +86,22 @@ public final class Minimap implements HudElement {
     return (graphics, deltaTracker) -> {
       final int shift =
           shown() && !this.settings.minimapLeft()
-              ? MARGIN + this.settings.minimapSize() + 2 * INSET + COORDINATES
+              ? MARGIN + this.settings.minimapSize() + 2 * INSET + infoHeight()
               : 0;
       graphics.pose().pushMatrix();
       graphics.pose().translate(0, shift);
       effects.extractRenderState(graphics, deltaTracker);
       graphics.pose().popMatrix();
     };
+  }
+
+  private @NotNull List<MinimapInfo> info() {
+    return Arrays.stream(MinimapInfo.values()).filter(this.settings::minimapInfo).toList();
+  }
+
+  private int infoHeight() {
+    final int lines = info().size();
+    return lines == 0 ? 0 : GAP + lines * LINE - 1;
   }
 
   private boolean shown() {
@@ -130,11 +158,92 @@ public final class Minimap implements HudElement {
         right - INSET - NEEDLE_INSET,
         top + INSET + NEEDLE_INSET,
         Projection.topDown(map.config()).bearing(180) + this.view.spin());
-    graphics.centeredText(
-        minecraft.font,
-        "%d %d %d".formatted(player.getBlockX(), player.getBlockY(), player.getBlockZ()),
-        (left + right) / 2,
-        bottom + 3,
-        0xFFFFFFFF);
+    drawInfo(graphics, minecraft, player, (left + right) / 2, bottom + GAP);
+  }
+
+  private void drawInfo(
+      final @NotNull GuiGraphicsExtractor graphics,
+      final @NotNull Minecraft minecraft,
+      final @NotNull LocalPlayer player,
+      final int center,
+      final int top) {
+    final @Nullable ClientLevel level = minecraft.level;
+    final @NotNull List<MinimapInfo> info = info();
+    if (level == null || info.isEmpty()) {
+      return;
+    }
+    final @NotNull List<Component> lines = new ArrayList<>(info.size());
+    for (final MinimapInfo line : info) {
+      lines.add(text(line, level, player.blockPosition()));
+    }
+    final @NotNull Font font = minecraft.font;
+    final int width = lines.stream().mapToInt(font::width).max().orElse(0);
+    final int half = (width + 1) / 2;
+    final int x = Math.max(PADDING + half, Math.min(graphics.guiWidth() - PADDING - half, center));
+    final int backdrop = minecraft.options.getBackgroundColor(0f);
+    if (backdrop != 0) {
+      graphics.fill(
+          x - half - PADDING,
+          top - PADDING,
+          x + half + PADDING,
+          top + lines.size() * LINE - 1 + PADDING,
+          backdrop);
+    }
+    for (int i = 0; i < lines.size(); i++) {
+      graphics.centeredText(font, lines.get(i), x, top + i * LINE, 0xFFFFFFFF);
+    }
+  }
+
+  private static @NotNull Component text(
+      final @NotNull MinimapInfo info,
+      final @NotNull ClientLevel level,
+      final @NotNull BlockPos at) {
+    return switch (info) {
+      case COORDINATES -> Component.literal("%d %d %d".formatted(at.getX(), at.getY(), at.getZ()));
+      case BIOME -> biome(level.getBiome(at));
+      case TIME ->
+          day(level)
+              .map(
+                  ticks -> {
+                    final long time = ticks.getCurrentTicks(level.clockManager()) + 6000;
+                    return Component.literal(
+                        "%d:%02d".formatted(time / 1000 % 24, time % 1000 * 60 / 1000));
+                  })
+              .orElseGet(Component::empty);
+      case DAY ->
+          day(level)
+              .map(
+                  ticks ->
+                      Component.translatable(
+                          "taerra.minimap.day", ticks.getPeriodCount(level.clockManager())))
+              .orElseGet(Component::empty);
+      case LIGHT ->
+          Component.translatable("taerra.minimap.light", level.getBrightness(LightLayer.BLOCK, at));
+    };
+  }
+
+  private static @NotNull Optional<Timeline> day(final @NotNull ClientLevel level) {
+    return level.registryAccess().get(Timelines.OVERWORLD_DAY).map(Holder::value);
+  }
+
+  private static @NotNull Component biome(final @NotNull Holder<Biome> biome) {
+    return biome
+        .unwrapKey()
+        .map(
+            key -> {
+              final @NotNull Identifier id = key.identifier();
+              final @NotNull String path =
+                  id.getPath().substring(id.getPath().lastIndexOf('/') + 1);
+              return (Component)
+                  Component.translatableWithFallback(
+                      Util.makeDescriptionId("biome", id),
+                      Arrays.stream(path.split("_"))
+                          .filter(word -> !word.isEmpty())
+                          .map(
+                              word ->
+                                  word.substring(0, 1).toUpperCase(Locale.ROOT) + word.substring(1))
+                          .collect(Collectors.joining(" ")));
+            })
+        .orElseGet(Component::empty);
   }
 }

@@ -36,4 +36,22 @@ class SettingsImplTest {
     reloaded.save();
     assertFalse(Files.exists(file));
   }
+
+  @Test
+  void minimapInfoSurvivesAReload(@TempDir final @NotNull Path directory) throws Exception {
+    final @NotNull Path file = directory.resolve("taerra.json");
+    final @NotNull Settings settings = SettingsImpl.load(file);
+    assertTrue(settings.minimapInfo(MinimapInfo.COORDINATES));
+    assertFalse(settings.minimapInfo(MinimapInfo.BIOME));
+    settings.setMinimapInfo(MinimapInfo.COORDINATES, false);
+    settings.setMinimapInfo(MinimapInfo.BIOME, true);
+    settings.save();
+
+    final @NotNull Settings reloaded = SettingsImpl.load(file);
+    assertFalse(reloaded.minimapInfo(MinimapInfo.COORDINATES));
+    assertTrue(reloaded.minimapInfo(MinimapInfo.BIOME));
+
+    Files.writeString(file, "{\"minimapInfo\": null}");
+    assertFalse(SettingsImpl.load(file).minimapInfo(MinimapInfo.BIOME));
+  }
 }
