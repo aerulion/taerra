@@ -45,7 +45,7 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 - **Private worlds and layers.** Keep a world, or a layer hidden from everyone except logged-in players with the right permission.
 - **Teleport from the map.** Logged-in players with permission right-click the map to teleport there.
 - **Waypoints, areas, and lines** in named groups and colors, private ones too, each with an optional description. Players with permission draw, move, and recolor them right on the map, in the browser or in game, with areas traced from selected chunks or clicked point by point, and lines straight or smooth. The mod shows waypoints as labels in the world itself.
-- **Waypoints of your own.** Every logged-in player can keep up to 100 waypoints, areas, and lines only they see, in the browser and in game. They are drawn as gems and dashed lines, so they never pass for the server's. A list of them, on the web map and in the mod, sorts by name or distance, filters by world, hides single ones from the map, and exports any of them to a JSON file to share or back up, which imports again by adding to yours or replacing them. Other plugins can show players their own markers the same way, like their homes.
+- **Waypoints of your own.** Every logged-in player can keep up to 100 waypoints, areas, and lines only they see, in the browser and in game. They are drawn as gems and dashed lines, so they never pass for the server's. A list of them, on the web map and in the mod, sorts by name or distance, filters by world, hides single ones from the map, and exports any of them to a JSON file to share or back up, which imports again by adding to yours or replacing them. When you die, a Last Death waypoint marks the spot, replacing the one before. Other plugins can show players their own markers the same way, like their homes.
 - **Privacy built in.** Players in spectator mode, invisible or vanished, don't appear, and neither does anyone with `taerra.hide`. Staff with `taerra.web.see-hidden` still see them, marked as hidden. Players who turned off server listings in their client show as an anonymous gray dot. Player heads are served by your server, so viewing the map never reveals a visitor's address to Mojang.
 - **One jar.** No external database, no CDN, and no web admin panel: everything is configured in game.
 - **Right-click any place** to copy its coordinates, or a link straight to it.
@@ -73,8 +73,8 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 The optional Fabric mod brings the server's map into the game. Join a server running TAERRA, and it connects by itself, already logged in, so no `/taerra login` is needed in game:
 
 - a **full world map** that does everything the web map does: both views and all four rotations, layers, players and follow mode, waypoints, search, teleporting, chunk selection, and render progress
-- a **minimap** you can size, zoom, place on either side, and turn with the player
-- **waypoints in the world** as labels where they are, and a list of your own on its own key, J by default
+- a **minimap** you can size, zoom, place on either side, and turn with the player, with the lines you pick below it: coordinates, Nether coordinates, chunk, facing, biome, weather, time, day, light level, real time, and FPS
+- **waypoints in the world** as labels where they are, a list of your own on its own key, J by default, and a key to set one where you stand, H by default
 - **navigation** to a waypoint, a player, or any spot on the map, started in game or from the web map while you play: a beacon beam where it is, and an arrow with the distance at the top of the screen, through the Nether too
 
 It only works on servers running the TAERRA plugin, and it renders nothing itself: it draws the images the server already made. It needs Fabric API. Mod Menu is optional, for the settings screen.

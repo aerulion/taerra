@@ -135,7 +135,7 @@ export const de: Copy = {
                     },
                     {
                         title: 'Eigene Wegpunkte',
-                        text: 'Alle angemeldeten Spieler:innen haben bis zu 100 Wegpunkte, Flächen und Linien, die nur sie sehen, im Browser und im Spiel, gezeichnet als Edelsteine und gestrichelte Linien, damit sie nie mit denen des Servers verwechselt werden. Eine Liste, im Browser und in der Mod, sortiert sie nach Name oder Entfernung, verbirgt einzelne und exportiert sie als JSON-Datei zum Teilen oder Sichern. Andere Plugins zeigen Spieler:innen so auch ihre eigenen Markierungen, etwa ihre Homes.'
+                        text: 'Alle angemeldeten Spieler:innen haben bis zu 100 Wegpunkte, Flächen und Linien, die nur sie sehen, im Browser und im Spiel, gezeichnet als Edelsteine und gestrichelte Linien, damit sie nie mit denen des Servers verwechselt werden. Eine Liste, im Browser und in der Mod, sortiert sie nach Name oder Entfernung, verbirgt einzelne und exportiert sie als JSON-Datei zum Teilen oder Sichern. Wenn du stirbst, markiert ein Wegpunkt „Letzter Tod“ die Stelle. Andere Plugins zeigen Spieler:innen so auch ihre eigenen Markierungen, etwa ihre Homes.'
                     },
                     {
                         title: 'Datenschutz eingebaut',
@@ -197,7 +197,7 @@ export const de: Copy = {
         lede: 'Die optionale Fabric-Mod bringt die Karte deines Servers zu deinen Spieler:innen. Betritt einen Server mit TAERRA, und sie verbindet sich von selbst, schon angemeldet, ganz ohne /taerra login.',
         points: [
             'Eine ganze Weltkarte, die alles kann, was die Web-Karte kann: beide Ansichten und alle vier Drehungen, Ebenen, Spieler:innen und Folgemodus, Wegpunkte, Suche, Teleport, Chunk-Auswahl und Render-Fortschritt',
-            'Eine Minikarte, die du in Größe und Zoom anpassen, links oder rechts platzieren und mit deiner Blickrichtung drehen kannst',
+            'Eine Minikarte, die du in Größe und Zoom anpassen, links oder rechts platzieren und mit deiner Blickrichtung drehen kannst, mit den Zeilen darunter, die du willst, von Koordinaten und Biom bis Uhrzeit und Wetter',
             'Wegpunkte in der Welt, als Beschriftung dort, wo sie sind',
             'Navigation zu einem Wegpunkt, Spieler:innen oder jedem Ort, gestartet im Spiel oder auf der Web-Karte: ein Leuchtfeuerstrahl, wo er ist, und ein Pfeil mit der Entfernung, auch durch den Nether'
         ],

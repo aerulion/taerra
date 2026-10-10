@@ -177,7 +177,7 @@ const en = {
                     },
                     {
                         title: 'Waypoints of your own',
-                        text: "Every logged-in player keeps up to 100 waypoints, areas and lines only they see, in the browser and in game, drawn as gems and dashed lines so they never pass for the server's. A list, in the browser and in the mod, sorts them by name or distance, hides single ones and exports them as a JSON file to share or back up. Other plugins can show players their own markers the same way, like their homes."
+                        text: "Every logged-in player keeps up to 100 waypoints, areas and lines only they see, in the browser and in game, drawn as gems and dashed lines so they never pass for the server's. A list, in the browser and in the mod, sorts them by name or distance, hides single ones and exports them as a JSON file to share or back up. When you die, a Last Death waypoint marks the spot. Other plugins can show players their own markers the same way, like their homes."
                     },
                     {
                         title: 'Privacy built in',
@@ -239,7 +239,7 @@ const en = {
         lede: 'The optional Fabric mod brings your server’s map to your players. Join a server running TAERRA and it connects by itself, already logged in, so no /taerra login is needed in game.',
         points: [
             'A full world map that does everything the web map does: both views and all four rotations, layers, players and follow mode, waypoints, search, teleporting, chunk selection and render progress',
-            'A minimap you can size, zoom, place on either side and turn with the player',
+            'A minimap you can size, zoom, place on either side and turn with the player, with the lines you pick below it, from coordinates and biome to time and weather',
             'Waypoints in the world, as labels where they are',
             'Navigation to a waypoint, a player or any spot, started in game or from the web map: a beacon beam where it is and an arrow with the distance, through the Nether too'
         ],
