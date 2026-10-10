@@ -12,6 +12,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
@@ -103,6 +104,11 @@ public final class SettingsScreen extends OptionsSubScreen {
                 info ->
                     OptionInstance.createBoolean(
                         "taerra.options.info." + info.id(),
+                        Language.getInstance().has("taerra.options.info." + info.id() + ".tooltip")
+                            ? OptionInstance.cachedConstantTooltip(
+                                Component.translatable(
+                                    "taerra.options.info." + info.id() + ".tooltip"))
+                            : OptionInstance.noTooltip(),
                         settings.minimapInfo(info),
                         shown -> settings.setMinimapInfo(info, shown)))
             .toArray(OptionInstance<?>[]::new));

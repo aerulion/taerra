@@ -1,5 +1,7 @@
 package net.aerulion.taerra.mod.gui.hud;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,9 +29,11 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.SectionPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.phys.Vec3;
@@ -95,13 +99,27 @@ public final class Minimap implements HudElement {
     };
   }
 
-  private @NotNull List<MinimapInfo> info() {
-    return Arrays.stream(MinimapInfo.values()).filter(this.settings::minimapInfo).toList();
+  private int infoHeight() {
+    final int lines = lines().size();
+    return lines == 0 ? 0 : GAP + lines * LINE - 1;
   }
 
-  private int infoHeight() {
-    final int lines = info().size();
-    return lines == 0 ? 0 : GAP + lines * LINE - 1;
+  private @NotNull List<Component> lines() {
+    final @NotNull Minecraft minecraft = Minecraft.getInstance();
+    final @Nullable ClientLevel level = minecraft.level;
+    final @Nullable LocalPlayer player = minecraft.player;
+    final @NotNull List<Component> lines = new ArrayList<>();
+    if (level == null || player == null) {
+      return lines;
+    }
+    for (final @NotNull MinimapInfo info : MinimapInfo.values()) {
+      final @Nullable Component line =
+          this.settings.minimapInfo(info) ? text(info, minecraft, level, player) : null;
+      if (line != null) {
+        lines.add(line);
+      }
+    }
+    return lines;
   }
 
   private boolean shown() {
@@ -158,23 +176,17 @@ public final class Minimap implements HudElement {
         right - INSET - NEEDLE_INSET,
         top + INSET + NEEDLE_INSET,
         Projection.topDown(map.config()).bearing(180) + this.view.spin());
-    drawInfo(graphics, minecraft, player, (left + right) / 2, bottom + GAP);
+    drawInfo(graphics, minecraft, (left + right) / 2, bottom + GAP);
   }
 
   private void drawInfo(
       final @NotNull GuiGraphicsExtractor graphics,
       final @NotNull Minecraft minecraft,
-      final @NotNull LocalPlayer player,
       final int center,
       final int top) {
-    final @Nullable ClientLevel level = minecraft.level;
-    final @NotNull List<MinimapInfo> info = info();
-    if (level == null || info.isEmpty()) {
+    final @NotNull List<Component> lines = lines();
+    if (lines.isEmpty()) {
       return;
-    }
-    final @NotNull List<Component> lines = new ArrayList<>(info.size());
-    for (final MinimapInfo line : info) {
-      lines.add(text(line, level, player.blockPosition()));
     }
     final @NotNull Font font = minecraft.font;
     final int width = lines.stream().mapToInt(font::width).max().orElse(0);
@@ -194,32 +206,79 @@ public final class Minimap implements HudElement {
     }
   }
 
-  private static @NotNull Component text(
+  private static @Nullable Component text(
       final @NotNull MinimapInfo info,
+      final @NotNull Minecraft minecraft,
       final @NotNull ClientLevel level,
-      final @NotNull BlockPos at) {
+      final @NotNull LocalPlayer player) {
+    final @NotNull BlockPos at = player.blockPosition();
     return switch (info) {
       case COORDINATES -> Component.literal("%d %d %d".formatted(at.getX(), at.getY(), at.getZ()));
+      case NETHER -> {
+        if (level.dimension() == Level.OVERWORLD) {
+          yield Component.translatable(
+              "taerra.minimap.nether", Math.floorDiv(at.getX(), 8), Math.floorDiv(at.getZ(), 8));
+        }
+        if (level.dimension() == Level.NETHER) {
+          yield Component.translatable("taerra.minimap.overworld", at.getX() * 8, at.getZ() * 8);
+        }
+        yield null;
+      }
+      case CHUNK ->
+          Component.translatable(
+              "taerra.minimap.chunk",
+              SectionPos.blockToSectionCoord(at.getX()),
+              SectionPos.blockToSectionCoord(at.getZ()));
+      case FACING ->
+          Component.translatable(
+              "taerra.minimap.facing."
+                  + Math.floorMod(Math.round((player.getYRot() - 180) / 45), 8));
       case BIOME -> biome(level.getBiome(at));
+      case WEATHER -> weather(level, at);
       case TIME ->
           day(level)
               .map(
                   ticks -> {
                     final long time = ticks.getCurrentTicks(level.clockManager()) + 6000;
-                    return Component.literal(
-                        "%d:%02d".formatted(time / 1000 % 24, time % 1000 * 60 / 1000));
+                    return (Component)
+                        Component.literal(
+                            "%d:%02d".formatted(time / 1000 % 24, time % 1000 * 60 / 1000));
                   })
-              .orElseGet(Component::empty);
+              .orElse(null);
       case DAY ->
           day(level)
               .map(
                   ticks ->
-                      Component.translatable(
-                          "taerra.minimap.day", ticks.getPeriodCount(level.clockManager())))
-              .orElseGet(Component::empty);
+                      (Component)
+                          Component.translatable(
+                              "taerra.minimap.day", ticks.getPeriodCount(level.clockManager())))
+              .orElse(null);
       case LIGHT ->
           Component.translatable("taerra.minimap.light", level.getBrightness(LightLayer.BLOCK, at));
+      case REAL_TIME ->
+          Component.translatable(
+              "taerra.minimap.real_time",
+              LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
+      case FPS -> Component.translatable("taerra.minimap.fps", minecraft.getFps());
     };
+  }
+
+  private static @Nullable Component weather(
+      final @NotNull ClientLevel level, final @NotNull BlockPos at) {
+    if (!level.dimensionType().hasSkyLight()) {
+      return null;
+    }
+    final @NotNull Biome biome = level.getBiome(at).value();
+    if (!level.isRaining() || !biome.hasPrecipitation()) {
+      return Component.translatable("taerra.minimap.weather.clear");
+    }
+    if (level.isThundering()) {
+      return Component.translatable("taerra.minimap.weather.thunder");
+    }
+    return Component.translatable(
+        biome.coldEnoughToSnow(at, level.getSeaLevel())
+            ? "taerra.minimap.weather.snow"
+            : "taerra.minimap.weather.rain");
   }
 
   private static @NotNull Optional<Timeline> day(final @NotNull ClientLevel level) {

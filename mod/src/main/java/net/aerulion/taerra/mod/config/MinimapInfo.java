@@ -5,10 +5,16 @@ import org.jetbrains.annotations.NotNull;
 
 public enum MinimapInfo {
   COORDINATES,
+  NETHER,
+  CHUNK,
+  FACING,
   BIOME,
+  WEATHER,
   TIME,
   DAY,
-  LIGHT;
+  LIGHT,
+  REAL_TIME,
+  FPS;
 
   public @NotNull String id() {
     return name().toLowerCase(Locale.ROOT);
