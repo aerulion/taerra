@@ -202,6 +202,7 @@
   "taerra.devices.days": "Used %s d ago",
   "taerra.devices.logout": "Log Out",
   "key.taerra.waypoint_list": "Waypoint List",
+  "key.taerra.waypoint_add": "Add waypoint here",
   "taerra.waypoints": "My Waypoints",
   "taerra.waypoints.tooltip": "List, show, hide, import and export your waypoints (%s)",
   "taerra.waypoints.filter": "Filter by name",

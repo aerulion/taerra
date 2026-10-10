@@ -8,6 +8,7 @@ import net.aerulion.taerra.mod.gui.hud.NavigationBeam;
 import net.aerulion.taerra.mod.gui.hud.NavigationHud;
 import net.aerulion.taerra.mod.gui.hud.WaypointLabels;
 import net.aerulion.taerra.mod.gui.screen.MapScreen;
+import net.aerulion.taerra.mod.gui.screen.WaypointScreen;
 import net.aerulion.taerra.mod.input.TaerraKeys;
 import net.aerulion.taerra.mod.map.MapView;
 import net.aerulion.taerra.mod.map.MapViewImpl;
@@ -17,6 +18,8 @@ import net.aerulion.taerra.mod.session.MapSession;
 import net.aerulion.taerra.mod.session.MapSessionImpl;
 import net.aerulion.taerra.mod.util.Dimensions;
 import net.aerulion.taerra.mod.web.WebMap;
+import net.aerulion.taerra.mod.web.model.Account;
+import net.aerulion.taerra.mod.web.model.Waypoint;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationConnectionEvents;
@@ -93,6 +96,29 @@ public final class TaerraClient implements ClientModInitializer {
         minecraft.setScreenAndShow(screen);
         screen.openWaypointList();
       } else if (minecraft.player != null) {
+        minecraft.player.sendOverlayMessage(this.session.unavailable());
+      }
+    }
+    while (TaerraKeys.ADD_WAYPOINT.consumeClick()) {
+      final @Nullable WebMap map = this.session.map();
+      final @Nullable Account account = map == null ? null : map.account();
+      if (minecraft.player == null) {
+        continue;
+      }
+      if (account != null
+          && (account.markers() || account.personal())
+          && map.world(Dimensions.current()) != null) {
+        minecraft.setScreenAndShow(
+            new WaypointScreen(
+                null,
+                map,
+                Waypoint.create(
+                    Dimensions.current(),
+                    minecraft.player.getBlockX(),
+                    minecraft.player.getBlockY(),
+                    minecraft.player.getBlockZ()),
+                () -> {}));
+      } else {
         minecraft.player.sendOverlayMessage(this.session.unavailable());
       }
     }

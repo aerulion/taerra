@@ -202,6 +202,7 @@
   "taerra.devices.days": "Vor %s Tagen benutzt",
   "taerra.devices.logout": "Abmelden",
   "key.taerra.waypoint_list": "Wegpunktliste",
+  "key.taerra.waypoint_add": "Wegpunkt hier setzen",
   "taerra.waypoints": "Meine Wegpunkte",
   "taerra.waypoints.tooltip": "Deine Wegpunkte auflisten, zeigen, verbergen, importieren und exportieren (%s)",
   "taerra.waypoints.filter": "Nach Namen filtern",
