@@ -12,12 +12,12 @@ import java.util.Map;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.rendering.color.BlockColors;
 import net.aerulion.taerra.rendering.color.MapColorResolver;
+import net.aerulion.taerra.rendering.color.TintColors;
 import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsBuilder;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
 import net.aerulion.taerra.rendering.style.Lighting;
 import net.aerulion.taerra.rendering.style.MapStyle;
-import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,14 +44,14 @@ class IsoTileRendererTest {
       blockType ->
           new BlockColors() {
             @Override
-            public int topColor(final @Nullable Biome biome, final int x, final int z) {
+            public int topColor(final @Nullable TintColors tint) {
               return blockType == BlockType.OAK_PLANKS
                   ? PLANK_TOP
                   : blockType == BlockType.TORCH ? TORCH_TOP : STONE_TOP;
             }
 
             @Override
-            public int sideColor(final @Nullable Biome biome, final int x, final int z) {
+            public int sideColor(final @Nullable TintColors tint) {
               return blockType == BlockType.OAK_PLANKS
                   ? PLANK_SIDE
                   : blockType == BlockType.TORCH ? TORCH_SIDE : STONE_SIDE;

@@ -2,6 +2,7 @@ package net.aerulion.taerra.rendering.iso;
 
 import java.util.Arrays;
 import net.aerulion.taerra.model.MapRotation;
+import net.aerulion.taerra.rendering.sample.BiomeBlend;
 import net.aerulion.taerra.rendering.sample.ColumnHeightField;
 import net.aerulion.taerra.rendering.style.MapStyle;
 import net.aerulion.taerra.rendering.tile.PickBuffer;
@@ -21,6 +22,7 @@ final class IsoRenderPass {
   private final @NotNull ScreenBounds tileBounds;
   private final @NotNull MapRotation rotation;
   private final @NotNull ColumnHeightField solids;
+  private final @NotNull BiomeBlend biomes;
   private final int @NotNull [] pixels;
   private final int @NotNull [] paintedFrom;
   private final int @NotNull [] waterSurface;
@@ -41,12 +43,14 @@ final class IsoRenderPass {
       final @NotNull ScreenBounds tileBounds,
       final @NotNull MapRotation rotation,
       final @NotNull ColumnHeightField solids,
+      final @NotNull BiomeBlend biomes,
       final boolean withPick) {
     super();
     this.size = size;
     this.tileBounds = tileBounds;
     this.rotation = rotation;
     this.solids = solids;
+    this.biomes = biomes;
     this.pixels = new int[size * size];
     this.paintedFrom = new int[size];
     Arrays.fill(this.paintedFrom, size);
@@ -95,6 +99,11 @@ final class IsoRenderPass {
   @NotNull
   ColumnHeightField solids() {
     return this.solids;
+  }
+
+  @NotNull
+  BiomeBlend biomes() {
+    return this.biomes;
   }
 
   int @NotNull [] skyRays(final boolean positiveX) {

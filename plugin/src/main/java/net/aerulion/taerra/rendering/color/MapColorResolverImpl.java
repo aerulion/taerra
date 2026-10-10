@@ -87,6 +87,17 @@ public final class MapColorResolverImpl implements MapColorResolver {
     return this.colors[blockId];
   }
 
+  @Override
+  public boolean tintVaries(final @NotNull Biome biome) {
+    return this.biomeTints.tintVaries(biome);
+  }
+
+  @Override
+  public @Nullable TintColors tintAt(
+      final @Nullable Biome biome, final int blockX, final int blockZ) {
+    return biome == null ? null : this.biomeTints.tintAt(biome, blockX, blockZ);
+  }
+
   private record ResolvedColors(
       @NotNull BiomeTintMapper tints,
       int topRgb,
@@ -97,13 +108,13 @@ public final class MapColorResolverImpl implements MapColorResolver {
       implements BlockColors {
 
     @Override
-    public int topColor(final @Nullable Biome biome, final int blockX, final int blockZ) {
-      return this.tints.applyBiomeTint(this.topRgb, this.topTint, biome, blockX, blockZ);
+    public int topColor(final @Nullable TintColors tint) {
+      return this.tints.applyBiomeTint(this.topRgb, this.topTint, tint);
     }
 
     @Override
-    public int sideColor(final @Nullable Biome biome, final int blockX, final int blockZ) {
-      return this.tints.applyBiomeTint(this.sideRgb, this.sideTint, biome, blockX, blockZ);
+    public int sideColor(final @Nullable TintColors tint) {
+      return this.tints.applyBiomeTint(this.sideRgb, this.sideTint, tint);
     }
   }
 }

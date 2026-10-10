@@ -68,42 +68,45 @@ public final class BiomeTintMapperImpl implements BiomeTintMapper {
     return OPAQUE | (red << 16) | (green << 8) | blue;
   }
 
-  private int applyBiomeColor(
-      final int baseRgb,
-      final @NotNull Biome biome,
-      final @NotNull BiomeTint tint,
-      final int x,
-      final int z) {
-    final @NotNull BiomeColors colors = this.biomeColors.computeIfAbsent(biome, BiomeColors::of);
-    return switch (tint) {
-      case WATER -> OPAQUE | (colors.water() & RGB_MASK);
-      case GRASS ->
-          tintBaseColor(
-              baseRgb,
-              colors.swampGrass()
-                  ? ((CraftBiome) biome).getHandle().getGrassColor(x, z)
-                  : colors.grass());
-      case FOLIAGE -> tintBaseColor(baseRgb, colors.foliage());
-      case DRY_FOLIAGE -> tintBaseColor(baseRgb, colors.dryFoliage());
-      case BIRCH_FOLIAGE -> tintBaseColor(baseRgb, FoliageColor.FOLIAGE_BIRCH);
-      case EVERGREEN_FOLIAGE -> tintBaseColor(baseRgb, FoliageColor.FOLIAGE_EVERGREEN);
-      case LILY_PAD -> tintBaseColor(baseRgb, LILY_PAD_TINT);
-    };
-  }
-
   @Override
   public @Nullable BiomeTint tintOf(final @NotNull BlockType blockType) {
     return this.tints.get(blockType);
   }
 
   @Override
+  public boolean tintVaries(final @NotNull Biome biome) {
+    return this.biomeColors.computeIfAbsent(biome, BiomeColors::of).swampGrass();
+  }
+
+  @Override
+  public @NotNull TintColors tintAt(final @NotNull Biome biome, final int x, final int z) {
+    final @NotNull BiomeColors colors = this.biomeColors.computeIfAbsent(biome, BiomeColors::of);
+    if (!colors.swampGrass()) {
+      return colors.tint();
+    }
+    final @NotNull TintColors tint = colors.tint();
+    return new TintColors(
+        tint.water(),
+        ((CraftBiome) biome).getHandle().getGrassColor(x, z),
+        tint.foliage(),
+        tint.dryFoliage());
+  }
+
+  @Override
   public int applyBiomeTint(
-      final int baseRgb,
-      final @Nullable BiomeTint tint,
-      final @Nullable Biome biome,
-      final int x,
-      final int z) {
-    return tint == null || biome == null ? baseRgb : applyBiomeColor(baseRgb, biome, tint, x, z);
+      final int baseRgb, final @Nullable BiomeTint tint, final @Nullable TintColors colors) {
+    if (tint == null || colors == null) {
+      return baseRgb;
+    }
+    return switch (tint) {
+      case WATER -> OPAQUE | (colors.water() & RGB_MASK);
+      case GRASS -> tintBaseColor(baseRgb, colors.grass());
+      case FOLIAGE -> tintBaseColor(baseRgb, colors.foliage());
+      case DRY_FOLIAGE -> tintBaseColor(baseRgb, colors.dryFoliage());
+      case BIRCH_FOLIAGE -> tintBaseColor(baseRgb, FoliageColor.FOLIAGE_BIRCH);
+      case EVERGREEN_FOLIAGE -> tintBaseColor(baseRgb, FoliageColor.FOLIAGE_EVERGREEN);
+      case LILY_PAD -> tintBaseColor(baseRgb, LILY_PAD_TINT);
+    };
   }
 
   @Override

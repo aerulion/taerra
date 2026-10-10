@@ -7,7 +7,6 @@ import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
 import net.aerulion.taerra.rendering.style.HeightField;
 import net.aerulion.taerra.rendering.style.MapStyle;
 import net.aerulion.taerra.rendering.style.SunShadow;
-import org.bukkit.block.Biome;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,7 +23,6 @@ final class SurfaceGrid implements HeightField {
   private final int @NotNull [] floorY;
   private final int @NotNull [] blockId;
   private final int @NotNull [] capBlockId;
-  private final Biome @NotNull [] biome;
   private int @NotNull [] ceilings = new int[0];
   private int ceilingsPerRow;
 
@@ -40,7 +38,6 @@ final class SurfaceGrid implements HeightField {
     this.blockId = new int[stride * stride];
     this.capBlockId = new int[stride * stride];
     Arrays.fill(this.blockId, BlockTypes.NONE);
-    this.biome = new Biome[stride * stride];
   }
 
   static @NotNull SurfaceGrid sample(
@@ -120,11 +117,6 @@ final class SurfaceGrid implements HeightField {
     return this.capBlockId[index];
   }
 
-  @Nullable
-  Biome biome(final int index) {
-    return this.biome[index];
-  }
-
   int surfaceY(final int index) {
     return this.surfaceY[index];
   }
@@ -188,7 +180,6 @@ final class SurfaceGrid implements HeightField {
         this.surfaceY[gridIndex] = columns.runTopY(firstRun);
         this.blockId[gridIndex] = columns.runBlockId(firstRun);
         this.capBlockId[gridIndex] = columns.capBlockId(columnIndex);
-        this.biome[gridIndex] = columns.columnBiome(columnIndex);
         this.floorY[gridIndex] = columns.bedY(columnIndex);
       }
     }

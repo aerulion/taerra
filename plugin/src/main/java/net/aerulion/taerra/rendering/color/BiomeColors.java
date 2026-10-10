@@ -5,16 +5,17 @@ import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.jetbrains.annotations.NotNull;
 
-record BiomeColors(int water, int grass, boolean swampGrass, int foliage, int dryFoliage) {
+record BiomeColors(@NotNull TintColors tint, boolean swampGrass) {
 
   static @NotNull BiomeColors of(final @NotNull Biome biome) {
     final net.minecraft.world.level.biome.@NotNull Biome handle = ((CraftBiome) biome).getHandle();
     return new BiomeColors(
-        handle.getWaterColor(),
-        handle.getGrassColor(0, 0),
+        new TintColors(
+            handle.getWaterColor(),
+            handle.getGrassColor(0, 0),
+            handle.getFoliageColor(),
+            handle.getDryFoliageColor()),
         handle.getSpecialEffects().grassColorModifier()
-            == BiomeSpecialEffects.GrassColorModifier.SWAMP,
-        handle.getFoliageColor(),
-        handle.getDryFoliageColor());
+            == BiomeSpecialEffects.GrassColorModifier.SWAMP);
   }
 }

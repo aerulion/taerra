@@ -11,7 +11,12 @@ public sealed interface BiomeTintMapper permits BiomeTintMapperImpl {
   @Nullable
   BiomeTint tintOf(@NotNull BlockType blockType);
 
-  int applyBiomeTint(int baseRgb, @Nullable BiomeTint tint, @Nullable Biome biome, int x, int z);
+  boolean tintVaries(@NotNull Biome biome);
+
+  @NotNull
+  TintColors tintAt(@NotNull Biome biome, int x, int z);
+
+  int applyBiomeTint(int baseRgb, @Nullable BiomeTint tint, @Nullable TintColors colors);
 
   @NotNull
   Set<BlockType> tintedBlocks();

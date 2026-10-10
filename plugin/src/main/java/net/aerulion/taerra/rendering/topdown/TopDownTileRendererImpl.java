@@ -9,6 +9,8 @@ import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.rendering.block.Fluids;
 import net.aerulion.taerra.rendering.color.BlockColors;
 import net.aerulion.taerra.rendering.color.MapColorResolver;
+import net.aerulion.taerra.rendering.color.TintColors;
+import net.aerulion.taerra.rendering.sample.BiomeBlend;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
 import net.aerulion.taerra.rendering.style.Lighting;
 import net.aerulion.taerra.rendering.style.MapStyle;
@@ -18,6 +20,7 @@ import net.aerulion.taerra.rendering.tile.RenderedImage;
 import net.aerulion.taerra.rendering.tile.RenderedTile;
 import net.aerulion.taerra.util.ImageUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class TopDownTileRendererImpl implements TopDownTileRenderer {
 
@@ -46,6 +49,7 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
     final @NotNull SurfaceGrid surface =
         SurfaceGrid.sample(
             source, startBlockX, startBlockZ, tileSize, SunShadow.reach(this.shadowDistance));
+    final @NotNull BiomeBlend biomes = new BiomeBlend(source, this.colors);
     final int @NotNull [] pixels = new int[tileSize * tileSize];
     final int @NotNull [] pickDepth = new int[tileSize * tileSize];
     final int @NotNull [] pickHeight = new int[tileSize * tileSize];
@@ -63,8 +67,8 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
         final @NotNull BlockColors blockColors = this.colors.colorsOf(blockId);
         final @NotNull BlockColors topColors =
             capBlockId == BlockTypes.NONE ? blockColors : this.colors.colorsOf(capBlockId);
-        final int baseRgb =
-            topColors.topColor(surface.biome(index), startBlockX + x, startBlockZ + z);
+        final @Nullable TintColors tint = biomes.at(startBlockX + x, startBlockZ + z);
+        final int baseRgb = topColors.topColor(tint);
         final boolean underwater = surface.surfaceY(index) > surface.floorY(index);
         final int @NotNull [] shadingHeights =
             underwater ? surface.floorHeights() : surface.surfaceHeights();
@@ -82,7 +86,7 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
         int shaded =
             applyEdgeShading(
                 Lighting.face(baseRgb, topFace, taller, shadowed, Lighting.NO_CONTACT),
-                blockColors.sideColor(surface.biome(index), startBlockX + x, startBlockZ + z),
+                blockColors.sideColor(tint),
                 taller,
                 glows ? Lighting.EMISSIVE : -1,
                 shadowed,

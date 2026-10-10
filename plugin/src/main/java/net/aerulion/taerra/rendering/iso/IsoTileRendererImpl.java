@@ -9,6 +9,8 @@ import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.rendering.block.Fluids;
 import net.aerulion.taerra.rendering.color.BlockColors;
 import net.aerulion.taerra.rendering.color.MapColorResolver;
+import net.aerulion.taerra.rendering.color.TintColors;
+import net.aerulion.taerra.rendering.sample.BiomeBlend;
 import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
 import net.aerulion.taerra.rendering.sample.ColumnHeightField;
@@ -16,7 +18,6 @@ import net.aerulion.taerra.rendering.style.Lighting;
 import net.aerulion.taerra.rendering.style.MapStyle;
 import net.aerulion.taerra.rendering.style.SunShadow;
 import net.aerulion.taerra.rendering.tile.RenderedImage;
-import org.bukkit.block.Biome;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -173,7 +174,13 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
     final int size = IsoTileGeometry.TILE_SIZE;
     final @NotNull ScreenBounds tileBounds = IsoTileGeometry.tileBounds(tileX, tileY, 0);
     final @NotNull IsoRenderPass pass =
-        new IsoRenderPass(size, tileBounds, rotation, new ColumnHeightField(source), withPick);
+        new IsoRenderPass(
+            size,
+            tileBounds,
+            rotation,
+            new ColumnHeightField(source),
+            new BiomeBlend(source, this.colors),
+            withPick);
 
     for (final long chunk : candidateChunks(pass, minWorldY, maxWorldY)) {
       if (pass.isFullyPainted()) {
@@ -299,7 +306,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
     final int blockX = chunk.chunkX() * CHUNK_SIZE + rotation.localX(localX, localZ);
     final int blockZ = chunk.chunkZ() * CHUNK_SIZE + rotation.localZ(localX, localZ);
 
-    final @Nullable Biome biome = chunk.columnBiome(columnIndex);
+    final @Nullable TintColors tint = pass.biomes().at(blockX, blockZ);
     final int capBlockId = chunk.capBlockId(columnIndex);
 
     neighborTops(rotation, around, localX, localZ, neighborTops);
@@ -332,7 +339,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
           runIndex == firstRun && capBlockId != BlockTypes.NONE
               ? this.colors.colorsOf(capBlockId)
               : blockColors;
-      final int rawSideColor = blockColors.sideColor(biome, blockX, blockZ);
+      final int rawSideColor = blockColors.sideColor(tint);
       final boolean openAbove =
           runIndex == firstRun
               || chunk.runBottomY(runIndex - 1) > runTopY + 1
@@ -342,7 +349,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
         final boolean topGlows = topColors.emitsLight();
         final boolean shadowed = !topGlows && sunBlocked(pass, blockX, runTopY + 1, blockZ);
 
-        final int topColor = topColors.topColor(biome, blockX, blockZ);
+        final int topColor = topColors.topColor(tint);
         final int faceColor =
             Fluids.isFluid(blockId) && !water
                 ? MapStyle.depthTinted(
@@ -592,7 +599,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
         this.colors.colorsOf(capBlockId == BlockTypes.NONE ? neighbor.runBlockId(run) : capBlockId);
     final boolean glows = blockColors.emitsLight();
     return Lighting.face(
-        blockColors.topColor(neighbor.columnBiome(neighborColumn), frontX, frontZ),
+        blockColors.topColor(pass.biomes().at(frontX, frontZ)),
         glows ? Lighting.EMISSIVE : Lighting.TOP,
         0,
         !glows && (!sunward || sunBlocked(pass, frontX, openY, frontZ)),
