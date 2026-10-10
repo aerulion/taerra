@@ -1,6 +1,7 @@
 package net.aerulion.taerra.mod.gui.screen;
 
 import net.aerulion.taerra.mod.config.Settings;
+import net.aerulion.taerra.mod.gui.hud.Minimap;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
@@ -46,6 +47,8 @@ public final class SettingsScreen extends OptionsSubScreen {
   @Override
   protected void addOptions() {
     final Settings settings = this.settings;
+    final int closest = Minimap.closestZoom(this.map);
+    final int farthest = Minimap.farthestZoom(this.map);
     this.list.addSmall(
         OptionInstance.createBoolean(
             "taerra.options.minimap", settings.minimap(), settings::setMinimap),
@@ -66,8 +69,8 @@ public final class SettingsScreen extends OptionsSubScreen {
             "taerra.options.zoom",
             OptionInstance.noTooltip(),
             Options::genericValueLabel,
-            new OptionInstance.IntRange(Settings.MIN_ZOOM, Settings.MAX_ZOOM),
-            settings.minimapZoom(),
+            new OptionInstance.IntRange(farthest, closest),
+            Math.clamp(settings.minimapZoom(), farthest, closest),
             settings::setMinimapZoom),
         OptionInstance.createBoolean(
             "taerra.options.side",

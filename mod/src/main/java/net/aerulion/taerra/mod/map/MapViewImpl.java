@@ -337,9 +337,14 @@ public final class MapViewImpl implements MapView {
     final int minZoom = world.minZoom(config, this.isometric, this.rotation);
     this.screenX = (x0 + x1) / 2.0;
     this.screenY = (y0 + y1) / 2.0;
-    this.targetZoom = Math.clamp(this.targetZoom, minZoom - 1, this.maxZoom + 2);
-    this.zoom = Math.clamp(this.zoom, minZoom - 1, this.maxZoom + 2);
     this.pixels = Minecraft.getInstance().getWindow().getGuiScale();
+    final double closest =
+        Math.max(
+            minZoom - 1,
+            Projection.closestZoom(
+                config, this.isometric, Minecraft.getInstance().getWindow().getGuiScale()));
+    this.targetZoom = Math.clamp(this.targetZoom, minZoom - 1, closest);
+    this.zoom = Math.clamp(this.zoom, minZoom - 1, closest);
     this.unitPixels = unitPixels();
     animate();
     if (!this.minimap && world.bounds() != null) {

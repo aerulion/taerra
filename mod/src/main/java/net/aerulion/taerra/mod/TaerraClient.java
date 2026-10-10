@@ -111,11 +111,13 @@ public final class TaerraClient implements ClientModInitializer {
       changed = true;
     }
     while (TaerraKeys.MINIMAP_ZOOM_IN.consumeClick()) {
-      settings.setMinimapZoom(settings.minimapZoom() + 1);
+      settings.setMinimapZoom(
+          Math.min(settings.minimapZoom() + 1, Minimap.closestZoom(this.session.map())));
       changed = true;
     }
     while (TaerraKeys.MINIMAP_ZOOM_OUT.consumeClick()) {
-      settings.setMinimapZoom(settings.minimapZoom() - 1);
+      settings.setMinimapZoom(
+          Math.max(settings.minimapZoom() - 1, Minimap.farthestZoom(this.session.map())));
       changed = true;
     }
     while (TaerraKeys.TOGGLE_WAYPOINTS.consumeClick()) {

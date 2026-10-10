@@ -8,6 +8,8 @@ import net.aerulion.taerra.mod.map.Projection;
 import net.aerulion.taerra.mod.session.MapSession;
 import net.aerulion.taerra.mod.util.Dimensions;
 import net.aerulion.taerra.mod.web.WebMap;
+import net.aerulion.taerra.mod.web.model.MapConfig;
+import net.aerulion.taerra.mod.web.model.World;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -36,6 +38,29 @@ public final class Minimap implements HudElement {
     this.session = session;
     this.settings = settings;
     this.view = new MapViewImpl(settings, settings.minimapZoom(), true);
+  }
+
+  public static int closestZoom(final @Nullable WebMap map) {
+    final @Nullable MapConfig config = map == null ? null : map.config();
+    if (config == null) {
+      return Settings.MAX_ZOOM;
+    }
+    return Math.clamp(
+        (long)
+            Math.floor(
+                Projection.closestZoom(
+                    config, false, Minecraft.getInstance().getWindow().getGuiScale())),
+        Settings.MIN_ZOOM,
+        Settings.MAX_ZOOM);
+  }
+
+  public static int farthestZoom(final @Nullable WebMap map) {
+    final @Nullable MapConfig config = map == null ? null : map.config();
+    final @Nullable World world = map == null ? null : map.world(Dimensions.current());
+    if (config == null || world == null) {
+      return Settings.MIN_ZOOM;
+    }
+    return Math.clamp(world.minZoom(config, false, 0) - 1, Settings.MIN_ZOOM, closestZoom(map));
   }
 
   public @NotNull HudElement below(final @NotNull HudElement effects) {

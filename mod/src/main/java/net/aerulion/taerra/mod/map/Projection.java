@@ -11,6 +11,15 @@ public record Projection(boolean isometric, int rotation, double unitsPerBlock, 
     return Math.scalb((double) TILE_PIXELS, -zoom);
   }
 
+  public static double closestZoom(
+      final @NotNull MapConfig config, final boolean isometric, final int guiScale) {
+    if (isometric) {
+      return Math.log(config.isometric().tileSize() / tileUnits(config.isometric().maxZoom()))
+          / Math.log(2);
+    }
+    return Math.log(config.tileSize() / tileUnits(config.maxZoom()) * guiScale) / Math.log(2);
+  }
+
   public static @NotNull Projection topDown(final @NotNull MapConfig config) {
     return new Projection(
         false, 0, tileUnits(config.maxZoom()) / config.tileSize(), config.isometric().blockWidth());
