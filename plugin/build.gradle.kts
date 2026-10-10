@@ -38,6 +38,7 @@ dependencies {
     implementation(project(":api"))
     bundled(project(":api"))
     compileOnly(libs.jetbrains.annotations)
+    testImplementation(libs.junit.launcher)
     runtimeLibraries.forEach { implementation(it) }
 
     compileOnly(libs.worldguard.core) { isTransitive = false }

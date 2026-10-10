@@ -1,8 +1,8 @@
 package net.aerulion.taerra.rendering.sample;
 
 import net.aerulion.taerra.rendering.block.Fluids;
-import org.bukkit.Material;
 import org.bukkit.block.Biome;
+import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,8 +18,8 @@ public final class ChunkColumns {
   private final int @NotNull [] runOffsets;
   private final short @NotNull [] runTopY;
   private final short @NotNull [] runBottomY;
-  private final Material @NotNull [] runMaterial;
-  private final Material @NotNull [] capMaterial;
+  private final BlockType @NotNull [] runBlockType;
+  private final BlockType @NotNull [] capBlockType;
   private final Biome @NotNull [] columnBiome;
   private final int minTopY;
   private final int maxTopY;
@@ -30,8 +30,8 @@ public final class ChunkColumns {
       final int @NotNull [] runOffsets,
       final short @NotNull [] runTopY,
       final short @NotNull [] runBottomY,
-      final Material @NotNull [] runMaterial,
-      final Material @NotNull [] capMaterial,
+      final BlockType @NotNull [] runBlockType,
+      final BlockType @NotNull [] capBlockType,
       final Biome @NotNull [] columnBiome,
       final int minTopY,
       final int maxTopY) {
@@ -41,8 +41,8 @@ public final class ChunkColumns {
     this.runOffsets = runOffsets;
     this.runTopY = runTopY;
     this.runBottomY = runBottomY;
-    this.runMaterial = runMaterial;
-    this.capMaterial = capMaterial;
+    this.runBlockType = runBlockType;
+    this.capBlockType = capBlockType;
     this.columnBiome = columnBiome;
     this.minTopY = minTopY;
     this.maxTopY = maxTopY;
@@ -88,12 +88,12 @@ public final class ChunkColumns {
     return this.runBottomY[runIndex];
   }
 
-  public @NotNull Material runMaterial(final int runIndex) {
-    return this.runMaterial[runIndex];
+  public @NotNull BlockType runBlockType(final int runIndex) {
+    return this.runBlockType[runIndex];
   }
 
-  public @Nullable Material capMaterial(final int columnIndex) {
-    return this.capMaterial[columnIndex];
+  public @Nullable BlockType capBlockType(final int columnIndex) {
+    return this.capBlockType[columnIndex];
   }
 
   public @Nullable Biome columnBiome(final int columnIndex) {
@@ -123,7 +123,7 @@ public final class ChunkColumns {
     final int firstRun = runStart(columnIndex);
     final int lastRun = runEnd(columnIndex);
     int runIndex = firstRun;
-    while (runIndex < lastRun && Fluids.isFluid(this.runMaterial[runIndex])) {
+    while (runIndex < lastRun && Fluids.isFluid(this.runBlockType[runIndex])) {
       runIndex++;
     }
     if (runIndex == firstRun) {

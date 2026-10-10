@@ -10,14 +10,15 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 import net.aerulion.taerra.model.MapRotation;
+import net.aerulion.taerra.rendering.color.BlockColors;
 import net.aerulion.taerra.rendering.color.MapColorResolver;
 import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsBuilder;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
 import net.aerulion.taerra.rendering.style.Lighting;
 import net.aerulion.taerra.rendering.style.MapStyle;
-import org.bukkit.Material;
 import org.bukkit.block.Biome;
+import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
@@ -40,33 +41,22 @@ class IsoTileRendererTest {
   private static final int TORCH_SIDE = 0xFFFFDD00;
 
   private static final @NotNull MapColorResolver COLORS =
-      new MapColorResolver() {
-        @Override
-        public int topColor(
-            final @NotNull Material material,
-            final @Nullable Biome biome,
-            final int x,
-            final int z) {
-          return switch (material) {
-            case OAK_PLANKS -> PLANK_TOP;
-            case TORCH -> TORCH_TOP;
-            default -> STONE_TOP;
-          };
-        }
+      blockType ->
+          new BlockColors() {
+            @Override
+            public int topColor(final @Nullable Biome biome, final int x, final int z) {
+              return blockType == BlockType.OAK_PLANKS
+                  ? PLANK_TOP
+                  : blockType == BlockType.TORCH ? TORCH_TOP : STONE_TOP;
+            }
 
-        @Override
-        public int sideColor(
-            final @NotNull Material material,
-            final @Nullable Biome biome,
-            final int x,
-            final int z) {
-          return switch (material) {
-            case OAK_PLANKS -> PLANK_SIDE;
-            case TORCH -> TORCH_SIDE;
-            default -> STONE_SIDE;
+            @Override
+            public int sideColor(final @Nullable Biome biome, final int x, final int z) {
+              return blockType == BlockType.OAK_PLANKS
+                  ? PLANK_SIDE
+                  : blockType == BlockType.TORCH ? TORCH_SIDE : STONE_SIDE;
+            }
           };
-        }
-      };
 
   private static int[] renderTileAt(
       final @NotNull TestWorld world, final int blockX, final int blockZ, final int surfaceY) {
@@ -294,7 +284,7 @@ class IsoTileRendererTest {
   @Test
   @DisplayName("a cap colors the top face without extruding as a cube")
   void capColorsTheTopFaceOnly() {
-    final @NotNull TestWorld world = new TestWorld(true).cap(SUBJECT_X, SUBJECT_Z, Material.TORCH);
+    final @NotNull TestWorld world = new TestWorld(true).cap(SUBJECT_X, SUBJECT_Z, BlockType.TORCH);
     final int[] pixels = renderTileAt(world, SUBJECT_X, SUBJECT_Z, GROUND_Y + 1);
 
     assertTrue(
@@ -387,9 +377,9 @@ class IsoTileRendererTest {
                         && blockZ >= courtyardZ
                         && blockZ < courtyardZ + 6;
                 if (towers && !courtyard) {
-                  builder.addRun(roofY, GROUND_Y + 1, Material.OAK_PLANKS);
+                  builder.addRun(roofY, GROUND_Y + 1, BlockType.OAK_PLANKS);
                 }
-                builder.addRun(GROUND_Y, MIN_WORLD_Y, Material.STONE);
+                builder.addRun(GROUND_Y, MIN_WORLD_Y, BlockType.STONE);
                 builder.completeColumn(null, null);
               }
             }
@@ -416,10 +406,10 @@ class IsoTileRendererTest {
             for (int localX = 0; localX < 16; localX++) {
               for (int localZ = 0; localZ < 16; localZ++) {
                 if (x * 16 + localX > SUBJECT_X) {
-                  builder.addRun(GROUND_Y, GROUND_Y, Material.WATER);
-                  builder.addRun(GROUND_Y - 1, MIN_WORLD_Y, Material.STONE);
+                  builder.addRun(GROUND_Y, GROUND_Y, BlockType.WATER);
+                  builder.addRun(GROUND_Y - 1, MIN_WORLD_Y, BlockType.STONE);
                 } else {
-                  builder.addRun(GROUND_Y, MIN_WORLD_Y, Material.STONE);
+                  builder.addRun(GROUND_Y, MIN_WORLD_Y, BlockType.STONE);
                 }
                 builder.completeColumn(null, null);
               }
@@ -455,10 +445,10 @@ class IsoTileRendererTest {
                 final int blockX = chunkX * 16 + localX;
                 final int blockZ = chunkZ * 16 + localZ;
                 if (blockX == SUBJECT_X && blockZ == SUBJECT_Z) {
-                  builder.addRun(GROUND_Y + 4, GROUND_Y + 4, Material.TORCH);
-                  builder.addRun(GROUND_Y + 3, GROUND_Y + 1, Material.OAK_PLANKS);
+                  builder.addRun(GROUND_Y + 4, GROUND_Y + 4, BlockType.TORCH);
+                  builder.addRun(GROUND_Y + 3, GROUND_Y + 1, BlockType.OAK_PLANKS);
                 }
-                builder.addRun(GROUND_Y, 0, Material.STONE);
+                builder.addRun(GROUND_Y, 0, BlockType.STONE);
                 builder.completeColumn(null, null);
               }
             }
@@ -492,8 +482,8 @@ class IsoTileRendererTest {
                 final int blockX = chunkX * 16 + localX;
                 final int blockZ = chunkZ * 16 + localZ;
                 if (blockX == SUBJECT_X && blockZ == SUBJECT_Z) {
-                  builder.addRun(GROUND_Y + 4, GROUND_Y + 4, Material.OAK_PLANKS);
-                  builder.addRun(GROUND_Y - 1, GROUND_Y - 4, Material.OAK_PLANKS);
+                  builder.addRun(GROUND_Y + 4, GROUND_Y + 4, BlockType.OAK_PLANKS);
+                  builder.addRun(GROUND_Y - 1, GROUND_Y - 4, BlockType.OAK_PLANKS);
                   builder.completeColumn(null, null);
                   continue;
                 }
@@ -504,7 +494,7 @@ class IsoTileRendererTest {
                         && blockX <= SUBJECT_X + 1
                         && blockZ <= SUBJECT_Z + 1;
                 builder.addRun(
-                    nearNeighbor ? GROUND_Y - 20 : GROUND_Y, MIN_WORLD_Y, Material.STONE);
+                    nearNeighbor ? GROUND_Y - 20 : GROUND_Y, MIN_WORLD_Y, BlockType.STONE);
                 builder.completeColumn(null, null);
               }
             }
@@ -528,10 +518,12 @@ class IsoTileRendererTest {
         world(
             (builder, dx, dz) -> {
               if (dx >= -1 && dx <= 12 && dz >= -12 && dz <= 0) {
-                builder.addRun(GROUND_Y + 3, GROUND_Y + 3, Material.TORCH);
+                builder.addRun(GROUND_Y + 3, GROUND_Y + 3, BlockType.TORCH);
               }
               builder.addRun(
-                  GROUND_Y, MIN_WORLD_Y, dx == 0 && dz == 0 ? Material.OAK_PLANKS : Material.STONE);
+                  GROUND_Y,
+                  MIN_WORLD_Y,
+                  dx == 0 && dz == 0 ? BlockType.OAK_PLANKS : BlockType.STONE);
             });
 
     final int[] pixels = renderWithShadows(roofed, GROUND_Y + 1);
@@ -548,10 +540,12 @@ class IsoTileRendererTest {
         world(
             (builder, dx, dz) -> {
               if (dx == 0 && dz == 0) {
-                builder.addRun(GROUND_Y + 3, GROUND_Y + 3, Material.TORCH);
+                builder.addRun(GROUND_Y + 3, GROUND_Y + 3, BlockType.TORCH);
               }
               builder.addRun(
-                  GROUND_Y, MIN_WORLD_Y, dx == 0 && dz == 0 ? Material.OAK_PLANKS : Material.STONE);
+                  GROUND_Y,
+                  MIN_WORLD_Y,
+                  dx == 0 && dz == 0 ? BlockType.OAK_PLANKS : BlockType.STONE);
             });
 
     final int[] pixels = renderWithShadows(world, GROUND_Y + 1);
@@ -568,11 +562,11 @@ class IsoTileRendererTest {
         world(
             (builder, dx, dz) -> {
               if (dx == 0 && dz == 0) {
-                builder.addRun(GROUND_Y + 16, GROUND_Y + 1, Material.OAK_PLANKS);
+                builder.addRun(GROUND_Y + 16, GROUND_Y + 1, BlockType.OAK_PLANKS);
               } else if ((dz == -4 || dz == -5) && dx >= -5 && dx <= 15) {
-                builder.addRun(GROUND_Y + 6, GROUND_Y + 1, Material.STONE);
+                builder.addRun(GROUND_Y + 6, GROUND_Y + 1, BlockType.STONE);
               }
-              builder.addRun(GROUND_Y, MIN_WORLD_Y, Material.STONE);
+              builder.addRun(GROUND_Y, MIN_WORLD_Y, BlockType.STONE);
             });
 
     final int[] pixels = renderWithShadows(world, GROUND_Y + 8);
@@ -594,17 +588,17 @@ class IsoTileRendererTest {
         world(
             (builder, dx, dz) -> {
               if ((dx == 0 && dz <= 0) || (dz == -1 && dx > 0 && dx <= 10)) {
-                builder.addRun(GROUND_Y + 20, GROUND_Y + 1, Material.OAK_PLANKS);
+                builder.addRun(GROUND_Y + 20, GROUND_Y + 1, BlockType.OAK_PLANKS);
               }
-              builder.addRun(GROUND_Y, MIN_WORLD_Y, Material.STONE);
+              builder.addRun(GROUND_Y, MIN_WORLD_Y, BlockType.STONE);
             });
     final @NotNull TestWorld open =
         world(
             (builder, dx, dz) -> {
               if (dx == 0 && dz <= 0) {
-                builder.addRun(GROUND_Y + 20, GROUND_Y + 1, Material.OAK_PLANKS);
+                builder.addRun(GROUND_Y + 20, GROUND_Y + 1, BlockType.OAK_PLANKS);
               }
-              builder.addRun(GROUND_Y, MIN_WORLD_Y, Material.STONE);
+              builder.addRun(GROUND_Y, MIN_WORLD_Y, BlockType.STONE);
             });
 
     final int cornered =
@@ -652,9 +646,9 @@ class IsoTileRendererTest {
             for (int localX = 0; localX < 16; localX++) {
               for (int localZ = 0; localZ < 16; localZ++) {
                 if (tower) {
-                  builder.addRun(towerTop, GROUND_Y + 1, Material.OAK_PLANKS);
+                  builder.addRun(towerTop, GROUND_Y + 1, BlockType.OAK_PLANKS);
                 }
-                builder.addRun(GROUND_Y, 0, Material.STONE);
+                builder.addRun(GROUND_Y, 0, BlockType.STONE);
                 builder.completeColumn(null, null);
               }
             }
@@ -698,7 +692,7 @@ class IsoTileRendererTest {
 
     private final @NotNull Map<Long, ChunkColumns> cache = new HashMap<>();
     private final @NotNull Map<Long, int[]> raisedColumns = new HashMap<>();
-    private final @NotNull Map<Long, Material> caps = new HashMap<>();
+    private final @NotNull Map<Long, BlockType> caps = new HashMap<>();
     private final boolean infinite;
     private int groundBottomY;
 
@@ -717,8 +711,8 @@ class IsoTileRendererTest {
     }
 
     @NotNull
-    TestWorld cap(final int blockX, final int blockZ, final Material material) {
-      this.caps.put(key(blockX, blockZ), material);
+    TestWorld cap(final int blockX, final int blockZ, final BlockType blockType) {
+      this.caps.put(key(blockX, blockZ), blockType);
       return this;
     }
 
@@ -743,9 +737,9 @@ class IsoTileRendererTest {
                 final int blockZ = chunkZ * 16 + localZ;
                 final int[] raised = this.raisedColumns.get(key(blockX, blockZ));
                 if (raised != null) {
-                  builder.addRun(raised[0], raised[1], Material.OAK_PLANKS);
+                  builder.addRun(raised[0], raised[1], BlockType.OAK_PLANKS);
                 }
-                builder.addRun(GROUND_Y, this.groundBottomY, Material.STONE);
+                builder.addRun(GROUND_Y, this.groundBottomY, BlockType.STONE);
                 builder.completeColumn(null, this.caps.get(key(blockX, blockZ)));
               }
             }

@@ -2,15 +2,16 @@ package net.aerulion.taerra.rendering.color;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
-import org.bukkit.Material;
+import net.aerulion.taerra.rendering.block.BlockTypes;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
-import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,8 +22,7 @@ public final class MapColorResolverImpl implements MapColorResolver {
 
   private static final int MIN_GLOWING_LIGHT = 3;
 
-  private final BlockType @NotNull [] blockTypesByMaterial;
-  private final boolean @NotNull [] emitsLightByMaterial;
+  private final @NotNull Map<BlockType, BlockColors> colors = new Reference2ObjectOpenHashMap<>();
 
   public MapColorResolverImpl(
       final @NotNull Logger logger,
@@ -31,18 +31,21 @@ public final class MapColorResolverImpl implements MapColorResolver {
     super();
     this.blockData = blockData;
     this.biomeTints = biomeTints;
-    this.blockTypesByMaterial = new BlockType[Material.values().length];
-    this.emitsLightByMaterial = new boolean[Material.values().length];
-    RegistryAccess.registryAccess()
-        .getRegistry(RegistryKey.BLOCK)
-        .forEach(
-            blockType -> {
-              final @NotNull Material material = blockType.asMaterial();
-              this.blockTypesByMaterial[material.ordinal()] = blockType;
-              this.emitsLightByMaterial[material.ordinal()] =
-                  CraftBlockType.bukkitToMinecraft(material).defaultBlockState().getLightEmission()
-                      >= MIN_GLOWING_LIGHT;
-            });
+    for (final @NotNull BlockType blockType :
+        RegistryAccess.registryAccess().getRegistry(RegistryKey.BLOCK)) {
+      final @NotNull BlockRenderData data = blockData.dataFor(blockType);
+      final @Nullable BiomeTint tint = biomeTints.tintOf(blockType);
+      this.colors.put(
+          blockType,
+          new ResolvedColors(
+              biomeTints,
+              data.topRgb(),
+              data.sideRgb(),
+              tint,
+              data.tintSide() ? tint : null,
+              BlockTypes.handle(blockType).defaultBlockState().getLightEmission()
+                  >= MIN_GLOWING_LIGHT));
+    }
     reconcileTints(logger);
   }
 
@@ -53,7 +56,7 @@ public final class MapColorResolverImpl implements MapColorResolver {
 
     for (final @NotNull BlockType blockType :
         RegistryAccess.registryAccess().getRegistry(RegistryKey.BLOCK)) {
-      final @NotNull BlockRenderData data = this.blockData.dataFor(blockType.asMaterial());
+      final @NotNull BlockRenderData data = this.blockData.dataFor(blockType);
       final boolean hasRule = tinted.contains(blockType);
       if (data.tintTop() && !hasRule) {
         tintedWithoutRule.add(blockType.key().asString());
@@ -77,36 +80,28 @@ public final class MapColorResolverImpl implements MapColorResolver {
     }
   }
 
-  private @Nullable BlockType blockType(final @NotNull Material material) {
-    return this.blockTypesByMaterial[material.ordinal()];
+  @Override
+  public @NotNull BlockColors colorsOf(final @NotNull BlockType blockType) {
+    return this.colors.get(blockType);
   }
 
-  @Override
-  public int topColor(
-      final @NotNull Material material,
-      final @Nullable Biome biome,
-      final int blockX,
-      final int blockZ) {
-    return this.biomeTints.applyBiomeTint(
-        this.blockData.dataFor(material).topRgb(), blockType(material), biome, blockX, blockZ);
-  }
+  private record ResolvedColors(
+      @NotNull BiomeTintMapper tints,
+      int topRgb,
+      int sideRgb,
+      @Nullable BiomeTint topTint,
+      @Nullable BiomeTint sideTint,
+      boolean emitsLight)
+      implements BlockColors {
 
-  @Override
-  public boolean emitsLight(final @NotNull Material material) {
-    return this.emitsLightByMaterial[material.ordinal()];
-  }
-
-  @Override
-  public int sideColor(
-      final @NotNull Material material,
-      final @Nullable Biome biome,
-      final int blockX,
-      final int blockZ) {
-    final @NotNull BlockRenderData data = this.blockData.dataFor(material);
-    if (!data.tintSide()) {
-      return data.sideRgb();
+    @Override
+    public int topColor(final @Nullable Biome biome, final int blockX, final int blockZ) {
+      return this.tints.applyBiomeTint(this.topRgb, this.topTint, biome, blockX, blockZ);
     }
-    return this.biomeTints.applyBiomeTint(
-        data.sideRgb(), blockType(material), biome, blockX, blockZ);
+
+    @Override
+    public int sideColor(final @Nullable Biome biome, final int blockX, final int blockZ) {
+      return this.tints.applyBiomeTint(this.sideRgb, this.sideTint, biome, blockX, blockZ);
+    }
   }
 }

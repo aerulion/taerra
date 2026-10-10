@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.bukkit.Material;
+import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,16 +48,19 @@ class ChunkColumnsTest {
   @DisplayName("runs are stored against the column that produced them")
   void runsBelongToTheirColumn() {
     final @NotNull ChunkColumnsBuilder builder = builderWithLeadingEmptyColumns(0);
-    builder.addRun(70, 65, Material.OAK_PLANKS).completeColumn(null, null);
-    builder.addRun(80, 80, Material.STONE).addRun(60, 50, Material.DIRT).completeColumn(null, null);
+    builder.addRun(70, 65, BlockType.OAK_PLANKS).completeColumn(null, null);
+    builder
+        .addRun(80, 80, BlockType.STONE)
+        .addRun(60, 50, BlockType.DIRT)
+        .completeColumn(null, null);
     final @NotNull ChunkColumns columns = padToFullChunk(builder, 2);
 
     assertEquals(1, columns.runEnd(0) - columns.runStart(0));
     assertEquals(2, columns.runEnd(1) - columns.runStart(1));
     assertEquals(70, columns.runTopY(columns.runStart(0)));
     assertEquals(65, columns.runBottomY(columns.runStart(0)));
-    assertSame(Material.OAK_PLANKS, columns.runMaterial(columns.runStart(0)));
-    assertSame(Material.DIRT, columns.runMaterial(columns.runStart(1) + 1));
+    assertSame(BlockType.OAK_PLANKS, columns.runBlockType(columns.runStart(0)));
+    assertSame(BlockType.DIRT, columns.runBlockType(columns.runStart(1) + 1));
   }
 
   @Test
@@ -66,8 +69,8 @@ class ChunkColumnsTest {
     final @NotNull ChunkColumnsBuilder builder = builderWithLeadingEmptyColumns(0);
 
     builder
-        .addRun(70, 70, Material.OAK_PLANKS)
-        .addRun(65, 65, Material.STONE)
+        .addRun(70, 70, BlockType.OAK_PLANKS)
+        .addRun(65, 65, BlockType.STONE)
         .completeColumn(null, null);
     final @NotNull ChunkColumns columns = padToFullChunk(builder, 1);
 
@@ -93,7 +96,7 @@ class ChunkColumnsTest {
   @DisplayName("the top of a column is the top of its first run")
   void topYIsTheFirstRun() {
     final @NotNull ChunkColumnsBuilder builder = builderWithLeadingEmptyColumns(0);
-    builder.addRun(100, 90, Material.STONE).completeColumn(null, null);
+    builder.addRun(100, 90, BlockType.STONE).completeColumn(null, null);
     assertEquals(100, padToFullChunk(builder, 1).topY(0));
   }
 
@@ -102,9 +105,9 @@ class ChunkColumnsTest {
   void topRangeIgnoresEmptyColumns() {
     final @NotNull ChunkColumnsBuilder builder = ChunkColumns.builder(0, 0);
     builder.completeColumn(null, null);
-    builder.addRun(80, 70, Material.STONE).completeColumn(null, null);
+    builder.addRun(80, 70, BlockType.STONE).completeColumn(null, null);
     builder.completeColumn(null, null);
-    builder.addRun(40, 30, Material.STONE).completeColumn(null, null);
+    builder.addRun(40, 30, BlockType.STONE).completeColumn(null, null);
     final @NotNull ChunkColumns columns = padToFullChunk(builder, 4);
 
     assertEquals(40, columns.minTopY());
@@ -116,20 +119,20 @@ class ChunkColumnsTest {
   @DisplayName("a cap records the thin block resting on a column without becoming a run")
   void capIsSeparateFromRuns() {
     final @NotNull ChunkColumnsBuilder builder = builderWithLeadingEmptyColumns(0);
-    builder.addRun(64, 60, Material.GRASS_BLOCK).completeColumn(null, Material.TORCH);
+    builder.addRun(64, 60, BlockType.GRASS_BLOCK).completeColumn(null, BlockType.TORCH);
     final @NotNull ChunkColumns columns = padToFullChunk(builder, 1);
 
-    assertSame(Material.TORCH, columns.capMaterial(0));
+    assertSame(BlockType.TORCH, columns.capBlockType(0));
     assertEquals(1, columns.runEnd(0) - columns.runStart(0));
     assertEquals(64, columns.topY(0));
-    assertNull(columns.capMaterial(1));
+    assertNull(columns.capBlockType(1));
   }
 
   @Test
   @DisplayName("negative y levels survive the short encoding")
   void deepColumnsRoundTrip() {
     final @NotNull ChunkColumnsBuilder builder = builderWithLeadingEmptyColumns(0);
-    builder.addRun(-40, -64, Material.DEEPSLATE).completeColumn(null, null);
+    builder.addRun(-40, -64, BlockType.DEEPSLATE).completeColumn(null, null);
     final @NotNull ChunkColumns columns = padToFullChunk(builder, 1);
 
     assertEquals(-40, columns.runTopY(columns.runStart(0)));
@@ -152,7 +155,7 @@ class ChunkColumnsTest {
     final @NotNull ChunkColumnsBuilder builder = ChunkColumns.builder(3, -4);
     for (int column = 0; column < ChunkColumns.COLUMN_COUNT; column++) {
       for (int run = 0; run < 6; run++) {
-        builder.addRun(100 - run * 4, 98 - run * 4, Material.STONE);
+        builder.addRun(100 - run * 4, 98 - run * 4, BlockType.STONE);
       }
       builder.completeColumn(null, null);
     }
@@ -174,11 +177,11 @@ class ChunkColumnsTest {
     final int caveColumn = ChunkColumns.columnIndex(8, 9);
     final @NotNull ChunkColumnsBuilder builder = ChunkColumns.builder(0, 0);
     for (int column = 0; column < ChunkColumns.COLUMN_COUNT; column++) {
-      builder.addRun(64, 64, Material.GRASS_BLOCK).addRun(63, 41, Material.STONE);
+      builder.addRun(64, 64, BlockType.GRASS_BLOCK).addRun(63, 41, BlockType.STONE);
       if (column != caveColumn) {
-        builder.addRun(40, 40, Material.IRON_ORE);
+        builder.addRun(40, 40, BlockType.IRON_ORE);
       }
-      builder.addRun(39, -64, Material.STONE).completeColumn(null, null);
+      builder.addRun(39, -64, BlockType.STONE).completeColumn(null, null);
     }
     final @NotNull ChunkColumns columns = builder.build();
 
@@ -187,15 +190,15 @@ class ChunkColumnsTest {
         1,
         columns.runEnd(buried) - columns.runStart(buried),
         "nothing below the grass can be seen");
-    assertSame(Material.GRASS_BLOCK, columns.runMaterial(columns.runStart(buried)));
+    assertSame(BlockType.GRASS_BLOCK, columns.runBlockType(columns.runStart(buried)));
     assertEquals(
         -64, columns.runBottomY(columns.runStart(buried)), "solid all the way down, as before");
 
     final int besideCave = ChunkColumns.columnIndex(8, 8);
     assertEquals(2, columns.runEnd(besideCave) - columns.runStart(besideCave));
     assertSame(
-        Material.IRON_ORE,
-        columns.runMaterial(columns.runStart(besideCave) + 1),
+        BlockType.IRON_ORE,
+        columns.runBlockType(columns.runStart(besideCave) + 1),
         "the ore faces the pocket, so it keeps its own color");
     assertEquals(40, columns.runTopY(columns.runStart(besideCave) + 1));
 

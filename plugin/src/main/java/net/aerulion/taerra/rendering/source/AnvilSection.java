@@ -2,14 +2,21 @@ package net.aerulion.taerra.rendering.source;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.LongStream;
 import net.aerulion.taerra.rendering.block.BlockShape;
 import net.aerulion.taerra.rendering.block.BlockShapeResolver;
+import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.rendering.block.Fluids;
+import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import org.bukkit.Material;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.PalettedContainer;
+import net.minecraft.world.level.chunk.PalettedContainerFactory;
+import net.minecraft.world.level.chunk.PalettedContainerRO;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Biome;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +30,7 @@ final class AnvilSection {
   private static final byte YES = 1;
   private static final byte NO = 2;
 
-  private final Material @NotNull [] palette;
+  private final int @NotNull [] palette;
   private final boolean @NotNull [] paletteAir;
   private final long @NotNull [] data;
   private final int bits;
@@ -37,7 +44,7 @@ final class AnvilSection {
   private byte allFull = UNKNOWN;
 
   private AnvilSection(
-      final Material @NotNull [] palette,
+      final int @NotNull [] palette,
       final long @NotNull [] data,
       final int bits,
       final Biome @NotNull [] biomePalette,
@@ -53,7 +60,7 @@ final class AnvilSection {
     this.paletteAir = new boolean[palette.length];
     boolean air = true;
     for (int i = 0; i < palette.length; i++) {
-      this.paletteAir[i] = palette[i].isAir();
+      this.paletteAir[i] = BlockTypes.byId(palette[i]).isAir();
       air &= this.paletteAir[i];
     }
     this.allAir = air;
@@ -63,10 +70,10 @@ final class AnvilSection {
       final @NotNull CompoundTag sectionTag, final @NotNull ChunkFormat format) {
     final @NotNull CompoundTag blocks = sectionTag.getCompoundOrEmpty("block_states");
     final @NotNull ListTag blockPalette = blocks.getListOrEmpty("palette");
-    final Material @NotNull [] palette = new Material[Math.max(1, blockPalette.size())];
-    palette[0] = Material.AIR;
+    final int @NotNull [] palette = new int[Math.max(1, blockPalette.size())];
+    palette[0] = BlockTypes.AIR;
     for (int i = 0; i < blockPalette.size(); i++) {
-      palette[i] = AnvilMaterials.byName(format.blockStateName(blockPalette, i));
+      palette[i] = BlockTypes.idByName(format.blockStateName(blockPalette, i));
     }
     final int bits = bitsOnDisk(blockPalette.size(), 4, 8);
     final long @NotNull [] data =
@@ -82,6 +89,42 @@ final class AnvilSection {
     final int biomeBits = bitsOnDisk(biomeNames.size(), 1, 3);
     final long @NotNull [] biomeData =
         biomeBits == 0 ? new long[0] : biomes.getLongArray("data").orElse(new long[0]);
+
+    return new AnvilSection(palette, data, bits, biomePalette, biomeData, biomeBits);
+  }
+
+  static @NotNull AnvilSection pack(
+      final @NotNull PalettedContainer<BlockState> states,
+      final @NotNull PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>> biomes,
+      final @NotNull PalettedContainerFactory factory) {
+    final @NotNull PalettedContainerRO.PackedData<BlockState> packedStates =
+        states.pack(factory.blockStatesStrategy());
+    final @NotNull List<BlockState> stateEntries = packedStates.paletteEntries();
+    final int @NotNull [] palette = new int[Math.max(1, stateEntries.size())];
+    palette[0] = BlockTypes.AIR;
+    for (int i = 0; i < stateEntries.size(); i++) {
+      palette[i] = BlockTypes.id(stateEntries.get(i).getBlock());
+    }
+    final int bits = bitsOnDisk(stateEntries.size(), 4, 8);
+    final long @NotNull [] data =
+        bits == 0
+            ? new long[0]
+            : packedStates.storage().map(LongStream::toArray).orElse(new long[0]);
+
+    final @NotNull PalettedContainerRO.PackedData<Holder<net.minecraft.world.level.biome.Biome>>
+        packedBiomes = biomes.pack(factory.biomeStrategy());
+    final @NotNull List<Holder<net.minecraft.world.level.biome.Biome>> biomeEntries =
+        packedBiomes.paletteEntries();
+    final Biome @NotNull [] biomePalette = new Biome[Math.max(1, biomeEntries.size())];
+    biomePalette[0] = Biome.PLAINS;
+    for (int i = 0; i < biomeEntries.size(); i++) {
+      biomePalette[i] = biome(biomeEntries.get(i).getRegisteredName());
+    }
+    final int biomeBits = bitsOnDisk(biomeEntries.size(), 1, 3);
+    final long @NotNull [] biomeData =
+        biomeBits == 0
+            ? new long[0]
+            : packedBiomes.storage().map(LongStream::toArray).orElse(new long[0]);
 
     return new AnvilSection(palette, data, bits, biomePalette, biomeData, biomeBits);
   }
@@ -143,8 +186,8 @@ final class AnvilSection {
   boolean allFull(final @NotNull BlockShapeResolver shapes) {
     if (this.allFull == UNKNOWN) {
       boolean full = true;
-      for (final @NotNull Material material : this.palette) {
-        full &= shapes.shapeOf(Fluids.substituteSubmerged(material)) == BlockShape.FULL;
+      for (final int blockId : this.palette) {
+        full &= shapes.shapeOf(Fluids.substituteSubmerged(blockId)) == BlockShape.FULL;
       }
       this.allFull = full ? YES : NO;
     }
@@ -163,8 +206,7 @@ final class AnvilSection {
     return entries[(localY << 8) | (localZ << 4) | localX];
   }
 
-  @NotNull
-  Material materialAt(final int localX, final int localY, final int localZ) {
+  int blockIdAt(final int localX, final int localY, final int localZ) {
     return this.palette[entryAt(localX, localY, localZ)];
   }
 

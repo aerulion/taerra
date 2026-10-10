@@ -92,17 +92,18 @@ public final class BiomeTintMapperImpl implements BiomeTintMapper {
   }
 
   @Override
+  public @Nullable BiomeTint tintOf(final @NotNull BlockType blockType) {
+    return this.tints.get(blockType);
+  }
+
+  @Override
   public int applyBiomeTint(
       final int baseRgb,
-      final @Nullable BlockType blockType,
+      final @Nullable BiomeTint tint,
       final @Nullable Biome biome,
       final int x,
       final int z) {
-    if (blockType == null || biome == null) {
-      return baseRgb;
-    }
-    final @Nullable BiomeTint tint = this.tints.get(blockType);
-    return tint == null ? baseRgb : applyBiomeColor(baseRgb, biome, tint, x, z);
+    return tint == null || biome == null ? baseRgb : applyBiomeColor(baseRgb, biome, tint, x, z);
   }
 
   @Override

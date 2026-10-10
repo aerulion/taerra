@@ -1,17 +1,11 @@
 package net.aerulion.taerra.rendering.color;
 
-import org.bukkit.Material;
-import org.bukkit.block.Biome;
+import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+@FunctionalInterface
 public interface MapColorResolver {
 
-  int topColor(@NotNull Material material, @Nullable Biome biome, int blockX, int blockZ);
-
-  int sideColor(@NotNull Material material, @Nullable Biome biome, int blockX, int blockZ);
-
-  default boolean emitsLight(final @NotNull Material material) {
-    return false;
-  }
+  @NotNull
+  BlockColors colorsOf(@NotNull BlockType blockType);
 }

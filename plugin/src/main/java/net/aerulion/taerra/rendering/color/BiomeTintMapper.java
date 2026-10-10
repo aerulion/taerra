@@ -8,8 +8,10 @@ import org.jetbrains.annotations.Nullable;
 
 public sealed interface BiomeTintMapper permits BiomeTintMapperImpl {
 
-  int applyBiomeTint(
-      int baseRgb, @Nullable BlockType blockType, @Nullable Biome biome, int x, int z);
+  @Nullable
+  BiomeTint tintOf(@NotNull BlockType blockType);
+
+  int applyBiomeTint(int baseRgb, @Nullable BiomeTint tint, @Nullable Biome biome, int x, int z);
 
   @NotNull
   Set<BlockType> tintedBlocks();

@@ -8,13 +8,14 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import net.aerulion.taerra.rendering.color.BlockColors;
 import net.aerulion.taerra.rendering.color.MapColorResolver;
 import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsBuilder;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
 import net.aerulion.taerra.rendering.style.Lighting;
-import org.bukkit.Material;
 import org.bukkit.block.Biome;
+import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
@@ -32,30 +33,22 @@ class TopDownTileRendererTest {
   private static final int TORCH_TOP = 0xFFFFE000;
 
   private static final @NotNull MapColorResolver COLORS =
-      new MapColorResolver() {
-        @Override
-        public int topColor(
-            final @NotNull Material material,
-            final @Nullable Biome biome,
-            final int x,
-            final int z) {
-          return switch (material) {
-            case GRASS_BLOCK -> GRASS_TOP;
-            case WATER -> WATER_TOP;
-            case TORCH -> TORCH_TOP;
-            default -> STONE_TOP;
-          };
-        }
+      blockType ->
+          new BlockColors() {
+            @Override
+            public int topColor(final @Nullable Biome biome, final int x, final int z) {
+              return blockType == BlockType.GRASS_BLOCK
+                  ? GRASS_TOP
+                  : blockType == BlockType.WATER
+                      ? WATER_TOP
+                      : blockType == BlockType.TORCH ? TORCH_TOP : STONE_TOP;
+            }
 
-        @Override
-        public int sideColor(
-            final @NotNull Material material,
-            final @Nullable Biome biome,
-            final int x,
-            final int z) {
-          return STONE_SIDE;
-        }
-      };
+            @Override
+            public int sideColor(final @Nullable Biome biome, final int x, final int z) {
+              return STONE_SIDE;
+            }
+          };
 
   private static int lit(final int topColor) {
     return Lighting.face(topColor, Lighting.TOP, 0, false, Lighting.NO_CONTACT);
@@ -80,8 +73,8 @@ class TopDownTileRendererTest {
   private static @NotNull ChunkColumnsSource flatGrass() {
     return world(
         (chunk, x, z) -> {
-          chunk.addRun(GROUND_Y, GROUND_Y, Material.GRASS_BLOCK);
-          chunk.addRun(GROUND_Y - 1, 0, Material.STONE);
+          chunk.addRun(GROUND_Y, GROUND_Y, BlockType.GRASS_BLOCK);
+          chunk.addRun(GROUND_Y - 1, 0, BlockType.STONE);
           chunk.completeColumn(null, null);
         });
   }
@@ -95,8 +88,8 @@ class TopDownTileRendererTest {
   private static @NotNull ChunkColumnsSource flatWater(final int depth) {
     return world(
         (chunk, x, z) -> {
-          chunk.addRun(GROUND_Y, GROUND_Y - depth + 1, Material.WATER);
-          chunk.addRun(GROUND_Y - depth, 0, Material.STONE);
+          chunk.addRun(GROUND_Y, GROUND_Y - depth + 1, BlockType.WATER);
+          chunk.addRun(GROUND_Y - depth, 0, BlockType.STONE);
           chunk.completeColumn(null, null);
         });
   }
@@ -104,7 +97,7 @@ class TopDownTileRendererTest {
   private static @NotNull ChunkColumnsSource stepDownAt(final int stepX, final int drop) {
     return world(
         (chunk, x, z) -> {
-          chunk.addRun(x > stepX ? GROUND_Y - drop : GROUND_Y, 0, Material.GRASS_BLOCK);
+          chunk.addRun(x > stepX ? GROUND_Y - drop : GROUND_Y, 0, BlockType.GRASS_BLOCK);
           chunk.completeColumn(null, null);
         });
   }
@@ -138,8 +131,8 @@ class TopDownTileRendererTest {
         render(
             world(
                 (chunk, x, z) -> {
-                  chunk.addRun(GROUND_Y, 0, Material.GRASS_BLOCK);
-                  chunk.completeColumn(null, x == 4 && z == 4 ? Material.TORCH : null);
+                  chunk.addRun(GROUND_Y, 0, BlockType.GRASS_BLOCK);
+                  chunk.completeColumn(null, x == 4 && z == 4 ? BlockType.TORCH : null);
                 }));
     assertEquals(lit(TORCH_TOP), pixels[4 * TILE_SIZE + 4]);
     assertEquals(lit(GRASS_TOP), pixels[5 * TILE_SIZE + 4]);
@@ -169,8 +162,8 @@ class TopDownTileRendererTest {
         render(
             world(
                 (chunk, x, z) -> {
-                  chunk.addRun(GROUND_Y, GROUND_Y - Math.min(12, Math.max(0, x)), Material.WATER);
-                  chunk.addRun(GROUND_Y - Math.min(12, Math.max(0, x)) - 1, 0, Material.STONE);
+                  chunk.addRun(GROUND_Y, GROUND_Y - Math.min(12, Math.max(0, x)), BlockType.WATER);
+                  chunk.addRun(GROUND_Y - Math.min(12, Math.max(0, x)) - 1, 0, BlockType.STONE);
                   chunk.completeColumn(null, null);
                 }));
 
@@ -193,7 +186,7 @@ class TopDownTileRendererTest {
     final @NotNull ChunkColumnsSource stepped =
         world(
             (chunk, x, z) -> {
-              chunk.addRun(x >= TILE_SIZE ? GROUND_Y - 8 : GROUND_Y, 0, Material.GRASS_BLOCK);
+              chunk.addRun(x >= TILE_SIZE ? GROUND_Y - 8 : GROUND_Y, 0, BlockType.GRASS_BLOCK);
               chunk.completeColumn(null, null);
             });
     final int[] pixels = render(stepped);
@@ -261,7 +254,7 @@ class TopDownTileRendererTest {
         render(
             world(
                 (chunk, x, z) -> {
-                  chunk.addRun(z > 8 ? GROUND_Y - 3 : GROUND_Y, 0, Material.GRASS_BLOCK);
+                  chunk.addRun(z > 8 ? GROUND_Y - 3 : GROUND_Y, 0, BlockType.GRASS_BLOCK);
                   chunk.completeColumn(null, null);
                 }));
     final int alongZ = alongZPixels[8 * TILE_SIZE + 4];
@@ -299,7 +292,7 @@ class TopDownTileRendererTest {
             world(
                 (chunk, x, z) -> {
                   if (x != 2 || z != 2) {
-                    chunk.addRun(GROUND_Y, 0, Material.GRASS_BLOCK);
+                    chunk.addRun(GROUND_Y, 0, BlockType.GRASS_BLOCK);
                   }
                   chunk.completeColumn(null, null);
                 }));
@@ -315,10 +308,10 @@ class TopDownTileRendererTest {
         world(
             (chunk, x, z) -> {
               if (x == 3 && z == 5) {
-                chunk.addRun(GROUND_Y + 7, GROUND_Y + 1, Material.STONE);
+                chunk.addRun(GROUND_Y + 7, GROUND_Y + 1, BlockType.STONE);
               }
               if (x != 9 || z != 9) {
-                chunk.addRun(GROUND_Y, 0, Material.GRASS_BLOCK);
+                chunk.addRun(GROUND_Y, 0, BlockType.GRASS_BLOCK);
               }
               chunk.completeColumn(null, null);
             });

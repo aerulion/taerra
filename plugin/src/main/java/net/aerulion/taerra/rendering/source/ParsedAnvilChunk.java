@@ -1,9 +1,9 @@
 package net.aerulion.taerra.rendering.source;
 
 import net.aerulion.taerra.rendering.block.BlockShapeResolver;
+import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +41,16 @@ public final class ParsedAnvilChunk implements ColumnSource {
       if (index >= 0 && index < sections.length) {
         sections[index] = AnvilSection.decode(sectionTag, format);
       }
+    }
+    return new ParsedAnvilChunk(minHeight, maxHeight, sections);
+  }
+
+  static @NotNull ParsedAnvilChunk fromLive(
+      final @NotNull LiveChunk chunk, final int minHeight, final int maxHeight) {
+    final AnvilSection @NotNull [] sections = new AnvilSection[(maxHeight - minHeight) >> 4];
+    for (int i = 0; i < sections.length && i < chunk.states().size(); i++) {
+      sections[i] =
+          AnvilSection.pack(chunk.states().get(i), chunk.biomes().get(i), chunk.factory());
     }
     return new ParsedAnvilChunk(minHeight, maxHeight, sections);
   }
@@ -85,9 +95,9 @@ public final class ParsedAnvilChunk implements ColumnSource {
   }
 
   @Override
-  public @NotNull Material materialAt(final int localX, final int y, final int localZ) {
+  public int blockIdAt(final int localX, final int y, final int localZ) {
     final @Nullable AnvilSection section = sectionAt(y);
-    return section == null ? Material.AIR : section.materialAt(localX, y & 15, localZ);
+    return section == null ? BlockTypes.AIR : section.blockIdAt(localX, y & 15, localZ);
   }
 
   @Override

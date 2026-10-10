@@ -18,9 +18,9 @@ import net.aerulion.taerra.model.WorldLimit;
 import net.aerulion.taerra.rendering.block.BlockShapeResolver;
 import net.aerulion.taerra.rendering.source.ChunkSourceProvider;
 import net.aerulion.taerra.rendering.source.ColumnSource;
+import net.aerulion.taerra.rendering.source.LiveChunk;
 import net.aerulion.taerra.rendering.source.LiveChunkSourceProvider;
 import org.bukkit.Bukkit;
-import org.bukkit.ChunkSnapshot;
 import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -61,7 +61,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       final @NotNull World world,
       final @NotNull List<ChunkCoordinate> chunks,
       final int from,
-      final @NotNull Map<Long, ChunkSnapshot> into) {
+      final @NotNull Map<Long, LiveChunk> into) {
     final long startedAt = System.nanoTime();
     int index = from;
     while (index < chunks.size()
@@ -69,9 +69,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
         && (into.isEmpty() || System.nanoTime() - startedAt < SNAPSHOT_BUDGET_NANOS)) {
       final @NotNull ChunkCoordinate chunk = chunks.get(index);
       if (world.isChunkLoaded(chunk.x(), chunk.z())) {
-        into.put(
-            chunk.toKey(),
-            world.getChunkAt(chunk.x(), chunk.z()).getChunkSnapshot(true, true, false));
+        into.put(chunk.toKey(), LiveChunk.capture(world, chunk.x(), chunk.z()));
       }
       index++;
     }
@@ -144,7 +142,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       try {
         while (next < changed.size()) {
           final int from = next;
-          final @NotNull Map<Long, ChunkSnapshot> snapshots = new HashMap<>();
+          final @NotNull Map<Long, LiveChunk> snapshots = new HashMap<>();
           next =
               Bukkit.getScheduler()
                   .callSyncMethod(this.plugin, () -> takeSnapshots(world, changed, from, snapshots))

@@ -6,6 +6,7 @@ import java.util.List;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.rendering.block.Fluids;
+import net.aerulion.taerra.rendering.color.BlockColors;
 import net.aerulion.taerra.rendering.color.MapColorResolver;
 import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
@@ -14,8 +15,8 @@ import net.aerulion.taerra.rendering.style.Lighting;
 import net.aerulion.taerra.rendering.style.MapStyle;
 import net.aerulion.taerra.rendering.style.SunShadow;
 import net.aerulion.taerra.rendering.tile.RenderedImage;
-import org.bukkit.Material;
 import org.bukkit.block.Biome;
+import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -299,7 +300,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
     final int blockZ = chunk.chunkZ() * CHUNK_SIZE + rotation.localZ(localX, localZ);
 
     final @Nullable Biome biome = chunk.columnBiome(columnIndex);
-    final @Nullable Material cap = chunk.capMaterial(columnIndex);
+    final @Nullable BlockType cap = chunk.capBlockType(columnIndex);
 
     neighborTops(rotation, around, localX, localZ, neighborTops);
 
@@ -322,24 +323,26 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
         break;
       }
       final int taller = tallerThan(neighborTops, runTopY);
-      final @NotNull Material material = chunk.runMaterial(runIndex);
-      final boolean water = Fluids.isClearWater(material);
-      final boolean glows = this.colors.emitsLight(material);
+      final @NotNull BlockType blockType = chunk.runBlockType(runIndex);
+      final boolean water = Fluids.isClearWater(blockType);
+      final @NotNull BlockColors blockColors = this.colors.colorsOf(blockType);
+      final boolean glows = blockColors.emitsLight();
 
-      final @NotNull Material topMaterial = runIndex == firstRun && cap != null ? cap : material;
-      final int rawSideColor = this.colors.sideColor(material, biome, blockX, blockZ);
+      final @NotNull BlockColors topColors =
+          runIndex == firstRun && cap != null ? this.colors.colorsOf(cap) : blockColors;
+      final int rawSideColor = blockColors.sideColor(biome, blockX, blockZ);
       final boolean openAbove =
           runIndex == firstRun
               || chunk.runBottomY(runIndex - 1) > runTopY + 1
-              || (!water && Fluids.isClearWater(chunk.runMaterial(runIndex - 1)));
+              || (!water && Fluids.isClearWater(chunk.runBlockType(runIndex - 1)));
 
       if (openAbove) {
-        final boolean topGlows = this.colors.emitsLight(topMaterial);
+        final boolean topGlows = topColors.emitsLight();
         final boolean shadowed = !topGlows && sunBlocked(pass, blockX, runTopY + 1, blockZ);
 
-        final int topColor = this.colors.topColor(topMaterial, biome, blockX, blockZ);
+        final int topColor = topColors.topColor(biome, blockX, blockZ);
         final int faceColor =
-            Fluids.isFluid(material) && !water
+            Fluids.isFluid(blockType) && !water
                 ? MapStyle.depthTinted(
                     MapStyle.blendFaces(
                         topColor,
@@ -459,7 +462,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
     while (y >= runBottomY) {
       while (occluder < lastOccluder
           && (neighbor.runBottomY(occluder) > y
-              || (!water && Fluids.isClearWater(neighbor.runMaterial(occluder))))) {
+              || (!water && Fluids.isClearWater(neighbor.runBlockType(occluder))))) {
         occluder++;
       }
       if (occluder < lastOccluder && neighbor.runTopY(occluder) >= y) {
@@ -579,12 +582,13 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       final int frontX,
       final int openY,
       final int frontZ) {
-    final @Nullable Material cap =
-        run == neighbor.runStart(neighborColumn) ? neighbor.capMaterial(neighborColumn) : null;
-    final @NotNull Material material = cap == null ? neighbor.runMaterial(run) : cap;
-    final boolean glows = this.colors.emitsLight(material);
+    final @Nullable BlockType cap =
+        run == neighbor.runStart(neighborColumn) ? neighbor.capBlockType(neighborColumn) : null;
+    final @NotNull BlockColors blockColors =
+        this.colors.colorsOf(cap == null ? neighbor.runBlockType(run) : cap);
+    final boolean glows = blockColors.emitsLight();
     return Lighting.face(
-        this.colors.topColor(material, neighbor.columnBiome(neighborColumn), frontX, frontZ),
+        blockColors.topColor(neighbor.columnBiome(neighborColumn), frontX, frontZ),
         glows ? Lighting.EMISSIVE : Lighting.TOP,
         0,
         !glows && (!sunward || sunBlocked(pass, frontX, openY, frontZ)),

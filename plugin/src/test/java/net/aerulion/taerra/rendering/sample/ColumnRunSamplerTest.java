@@ -4,13 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Set;
 import java.util.function.IntFunction;
 import net.aerulion.taerra.model.WorldLimit;
 import net.aerulion.taerra.rendering.block.BlockShape;
 import net.aerulion.taerra.rendering.block.BlockShapeResolver;
+import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.rendering.source.ColumnSource;
-import org.bukkit.Material;
 import org.bukkit.block.Biome;
+import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,14 +24,22 @@ class ColumnRunSamplerTest {
   private static final int VANILLA_NETHER_CEILING_Y = 122;
 
   private static final @NotNull BlockShapeResolver SHAPES =
-      material ->
-          switch (material) {
-            case AIR, CAVE_AIR, VOID_AIR, BARRIER, LIGHT, STRUCTURE_VOID -> BlockShape.NONE;
-            case TORCH, TALL_GRASS, FIRE_CORAL -> BlockShape.THIN;
-            default -> BlockShape.FULL;
-          };
+      blockType ->
+          Set.of(
+                      BlockType.AIR,
+                      BlockType.CAVE_AIR,
+                      BlockType.VOID_AIR,
+                      BlockType.BARRIER,
+                      BlockType.LIGHT,
+                      BlockType.STRUCTURE_VOID)
+                  .contains(blockType)
+              ? BlockShape.NONE
+              : Set.of(BlockType.TORCH, BlockType.TALL_GRASS, BlockType.FIRE_CORAL)
+                      .contains(blockType)
+                  ? BlockShape.THIN
+                  : BlockShape.FULL;
 
-  private static @NotNull ChunkColumns sample(final @NotNull IntFunction<Material> column) {
+  private static @NotNull ChunkColumns sample(final @NotNull IntFunction<BlockType> column) {
     return sample((localX, localZ, y) -> column.apply(y));
   }
 
@@ -52,7 +62,7 @@ class ColumnRunSamplerTest {
   void limitClipsColumns() {
     final @NotNull ChunkColumns columns =
         ColumnRunSampler.sampleChunk(
-            new TestChunk((localX, localZ, y) -> y <= 70 ? Material.STONE : Material.AIR),
+            new TestChunk((localX, localZ, y) -> y <= 70 ? BlockType.STONE : BlockType.AIR),
             ColumnRunSampler.NO_CEILING,
             SHAPES,
             0,
@@ -80,20 +90,20 @@ class ColumnRunSamplerTest {
     assertEquals(63, columns.minTopY());
     assertEquals(63, columns.maxTopY());
     assertEquals(
-        Material.YELLOW_CONCRETE,
-        columns.runMaterial(columns.runStart(ChunkColumns.columnIndex(0, 0))));
+        BlockType.YELLOW_CONCRETE,
+        columns.runBlockType(columns.runStart(ChunkColumns.columnIndex(0, 0))));
     assertEquals(
-        Material.BLACK_CONCRETE,
-        columns.runMaterial(columns.runStart(ChunkColumns.columnIndex(4, 0))));
+        BlockType.BLACK_CONCRETE,
+        columns.runBlockType(columns.runStart(ChunkColumns.columnIndex(4, 0))));
     assertEquals(
-        Material.YELLOW_CONCRETE,
-        columns.runMaterial(columns.runStart(ChunkColumns.columnIndex(4, 4))));
+        BlockType.YELLOW_CONCRETE,
+        columns.runBlockType(columns.runStart(ChunkColumns.columnIndex(4, 4))));
   }
 
   @Test
   @DisplayName("a solid column is one run down to the world floor")
   void solidColumnIsOneRun() {
-    final @NotNull ChunkColumns columns = sample(y -> y <= 70 ? Material.STONE : Material.AIR);
+    final @NotNull ChunkColumns columns = sample(y -> y <= 70 ? BlockType.STONE : BlockType.AIR);
 
     assertEquals(1, runCount(columns));
     assertEquals(70, columns.runTopY(columns.runStart(0)));
@@ -107,9 +117,9 @@ class ColumnRunSamplerTest {
         sample(
             y -> {
               if (y > 64 && y < 300) {
-                return y % 8 == 0 ? Material.TORCH : Material.STONE_BRICKS;
+                return y % 8 == 0 ? BlockType.TORCH : BlockType.STONE_BRICKS;
               }
-              return y <= 64 ? Material.STONE : Material.AIR;
+              return y <= 64 ? BlockType.STONE : BlockType.AIR;
             });
 
     final int lastRun = columns.runEnd(0) - 1;
@@ -127,7 +137,7 @@ class ColumnRunSamplerTest {
   @DisplayName("a cave deep under the surface keeps its floor and ceiling")
   void deepCaveIsRecorded() {
     final @NotNull ChunkColumns columns =
-        sample(y -> y <= 100 && (y < -20 || y > -10) ? Material.STONE : Material.AIR);
+        sample(y -> y <= 100 && (y < -20 || y > -10) ? BlockType.STONE : BlockType.AIR);
 
     assertEquals(2, runCount(columns));
     assertEquals(-9, columns.runBottomY(columns.runStart(0)), "the cave ceiling");
@@ -139,7 +149,7 @@ class ColumnRunSamplerTest {
       "water filling a whole section does not swallow the bed below it, inside the chunk or at its edge")
   void deepWaterKeepsItsBedEverywhere() {
     final @NotNull ChunkColumns columns =
-        sample(y -> y <= 20 ? Material.STONE : y <= 62 ? Material.WATER : Material.AIR);
+        sample(y -> y <= 20 ? BlockType.STONE : y <= 62 ? BlockType.WATER : BlockType.AIR);
 
     for (final int column :
         new int[] {ChunkColumns.columnIndex(0, 0), ChunkColumns.columnIndex(7, 7)}) {
@@ -151,7 +161,7 @@ class ColumnRunSamplerTest {
   @DisplayName("a roof over nothing records no ground, rather than inventing one")
   void floatingColumnHasNoGround() {
     final @NotNull ChunkColumns columns =
-        sample(y -> y == 200 ? Material.OAK_PLANKS : Material.AIR);
+        sample(y -> y == 200 ? BlockType.OAK_PLANKS : BlockType.AIR);
 
     assertEquals(1, runCount(columns));
     assertEquals(200, columns.runTopY(columns.runStart(0)));
@@ -165,14 +175,14 @@ class ColumnRunSamplerTest {
         sample(
             y -> {
               if (y == 65) {
-                return Material.TORCH;
+                return BlockType.TORCH;
               }
-              return y <= 64 ? Material.STONE : Material.AIR;
+              return y <= 64 ? BlockType.STONE : BlockType.AIR;
             });
 
     assertEquals(1, runCount(columns));
     assertEquals(64, columns.runTopY(columns.runStart(0)));
-    assertEquals(Material.TORCH, columns.capMaterial(0));
+    assertEquals(BlockType.TORCH, columns.capBlockType(0));
   }
 
   @Test
@@ -181,11 +191,13 @@ class ColumnRunSamplerTest {
     final @NotNull ChunkColumns columns =
         sample(
             y ->
-                y == 65 || y == 66 ? Material.TALL_GRASS : y <= 64 ? Material.STONE : Material.AIR);
+                y == 65 || y == 66
+                    ? BlockType.TALL_GRASS
+                    : y <= 64 ? BlockType.STONE : BlockType.AIR);
 
     assertEquals(1, runCount(columns));
     assertEquals(64, columns.runTopY(columns.runStart(0)));
-    assertEquals(Material.TALL_GRASS, columns.capMaterial(0));
+    assertEquals(BlockType.TALL_GRASS, columns.capBlockType(0));
   }
 
   @Test
@@ -193,12 +205,12 @@ class ColumnRunSamplerTest {
       "thin blocks floating in the air are drawn as blocks where they are, not on the ground")
   void floatingThinBlocksFormRuns() {
     final @NotNull ChunkColumns columns =
-        sample(y -> y == 80 ? Material.FIRE_CORAL : y <= 64 ? Material.STONE : Material.AIR);
+        sample(y -> y == 80 ? BlockType.FIRE_CORAL : y <= 64 ? BlockType.STONE : BlockType.AIR);
 
     assertEquals(2, runCount(columns));
     assertEquals(80, columns.runTopY(columns.runStart(0)));
-    assertEquals(Material.FIRE_CORAL, columns.runMaterial(columns.runStart(0)));
-    assertNull(columns.capMaterial(0));
+    assertEquals(BlockType.FIRE_CORAL, columns.runBlockType(columns.runStart(0)));
+    assertNull(columns.capBlockType(0));
   }
 
   @Test
@@ -207,12 +219,14 @@ class ColumnRunSamplerTest {
     final @NotNull ChunkColumns columns =
         sample(
             y ->
-                y >= 65 && y <= 67 ? Material.FIRE_CORAL : y <= 64 ? Material.STONE : Material.AIR);
+                y >= 65 && y <= 67
+                    ? BlockType.FIRE_CORAL
+                    : y <= 64 ? BlockType.STONE : BlockType.AIR);
 
     assertEquals(2, runCount(columns));
     assertEquals(67, columns.runTopY(columns.runStart(0)));
     assertEquals(65, columns.runBottomY(columns.runStart(0)));
-    assertNull(columns.capMaterial(0));
+    assertNull(columns.capBlockType(0));
   }
 
   @Test
@@ -223,21 +237,21 @@ class ColumnRunSamplerTest {
         sample(
             y -> {
               if (y == 100) {
-                return Material.BARRIER;
+                return BlockType.BARRIER;
               }
-              return y <= 64 ? Material.STONE : Material.AIR;
+              return y <= 64 ? BlockType.STONE : BlockType.AIR;
             });
 
     assertEquals(1, runCount(columns));
     assertEquals(64, columns.runTopY(columns.runStart(0)));
-    assertEquals(Material.STONE, columns.runMaterial(columns.runStart(0)));
-    assertNull(columns.capMaterial(0));
+    assertEquals(BlockType.STONE, columns.runBlockType(columns.runStart(0)));
+    assertNull(columns.capBlockType(0));
   }
 
   @Test
   @DisplayName("an empty column stays empty")
   void emptyColumnStaysEmpty() {
-    final @NotNull ChunkColumns columns = sample(y -> Material.AIR);
+    final @NotNull ChunkColumns columns = sample(y -> BlockType.AIR);
 
     assertEquals(0, runCount(columns));
     assertTrue(columns.isEmpty());
@@ -250,24 +264,24 @@ class ColumnRunSamplerTest {
         sampleNether(
             (localX, localZ, y) -> {
               if (y >= 123 && y <= 127) {
-                return Material.BEDROCK;
+                return BlockType.BEDROCK;
               }
               if (y > 127 || (localX == 0 && y > 70 && y < 123)) {
-                return Material.AIR;
+                return BlockType.AIR;
               }
-              return Material.NETHERRACK;
+              return BlockType.NETHERRACK;
             });
 
     assertEquals(70, columns.topY(ChunkColumns.columnIndex(0, 0)));
     final int solid = ChunkColumns.columnIndex(1, 0);
     assertEquals(122, columns.topY(solid));
-    assertEquals(Material.NETHERRACK, columns.runMaterial(columns.runStart(solid)));
+    assertEquals(BlockType.NETHERRACK, columns.runBlockType(columns.runStart(solid)));
   }
 
   @FunctionalInterface
   private interface Blocks {
 
-    Material at(int localX, int localZ, int y);
+    BlockType at(int localX, int localZ, int y);
   }
 
   private record TestChunk(Blocks at) implements ColumnSource {
@@ -285,7 +299,7 @@ class ColumnRunSamplerTest {
     @Override
     public int highestNonAirY(final int localX, final int localZ) {
       for (int y = MAX_HEIGHT - 1; y >= MIN_HEIGHT; y--) {
-        if (this.at.at(localX, localZ, y) != Material.AIR) {
+        if (this.at.at(localX, localZ, y) != BlockType.AIR) {
           return y;
         }
       }
@@ -300,7 +314,7 @@ class ColumnRunSamplerTest {
           level++) {
         for (int localX = 0; localX < 16; localX++) {
           for (int localZ = 0; localZ < 16; localZ++) {
-            if (this.at.at(localX, localZ, level) != Material.AIR) {
+            if (this.at.at(localX, localZ, level) != BlockType.AIR) {
               return false;
             }
           }
@@ -325,8 +339,8 @@ class ColumnRunSamplerTest {
     }
 
     @Override
-    public @NotNull Material materialAt(final int localX, final int y, final int localZ) {
-      return this.at.at(localX, localZ, y);
+    public int blockIdAt(final int localX, final int y, final int localZ) {
+      return BlockTypes.id(this.at.at(localX, localZ, y));
     }
 
     @Override

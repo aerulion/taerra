@@ -1,29 +1,27 @@
 package net.aerulion.taerra.rendering.block;
 
-import io.papermc.paper.registry.RegistryAccess;
-import io.papermc.paper.registry.RegistryKey;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
-import org.bukkit.Material;
 import org.bukkit.block.BlockType;
-import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 public final class Fluids {
 
-  private static final @NotNull Set<Material> SUBMERGED_PLANTS =
-      EnumSet.of(Material.KELP, Material.KELP_PLANT, Material.SEAGRASS, Material.TALL_SEAGRASS);
-
-  private static final boolean @NotNull [] SUBMERGED_BY_ORDINAL =
-      new boolean[Material.values().length];
+  private static final int WATER = BlockTypes.id(BlockType.WATER);
+  private static final boolean @NotNull [] SUBMERGED = new boolean[BlockTypes.count()];
+  private static final boolean @NotNull [] FLUID = new boolean[BlockTypes.count()];
 
   static {
-    for (final @NotNull Material material : SUBMERGED_PLANTS) {
-      SUBMERGED_BY_ORDINAL[material.ordinal()] = true;
+    for (final @NotNull BlockType blockType :
+        List.of(
+            BlockType.KELP, BlockType.KELP_PLANT, BlockType.SEAGRASS, BlockType.TALL_SEAGRASS)) {
+      SUBMERGED[BlockTypes.id(blockType)] = true;
+    }
+    for (final @NotNull BlockType blockType :
+        List.of(BlockType.WATER, BlockType.LAVA, BlockType.BUBBLE_COLUMN)) {
+      FLUID[BlockTypes.id(blockType)] = true;
     }
   }
 
@@ -31,22 +29,18 @@ public final class Fluids {
     super();
   }
 
-  public static @NotNull Material substituteSubmerged(final @NotNull Material material) {
-    return SUBMERGED_BY_ORDINAL[material.ordinal()] ? Material.WATER : material;
+  public static int substituteSubmerged(final int blockId) {
+    return SUBMERGED[blockId] ? WATER : blockId;
   }
 
   public static void reportUnhandled(final @NotNull Plugin plugin) {
     final @NotNull List<String> candidates = new ArrayList<>();
-    for (final @NotNull BlockType blockType :
-        RegistryAccess.registryAccess().getRegistry(RegistryKey.BLOCK)) {
-      final @NotNull Material material = blockType.asMaterial();
-      if (isFluid(material) || SUBMERGED_PLANTS.contains(material)) {
+    for (int id = 0; id < BlockTypes.count(); id++) {
+      final @NotNull BlockType blockType = BlockTypes.byId(id);
+      if (FLUID[id] || SUBMERGED[id]) {
         continue;
       }
-      if (!CraftBlockType.bukkitToMinecraft(material)
-          .defaultBlockState()
-          .getFluidState()
-          .isEmpty()) {
+      if (!BlockTypes.handle(blockType).defaultBlockState().getFluidState().isEmpty()) {
         candidates.add(blockType.key().asString());
       }
     }
@@ -62,13 +56,17 @@ public final class Fluids {
                 + " (add any that can reach the surface to Fluids)");
   }
 
-  public static boolean isClearWater(final @NotNull Material material) {
-    return material == Material.WATER || material == Material.BUBBLE_COLUMN;
+  public static boolean isClearWater(final @NotNull BlockType blockType) {
+    return blockType == BlockType.WATER || blockType == BlockType.BUBBLE_COLUMN;
   }
 
-  public static boolean isFluid(final @NotNull Material material) {
-    return material == Material.WATER
-        || material == Material.LAVA
-        || material == Material.BUBBLE_COLUMN;
+  public static boolean isFluid(final int blockId) {
+    return FLUID[blockId];
+  }
+
+  public static boolean isFluid(final @NotNull BlockType blockType) {
+    return blockType == BlockType.WATER
+        || blockType == BlockType.LAVA
+        || blockType == BlockType.BUBBLE_COLUMN;
   }
 }

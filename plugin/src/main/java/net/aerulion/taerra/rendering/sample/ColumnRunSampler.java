@@ -3,11 +3,12 @@ package net.aerulion.taerra.rendering.sample;
 import net.aerulion.taerra.model.WorldLimit;
 import net.aerulion.taerra.rendering.block.BlockShape;
 import net.aerulion.taerra.rendering.block.BlockShapeResolver;
+import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.rendering.block.Fluids;
 import net.aerulion.taerra.rendering.source.ColumnSource;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
+import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,6 +22,7 @@ public final class ColumnRunSampler {
   private static final int NO_THIN = Integer.MIN_VALUE;
   private static final int BLOCKED_Y = 63;
   private static final int STRIPE_WIDTH = 4;
+  private static final int NO_BLOCK = -1;
 
   private ColumnRunSampler() {
     super();
@@ -75,8 +77,8 @@ public final class ColumnRunSampler {
                 y,
                 y,
                 Math.floorMod(diagonal, 2 * STRIPE_WIDTH) < STRIPE_WIDTH
-                    ? Material.YELLOW_CONCRETE
-                    : Material.BLACK_CONCRETE)
+                    ? BlockType.YELLOW_CONCRETE
+                    : BlockType.BLACK_CONCRETE)
             .completeColumn(null, null);
       }
     }
@@ -96,8 +98,8 @@ public final class ColumnRunSampler {
       return;
     }
 
-    @Nullable Material capMaterial = null;
-    @Nullable Material runMaterial = null;
+    @Nullable BlockType capBlockType = null;
+    int runBlockId = NO_BLOCK;
     int runTopY = 0;
     int runBottomY = 0;
     boolean sawSolid = false;
@@ -114,9 +116,9 @@ public final class ColumnRunSampler {
           }
           thinTopY = NO_THIN;
         }
-        if (runMaterial != null) {
-          builder.addRun(runTopY, runBottomY, runMaterial);
-          runMaterial = null;
+        if (runBlockId != NO_BLOCK) {
+          builder.addRun(runTopY, runBottomY, BlockTypes.byId(runBlockId));
+          runBlockId = NO_BLOCK;
         }
         y &= ~15;
         continue;
@@ -124,8 +126,8 @@ public final class ColumnRunSampler {
 
       if (interior
           && (y & 15) == 15
-          && runMaterial != null
-          && !Fluids.isFluid(runMaterial)
+          && runBlockId != NO_BLOCK
+          && !Fluids.isFluid(runBlockId)
           && runBottomY == y + 1
           && source.isSectionAllFull(y, shapes)) {
         y &= ~15;
@@ -133,14 +135,15 @@ public final class ColumnRunSampler {
         continue;
       }
 
-      final @NotNull Material material =
-          Fluids.substituteSubmerged(source.materialAt(localX, y, localZ));
-      final @NotNull BlockShape shape = shapes.shapeOf(material);
+      final int blockId = Fluids.substituteSubmerged(source.blockIdAt(localX, y, localZ));
+      final @NotNull BlockShape shape = shapes.shapeOf(blockId);
 
       if (thinTopY != NO_THIN && shape != BlockShape.THIN) {
         if (shape == BlockShape.FULL && thinTopY - y <= MAX_GROUND_COVER_HEIGHT) {
-          if (!sawSolid && capMaterial == null) {
-            capMaterial = Fluids.substituteSubmerged(source.materialAt(localX, thinTopY, localZ));
+          if (!sawSolid && capBlockType == null) {
+            capBlockType =
+                BlockTypes.byId(
+                    Fluids.substituteSubmerged(source.blockIdAt(localX, thinTopY, localZ)));
             biome = source.biomeAt(localX, thinTopY, localZ);
           }
         } else {
@@ -157,9 +160,9 @@ public final class ColumnRunSampler {
         if (shape == BlockShape.THIN && thinTopY == NO_THIN) {
           thinTopY = y;
         }
-        if (runMaterial != null) {
-          builder.addRun(runTopY, runBottomY, runMaterial);
-          runMaterial = null;
+        if (runBlockId != NO_BLOCK) {
+          builder.addRun(runTopY, runBottomY, BlockTypes.byId(runBlockId));
+          runBlockId = NO_BLOCK;
         }
         continue;
       }
@@ -171,20 +174,20 @@ public final class ColumnRunSampler {
         }
       }
 
-      if (runMaterial == material && runBottomY == y + 1) {
+      if (runBlockId == blockId && runBottomY == y + 1) {
         runBottomY = y;
         continue;
       }
-      if (runMaterial != null) {
-        builder.addRun(runTopY, runBottomY, runMaterial);
+      if (runBlockId != NO_BLOCK) {
+        builder.addRun(runTopY, runBottomY, BlockTypes.byId(runBlockId));
       }
-      runMaterial = material;
+      runBlockId = blockId;
       runTopY = y;
       runBottomY = y;
     }
 
-    if (runMaterial != null) {
-      builder.addRun(runTopY, runBottomY, runMaterial);
+    if (runBlockId != NO_BLOCK) {
+      builder.addRun(runTopY, runBottomY, BlockTypes.byId(runBlockId));
     }
     if (thinTopY != NO_THIN) {
       addThinAsRuns(source, builder, localX, localZ, thinTopY, source.minHeight());
@@ -192,7 +195,7 @@ public final class ColumnRunSampler {
         biome = source.biomeAt(localX, thinTopY, localZ);
       }
     }
-    builder.completeColumn(biome, capMaterial);
+    builder.completeColumn(biome, capBlockType);
   }
 
   private static void addThinAsRuns(
@@ -202,21 +205,20 @@ public final class ColumnRunSampler {
       final int localZ,
       final int topY,
       final int bottomY) {
-    @Nullable Material runMaterial = null;
+    int runBlockId = NO_BLOCK;
     int runTopY = topY;
     for (int y = topY; y >= bottomY; y--) {
-      final @NotNull Material material =
-          Fluids.substituteSubmerged(source.materialAt(localX, y, localZ));
-      if (material != runMaterial) {
-        if (runMaterial != null) {
-          builder.addRun(runTopY, y + 1, runMaterial);
+      final int blockId = Fluids.substituteSubmerged(source.blockIdAt(localX, y, localZ));
+      if (blockId != runBlockId) {
+        if (runBlockId != NO_BLOCK) {
+          builder.addRun(runTopY, y + 1, BlockTypes.byId(runBlockId));
         }
-        runMaterial = material;
+        runBlockId = blockId;
         runTopY = y;
       }
     }
-    if (runMaterial != null) {
-      builder.addRun(runTopY, bottomY, runMaterial);
+    if (runBlockId != NO_BLOCK) {
+      builder.addRun(runTopY, bottomY, BlockTypes.byId(runBlockId));
     }
   }
 
@@ -247,8 +249,7 @@ public final class ColumnRunSampler {
         continue;
       }
 
-      final @NotNull Material material = source.materialAt(localX, y, localZ);
-      if (shapes.shapeOf(material) != BlockShape.FULL) {
+      if (shapes.shapeOf(source.blockIdAt(localX, y, localZ)) != BlockShape.FULL) {
         openSpaceRun = Math.min(NETHER_REQUIRED_OPEN_SPACE, openSpaceRun + 1);
         continue;
       }

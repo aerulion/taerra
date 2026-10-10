@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.Inflater;
 import net.aerulion.taerra.model.MapRotation;
+import net.aerulion.taerra.rendering.color.BlockColors;
 import net.aerulion.taerra.rendering.color.MapColorResolver;
 import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsBuilder;
@@ -19,8 +20,8 @@ import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
 import net.aerulion.taerra.rendering.style.Lighting;
 import net.aerulion.taerra.rendering.tile.PickBuffer;
 import net.aerulion.taerra.rendering.tile.RenderedImage;
-import org.bukkit.Material;
 import org.bukkit.block.Biome;
+import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
@@ -40,25 +41,18 @@ class IsoPickBufferTest {
   private static final int PLANK_SIDE = 0xFF90D050;
 
   private static final @NotNull MapColorResolver COLORS =
-      new MapColorResolver() {
-        @Override
-        public int topColor(
-            final @NotNull Material material,
-            final @Nullable Biome biome,
-            final int x,
-            final int z) {
-          return material == Material.OAK_PLANKS ? PLANK_TOP : STONE_TOP;
-        }
+      blockType ->
+          new BlockColors() {
+            @Override
+            public int topColor(final @Nullable Biome biome, final int x, final int z) {
+              return blockType == BlockType.OAK_PLANKS ? PLANK_TOP : STONE_TOP;
+            }
 
-        @Override
-        public int sideColor(
-            final @NotNull Material material,
-            final @Nullable Biome biome,
-            final int x,
-            final int z) {
-          return material == Material.OAK_PLANKS ? PLANK_SIDE : STONE_SIDE;
-        }
-      };
+            @Override
+            public int sideColor(final @Nullable Biome biome, final int x, final int z) {
+              return blockType == BlockType.OAK_PLANKS ? PLANK_SIDE : STONE_SIDE;
+            }
+          };
 
   private static @NotNull ChunkColumnsSource world(final int raisedTop, final int raisedBottom) {
     final @NotNull Map<Long, ChunkColumns> cache = new HashMap<>();
@@ -70,9 +64,9 @@ class IsoPickBufferTest {
               for (int localX = 0; localX < 16; localX++) {
                 for (int localZ = 0; localZ < 16; localZ++) {
                   if (chunkX * 16 + localX == SUBJECT_X && chunkZ * 16 + localZ == SUBJECT_Z) {
-                    builder.addRun(raisedTop, raisedBottom, Material.OAK_PLANKS);
+                    builder.addRun(raisedTop, raisedBottom, BlockType.OAK_PLANKS);
                   }
-                  builder.addRun(GROUND_Y, 0, Material.STONE);
+                  builder.addRun(GROUND_Y, 0, BlockType.STONE);
                   builder.completeColumn(null, null);
                 }
               }

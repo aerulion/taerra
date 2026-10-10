@@ -1,7 +1,6 @@
 package net.aerulion.taerra.rendering.source;
 
 import net.aerulion.taerra.rendering.block.BlockShapeResolver;
-import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,8 +20,7 @@ public interface ColumnSource {
     return false;
   }
 
-  @NotNull
-  Material materialAt(int localX, int y, int localZ);
+  int blockIdAt(int localX, int y, int localZ);
 
   @NotNull
   Biome biomeAt(int localX, int y, int localZ);

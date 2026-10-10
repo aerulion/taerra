@@ -6,17 +6,15 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.logging.Logger;
 import net.aerulion.taerra.rendering.block.BlockShape;
+import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.util.HexColors;
 import net.minecraft.world.level.block.RenderShape;
-import org.bukkit.Material;
 import org.bukkit.block.BlockType;
-import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,15 +31,16 @@ public final class BlockDataStoreImpl implements BlockDataStore {
 
   private final @NotNull Logger logger;
 
-  private final BlockRenderData @NotNull [] entries = new BlockRenderData[Material.values().length];
+  private final BlockRenderData @NotNull [] entries = new BlockRenderData[BlockTypes.count()];
 
-  private final BlockShape @NotNull [] shapes = new BlockShape[Material.values().length];
+  private final BlockShape @NotNull [] shapes = new BlockShape[BlockTypes.count()];
   private int loadedEntries;
 
   public BlockDataStoreImpl(final @NotNull Logger logger) {
     super();
     this.logger = logger;
     load();
+    resolveShapes();
   }
 
   private static int parseRgb(final @Nullable String value) {
@@ -75,7 +74,6 @@ public final class BlockDataStoreImpl implements BlockDataStore {
         this.logger.severe("Missing block data resource " + RESOURCE_PATH);
         return;
       }
-      final @NotNull Map<String, BlockType> validBlocksByKey = BlockTypes.byKey();
       final @NotNull Map<String, BlockDataEntry> raw =
           OBJECT_MAPPER.readValue(
               inputStream,
@@ -85,13 +83,13 @@ public final class BlockDataStoreImpl implements BlockDataStore {
       int unknownBlocks = 0;
       for (final Map.@NotNull Entry<String, BlockDataEntry> entry : raw.entrySet()) {
         final @Nullable BlockType blockType =
-            validBlocksByKey.get(entry.getKey().toLowerCase(Locale.ROOT));
+            BlockTypes.byKey(entry.getKey().toLowerCase(Locale.ROOT));
         if (blockType == null) {
           unknownBlocks++;
           continue;
         }
         final @NotNull BlockDataEntry value = entry.getValue();
-        this.entries[blockType.asMaterial().ordinal()] =
+        this.entries[BlockTypes.id(blockType)] =
             new BlockRenderData(
                 parseRgb(value.top()),
                 parseRgb(value.side()),
@@ -101,7 +99,6 @@ public final class BlockDataStoreImpl implements BlockDataStore {
         this.loadedEntries++;
       }
       final int invisibleBlocks = markInvisibleBlocks();
-      resolveShapes();
       this.logger.fine(
           "Loaded "
               + this.loadedEntries
@@ -117,12 +114,9 @@ public final class BlockDataStoreImpl implements BlockDataStore {
   }
 
   private void resolveShapes() {
-    Arrays.fill(this.shapes, BlockShape.FULL);
-    for (final @NotNull BlockType blockType :
-        RegistryAccess.registryAccess().getRegistry(RegistryKey.BLOCK)) {
-      final @NotNull Material material = blockType.asMaterial();
-      this.shapes[material.ordinal()] =
-          material.isAir() ? BlockShape.NONE : dataFor(material).shape();
+    for (int id = 0; id < this.shapes.length; id++) {
+      final @NotNull BlockType blockType = BlockTypes.byId(id);
+      this.shapes[id] = blockType.isAir() ? BlockShape.NONE : dataFor(blockType).shape();
     }
   }
 
@@ -130,14 +124,13 @@ public final class BlockDataStoreImpl implements BlockDataStore {
     int marked = 0;
     for (final @NotNull BlockType blockType :
         RegistryAccess.registryAccess().getRegistry(RegistryKey.BLOCK)) {
-      final @NotNull Material material = blockType.asMaterial();
       final @Nullable BlockRenderData filled =
           invisibleFallback(
-              this.entries[material.ordinal()],
-              CraftBlockType.bukkitToMinecraft(material).defaultBlockState().getRenderShape()
+              this.entries[BlockTypes.id(blockType)],
+              BlockTypes.handle(blockType).defaultBlockState().getRenderShape()
                   == RenderShape.INVISIBLE);
       if (filled != null) {
-        this.entries[material.ordinal()] = filled;
+        this.entries[BlockTypes.id(blockType)] = filled;
         marked++;
       }
     }
@@ -145,14 +138,18 @@ public final class BlockDataStoreImpl implements BlockDataStore {
   }
 
   @Override
-  public @NotNull BlockRenderData dataFor(final @NotNull Material material) {
-    final @Nullable BlockRenderData data = this.entries[material.ordinal()];
+  public @NotNull BlockRenderData dataFor(final @NotNull BlockType blockType) {
+    final @Nullable BlockRenderData data = this.entries[BlockTypes.id(blockType)];
     return data == null ? FALLBACK : data;
   }
 
   @Override
-  public @NotNull BlockShape shapeOf(final @NotNull Material material) {
-    final @Nullable BlockShape shape = this.shapes[material.ordinal()];
-    return shape == null ? (material.isAir() ? BlockShape.NONE : dataFor(material).shape()) : shape;
+  public @NotNull BlockShape shapeOf(final @NotNull BlockType blockType) {
+    return this.shapes[BlockTypes.id(blockType)];
+  }
+
+  @Override
+  public @NotNull BlockShape shapeOf(final int blockId) {
+    return this.shapes[blockId];
   }
 }

@@ -2,18 +2,17 @@ package net.aerulion.taerra.rendering.source;
 
 import java.util.Map;
 import net.aerulion.taerra.model.ChunkCoordinate;
-import org.bukkit.ChunkSnapshot;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class LiveChunkSourceProvider implements ChunkSourceProvider {
 
-  private final @NotNull Map<Long, ChunkSnapshot> snapshots;
+  private final @NotNull Map<Long, LiveChunk> snapshots;
   private final int minHeight;
   private final int maxHeight;
 
   public LiveChunkSourceProvider(
-      final @NotNull Map<Long, ChunkSnapshot> snapshots, final int minHeight, final int maxHeight) {
+      final @NotNull Map<Long, LiveChunk> snapshots, final int minHeight, final int maxHeight) {
     super();
     this.snapshots = snapshots;
     this.minHeight = minHeight;
@@ -22,11 +21,10 @@ public final class LiveChunkSourceProvider implements ChunkSourceProvider {
 
   @Override
   public @Nullable ColumnSource sourceForChunk(final int chunkX, final int chunkZ) {
-    final @Nullable ChunkSnapshot snapshot =
-        this.snapshots.get(ChunkCoordinate.key(chunkX, chunkZ));
+    final @Nullable LiveChunk snapshot = this.snapshots.get(ChunkCoordinate.key(chunkX, chunkZ));
     if (snapshot == null) {
       return null;
     }
-    return new ChunkSnapshotColumnSource(snapshot, this.minHeight, this.maxHeight);
+    return ParsedAnvilChunk.fromLive(snapshot, this.minHeight, this.maxHeight);
   }
 }
