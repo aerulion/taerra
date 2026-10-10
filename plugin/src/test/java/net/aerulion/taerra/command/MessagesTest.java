@@ -44,6 +44,9 @@ class MessagesTest {
               Messages.tr(
                   "render.world_disabled", Messages.value("Home"), Messages.value("/taerra")),
               Locale.US));
+      assertEquals(
+          java.util.List.of("Last Death", "Letzter Tod"),
+          Messages.plainInEveryLocale("taerra.waypoint.death"));
     } finally {
       GlobalTranslator.translator().removeSource(translations);
     }

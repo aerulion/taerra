@@ -234,6 +234,9 @@ public final class Taerra extends JavaPlugin {
               chunkColumnsCache,
               worldLimits,
               configuration);
+      final @NotNull PersonalWaypoints personalWaypoints =
+          new PersonalWaypoints(this, markers, new File(getDataFolder(), "personal-waypoints"));
+      getServer().getPluginManager().registerEvents(personalWaypoints, this);
       final @NotNull TaerraWebServer webServer =
           new TaerraWebServerImpl(
               this,
@@ -246,7 +249,7 @@ public final class Taerra extends JavaPlugin {
               webSessions,
               modHandshake,
               waypoints,
-              new PersonalWaypoints(this, markers, new File(getDataFolder(), "personal-waypoints")),
+              personalWaypoints,
               render);
       this.webServer = webServer;
       webServer.start();

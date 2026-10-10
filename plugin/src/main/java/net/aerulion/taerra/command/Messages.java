@@ -13,6 +13,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.translation.GlobalTranslator;
 import net.kyori.adventure.translation.TranslationStore;
 import net.kyori.adventure.translation.Translator;
@@ -54,6 +55,15 @@ public final class Messages {
     }
     GlobalTranslator.translator().addSource(store);
     return store;
+  }
+
+  public static @NotNull String plain(final @NotNull String key, final @NotNull Locale locale) {
+    return PlainTextComponentSerializer.plainText()
+        .serialize(GlobalTranslator.render(Component.translatable(key), locale));
+  }
+
+  public static @NotNull List<String> plainInEveryLocale(final @NotNull String key) {
+    return LOCALES.stream().map(locale -> plain(key, locale)).toList();
   }
 
   public static @NotNull Component renderSuggestion(

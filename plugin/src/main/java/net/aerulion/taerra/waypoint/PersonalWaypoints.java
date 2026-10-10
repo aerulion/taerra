@@ -18,17 +18,31 @@ import java.util.logging.Level;
 import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.api.marker.PlayerMarkerLayer;
+import net.aerulion.taerra.command.Messages;
+import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.util.AtomicFiles;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class PersonalWaypoints {
+public final class PersonalWaypoints implements Listener {
 
   public static final String LAYER = "personal";
   public static final int MAX = 100;
   private static final String PREFIX = "personal:";
+  private static final String DEATH = "taerra.waypoint.death";
+  private static final Color DEATH_COLOR = Color.fromRGB(0xE34A4A);
 
   private final @NotNull Plugin plugin;
   private final @NotNull File directory;
@@ -88,6 +102,45 @@ public final class PersonalWaypoints {
     }
     saved.add(new Saved(marker, hidden));
     return write(player, saved) ? Result.SAVED : Result.FAILED;
+  }
+
+  public synchronized @NotNull Result replace(
+      final @NotNull UUID player,
+      final @NotNull Marker marker,
+      final @NotNull Collection<String> previous) {
+    final @NotNull Set<String> ids = new HashSet<>();
+    previous.forEach(name -> ids.add(markerId(name)));
+    final @NotNull List<Saved> saved = new ArrayList<>(all(player));
+    saved.removeIf(known -> ids.contains(known.marker().id()));
+    if (saved.size() >= MAX) {
+      return Result.FULL;
+    }
+    saved.add(new Saved(marker, false));
+    return write(player, saved) ? Result.SAVED : Result.FAILED;
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  public void onDeath(final @NotNull PlayerDeathEvent event) {
+    final @NotNull Player player = event.getPlayer();
+    if (!TaerraPermission.WEB_MARKERS_PERSONAL.check(player)) {
+      return;
+    }
+    final @NotNull Location at = player.getLocation();
+    final @NotNull World world = at.getWorld();
+    final @NotNull String name = Messages.plain(DEATH, player.locale());
+    final @NotNull Marker marker =
+        Marker.point(
+                markerId(name),
+                world.getKey(),
+                new Vector(
+                    at.getBlockX() + .5,
+                    Math.clamp(at.getBlockY(), world.getMinHeight(), world.getMaxHeight() - 1),
+                    at.getBlockZ() + .5),
+                name)
+            .withColor(DEATH_COLOR);
+    final @NotNull UUID uuid = player.getUniqueId();
+    final @NotNull List<String> previous = Messages.plainInEveryLocale(DEATH);
+    Bukkit.getScheduler().runTaskAsynchronously(this.plugin, () -> replace(uuid, marker, previous));
   }
 
   public synchronized boolean remove(final @NotNull UUID player, final @NotNull String name) {

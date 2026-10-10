@@ -133,4 +133,21 @@ class PersonalWaypointsTest {
     assertFalse(
         waypoints.all(ALEX).stream().anyMatch(saved -> saved.marker().label().equals("Home")));
   }
+
+  @Test
+  @DisplayName("a new death point replaces the last one, whatever language named it")
+  void replacesTheLastDeath(final @TempDir Path directory) {
+    final @NotNull PersonalWaypoints waypoints =
+        new PersonalWaypoints(
+            TestPlugins.named("TAERRA"), new MarkerRegistryImpl(), directory.toFile());
+    final @NotNull List<String> names = List.of("Last Death", "Letzter Tod");
+    waypoints.save(ALEX, point("Home", 1), null);
+    waypoints.save(ALEX, point("Letzter Tod", 2), null);
+
+    assertEquals(
+        PersonalWaypoints.Result.SAVED, waypoints.replace(ALEX, point("Last Death", 3), names));
+    assertEquals(
+        List.of("Home", "Last Death"),
+        waypoints.all(ALEX).stream().map(saved -> saved.marker().label()).toList());
+  }
 }
