@@ -186,7 +186,7 @@ public final class Taerra extends JavaPlugin {
           new IsoTileServiceImpl(
               chunkColumnsCache,
               new IsoTileRendererImpl(
-                  colorResolver, MapStyle.SHADOW_DISTANCE, MapStyle.TOP_FACE_WEIGHT));
+                  colorResolver, MapStyle.ISO_SHADOW_DISTANCE, MapStyle.TOP_FACE_WEIGHT));
 
       final @NotNull WebSessions webSessions =
           new WebSessions(new File(getDataFolder(), "sessions.yml"), getLogger());
@@ -206,7 +206,7 @@ public final class Taerra extends JavaPlugin {
           new TileGeneratorServiceImpl(
               this,
               new TopDownTileRendererImpl(
-                  colorResolver, MapStyle.TOP_FACE_WEIGHT, MapStyle.SHADOW_DISTANCE),
+                  colorResolver, MapStyle.TOP_FACE_WEIGHT, MapStyle.TOP_DOWN_SHADOW_DISTANCE),
               chunkColumnsCache,
               isoTileService,
               tileCache,

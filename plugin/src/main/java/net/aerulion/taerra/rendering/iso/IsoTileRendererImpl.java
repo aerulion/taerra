@@ -24,7 +24,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
   private static final int CHUNK_SIZE = IsoTileGeometry.CHUNK_SIZE;
   private static final int LAST_LOCAL = CHUNK_SIZE - 1;
   private static final int MAX_LOCAL_SUM = 2 * LAST_LOCAL;
-  private static final int SKY_REACH = 12;
+  static final int SKY_REACH = 12;
   private final @NotNull IsoProjection projection = IsoTileGeometry.projection();
   private final @NotNull MapColorResolver colors;
   private final int shadowDistance;
@@ -140,12 +140,22 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       final int x,
       final int y,
       final int z) {
+    final @NotNull ColumnHeightField solids = pass.solids();
+    if (y >= solids.ceilingY()) {
+      return 0;
+    }
     int blocked = 0;
-    final int ceilingY = pass.solids().ceilingY();
-    for (int ray = 0; ray < rays.length; ray += 3) {
-      for (int step = 1; step <= SKY_REACH && y + rays[ray + 1] * step <= ceilingY; step++) {
-        if (pass.solids()
-            .isSolidAt(x + rays[ray] * step, y + rays[ray + 1] * step, z + rays[ray + 2] * step)) {
+    for (int ray = 0; ray < rays.length; ray += 2) {
+      final int deltaX = rays[ray];
+      final int deltaZ = rays[ray + 1];
+      final int lastStep =
+          Math.min(
+              SKY_REACH,
+              solids.topYBetween(
+                      x + deltaX, z + deltaZ, x + deltaX * SKY_REACH, z + deltaZ * SKY_REACH)
+                  - y);
+      for (int step = 1; step <= lastStep; step++) {
+        if (solids.isSolidAt(x + deltaX * step, y + step, z + deltaZ * step)) {
           blocked++;
           break;
         }
@@ -236,9 +246,8 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
 
   private int rayCeiling(
       final @NotNull ChunkColumnsSource source, final int chunkX, final int chunkZ) {
-    final int reach =
-        1 + Math.max(2 * SKY_REACH, (this.shadowDistance * Math.max(809, 627) >> 10) + 1);
-    final int chunks = (LAST_LOCAL + reach) / CHUNK_SIZE + 1;
+    final int reach = 1 + Math.max(2 * SKY_REACH, SunShadow.reach(this.shadowDistance) + 1);
+    final int chunks = (LAST_LOCAL + reach) / CHUNK_SIZE;
     int ceiling = Integer.MIN_VALUE;
     for (int offsetX = -chunks; offsetX <= chunks; offsetX++) {
       for (int offsetZ = -chunks; offsetZ <= chunks; offsetZ++) {

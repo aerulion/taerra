@@ -7,7 +7,6 @@ import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
 import net.aerulion.taerra.rendering.color.MapColorResolver;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
-import net.aerulion.taerra.rendering.sample.ColumnHeightField;
 import net.aerulion.taerra.rendering.style.Lighting;
 import net.aerulion.taerra.rendering.style.MapStyle;
 import net.aerulion.taerra.rendering.style.SunShadow;
@@ -44,9 +43,8 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
       final int startBlockZ,
       final int tileSize) {
     final @NotNull SurfaceGrid surface =
-        SurfaceGrid.sample(source, startBlockX, startBlockZ, tileSize);
-
-    final @NotNull ColumnHeightField heights = new ColumnHeightField(source);
+        SurfaceGrid.sample(
+            source, startBlockX, startBlockZ, tileSize, SunShadow.reach(this.shadowDistance));
     final int @NotNull [] pixels = new int[tileSize * tileSize];
     final int @NotNull [] pickDepth = new int[tileSize * tileSize];
     final int @NotNull [] pickHeight = new int[tileSize * tileSize];
@@ -72,7 +70,9 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
             underwater ? surface.floorHeights() : surface.surfaceHeights();
         final int taller = surface.tallerNeighbors(shadingHeights, x, z);
         final boolean shadowed =
-            isShadowed(heights, startBlockX + x, startBlockZ + z, surface.surfaceY(index));
+            this.shadowDistance > 0
+                && SunShadow.isShadowed(
+                    surface, x, z, surface.surfaceY(index), this.shadowDistance);
         int shaded =
             applyEdgeShading(
                 Lighting.face(baseRgb, Lighting.TOP, taller, shadowed, Lighting.NO_CONTACT),
@@ -115,16 +115,6 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
       }
     }
     return renderedTiles;
-  }
-
-  private boolean isShadowed(
-      final @NotNull ColumnHeightField heights,
-      final int blockX,
-      final int blockZ,
-      final int surfaceY) {
-
-    return this.shadowDistance > 0
-        && SunShadow.isShadowed(heights, blockX, blockZ, surfaceY, this.shadowDistance);
   }
 
   private int applyEdgeShading(

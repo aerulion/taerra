@@ -1,18 +1,22 @@
 package net.aerulion.taerra.rendering.topdown;
 
+import java.util.Arrays;
 import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
+import net.aerulion.taerra.rendering.style.HeightField;
+import net.aerulion.taerra.rendering.style.MapStyle;
+import net.aerulion.taerra.rendering.style.SunShadow;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class SurfaceGrid {
-
-  static final int HALO = 1;
+final class SurfaceGrid implements HeightField {
 
   private static final int CHUNK_SIZE = 16;
+  private static final int CEILING_CELL = 16;
 
+  private final int halo;
   private final int stride;
   private final int originBlockX;
   private final int originBlockZ;
@@ -21,9 +25,13 @@ final class SurfaceGrid {
   private final Material @NotNull [] material;
   private final Material @NotNull [] cap;
   private final Biome @NotNull [] biome;
+  private int @NotNull [] ceilings = new int[0];
+  private int ceilingsPerRow;
 
-  private SurfaceGrid(final int stride, final int originBlockX, final int originBlockZ) {
+  private SurfaceGrid(
+      final int halo, final int stride, final int originBlockX, final int originBlockZ) {
     super();
+    this.halo = halo;
     this.stride = stride;
     this.originBlockX = originBlockX;
     this.originBlockZ = originBlockZ;
@@ -38,10 +46,11 @@ final class SurfaceGrid {
       final @NotNull ChunkColumnsSource source,
       final int startBlockX,
       final int startBlockZ,
-      final int tileSize) {
-    final int stride = tileSize + HALO * 2;
+      final int tileSize,
+      final int halo) {
+    final int stride = tileSize + halo * 2;
     final @NotNull SurfaceGrid surface =
-        new SurfaceGrid(stride, startBlockX - HALO, startBlockZ - HALO);
+        new SurfaceGrid(halo, stride, startBlockX - halo, startBlockZ - halo);
 
     final int minChunkX = Math.floorDiv(surface.originBlockX, CHUNK_SIZE);
     final int maxChunkX = Math.floorDiv(surface.originBlockX + stride - 1, CHUNK_SIZE);
@@ -57,11 +66,49 @@ final class SurfaceGrid {
         surface.fillFromChunk(columns, chunkX, chunkZ);
       }
     }
+    surface.findCeilings(tileSize);
     return surface;
   }
 
+  private void findCeilings(final int tileSize) {
+    this.ceilingsPerRow = Math.ceilDiv(tileSize, CEILING_CELL);
+    this.ceilings = new int[this.ceilingsPerRow * this.ceilingsPerRow];
+    Arrays.fill(this.ceilings, Integer.MIN_VALUE);
+    final int plusX = MapStyle.SUN_STEP_X > 0 ? this.halo : 0;
+    final int minusX = MapStyle.SUN_STEP_X < 0 ? this.halo : 0;
+    final int plusZ = MapStyle.SUN_STEP_Z > 0 ? this.halo : 0;
+    final int minusZ = MapStyle.SUN_STEP_Z < 0 ? this.halo : 0;
+    for (int cell = 0; cell < this.ceilings.length; cell++) {
+      final int firstX = (cell % this.ceilingsPerRow) * CEILING_CELL;
+      final int firstZ = (cell / this.ceilingsPerRow) * CEILING_CELL;
+      final int lastX = Math.min(tileSize, firstX + CEILING_CELL) - 1 + plusX;
+      final int lastZ = Math.min(tileSize, firstZ + CEILING_CELL) - 1 + plusZ;
+      int ceiling = Integer.MIN_VALUE;
+      for (int z = firstZ - minusZ; z <= lastZ; z++) {
+        for (int x = firstX - minusX; x <= lastX; x++) {
+          final int index = index(x, z);
+          if (this.material[index] != null) {
+            ceiling = Math.max(ceiling, this.floorY[index]);
+          }
+        }
+      }
+      this.ceilings[cell] = ceiling;
+    }
+  }
+
   int index(final int x, final int z) {
-    return (z + HALO) * this.stride + (x + HALO);
+    return (z + this.halo) * this.stride + (x + this.halo);
+  }
+
+  @Override
+  public int topYAt(final int x, final int z) {
+    final int index = index(x, z);
+    return this.material[index] == null ? SunShadow.NO_COLUMN : this.floorY[index];
+  }
+
+  @Override
+  public int ceilingYNear(final int x, final int z) {
+    return this.ceilings[(z / CEILING_CELL) * this.ceilingsPerRow + x / CEILING_CELL];
   }
 
   @Nullable
@@ -111,8 +158,8 @@ final class SurfaceGrid {
   }
 
   boolean hasData(final int x, final int z) {
-    final int gridX = x + HALO;
-    final int gridZ = z + HALO;
+    final int gridX = x + this.halo;
+    final int gridZ = z + this.halo;
     if (gridX < 0 || gridX >= this.stride || gridZ < 0 || gridZ >= this.stride) {
       return false;
     }

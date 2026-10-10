@@ -5,7 +5,7 @@ public interface HeightField {
 
   int topYAt(int blockX, int blockZ);
 
-  default int ceilingY() {
+  default int ceilingYNear(int blockX, int blockZ) {
     return Integer.MAX_VALUE;
   }
 }

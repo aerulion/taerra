@@ -14,7 +14,7 @@ final class IsoRenderPass {
 
   private static final int NO_WATER = Integer.MIN_VALUE;
   private static final int @NotNull [] @NotNull [] SKY_DIRECTIONS = {
-    {0, 1, 0}, {1, 1, 0}, {1, 1, 1}, {1, 1, -1}, {0, 1, 1}, {0, 1, -1}, {2, 1, 1}, {2, 1, -1}
+    {0, 0}, {1, 0}, {1, 1}, {1, -1}, {0, 1}, {0, -1}, {2, 1}, {2, -1}
   };
 
   private final int size;
@@ -62,15 +62,14 @@ final class IsoRenderPass {
 
   private static int @NotNull [] skyRays(
       final @NotNull MapRotation rotation, final boolean positiveX) {
-    final int @NotNull [] rays = new int[SKY_DIRECTIONS.length * 3];
+    final int @NotNull [] rays = new int[SKY_DIRECTIONS.length * 2];
     for (int ray = 0; ray < SKY_DIRECTIONS.length; ray++) {
       final int out = SKY_DIRECTIONS[ray][0];
-      final int along = SKY_DIRECTIONS[ray][2];
+      final int along = SKY_DIRECTIONS[ray][1];
       final int rotatedDeltaX = positiveX ? out : along;
       final int rotatedDeltaZ = positiveX ? along : out;
-      rays[ray * 3] = rotation.worldDeltaX(rotatedDeltaX, rotatedDeltaZ);
-      rays[ray * 3 + 1] = SKY_DIRECTIONS[ray][1];
-      rays[ray * 3 + 2] = rotation.worldDeltaZ(rotatedDeltaX, rotatedDeltaZ);
+      rays[ray * 2] = rotation.worldDeltaX(rotatedDeltaX, rotatedDeltaZ);
+      rays[ray * 2 + 1] = rotation.worldDeltaZ(rotatedDeltaX, rotatedDeltaZ);
     }
     return rays;
   }

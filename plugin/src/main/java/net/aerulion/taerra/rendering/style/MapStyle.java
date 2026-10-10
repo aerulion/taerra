@@ -16,7 +16,9 @@ public final class MapStyle {
 
   public static final int SUN_STEP_Z = -627;
 
-  public static final int SHADOW_LENGTH_PER_BLOCK = 2048;
+  public static final int ISO_SHADOW_LENGTH_PER_BLOCK = 2048;
+
+  public static final int TOP_DOWN_SHADOW_LENGTH_PER_BLOCK = 1024;
 
   public static final float @NotNull [] DEPTH_TINT = {0.84f, 0.90f, 0.98f};
 
@@ -25,7 +27,9 @@ public final class MapStyle {
   public static final int MAX_DEPTH_BANDS = 4;
   public static final int MAX_EDGE_DROP = 8;
 
-  public static final int SHADOW_DISTANCE = 32;
+  public static final int TOP_DOWN_SHADOW_DISTANCE = 32;
+
+  public static final int ISO_SHADOW_DISTANCE = 64;
 
   public static final float TOP_FACE_WEIGHT = 2.0f;
 

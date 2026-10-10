@@ -54,7 +54,7 @@ import org.jetbrains.annotations.NotNull;
 public final class WorldChangeListener implements Listener {
 
   private static final int HALO = 1;
-  private static final int SHADOW_DISTANCE = MapStyle.SHADOW_DISTANCE;
+  private static final int SHADOW_DISTANCE = MapStyle.TOP_DOWN_SHADOW_DISTANCE;
 
   private final @NotNull ChangeBuffer changes;
   private final @NotNull ChunkColumnsCache columns;

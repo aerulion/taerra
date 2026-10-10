@@ -73,11 +73,11 @@ class SunShadowTest {
   }
 
   @Test
-  @DisplayName("a shadow reaches about twice the height of what casts it")
-  void shadowsReachTwiceTheCasterHeight() {
+  @DisplayName("a top-down shadow reaches about as far as what casts it is tall")
+  void shadowsReachTheCasterHeight() {
 
-    assertTrue(SunShadow.isShadowed(towerAtOrigin(3), -4, 3, GROUND, DISTANCE));
-    assertFalse(SunShadow.isShadowed(towerAtOrigin(2), -4, 3, GROUND, DISTANCE));
+    assertTrue(SunShadow.isShadowed(towerAtOrigin(6), -4, 3, GROUND, DISTANCE));
+    assertFalse(SunShadow.isShadowed(towerAtOrigin(5), -4, 3, GROUND, DISTANCE));
   }
 
   @Test

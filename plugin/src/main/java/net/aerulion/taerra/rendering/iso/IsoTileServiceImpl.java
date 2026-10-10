@@ -15,6 +15,7 @@ import net.aerulion.taerra.rendering.sample.ChunkColumnsCache;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
 import net.aerulion.taerra.rendering.source.RegionFileChunkSourceProvider;
 import net.aerulion.taerra.rendering.style.MapStyle;
+import net.aerulion.taerra.rendering.style.SunShadow;
 import net.aerulion.taerra.rendering.tile.RenderedImage;
 import net.aerulion.taerra.rendering.tile.RenderedTile;
 import net.aerulion.taerra.util.ImageUtils;
@@ -26,7 +27,7 @@ public final class IsoTileServiceImpl implements IsoTileService {
 
   private final @NotNull ChunkColumnsCache columns;
   private final @NotNull IsoTileRenderer renderer;
-  private final int shadowDistance = MapStyle.SHADOW_DISTANCE;
+  private final int shadowDistance = MapStyle.ISO_SHADOW_DISTANCE;
 
   private final @NotNull LongAdder renderedBaseTiles = new LongAdder();
   private final @NotNull LongAdder renderNanos = new LongAdder();
@@ -59,7 +60,7 @@ public final class IsoTileServiceImpl implements IsoTileService {
           Math.max(
               world.getMinHeight(),
               Math.min(lowestTopAround(world, chunkX, chunkZ, ChunkColumns.minTopOf(known)), blockY)
-                  - this.shadowDistance
+                  - Math.max(SunShadow.isoDrop(this.shadowDistance), IsoTileRendererImpl.SKY_REACH)
                   - 1);
       maxTopY = Math.max(ChunkColumns.maxTopOf(known), blockY);
     }
@@ -70,11 +71,20 @@ public final class IsoTileServiceImpl implements IsoTileService {
 
       final int shadowX = rotation.worldDeltaX(-MapStyle.SUN_STEP_X, -MapStyle.SUN_STEP_Z);
       final int shadowZ = rotation.worldDeltaZ(-MapStyle.SUN_STEP_X, -MapStyle.SUN_STEP_Z);
+      final int backX = rotation.worldDeltaX(-1, -1);
+      final int backZ = rotation.worldDeltaZ(-1, -1);
+      final int padNegativeX = padding(backX, shadowX, -1);
+      final int padNegativeZ = padding(backZ, shadowZ, -1);
+      final int size =
+          IsoTileGeometry.CHUNK_SIZE
+              + Math.max(
+                  padNegativeX + padding(backX, shadowX, 1),
+                  padNegativeZ + padding(backZ, shadowZ, 1));
       final @NotNull ScreenBounds bounds =
           IsoTileGeometry.blockAreaScreenBounds(
-              (long) chunkX * IsoTileGeometry.CHUNK_SIZE - (shadowX < 0 ? this.shadowDistance : 0),
-              (long) chunkZ * IsoTileGeometry.CHUNK_SIZE - (shadowZ < 0 ? this.shadowDistance : 0),
-              IsoTileGeometry.CHUNK_SIZE + this.shadowDistance,
+              (long) chunkX * IsoTileGeometry.CHUNK_SIZE - padNegativeX,
+              (long) chunkZ * IsoTileGeometry.CHUNK_SIZE - padNegativeZ,
+              size,
               lowestY,
               maxTopY,
               rotation);
@@ -172,6 +182,14 @@ public final class IsoTileServiceImpl implements IsoTileService {
         this.reusedChunks.sum(),
         this.invalidatedTiles.sum(),
         this.columns.size());
+  }
+
+  private int padding(final int back, final int shadow, final int side) {
+    return Math.max(
+        IsoTileRendererImpl.SKY_REACH,
+        Math.max(
+            back * side > 0 ? 2 * IsoTileRendererImpl.SKY_REACH + 1 : 0,
+            shadow * side > 0 ? this.shadowDistance : 0));
   }
 
   private int lowestTopAround(
