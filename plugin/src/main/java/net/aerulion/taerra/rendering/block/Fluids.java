@@ -12,6 +12,7 @@ public final class Fluids {
   private static final int WATER = BlockTypes.id(BlockType.WATER);
   private static final boolean @NotNull [] SUBMERGED = new boolean[BlockTypes.count()];
   private static final boolean @NotNull [] FLUID = new boolean[BlockTypes.count()];
+  private static final boolean @NotNull [] CLEAR_WATER = new boolean[BlockTypes.count()];
 
   static {
     for (final @NotNull BlockType blockType :
@@ -23,6 +24,8 @@ public final class Fluids {
         List.of(BlockType.WATER, BlockType.LAVA, BlockType.BUBBLE_COLUMN)) {
       FLUID[BlockTypes.id(blockType)] = true;
     }
+    CLEAR_WATER[WATER] = true;
+    CLEAR_WATER[BlockTypes.id(BlockType.BUBBLE_COLUMN)] = true;
   }
 
   private Fluids() {
@@ -56,17 +59,11 @@ public final class Fluids {
                 + " (add any that can reach the surface to Fluids)");
   }
 
-  public static boolean isClearWater(final @NotNull BlockType blockType) {
-    return blockType == BlockType.WATER || blockType == BlockType.BUBBLE_COLUMN;
+  public static boolean isClearWater(final int blockId) {
+    return CLEAR_WATER[blockId];
   }
 
   public static boolean isFluid(final int blockId) {
     return FLUID[blockId];
-  }
-
-  public static boolean isFluid(final @NotNull BlockType blockType) {
-    return blockType == BlockType.WATER
-        || blockType == BlockType.LAVA
-        || blockType == BlockType.BUBBLE_COLUMN;
   }
 }

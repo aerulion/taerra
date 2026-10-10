@@ -99,11 +99,12 @@ class ChunkColumnsBedTest {
   @Test
   @DisplayName("lava counts as fluid too, so its surface follows the rock under it")
   void lavaIsFluid() {
-    assertTrue(Fluids.isFluid(BlockType.WATER));
-    assertTrue(Fluids.isFluid(BlockType.LAVA));
-    assertTrue(Fluids.isFluid(BlockType.BUBBLE_COLUMN));
-    assertFalse(Fluids.isFluid(BlockType.STONE));
+    assertTrue(Fluids.isFluid(BlockTypes.id(BlockType.WATER)));
+    assertTrue(Fluids.isFluid(BlockTypes.id(BlockType.LAVA)));
+    assertTrue(Fluids.isFluid(BlockTypes.id(BlockType.BUBBLE_COLUMN)));
+    assertFalse(Fluids.isFluid(BlockTypes.id(BlockType.STONE)));
     assertFalse(
-        Fluids.isFluid(BlockType.ICE), "frozen water is ground, not something to see through");
+        Fluids.isFluid(BlockTypes.id(BlockType.ICE)),
+        "frozen water is ground, not something to see through");
   }
 }

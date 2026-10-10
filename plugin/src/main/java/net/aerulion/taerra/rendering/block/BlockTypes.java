@@ -22,6 +22,7 @@ public final class BlockTypes {
       new Reference2IntOpenHashMap<>();
   private static final BlockType @NotNull [] BY_ID;
 
+  public static final int NONE = -1;
   public static final int AIR;
 
   static {

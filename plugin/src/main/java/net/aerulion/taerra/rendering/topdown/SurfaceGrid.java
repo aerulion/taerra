@@ -1,13 +1,13 @@
 package net.aerulion.taerra.rendering.topdown;
 
 import java.util.Arrays;
+import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
 import net.aerulion.taerra.rendering.style.HeightField;
 import net.aerulion.taerra.rendering.style.MapStyle;
 import net.aerulion.taerra.rendering.style.SunShadow;
 import org.bukkit.block.Biome;
-import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,8 +22,8 @@ final class SurfaceGrid implements HeightField {
   private final int originBlockZ;
   private final int @NotNull [] surfaceY;
   private final int @NotNull [] floorY;
-  private final BlockType @NotNull [] blockType;
-  private final BlockType @NotNull [] cap;
+  private final int @NotNull [] blockId;
+  private final int @NotNull [] capBlockId;
   private final Biome @NotNull [] biome;
   private int @NotNull [] ceilings = new int[0];
   private int ceilingsPerRow;
@@ -37,8 +37,9 @@ final class SurfaceGrid implements HeightField {
     this.originBlockZ = originBlockZ;
     this.surfaceY = new int[stride * stride];
     this.floorY = new int[stride * stride];
-    this.blockType = new BlockType[stride * stride];
-    this.cap = new BlockType[stride * stride];
+    this.blockId = new int[stride * stride];
+    this.capBlockId = new int[stride * stride];
+    Arrays.fill(this.blockId, BlockTypes.NONE);
     this.biome = new Biome[stride * stride];
   }
 
@@ -87,7 +88,7 @@ final class SurfaceGrid implements HeightField {
       for (int z = firstZ - minusZ; z <= lastZ; z++) {
         for (int x = firstX - minusX; x <= lastX; x++) {
           final int index = index(x, z);
-          if (this.blockType[index] != null) {
+          if (this.blockId[index] != BlockTypes.NONE) {
             ceiling = Math.max(ceiling, this.floorY[index]);
           }
         }
@@ -103,7 +104,7 @@ final class SurfaceGrid implements HeightField {
   @Override
   public int topYAt(final int x, final int z) {
     final int index = index(x, z);
-    return this.blockType[index] == null ? SunShadow.NO_COLUMN : this.floorY[index];
+    return this.blockId[index] == BlockTypes.NONE ? SunShadow.NO_COLUMN : this.floorY[index];
   }
 
   @Override
@@ -111,14 +112,12 @@ final class SurfaceGrid implements HeightField {
     return this.ceilings[(z / CEILING_CELL) * this.ceilingsPerRow + x / CEILING_CELL];
   }
 
-  @Nullable
-  BlockType blockType(final int index) {
-    return this.blockType[index];
+  int blockId(final int index) {
+    return this.blockId[index];
   }
 
-  @Nullable
-  BlockType cap(final int index) {
-    return this.cap[index];
+  int capBlockId(final int index) {
+    return this.capBlockId[index];
   }
 
   @Nullable
@@ -163,7 +162,7 @@ final class SurfaceGrid implements HeightField {
     if (gridX < 0 || gridX >= this.stride || gridZ < 0 || gridZ >= this.stride) {
       return false;
     }
-    return this.blockType[gridZ * this.stride + gridX] != null;
+    return this.blockId[gridZ * this.stride + gridX] != BlockTypes.NONE;
   }
 
   private void fillFromChunk(
@@ -187,8 +186,8 @@ final class SurfaceGrid implements HeightField {
         final int gridIndex =
             (blockZ - this.originBlockZ) * this.stride + (blockX - this.originBlockX);
         this.surfaceY[gridIndex] = columns.runTopY(firstRun);
-        this.blockType[gridIndex] = columns.runBlockType(firstRun);
-        this.cap[gridIndex] = columns.capBlockType(columnIndex);
+        this.blockId[gridIndex] = columns.runBlockId(firstRun);
+        this.capBlockId[gridIndex] = columns.capBlockId(columnIndex);
         this.biome[gridIndex] = columns.columnBiome(columnIndex);
         this.floorY[gridIndex] = columns.bedY(columnIndex);
       }

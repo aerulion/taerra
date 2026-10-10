@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
+import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.rendering.block.Fluids;
 import net.aerulion.taerra.rendering.color.BlockColors;
 import net.aerulion.taerra.rendering.color.MapColorResolver;
@@ -16,9 +17,7 @@ import net.aerulion.taerra.rendering.tile.PickBuffer;
 import net.aerulion.taerra.rendering.tile.RenderedImage;
 import net.aerulion.taerra.rendering.tile.RenderedTile;
 import net.aerulion.taerra.util.ImageUtils;
-import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public final class TopDownTileRendererImpl implements TopDownTileRenderer {
 
@@ -55,15 +54,15 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
     for (int x = 0; x < tileSize; x++) {
       for (int z = 0; z < tileSize; z++) {
         final int index = surface.index(x, z);
-        final @Nullable BlockType blockType = surface.blockType(index);
-        if (blockType == null) {
+        final int blockId = surface.blockId(index);
+        if (blockId == BlockTypes.NONE) {
           pixels[z * tileSize + x] = 0;
           continue;
         }
-        final @Nullable BlockType cap = surface.cap(index);
-        final @NotNull BlockColors blockColors = this.colors.colorsOf(blockType);
+        final int capBlockId = surface.capBlockId(index);
+        final @NotNull BlockColors blockColors = this.colors.colorsOf(blockId);
         final @NotNull BlockColors topColors =
-            cap == null ? blockColors : this.colors.colorsOf(cap);
+            capBlockId == BlockTypes.NONE ? blockColors : this.colors.colorsOf(capBlockId);
         final int baseRgb =
             topColors.topColor(surface.biome(index), startBlockX + x, startBlockZ + z);
         final boolean underwater = surface.surfaceY(index) > surface.floorY(index);
@@ -79,7 +78,7 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
         final int topFace =
             glows
                 ? Lighting.EMISSIVE
-                : Fluids.isClearWater(blockType) ? Lighting.WATER : Lighting.TOP;
+                : Fluids.isClearWater(blockId) ? Lighting.WATER : Lighting.TOP;
         int shaded =
             applyEdgeShading(
                 Lighting.face(baseRgb, topFace, taller, shadowed, Lighting.NO_CONTACT),

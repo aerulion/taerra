@@ -2,11 +2,9 @@ package net.aerulion.taerra.rendering.color;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 import net.aerulion.taerra.rendering.block.BlockTypes;
@@ -22,7 +20,7 @@ public final class MapColorResolverImpl implements MapColorResolver {
 
   private static final int MIN_GLOWING_LIGHT = 3;
 
-  private final @NotNull Map<BlockType, BlockColors> colors = new Reference2ObjectOpenHashMap<>();
+  private final BlockColors @NotNull [] colors = new BlockColors[BlockTypes.count()];
 
   public MapColorResolverImpl(
       final @NotNull Logger logger,
@@ -31,12 +29,11 @@ public final class MapColorResolverImpl implements MapColorResolver {
     super();
     this.blockData = blockData;
     this.biomeTints = biomeTints;
-    for (final @NotNull BlockType blockType :
-        RegistryAccess.registryAccess().getRegistry(RegistryKey.BLOCK)) {
+    for (int id = 0; id < this.colors.length; id++) {
+      final @NotNull BlockType blockType = BlockTypes.byId(id);
       final @NotNull BlockRenderData data = blockData.dataFor(blockType);
       final @Nullable BiomeTint tint = biomeTints.tintOf(blockType);
-      this.colors.put(
-          blockType,
+      this.colors[id] =
           new ResolvedColors(
               biomeTints,
               data.topRgb(),
@@ -44,7 +41,7 @@ public final class MapColorResolverImpl implements MapColorResolver {
               tint,
               data.tintSide() ? tint : null,
               BlockTypes.handle(blockType).defaultBlockState().getLightEmission()
-                  >= MIN_GLOWING_LIGHT));
+                  >= MIN_GLOWING_LIGHT);
     }
     reconcileTints(logger);
   }
@@ -82,7 +79,12 @@ public final class MapColorResolverImpl implements MapColorResolver {
 
   @Override
   public @NotNull BlockColors colorsOf(final @NotNull BlockType blockType) {
-    return this.colors.get(blockType);
+    return this.colors[BlockTypes.id(blockType)];
+  }
+
+  @Override
+  public @NotNull BlockColors colorsOf(final int blockId) {
+    return this.colors[blockId];
   }
 
   private record ResolvedColors(

@@ -45,7 +45,7 @@ public final class ColumnHeightField implements SolidField {
       return false;
     }
     final int run = columns.runIndexAt(ChunkColumns.columnIndex(blockX & 15, blockZ & 15), blockY);
-    return run >= 0 && !Fluids.isFluid(columns.runBlockType(run));
+    return run >= 0 && !Fluids.isFluid(columns.runBlockId(run));
   }
 
   @Override

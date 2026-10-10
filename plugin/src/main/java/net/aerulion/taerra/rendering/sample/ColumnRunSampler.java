@@ -22,7 +22,6 @@ public final class ColumnRunSampler {
   private static final int NO_THIN = Integer.MIN_VALUE;
   private static final int BLOCKED_Y = 63;
   private static final int STRIPE_WIDTH = 4;
-  private static final int NO_BLOCK = -1;
 
   private ColumnRunSampler() {
     super();
@@ -49,7 +48,7 @@ public final class ColumnRunSampler {
     for (int localX = 0; localX < 16; localX++) {
       for (int localZ = 0; localZ < 16; localZ++) {
         if (clipped && !limit.contains(blockX + localX, blockZ + localZ)) {
-          builder.completeColumn(null, null);
+          builder.completeColumn(null, BlockTypes.NONE);
           continue;
         }
         sampleColumn(
@@ -79,7 +78,7 @@ public final class ColumnRunSampler {
                 Math.floorMod(diagonal, 2 * STRIPE_WIDTH) < STRIPE_WIDTH
                     ? BlockType.YELLOW_CONCRETE
                     : BlockType.BLACK_CONCRETE)
-            .completeColumn(null, null);
+            .completeColumn(null, BlockTypes.NONE);
       }
     }
     return builder.build();
@@ -94,12 +93,12 @@ public final class ColumnRunSampler {
       final boolean interior,
       final int startY) {
     if (startY == ColumnSource.EMPTY_COLUMN) {
-      builder.completeColumn(null, null);
+      builder.completeColumn(null, BlockTypes.NONE);
       return;
     }
 
-    @Nullable BlockType capBlockType = null;
-    int runBlockId = NO_BLOCK;
+    int capBlockId = BlockTypes.NONE;
+    int runBlockId = BlockTypes.NONE;
     int runTopY = 0;
     int runBottomY = 0;
     boolean sawSolid = false;
@@ -116,9 +115,9 @@ public final class ColumnRunSampler {
           }
           thinTopY = NO_THIN;
         }
-        if (runBlockId != NO_BLOCK) {
-          builder.addRun(runTopY, runBottomY, BlockTypes.byId(runBlockId));
-          runBlockId = NO_BLOCK;
+        if (runBlockId != BlockTypes.NONE) {
+          builder.addRun(runTopY, runBottomY, runBlockId);
+          runBlockId = BlockTypes.NONE;
         }
         y &= ~15;
         continue;
@@ -126,7 +125,7 @@ public final class ColumnRunSampler {
 
       if (interior
           && (y & 15) == 15
-          && runBlockId != NO_BLOCK
+          && runBlockId != BlockTypes.NONE
           && !Fluids.isFluid(runBlockId)
           && runBottomY == y + 1
           && source.isSectionAllFull(y, shapes)) {
@@ -140,10 +139,8 @@ public final class ColumnRunSampler {
 
       if (thinTopY != NO_THIN && shape != BlockShape.THIN) {
         if (shape == BlockShape.FULL && thinTopY - y <= MAX_GROUND_COVER_HEIGHT) {
-          if (!sawSolid && capBlockType == null) {
-            capBlockType =
-                BlockTypes.byId(
-                    Fluids.substituteSubmerged(source.blockIdAt(localX, thinTopY, localZ)));
+          if (!sawSolid && capBlockId == BlockTypes.NONE) {
+            capBlockId = Fluids.substituteSubmerged(source.blockIdAt(localX, thinTopY, localZ));
             biome = source.biomeAt(localX, thinTopY, localZ);
           }
         } else {
@@ -160,9 +157,9 @@ public final class ColumnRunSampler {
         if (shape == BlockShape.THIN && thinTopY == NO_THIN) {
           thinTopY = y;
         }
-        if (runBlockId != NO_BLOCK) {
-          builder.addRun(runTopY, runBottomY, BlockTypes.byId(runBlockId));
-          runBlockId = NO_BLOCK;
+        if (runBlockId != BlockTypes.NONE) {
+          builder.addRun(runTopY, runBottomY, runBlockId);
+          runBlockId = BlockTypes.NONE;
         }
         continue;
       }
@@ -178,16 +175,16 @@ public final class ColumnRunSampler {
         runBottomY = y;
         continue;
       }
-      if (runBlockId != NO_BLOCK) {
-        builder.addRun(runTopY, runBottomY, BlockTypes.byId(runBlockId));
+      if (runBlockId != BlockTypes.NONE) {
+        builder.addRun(runTopY, runBottomY, runBlockId);
       }
       runBlockId = blockId;
       runTopY = y;
       runBottomY = y;
     }
 
-    if (runBlockId != NO_BLOCK) {
-      builder.addRun(runTopY, runBottomY, BlockTypes.byId(runBlockId));
+    if (runBlockId != BlockTypes.NONE) {
+      builder.addRun(runTopY, runBottomY, runBlockId);
     }
     if (thinTopY != NO_THIN) {
       addThinAsRuns(source, builder, localX, localZ, thinTopY, source.minHeight());
@@ -195,7 +192,7 @@ public final class ColumnRunSampler {
         biome = source.biomeAt(localX, thinTopY, localZ);
       }
     }
-    builder.completeColumn(biome, capBlockType);
+    builder.completeColumn(biome, capBlockId);
   }
 
   private static void addThinAsRuns(
@@ -205,20 +202,20 @@ public final class ColumnRunSampler {
       final int localZ,
       final int topY,
       final int bottomY) {
-    int runBlockId = NO_BLOCK;
+    int runBlockId = BlockTypes.NONE;
     int runTopY = topY;
     for (int y = topY; y >= bottomY; y--) {
       final int blockId = Fluids.substituteSubmerged(source.blockIdAt(localX, y, localZ));
       if (blockId != runBlockId) {
-        if (runBlockId != NO_BLOCK) {
-          builder.addRun(runTopY, y + 1, BlockTypes.byId(runBlockId));
+        if (runBlockId != BlockTypes.NONE) {
+          builder.addRun(runTopY, y + 1, runBlockId);
         }
         runBlockId = blockId;
         runTopY = y;
       }
     }
-    if (runBlockId != NO_BLOCK) {
-      builder.addRun(runTopY, bottomY, BlockTypes.byId(runBlockId));
+    if (runBlockId != BlockTypes.NONE) {
+      builder.addRun(runTopY, bottomY, runBlockId);
     }
   }
 

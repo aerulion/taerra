@@ -1,6 +1,7 @@
 package net.aerulion.taerra.rendering.sample;
 
 import java.util.Arrays;
+import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.rendering.block.Fluids;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
@@ -14,11 +15,11 @@ public final class ChunkColumnsBuilder {
   private final int chunkX;
   private final int chunkZ;
   private final int @NotNull [] runOffsets = new int[ChunkColumns.COLUMN_COUNT + 1];
-  private final BlockType @NotNull [] capBlockType = new BlockType[ChunkColumns.COLUMN_COUNT];
+  private final int @NotNull [] capBlockId = new int[ChunkColumns.COLUMN_COUNT];
   private final Biome @NotNull [] columnBiome = new Biome[ChunkColumns.COLUMN_COUNT];
   private short @NotNull [] runTopY = new short[INITIAL_RUN_CAPACITY];
   private short @NotNull [] runBottomY = new short[INITIAL_RUN_CAPACITY];
-  private BlockType @NotNull [] runBlockType = new BlockType[INITIAL_RUN_CAPACITY];
+  private int @NotNull [] runBlockId = new int[INITIAL_RUN_CAPACITY];
   private int runCount;
   private int completedColumns;
   private int minTopY = ChunkColumns.EMPTY_COLUMN;
@@ -32,24 +33,34 @@ public final class ChunkColumnsBuilder {
 
   public @NotNull ChunkColumnsBuilder addRun(
       final int topY, final int bottomY, final @NotNull BlockType blockType) {
+    return addRun(topY, bottomY, BlockTypes.id(blockType));
+  }
+
+  public @NotNull ChunkColumnsBuilder addRun(final int topY, final int bottomY, final int blockId) {
     if (this.runCount == this.runTopY.length) {
       final int grown = this.runCount * 2;
       this.runTopY = Arrays.copyOf(this.runTopY, grown);
       this.runBottomY = Arrays.copyOf(this.runBottomY, grown);
-      this.runBlockType = Arrays.copyOf(this.runBlockType, grown);
+      this.runBlockId = Arrays.copyOf(this.runBlockId, grown);
     }
     this.runTopY[this.runCount] = (short) topY;
     this.runBottomY[this.runCount] = (short) bottomY;
-    this.runBlockType[this.runCount] = blockType;
+    this.runBlockId[this.runCount] = blockId;
     this.runCount++;
     return this;
   }
 
   public @NotNull ChunkColumnsBuilder completeColumn(
       final @Nullable Biome biome, final @Nullable BlockType capBlockType) {
+    return completeColumn(
+        biome, capBlockType == null ? BlockTypes.NONE : BlockTypes.id(capBlockType));
+  }
+
+  public @NotNull ChunkColumnsBuilder completeColumn(
+      final @Nullable Biome biome, final int capBlockId) {
     final int columnIndex = this.completedColumns;
     this.columnBiome[columnIndex] = biome;
-    this.capBlockType[columnIndex] = capBlockType;
+    this.capBlockId[columnIndex] = capBlockId;
     if (this.runOffsets[columnIndex] < this.runCount) {
       final int topY = this.runTopY[this.runOffsets[columnIndex]];
       this.minTopY =
@@ -74,7 +85,7 @@ public final class ChunkColumnsBuilder {
     final int @NotNull [] offsets = new int[ChunkColumns.COLUMN_COUNT + 1];
     final short @NotNull [] topY = new short[this.runCount];
     final short @NotNull [] bottomY = new short[this.runCount];
-    final BlockType @NotNull [] blockTypes = new BlockType[this.runCount];
+    final int @NotNull [] blockIds = new int[this.runCount];
 
     final int @NotNull [] cursors = new int[4];
     int count = 0;
@@ -93,15 +104,15 @@ public final class ChunkColumnsBuilder {
         if (interior
             && count > offsets[column]
             && bottomY[count - 1] == this.runTopY[run] + 1
-            && !Fluids.isFluid(blockTypes[count - 1])
-            && !Fluids.isFluid(this.runBlockType[run])
+            && !Fluids.isFluid(blockIds[count - 1])
+            && !Fluids.isFluid(this.runBlockId[run])
             && isHidden(column, cursors, this.runBottomY[run], this.runTopY[run])) {
           bottomY[count - 1] = this.runBottomY[run];
           continue;
         }
         topY[count] = this.runTopY[run];
         bottomY[count] = this.runBottomY[run];
-        blockTypes[count] = this.runBlockType[run];
+        blockIds[count] = this.runBlockId[run];
         count++;
       }
     }
@@ -112,8 +123,8 @@ public final class ChunkColumnsBuilder {
         offsets,
         Arrays.copyOf(topY, count),
         Arrays.copyOf(bottomY, count),
-        Arrays.copyOf(blockTypes, count),
-        this.capBlockType,
+        Arrays.copyOf(blockIds, count),
+        this.capBlockId,
         this.columnBiome,
         this.minTopY,
         this.maxTopY);
@@ -141,7 +152,7 @@ public final class ChunkColumnsBuilder {
     cursors[slot] = run;
     int y = topY;
     for (; run < end && y >= bottomY; run++) {
-      if (this.runTopY[run] < y || Fluids.isFluid(this.runBlockType[run])) {
+      if (this.runTopY[run] < y || Fluids.isFluid(this.runBlockId[run])) {
         return false;
       }
       y = this.runBottomY[run] - 1;
