@@ -1,4 +1,4 @@
-package net.aerulion.taerra.command;
+package net.aerulion.taerra.chat;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

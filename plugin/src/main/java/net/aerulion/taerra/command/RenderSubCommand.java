@@ -18,6 +18,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.logging.Level;
+import net.aerulion.taerra.chat.Formats;
+import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.ChunkCoordinate;
@@ -315,10 +317,9 @@ public final class RenderSubCommand implements TaerraSubCommand {
                                                   export.width() + " × " + export.height() + " px"),
                                               Messages.tr(
                                                   "unit.tiles", Messages.value(export.tiles())),
+                                              Messages.value(Formats.megabytes(export.bytes())),
                                               Messages.value(
-                                                  RenderReport.megabytes(export.bytes())),
-                                              Messages.value(
-                                                  RenderReport.duration(
+                                                  Formats.duration(
                                                       (System.nanoTime() - startedAt)
                                                           / 1_000_000L)))
                                           .color(Messages.TEXT)),

@@ -1,11 +1,11 @@
-package net.aerulion.taerra.command;
+package net.aerulion.taerra.chat;
 
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 
-public final class RenderReport {
+public final class Formats {
 
-  private RenderReport() {
+  private Formats() {
     super();
   }
 

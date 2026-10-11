@@ -1,4 +1,4 @@
-package net.aerulion.taerra.command;
+package net.aerulion.taerra.chat;
 
 import java.text.MessageFormat;
 import java.util.List;
@@ -21,14 +21,14 @@ import org.jetbrains.annotations.NotNull;
 
 public final class Messages {
 
-  static final @NotNull TextColor BRAND = TextColor.color(0xd4732f);
-  static final @NotNull TextColor TEXT = NamedTextColor.GRAY;
-  static final @NotNull TextColor VALUE = NamedTextColor.WHITE;
-  static final @NotNull TextColor MUTED = TextColor.color(0x8c8d90);
-  static final @NotNull TextColor DIM = TextColor.color(0x58585a);
-  static final @NotNull TextColor GREEN = TextColor.color(0x52a535);
-  static final @NotNull TextColor GOLD = TextColor.color(0xffcf3f);
-  static final @NotNull TextColor RED = TextColor.color(0xe34a4a);
+  public static final @NotNull TextColor BRAND = TextColor.color(0xd4732f);
+  public static final @NotNull TextColor TEXT = NamedTextColor.GRAY;
+  public static final @NotNull TextColor VALUE = NamedTextColor.WHITE;
+  public static final @NotNull TextColor MUTED = TextColor.color(0x8c8d90);
+  public static final @NotNull TextColor DIM = TextColor.color(0x58585a);
+  public static final @NotNull TextColor GREEN = TextColor.color(0x52a535);
+  public static final @NotNull TextColor GOLD = TextColor.color(0xffcf3f);
+  public static final @NotNull TextColor RED = TextColor.color(0xe34a4a);
 
   private static final @NotNull List<Locale> LOCALES = List.of(Locale.ENGLISH, Locale.GERMAN);
   private static final int BAR_WIDTH = 20;
@@ -91,26 +91,28 @@ public final class Messages {
         : info("join_hint.text", link(mapUrl, tr("login.open")), mod);
   }
 
-  static @NotNull TranslatableComponent tr(
+  public static @NotNull TranslatableComponent tr(
       final @NotNull String key, final @NotNull ComponentLike... args) {
     return Component.translatable("taerra." + key, args);
   }
 
-  static @NotNull Component success(
+  public static @NotNull Component success(
       final @NotNull String key, final @NotNull ComponentLike... args) {
     return line("✔", GREEN, key, args);
   }
 
-  static @NotNull Component info(final @NotNull String key, final @NotNull ComponentLike... args) {
+  public static @NotNull Component info(
+      final @NotNull String key, final @NotNull ComponentLike... args) {
     return line("›", BRAND, key, args);
   }
 
-  static @NotNull Component warning(
+  public static @NotNull Component warning(
       final @NotNull String key, final @NotNull ComponentLike... args) {
     return line("⚠", GOLD, key, args);
   }
 
-  static @NotNull Component error(final @NotNull String key, final @NotNull ComponentLike... args) {
+  public static @NotNull Component error(
+      final @NotNull String key, final @NotNull ComponentLike... args) {
     return line("✖", RED, key, args);
   }
 
@@ -125,21 +127,22 @@ public final class Messages {
         .build();
   }
 
-  static @NotNull Component value(final @NotNull Object value) {
+  public static @NotNull Component value(final @NotNull Object value) {
     return Component.text(String.valueOf(value), VALUE);
   }
 
-  static @NotNull Component world(final @NotNull String worldName) {
+  public static @NotNull Component world(final @NotNull String worldName) {
     return Component.text(worldName, GREEN);
   }
 
-  static @NotNull Component copyable(final @NotNull String text) {
+  public static @NotNull Component copyable(final @NotNull String text) {
     return Component.text(text, VALUE)
         .hoverEvent(tr("click.copy").color(TEXT))
         .clickEvent(ClickEvent.copyToClipboard(text));
   }
 
-  static @NotNull Component link(final @NotNull String url, final @NotNull ComponentLike label) {
+  public static @NotNull Component link(
+      final @NotNull String url, final @NotNull ComponentLike label) {
     return Component.text()
         .color(GOLD)
         .append(label)
@@ -148,13 +151,13 @@ public final class Messages {
         .build();
   }
 
-  static @NotNull Component command(final @NotNull String command) {
+  public static @NotNull Component command(final @NotNull String command) {
     return Component.text(command, GOLD)
         .hoverEvent(tr("click.run", Component.text(command, GOLD)).color(TEXT))
         .clickEvent(ClickEvent.runCommand(command));
   }
 
-  static @NotNull Component button(
+  public static @NotNull Component button(
       final @NotNull String command, final @NotNull ComponentLike label) {
     return Component.text()
         .color(GOLD)
@@ -166,7 +169,7 @@ public final class Messages {
         .build();
   }
 
-  static @NotNull Component suggest(
+  public static @NotNull Component suggest(
       final @NotNull String command, final @NotNull ComponentLike hover) {
     return Component.text(command, GOLD)
         .hoverEvent(
@@ -177,7 +180,7 @@ public final class Messages {
         .clickEvent(ClickEvent.suggestCommand(command + " "));
   }
 
-  static @NotNull Component header(final @NotNull ComponentLike title) {
+  public static @NotNull Component header(final @NotNull ComponentLike title) {
     return Component.text()
         .append(Component.text("TAERRA", BRAND, TextDecoration.BOLD))
         .append(SEPARATOR)
@@ -185,11 +188,12 @@ public final class Messages {
         .build();
   }
 
-  static @NotNull Component section(final @NotNull String key) {
+  public static @NotNull Component section(final @NotNull String key) {
     return tr(key).color(GOLD);
   }
 
-  static @NotNull Component row(final @NotNull String labelKey, final ComponentLike... parts) {
+  public static @NotNull Component row(
+      final @NotNull String labelKey, final ComponentLike... parts) {
     return Component.text()
         .append(Component.text("  "))
         .append(tr(labelKey).color(MUTED))
@@ -198,26 +202,26 @@ public final class Messages {
         .build();
   }
 
-  static @NotNull Component indent(final @NotNull ComponentLike... parts) {
+  public static @NotNull Component indent(final @NotNull ComponentLike... parts) {
     return Component.text()
         .append(Component.text("  "))
         .append(Component.text().color(TEXT).append(parts(parts)))
         .build();
   }
 
-  static @NotNull Component parts(final @NotNull ComponentLike... parts) {
+  public static @NotNull Component parts(final @NotNull ComponentLike... parts) {
     return Component.join(JoinConfiguration.separator(SEPARATOR), parts);
   }
 
-  static @NotNull Component bar(final double fraction) {
-    final int filled = RenderReport.filled(fraction, BAR_WIDTH);
+  public static @NotNull Component bar(final double fraction) {
+    final int filled = Formats.filled(fraction, BAR_WIDTH);
     return Component.text()
         .append(Component.text("━".repeat(filled), GREEN))
         .append(Component.text("━".repeat(BAR_WIDTH - filled), DIM))
         .build();
   }
 
-  static @NotNull Component lines(final @NotNull List<? extends ComponentLike> lines) {
+  public static @NotNull Component lines(final @NotNull List<? extends ComponentLike> lines) {
     return Component.join(JoinConfiguration.newlines(), lines);
   }
 }

@@ -1,7 +1,7 @@
 package net.aerulion.taerra.listener;
 
 import java.util.concurrent.TimeUnit;
-import net.aerulion.taerra.command.Messages;
+import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.web.auth.ModHandshake;
 import org.bukkit.NamespacedKey;

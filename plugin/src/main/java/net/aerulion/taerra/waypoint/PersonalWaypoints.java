@@ -18,7 +18,7 @@ import java.util.logging.Level;
 import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.api.marker.PlayerMarkerLayer;
-import net.aerulion.taerra.command.Messages;
+import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.util.AtomicFiles;
 import org.bukkit.Bukkit;

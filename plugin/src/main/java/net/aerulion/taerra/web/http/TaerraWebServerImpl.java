@@ -33,7 +33,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 import net.aerulion.taerra.api.marker.LineMarker;
 import net.aerulion.taerra.api.marker.Marker;
-import net.aerulion.taerra.command.Messages;
+import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.command.RenderSubCommand;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.marker.MarkerRegistryInternal;

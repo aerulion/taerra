@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.waypoint.DynmapMarkers;
 import net.aerulion.taerra.waypoint.Waypoints;

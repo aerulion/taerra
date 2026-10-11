@@ -4,6 +4,8 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.ArrayList;
 import java.util.List;
+import net.aerulion.taerra.chat.Formats;
+import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.rendering.iso.IsoRenderStats;
 import net.aerulion.taerra.rendering.iso.IsoTileService;
@@ -55,14 +57,14 @@ public final class StatusSubCommand implements TaerraSubCommand {
   }
 
   private static @NotNull Component millis(final @NotNull String key, final double millis) {
-    return Messages.tr(key, Messages.value(RenderReport.millis(millis)));
+    return Messages.tr(key, Messages.value(Formats.millis(millis)));
   }
 
   private static @NotNull Component summary(final @NotNull CompletedRender render) {
     return Messages.parts(
         mode(render.mode()),
         Messages.world(render.worldName()),
-        Messages.value(RenderReport.duration(render.durationMillis())),
+        Messages.value(Formats.duration(render.durationMillis())),
         phase(render.outcome()));
   }
 
@@ -70,7 +72,7 @@ public final class StatusSubCommand implements TaerraSubCommand {
     return Component.text()
         .append(Messages.bar(fraction))
         .append(Component.space())
-        .append(Messages.value(RenderReport.percent(fraction)))
+        .append(Messages.value(Formats.percent(fraction)))
         .build();
   }
 
@@ -89,7 +91,7 @@ public final class StatusSubCommand implements TaerraSubCommand {
             "status.renderer",
             Component.text("● ", Messages.GOLD).append(Messages.tr("status.working")),
             Messages.tr("status.queued", Messages.value(snapshot.totalQueuedTiles())),
-            Messages.value(RenderReport.rate(snapshot.totalTilesPerSecond())))
+            Messages.value(Formats.rate(snapshot.totalTilesPerSecond())))
         .hoverEvent(
             Messages.lines(
                     List.of(
@@ -130,10 +132,10 @@ public final class StatusSubCommand implements TaerraSubCommand {
                 session.hasEstimate()
                     ? Messages.tr(
                         "status.remaining",
-                        Messages.value(RenderReport.duration(session.remainingMillis())))
+                        Messages.value(Formats.duration(session.remainingMillis())))
                     : Messages.tr(
                         "status.elapsed",
-                        Messages.value(RenderReport.duration(session.elapsedMillis()))))
+                        Messages.value(Formats.duration(session.elapsedMillis()))))
             .hoverEvent(
                 Messages.lines(
                         List.of(
@@ -144,7 +146,7 @@ public final class StatusSubCommand implements TaerraSubCommand {
                                     (session.totalEstimated() ? "~" : "") + session.totalTiles())),
                             Messages.tr(
                                 "status.elapsed",
-                                Messages.value(RenderReport.duration(session.elapsedMillis()))),
+                                Messages.value(Formats.duration(session.elapsedMillis()))),
                             Messages.tr(
                                 "status.in_flight", Messages.value(session.inFlightTiles())),
                             Messages.tr("status.queued", Messages.value(session.queuedTiles()))))
@@ -165,7 +167,7 @@ public final class StatusSubCommand implements TaerraSubCommand {
                             Messages.tr("unit.tiles", Messages.value(live.tiles())),
                             Messages.tr(
                                 "status.chunks_each",
-                                Messages.value(RenderReport.count(live.averageChunksPerBatch())))),
+                                Messages.value(Formats.count(live.averageChunksPerBatch())))),
                         Messages.row(
                             "status.per_batch",
                             millis("status.read", live.averageChunkLoadMillis()),
@@ -252,7 +254,7 @@ public final class StatusSubCommand implements TaerraSubCommand {
                                 Messages.tr("status.entries", Messages.value(cache.size())),
                                 Messages.tr(
                                     "status.hit_rate",
-                                    Messages.value(RenderReport.percent(cache.hitRate()))))))
+                                    Messages.value(Formats.percent(cache.hitRate()))))))
                     .color(Messages.TEXT));
 
     final @NotNull Component isometric =
@@ -266,14 +268,14 @@ public final class StatusSubCommand implements TaerraSubCommand {
                                 millis("unit.per_tile", iso.averageRenderMillis()),
                                 Messages.tr(
                                     "status.reading_share",
-                                    Messages.value(RenderReport.percent(iso.sampleShare())))),
+                                    Messages.value(Formats.percent(iso.sampleShare())))),
                             Messages.row(
                                 "status.chunk_columns",
                                 Messages.tr(
                                     "status.cached", Messages.value(this.chunkColumnsCache.size())),
                                 Messages.tr(
                                     "status.reused",
-                                    Messages.value(RenderReport.percent(iso.chunkReuseRate())))),
+                                    Messages.value(Formats.percent(iso.chunkReuseRate())))),
                             Messages.row(
                                 "status.redrawn",
                                 Messages.tr("unit.tiles", Messages.value(iso.invalidatedTiles())))))
@@ -294,7 +296,7 @@ public final class StatusSubCommand implements TaerraSubCommand {
             Messages.tr("unit.tiles", Messages.value(last.tiles())),
             Messages.tr("unit.regions", Messages.value(last.regions())),
             Messages.tr("unit.chunks", Messages.value(last.chunks())),
-            Messages.value(RenderReport.rate(last.tilesPerSecond()))));
+            Messages.value(Formats.rate(last.tilesPerSecond()))));
     if (recent.size() > 1) {
       hover.add(Component.empty());
       hover.add(Messages.section("status.earlier"));

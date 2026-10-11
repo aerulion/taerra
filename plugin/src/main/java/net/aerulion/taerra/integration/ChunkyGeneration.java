@@ -3,7 +3,7 @@ package net.aerulion.taerra.integration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
-import net.aerulion.taerra.command.Messages;
+import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.kyori.adventure.text.Component;
