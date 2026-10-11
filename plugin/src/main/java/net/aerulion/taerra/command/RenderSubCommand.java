@@ -15,7 +15,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -478,61 +477,66 @@ public final class RenderSubCommand implements TaerraSubCommand {
 
     audience.sendMessage(Messages.info("render.scanning", Messages.world(worldName), description));
 
-    CompletableFuture.runAsync(
-        () -> {
-          try {
-            final @NotNull RegionScanResult scanResult =
-                scan.apply(
-                    progress -> this.generator.updateManualRenderScanProgress(session, progress));
-            final @NotNull List<Component> lines = new ArrayList<>();
+    Thread.ofPlatform()
+        .name("Taerra-Scan")
+        .daemon()
+        .start(
+            () -> {
+              try {
+                final @NotNull RegionScanResult scanResult =
+                    scan.apply(
+                        progress ->
+                            this.generator.updateManualRenderScanProgress(session, progress));
+                final @NotNull List<Component> lines = new ArrayList<>();
 
-            if (scanResult.zoom0Tiles().isEmpty()) {
-              this.generator.cancelManualRender(session, "Nothing to render");
-              lines.add(Messages.error("render.nothing", Messages.world(worldName)));
-            } else {
-              final int queuedTiles =
-                  this.generator.submitManualRender(session, scanResult, "Queued " + mode);
-              if (queuedTiles == 0) {
-                return;
+                if (scanResult.zoom0Tiles().isEmpty()) {
+                  this.generator.cancelManualRender(session, "Nothing to render");
+                  lines.add(Messages.error("render.nothing", Messages.world(worldName)));
+                } else {
+                  final int queuedTiles =
+                      this.generator.submitManualRender(session, scanResult, "Queued " + mode);
+                  if (queuedTiles == 0) {
+                    return;
+                  }
+                  this.renderQueue.save();
+                  lines.add(
+                      Messages.success(
+                          "render.queued",
+                          Messages.tr("unit.tiles", Messages.value(queuedTiles))
+                              .hoverEvent(
+                                  Messages.lines(
+                                          List.of(
+                                              Messages.parts(
+                                                  Messages.tr(
+                                                      "unit.regions",
+                                                      Messages.value(scanResult.totalRegions())),
+                                                  Messages.tr(
+                                                      "unit.chunks",
+                                                      Messages.value(
+                                                          scanResult.discoveredChunks()))),
+                                              Messages.tr("render.isometric_follows")))
+                                      .color(Messages.TEXT)),
+                          Messages.world(worldName),
+                          Messages.command("/taerra status")));
+                }
+                if (scanResult.unreadableRegions() > 0) {
+                  lines.add(
+                      Messages.warning(
+                          "render.unreadable", Messages.value(scanResult.unreadableRegions())));
+                }
+                sendSync(audience, Messages.lines(lines));
+              } catch (final Throwable e) {
+                final @NotNull String failure = Throwables.describe(e);
+                this.generator.cancelManualRender(session, "Render failed: " + failure);
+                sendSync(
+                    audience,
+                    Messages.error(
+                        "render.failed", Messages.world(worldName), Messages.value(failure)));
+                this.plugin
+                    .getLogger()
+                    .log(Level.SEVERE, "Failed to render " + worldName + ": " + failure, e);
               }
-              this.renderQueue.save();
-              lines.add(
-                  Messages.success(
-                      "render.queued",
-                      Messages.tr("unit.tiles", Messages.value(queuedTiles))
-                          .hoverEvent(
-                              Messages.lines(
-                                      List.of(
-                                          Messages.parts(
-                                              Messages.tr(
-                                                  "unit.regions",
-                                                  Messages.value(scanResult.totalRegions())),
-                                              Messages.tr(
-                                                  "unit.chunks",
-                                                  Messages.value(scanResult.discoveredChunks()))),
-                                          Messages.tr("render.isometric_follows")))
-                                  .color(Messages.TEXT)),
-                      Messages.world(worldName),
-                      Messages.command("/taerra status")));
-            }
-            if (scanResult.unreadableRegions() > 0) {
-              lines.add(
-                  Messages.warning(
-                      "render.unreadable", Messages.value(scanResult.unreadableRegions())));
-            }
-            sendSync(audience, Messages.lines(lines));
-          } catch (final Throwable e) {
-            final @NotNull String failure = Throwables.describe(e);
-            this.generator.cancelManualRender(session, "Render failed: " + failure);
-            sendSync(
-                audience,
-                Messages.error(
-                    "render.failed", Messages.world(worldName), Messages.value(failure)));
-            this.plugin
-                .getLogger()
-                .log(Level.SEVERE, "Failed to render " + worldName + ": " + failure, e);
-          }
-        });
+            });
 
     return true;
   }
