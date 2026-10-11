@@ -1,4 +1,4 @@
-package net.aerulion.taerra.web.http;
+package net.aerulion.taerra.web.http.route;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

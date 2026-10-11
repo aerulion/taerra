@@ -1,4 +1,4 @@
-package net.aerulion.taerra.web.http;
+package net.aerulion.taerra.web.http.route;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -25,7 +25,7 @@ class IndexPageTest {
   @Test
   @DisplayName("the server name lands in the title, link preview and header, escaped")
   void nameEverywhere() throws IOException {
-    final @NotNull String html = TaerraWebServerImpl.indexPage(template(), "Tom & <Jerry>", "");
+    final @NotNull String html = MapRoutes.indexPage(template(), "Tom & <Jerry>", "");
     final @NotNull String name = "Tom &amp; &lt;Jerry&gt;";
     assertTrue(html.contains("<title>" + name + "</title>"));
     assertTrue(html.contains("content=\"" + name + "\" property=\"og:title\""));
@@ -38,7 +38,7 @@ class IndexPageTest {
   @Test
   @DisplayName("without a name the page is the template, the header slot hidden")
   void noName() throws IOException {
-    assertEquals(template(), TaerraWebServerImpl.indexPage(template(), "", ""));
+    assertEquals(template(), MapRoutes.indexPage(template(), "", ""));
     assertTrue(
         template().contains("<span class=\"server-name\" hidden id=\"server-name\"></span>"));
   }
