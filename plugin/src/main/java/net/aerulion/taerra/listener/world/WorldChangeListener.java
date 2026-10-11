@@ -46,7 +46,6 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
-import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkPopulateEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.jetbrains.annotations.NotNull;
@@ -209,14 +208,6 @@ public final class WorldChangeListener implements Listener {
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void onSpongeAbsorb(final @NotNull SpongeAbsorbEvent event) {
     markBlockStates(event.getBlocks());
-  }
-
-  @EventHandler(priority = EventPriority.MONITOR)
-  public void onChunkLoad(final @NotNull ChunkLoadEvent event) {
-    if (!event.isNewChunk()) {
-      return;
-    }
-    markChunk(event.getWorld(), event.getChunk().getX(), event.getChunk().getZ());
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
