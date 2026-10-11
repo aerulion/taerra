@@ -296,6 +296,10 @@ export const de: Copy = {
                 {command: '/taerra render image <welt> [zoom]', text: 'Die Karte als Bilder exportieren'},
                 {command: '/taerra render cancel', text: 'Einen laufenden Render abbrechen'},
                 {
+                    command: '/taerra render flush',
+                    text: 'Alle wartenden Kacheln verwerfen, auch noch nicht gerenderte Änderungen'
+                },
+                {
                     command: '/taerra limit <welt> circle|square|rectangle …',
                     text: 'Festlegen, wie viel einer Welt die Karte zeigt'
                 },

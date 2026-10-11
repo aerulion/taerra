@@ -8,6 +8,8 @@ public sealed interface ChangeBuffer permits ChangeBufferImpl {
 
   void add(@NotNull Collection<TileCoordinate> tiles);
 
+  int discard();
+
   void start();
 
   void stop();

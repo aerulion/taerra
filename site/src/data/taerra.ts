@@ -337,6 +337,7 @@ const en = {
                 },
                 {command: '/taerra render image <world> [zoom]', text: 'Export the map as images'},
                 {command: '/taerra render cancel', text: 'Stop a running render'},
+                {command: '/taerra render flush', text: 'Drop every queued tile, unrendered changes included'},
                 {
                     command: '/taerra limit <world> circle|square|rectangle …',
                     text: 'Set how much of a world the map shows'

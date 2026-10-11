@@ -224,11 +224,15 @@ public final class Taerra extends JavaPlugin {
       final @NotNull WaypointsImpl waypoints = new WaypointsImpl(this, markers);
       waypoints.load();
       getServer().getPluginManager().registerEvents(waypoints, this);
+      final @NotNull ChangeBuffer changeBuffer =
+          new ChangeBufferImpl(this, renderQueue, configuration.updateInterval());
+      this.changeBuffer = changeBuffer;
       final @NotNull RenderSubCommand render =
           new RenderSubCommand(
               this,
               generatorService,
               renderQueue,
+              changeBuffer,
               tileStorage,
               chunkColumnsCache,
               worldLimits,
@@ -260,9 +264,6 @@ public final class Taerra extends JavaPlugin {
           .runTaskTimerAsynchronously(
               this, renderQueue::save, QUEUE_SAVE_INTERVAL_TICKS, QUEUE_SAVE_INTERVAL_TICKS);
 
-      final @NotNull ChangeBuffer changeBuffer =
-          new ChangeBufferImpl(this, renderQueue, configuration.updateInterval());
-      this.changeBuffer = changeBuffer;
       changeBuffer.start();
 
       final @Nullable Predicate<World> chunkyGenerating =

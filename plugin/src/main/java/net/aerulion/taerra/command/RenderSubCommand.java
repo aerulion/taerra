@@ -30,6 +30,7 @@ import net.aerulion.taerra.model.WorldLimit;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.rendering.iso.IsoTileGeometry;
 import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
+import net.aerulion.taerra.rendering.queue.ChangeBuffer;
 import net.aerulion.taerra.rendering.queue.RenderPriority;
 import net.aerulion.taerra.rendering.queue.RenderQueue;
 import net.aerulion.taerra.rendering.region.RegionFileScanner;
@@ -59,6 +60,7 @@ public final class RenderSubCommand implements TaerraSubCommand {
   private final @NotNull Plugin plugin;
   private final @NotNull TileGeneratorService generator;
   private final @NotNull RenderQueue renderQueue;
+  private final @NotNull ChangeBuffer changes;
   private final @NotNull TileStorage tileStorage;
   private final @NotNull ChunkColumnsCache columns;
   private final @NotNull WorldLimits limits;
@@ -69,6 +71,7 @@ public final class RenderSubCommand implements TaerraSubCommand {
       final @NotNull Plugin plugin,
       final @NotNull TileGeneratorService generator,
       final @NotNull RenderQueue renderQueue,
+      final @NotNull ChangeBuffer changes,
       final @NotNull TileStorage tileStorage,
       final @NotNull ChunkColumnsCache columns,
       final @NotNull WorldLimits limits,
@@ -77,6 +80,7 @@ public final class RenderSubCommand implements TaerraSubCommand {
     this.plugin = plugin;
     this.generator = generator;
     this.renderQueue = renderQueue;
+    this.changes = changes;
     this.tileStorage = tileStorage;
     this.columns = columns;
     this.limits = limits;
@@ -119,6 +123,7 @@ public final class RenderSubCommand implements TaerraSubCommand {
   public @NotNull LiteralArgumentBuilder<CommandSourceStack> command() {
     return builder()
         .then(Commands.literal("cancel").executes(this::cancel))
+        .then(Commands.literal("flush").executes(this::flush))
         .then(
             Commands.literal("full")
                 .then(
@@ -206,6 +211,21 @@ public final class RenderSubCommand implements TaerraSubCommand {
     } else {
       feedback(context, Messages.error("render.idle"));
     }
+    return SUCCESS;
+  }
+
+  private int flush(final @NotNull CommandContext<? extends CommandSourceStack> context) {
+    final int discarded =
+        this.generator.cancelManualRender("Flushed by " + sender(context).getName())
+            + this.renderQueue.discardQueued(RenderPriority.LIVE_ZOOM_0)
+            + this.changes.discard();
+    this.plugin
+        .getServer()
+        .getScheduler()
+        .runTaskAsynchronously(this.plugin, this.renderQueue::save);
+    feedback(
+        context,
+        Messages.success("render.flushed", Messages.tr("unit.tiles", Messages.value(discarded))));
     return SUCCESS;
   }
 

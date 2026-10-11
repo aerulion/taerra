@@ -99,6 +99,7 @@ Every setting can also be changed in game with `/taerra config`.
 | `/taerra render radius <world> <radius> [x z]` | Render an area around you, around spawn, or around a point |
 | `/taerra render image <world> [zoom]` | Export the map as images |
 | `/taerra render cancel` | Stop a running render |
+| `/taerra render flush` | Drop every queued tile, unrendered changes included |
 | `/taerra limit <world> circle\|square\|rectangle …` | Set how much of a world the map shows |
 | `/taerra config …` | Change settings, enable worlds, make worlds and layers private |
 | `/taerra waypoint add\|remove …` | Add or remove waypoints |

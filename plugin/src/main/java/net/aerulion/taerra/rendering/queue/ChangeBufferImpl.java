@@ -51,6 +51,13 @@ public final class ChangeBufferImpl implements ChangeBuffer {
   }
 
   @Override
+  public int discard() {
+    final int discarded = this.pending.size();
+    this.pending.clear();
+    return discarded;
+  }
+
+  @Override
   public void start() {
     if (!isBuffering()) {
       this.plugin.getLogger().info("Rendering world changes as they happen");
