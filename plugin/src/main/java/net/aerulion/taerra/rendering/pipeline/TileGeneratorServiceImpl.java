@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -56,6 +57,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   private static final int LIVE_BATCH_SIZE = 16;
   private static final int REGION_BATCH_SIZE = 64;
   private static final long STALE_TILE_MARGIN_MILLIS = 2_000L;
+  private static final int RENDER_ATTEMPTS = 3;
 
   private final @NotNull Plugin plugin;
   private final @NotNull TopDownTileRenderer topDownRenderer;
@@ -77,6 +79,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   private final @NotNull LongAdder totalZoom0Nanos = new LongAdder();
   private final @NotNull LongAdder totalZoomNanos = new LongAdder();
   private final @NotNull LiveRenderRecorder liveRecorder = new LiveRenderRecorder();
+  private final @NotNull Map<TileCoordinate, Integer> failures = new ConcurrentHashMap<>();
   private final @NotNull ManualRenderCoordinator manualRenders;
   private final @NotNull PyramidDepths depths;
   private final int baseThreads;
@@ -432,23 +435,39 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
             persistNanos);
       }
       this.totalZoom0Nanos.add(System.nanoTime() - startedAt);
+      if (!this.failures.isEmpty()) {
+        tileCoordinates.forEach(this.failures::remove);
+      }
     } catch (final Throwable e) {
       if (this.stopping.get()) {
         this.manualRenders.markReturned(tileCoordinates);
         tileCoordinates.forEach(this.renderQueue::markFailed);
         return;
       }
+      final @NotNull List<TileCoordinate> retried = new ArrayList<>();
+      final @NotNull List<TileCoordinate> failed = new ArrayList<>();
+      for (final @NotNull TileCoordinate tile : tileCoordinates) {
+        (this.failures.merge(tile, 1, Integer::sum) < RENDER_ATTEMPTS ? retried : failed).add(tile);
+      }
+      this.manualRenders.markReturned(retried);
+      retried.forEach(this.renderQueue::markFailed);
+      if (failed.isEmpty()) {
+        return;
+      }
+      failed.forEach(this.failures::remove);
       this.plugin
           .getLogger()
           .log(
               Level.WARNING,
               "Failed to render tile batch starting at "
-                  + tasks.getFirst().coordinate()
-                  + ": "
+                  + failed.getFirst()
+                  + " after "
+                  + RENDER_ATTEMPTS
+                  + " attempts: "
                   + Throwables.describe(e),
               e);
-      this.manualRenders.markIncomplete(tasks.getFirst().coordinate().world());
-      finishTiles(tileCoordinates, priority);
+      this.manualRenders.markIncomplete(failed.getFirst().world());
+      finishTiles(failed, priority);
     } finally {
       slotCounter.decrementAndGet();
       dispatchSoon();

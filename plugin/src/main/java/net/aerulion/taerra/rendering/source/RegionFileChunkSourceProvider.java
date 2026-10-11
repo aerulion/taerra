@@ -76,6 +76,7 @@ public final class RegionFileChunkSourceProvider implements ChunkSourceProvider,
 
   private @Nullable ParsedAnvilChunk readChunk(final int chunkX, final int chunkZ) {
     final @NotNull RegionCoordinate coordinate = RegionCoordinate.fromChunk(chunkX, chunkZ);
+    @Nullable Exception failure = null;
     for (int attempt = 0; attempt < 2; attempt++) {
       try {
         final @Nullable RegionFileReader region = regionFor(coordinate);
@@ -110,14 +111,16 @@ public final class RegionFileChunkSourceProvider implements ChunkSourceProvider,
                 : null;
           }
         }
-      } catch (final Exception ignored) {
+      } catch (final Exception e) {
+        failure = e;
       }
       final @Nullable RegionFileReader stale = this.openRegionFiles.remove(coordinate);
       if (stale != null) {
         stale.close();
       }
     }
-    return null;
+    throw new IllegalStateException(
+        "Failed to read chunk " + chunkX + ", " + chunkZ + " of " + this.worldId, failure);
   }
 
   private void warnUnsupported(final int dataVersion) {
