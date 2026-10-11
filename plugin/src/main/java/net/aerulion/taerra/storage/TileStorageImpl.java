@@ -117,14 +117,14 @@ public final class TileStorageImpl implements TileStorage {
 
   @Override
   public boolean deleteTile(final @NotNull TileCoordinate coord) {
-    this.encodedTiles.invalidate(coord);
     try {
-
       Files.deleteIfExists(pickFile(coord).toPath());
       return Files.deleteIfExists(tileFile(coord).toPath());
     } catch (final IOException e) {
       this.plugin.getLogger().warning("Failed to delete tile " + coord + ": " + e.getMessage());
       return false;
+    } finally {
+      this.encodedTiles.invalidate(coord);
     }
   }
 
@@ -181,24 +181,21 @@ public final class TileStorageImpl implements TileStorage {
 
   @Override
   public @NotNull Optional<EncodedTile> readEncodedTile(final @NotNull TileCoordinate coord) {
-    final @Nullable EncodedTile cached = this.encodedTiles.getIfPresent(coord);
-    if (cached != null) {
-      return Optional.of(cached);
-    }
+    return Optional.ofNullable(this.encodedTiles.get(coord, this::loadEncodedTile));
+  }
 
+  private @Nullable EncodedTile loadEncodedTile(final @NotNull TileCoordinate coord) {
     final @NotNull File file = tileFile(coord);
     if (!file.exists()) {
-      return Optional.empty();
+      return null;
     }
 
     try {
       final byte @NotNull [] data = Files.readAllBytes(file.toPath());
-      final @NotNull EncodedTile encodedTile = new EncodedTile(data, EncodedTile.eTagOf(data));
-      this.encodedTiles.put(coord, encodedTile);
-      return Optional.of(encodedTile);
+      return new EncodedTile(data, EncodedTile.eTagOf(data));
     } catch (final IOException e) {
       this.plugin.getLogger().warning("Failed to read tile " + coord + ": " + e.getMessage());
-      return Optional.empty();
+      return null;
     }
   }
 

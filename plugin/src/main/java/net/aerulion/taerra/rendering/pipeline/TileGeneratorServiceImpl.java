@@ -613,8 +613,9 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   private void persistTile(final @NotNull TileCoordinate coord, final @NotNull BufferedImage image)
       throws Exception {
     final boolean created = !this.storage.tileFile(coord).exists();
+    final boolean changed = this.storage.saveTile(coord, image);
     this.cache.put(coord, image);
-    if (this.storage.saveTile(coord, image)) {
+    if (changed) {
       this.tileUpdateBroadcaster.tileUpdated(coord);
     }
     if (created) {
@@ -641,12 +642,12 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   }
 
   private boolean deleteStoredTile(final @NotNull TileCoordinate coord) {
+    final boolean deleted = this.storage.deleteTile(coord);
     this.cache.invalidate(coord);
-    if (this.storage.deleteTile(coord)) {
+    if (deleted) {
       this.tileUpdateBroadcaster.tileUpdated(coord);
-      return true;
     }
-    return false;
+    return deleted;
   }
 
   private int depth(final @NotNull TileCoordinate tile) {

@@ -8,7 +8,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import net.aerulion.taerra.model.TileCoordinate;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public final class TileCacheImpl implements TileCache {
 
@@ -29,15 +28,8 @@ public final class TileCacheImpl implements TileCache {
 
   @Override
   public @NotNull Optional<BufferedImage> get(final @NotNull TileCoordinate coord) {
-    final @Nullable BufferedImage cached = this.cache.getIfPresent(coord);
-    if (cached != null) {
-      return Optional.of(cached);
-    }
-
-    final @NotNull Optional<BufferedImage> loaded = this.storage.loadTile(coord);
-    loaded.ifPresent(image -> this.cache.put(coord, image));
-
-    return loaded;
+    return Optional.ofNullable(
+        this.cache.get(coord, key -> this.storage.loadTile(key).orElse(null)));
   }
 
   @Override
