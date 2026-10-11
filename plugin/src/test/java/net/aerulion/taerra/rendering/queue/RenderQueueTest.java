@@ -1,6 +1,7 @@
 package net.aerulion.taerra.rendering.queue;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -127,6 +128,22 @@ class RenderQueueTest {
     assertEquals(1, this.tracker.snapshot().queuedFullZoom0());
 
     assertEquals(tile(0, 0), this.tracker.pollNextBaseBatch(16).getFirst().coordinate());
+    assertCountersConsistent();
+  }
+
+  @Test
+  @DisplayName("a claimed tile is taken off the queue, and claiming it twice queues it again")
+  void claimSerializesDirectWrites() {
+    final @NotNull TileCoordinate parent = TileCoordinate.topDown("world", 4, 0, 0);
+    this.tracker.enqueue(parent, RenderPriority.FULL_RENDER_ZOOM_PARENT);
+
+    assertTrue(this.tracker.claim(parent, RenderPriority.FULL_RENDER_ZOOM_PARENT));
+    assertEquals(0, this.tracker.snapshot().queuedFullZoom());
+    assertNull(this.tracker.pollNextZoomTask(), "a claimed tile is not handed out again");
+
+    assertFalse(this.tracker.claim(parent, RenderPriority.FULL_RENDER_ZOOM_PARENT));
+    this.tracker.markClean(parent);
+    assertEquals(parent, this.tracker.pollNextZoomTask().coordinate());
     assertCountersConsistent();
   }
 

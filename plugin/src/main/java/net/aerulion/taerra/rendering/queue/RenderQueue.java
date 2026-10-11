@@ -21,6 +21,8 @@ public sealed interface RenderQueue permits RenderQueueImpl {
   @Nullable
   RenderQueueTask pollNextZoomTask();
 
+  boolean claim(@NotNull TileCoordinate coord, @NotNull RenderPriority priority);
+
   void markClean(@NotNull TileCoordinate coord);
 
   void markFailed(@NotNull TileCoordinate coord);

@@ -115,6 +115,18 @@ public final class RenderQueueImpl implements RenderQueue {
   }
 
   @Override
+  public synchronized boolean claim(
+      final @NotNull TileCoordinate coord, final @NotNull RenderPriority priority) {
+    if (this.inFlightPriorities.containsKey(coord)) {
+      enqueue(coord, priority, false);
+      return false;
+    }
+    clearQueued(coord);
+    setInFlight(coord, priority);
+    return true;
+  }
+
+  @Override
   public synchronized void markClean(final @NotNull TileCoordinate coord) {
     clearInFlight(coord);
     final RenderPriority requeuePriority = this.requeuePriorities.remove(coord);

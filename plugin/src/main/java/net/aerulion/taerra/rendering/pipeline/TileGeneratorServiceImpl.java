@@ -475,28 +475,34 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       for (final Map.@NotNull Entry<TileCoordinate, BufferedImage[]> entry :
           groupedChildren.entrySet()) {
         final @NotNull TileCoordinate parent = entry.getKey();
-        final BufferedImage @NotNull [] children = entry.getValue();
-
-        final TileCoordinate @NotNull [] childCoordinates = TileHierarchy.childrenOf(parent);
-        boolean anyPresent = false;
-        for (int childIndex = 0; childIndex < children.length; childIndex++) {
-          if (children[childIndex] == null) {
-            children[childIndex] = this.cache.get(childCoordinates[childIndex]).orElse(null);
-          }
-          if (children[childIndex] != null) {
-            anyPresent = true;
-          }
-        }
-        if (!anyPresent) {
+        if (!this.renderQueue.claim(parent, RenderPriority.FULL_RENDER_ZOOM_PARENT)) {
           continue;
         }
+        try {
+          final BufferedImage @NotNull [] children = entry.getValue();
+          final TileCoordinate @NotNull [] childCoordinates = TileHierarchy.childrenOf(parent);
+          boolean anyPresent = false;
+          for (int childIndex = 0; childIndex < children.length; childIndex++) {
+            if (children[childIndex] == null) {
+              children[childIndex] = this.cache.get(childCoordinates[childIndex]).orElse(null);
+            }
+            if (children[childIndex] != null) {
+              anyPresent = true;
+            }
+          }
+          if (!anyPresent) {
+            continue;
+          }
 
-        final @NotNull BufferedImage image = combine(children, parent.view());
-        persistTile(parent, image);
-        recordTileCompletion(parent);
-        nextLevel.put(parent, image);
-        nextLevelCoordinates.add(parent);
-        this.completedZoomTiles.increment();
+          final @NotNull BufferedImage image = combine(children, parent.view());
+          persistTile(parent, image);
+          recordTileCompletion(parent);
+          nextLevel.put(parent, image);
+          nextLevelCoordinates.add(parent);
+          this.completedZoomTiles.increment();
+        } finally {
+          this.renderQueue.markClean(parent);
+        }
       }
 
       highestLevel = nextLevelCoordinates;
