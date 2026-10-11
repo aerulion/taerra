@@ -60,6 +60,7 @@ import net.aerulion.taerra.storage.TileStorageImpl;
 import net.aerulion.taerra.util.Throwables;
 import net.aerulion.taerra.waypoint.DynmapImport;
 import net.aerulion.taerra.waypoint.PersonalWaypoints;
+import net.aerulion.taerra.waypoint.WaypointEditor;
 import net.aerulion.taerra.waypoint.Waypoints;
 import net.aerulion.taerra.waypoint.WaypointsImpl;
 import net.aerulion.taerra.web.auth.ModHandshake;
@@ -267,7 +268,8 @@ public final class Taerra extends JavaPlugin {
               personalWaypoints,
               renders,
               renderFeedback,
-              new Teleports(this));
+              new Teleports(this),
+              new WaypointEditor(this, configuration, waypoints, personalWaypoints));
       this.webServer = webServer;
       webServer.start();
       tileUpdateBroadcaster.start();

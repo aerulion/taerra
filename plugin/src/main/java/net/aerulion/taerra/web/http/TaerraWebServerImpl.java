@@ -31,8 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-import net.aerulion.taerra.api.marker.LineMarker;
-import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.chat.RenderFeedback;
 import net.aerulion.taerra.config.TaerraConfig;
@@ -51,6 +49,7 @@ import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.util.HexColors;
 import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.waypoint.PersonalWaypoints;
+import net.aerulion.taerra.waypoint.WaypointEditor;
 import net.aerulion.taerra.waypoint.Waypoints;
 import net.aerulion.taerra.web.auth.Device;
 import net.aerulion.taerra.web.auth.ModHandshake;
@@ -63,16 +62,13 @@ import net.aerulion.taerra.web.socket.MapWebSocketHandler;
 import net.aerulion.taerra.web.socket.MapWebSocketHandlerImpl;
 import net.aerulion.taerra.web.stats.RenderStatsPayloadSerializer;
 import net.aerulion.taerra.world.Teleports;
-import net.aerulion.taerra.world.WorldPositions;
 import net.kyori.adventure.audience.Audience;
 import org.bukkit.Bukkit;
-import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -98,6 +94,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private final @NotNull RenderService renders;
   private final @NotNull RenderFeedback renderFeedback;
   private final @NotNull Teleports teleports;
+  private final @NotNull WaypointEditor waypointEditor;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private final @NotNull PlayerAvatars avatars = new PlayerAvatars();
   private @Nullable Javalin app;
@@ -123,7 +120,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       final @NotNull PersonalWaypoints personalWaypoints,
       final @NotNull RenderService renders,
       final @NotNull RenderFeedback renderFeedback,
-      final @NotNull Teleports teleports) {
+      final @NotNull Teleports teleports,
+      final @NotNull WaypointEditor waypointEditor) {
     super();
     this.plugin = plugin;
     this.taerraConfig = taerraConfig;
@@ -140,6 +138,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     this.renders = renders;
     this.renderFeedback = renderFeedback;
     this.teleports = teleports;
+    this.waypointEditor = waypointEditor;
   }
 
   private static int environmentSortOrder(final @NotNull String environmentName) {
@@ -225,56 +224,6 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                         && point.get(2) != null
                         && point.stream()
                             .allMatch(value -> value == null || Double.isFinite(value)));
-  }
-
-  private static @Nullable CompletableFuture<Marker> shape(
-      final @NotNull World world,
-      final @NotNull WaypointRequest request,
-      final @NotNull String name) {
-    final @NotNull String id =
-        request.personal() ? PersonalWaypoints.markerId(name) : Waypoints.markerId(name);
-    final @NotNull NamespacedKey key = world.getKey();
-    final @Nullable List<List<Double>> points = request.points();
-    if (points == null) {
-      return WorldPositions.insideBorder(world, request.x(), request.z())
-          ? WorldPositions.standingY(world, request.x(), request.y(), request.z())
-              .thenApply(
-                  y ->
-                      Marker.point(
-                          id, key, new Vector(request.x() + .5, y, request.z() + .5), name))
-          : null;
-    }
-    if (points.stream()
-        .anyMatch(point -> !WorldPositions.nearBorder(world, point.get(0), point.get(2)))) {
-      return null;
-    }
-    if ("area".equals(request.type())) {
-      final @NotNull List<Vector> outline =
-          Waypoints.outline(
-              points.stream().map(point -> new Vector(point.get(0), 0, point.get(2))).toList());
-      return outline.size() < 3
-          ? null
-          : CompletableFuture.completedFuture(
-              Marker.polygon(id, key, outline, world.getMinHeight(), world.getMaxHeight(), name));
-    }
-    final @NotNull List<CompletableFuture<Vector>> placed =
-        points.stream()
-            .map(
-                point ->
-                    WorldPositions.standingY(
-                            world,
-                            (int) Math.floor(point.get(0)),
-                            point.get(1) == null ? null : (int) Math.floor(point.get(1)),
-                            (int) Math.floor(point.get(2)))
-                        .thenApply(y -> new Vector(point.get(0), y, point.get(2))))
-            .toList();
-    return CompletableFuture.allOf(placed.toArray(CompletableFuture[]::new))
-        .thenApply(
-            _ -> {
-              final @NotNull LineMarker line =
-                  Marker.line(id, key, placed.stream().map(CompletableFuture::join).toList(), name);
-              return request.smooth() ? line.smoothed() : line;
-            });
   }
 
   private @NotNull Viewer viewer(final @NotNull Context ctx) {
@@ -815,76 +764,40 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       ctx.status(400).result("Invalid waypoint");
       return;
     }
-    final @Nullable String groupId = Waypoints.groupLayerId(group);
-    if (!viewer.canSeeLayer(
-        this.taerraConfig,
-        request.personal()
-            ? PersonalWaypoints.LAYER
-            : groupId == null ? Waypoints.LAYER : groupId)) {
-      ctx.status(403).result("Not allowed");
-      return;
-    }
-    final boolean renamed =
-        request.previous() == null || !request.previous().equalsIgnoreCase(name);
-    final @NotNull CompletableFuture<Integer> result = new CompletableFuture<>();
-    Bukkit.getScheduler()
-        .runTask(
-            this.plugin,
-            () -> {
-              final @Nullable World world = WorldKeys.resolve(request.world());
-              final @Nullable CompletableFuture<Marker> shaped =
-                  world == null ? null : shape(world, request, name);
-              if (shaped == null) {
-                result.complete(400);
-                return;
-              }
-              shaped
-                  .thenAccept(
-                      marker -> {
-                        final @NotNull Marker described =
-                            marker
-                                .withColor(Color.fromRGB(color.getAsInt()))
-                                .withDescription(Names.description(request.description()));
-                        if (request.personal()) {
-                          result.complete(
-                              switch (this.personalWaypoints.save(
-                                  viewer.uuid(), described, request.previous())) {
-                                case SAVED -> 204;
-                                case TAKEN -> 409;
-                                case FULL -> 422;
-                                case FAILED -> 500;
-                              });
-                          return;
-                        }
-                        if (!canEditWaypoint(viewer, request.previous())) {
-                          result.complete(403);
-                          return;
-                        }
-                        if (renamed
-                            && this.waypoints.names().stream().anyMatch(name::equalsIgnoreCase)) {
-                          result.complete(409);
-                          return;
-                        }
-                        if (groupId != null
-                            && request.privateGroup()
-                            && viewer.canCreatePrivateGroups()
-                            && this.waypoints.groups().stream()
-                                .noneMatch(known -> known.id().equals(groupId))) {
-                          this.taerraConfig.setLayerPrivate(this.plugin, groupId, true);
-                        }
-                        if (renamed && request.previous() != null) {
-                          this.waypoints.remove(request.previous());
-                        }
-                        this.waypoints.add(described, group);
-                        result.complete(204);
-                      })
-                  .exceptionally(
-                      error -> {
-                        result.complete(500);
-                        return null;
-                      });
-            });
-    ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
+    final boolean area = "area".equals(request.type());
+    final WaypointEditor.@NotNull Draft draft =
+        new WaypointEditor.Draft(
+            name,
+            color.getAsInt(),
+            group,
+            request.privateGroup(),
+            request.world(),
+            point
+                ? WaypointEditor.Kind.POINT
+                : area ? WaypointEditor.Kind.AREA : WaypointEditor.Kind.LINE,
+            point ? request.x() : 0,
+            request.y(),
+            point ? request.z() : 0,
+            request.points(),
+            request.smooth(),
+            request.description(),
+            request.previous(),
+            request.personal());
+    ctx.future(
+        () ->
+            this.waypointEditor
+                .save(draft, author(viewer))
+                .thenAccept(
+                    saved ->
+                        ctx.status(
+                            switch (saved) {
+                              case SAVED -> 204;
+                              case INVALID -> 400;
+                              case FORBIDDEN -> 403;
+                              case TAKEN -> 409;
+                              case FULL -> 422;
+                              case FAILED -> 500;
+                            })));
   }
 
   private void handleWaypointDeleteRequest(final @NotNull Context ctx) {
@@ -899,18 +812,18 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       return;
     }
     final @NotNull String name = ctx.pathParam("name");
-    final @NotNull CompletableFuture<Integer> result = new CompletableFuture<>();
-    Bukkit.getScheduler()
-        .runTask(
-            this.plugin,
-            () ->
-                result.complete(
-                    (personal
-                            ? this.personalWaypoints.remove(viewer.uuid(), name)
-                            : canEditWaypoint(viewer, name) && this.waypoints.remove(name))
-                        ? 204
-                        : 404));
-    ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
+    ctx.future(
+        () ->
+            this.waypointEditor
+                .delete(name, personal, author(viewer))
+                .thenAccept(deleted -> ctx.status(deleted ? 204 : 404)));
+  }
+
+  private WaypointEditor.@NotNull Author author(final @NotNull Viewer viewer) {
+    return new WaypointEditor.Author(
+        viewer.uuid(),
+        layer -> viewer.canSeeLayer(this.taerraConfig, layer),
+        viewer.canCreatePrivateGroups());
   }
 
   private void handlePersonalListRequest(final @NotNull Context ctx) {
@@ -1173,11 +1086,6 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                       : 409);
             });
     ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
-  }
-
-  private boolean canEditWaypoint(final @NotNull Viewer viewer, final @Nullable String name) {
-    final @Nullable String layer = name == null ? null : this.waypoints.layerOf(name);
-    return layer == null || viewer.canSeeLayer(this.taerraConfig, layer);
   }
 
   private void handleAvatarRequest(final @NotNull Context ctx) {
