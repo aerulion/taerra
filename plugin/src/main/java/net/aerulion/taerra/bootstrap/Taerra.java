@@ -17,6 +17,7 @@ import net.aerulion.taerra.command.RenderSubCommand;
 import net.aerulion.taerra.command.StatusSubCommand;
 import net.aerulion.taerra.command.TaerraCommands;
 import net.aerulion.taerra.command.WaypointSubCommand;
+import net.aerulion.taerra.config.ConfigEditor;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.integration.ChunkyGeneration;
@@ -360,7 +361,16 @@ public final class Taerra extends JavaPlugin {
             new RenderSubCommand(renders, renderFeedback, exports),
             new LimitSubCommand(renders, renderFeedback, worldLimits),
             new WaypointSubCommand(waypoints),
-            new ConfigSubCommand(this, configuration, webServer, markers),
+            new ConfigSubCommand(
+                new ConfigEditor(
+                    this,
+                    configuration,
+                    markers,
+                    () ->
+                        getServer().getScheduler().runTaskAsynchronously(this, webServer::restart),
+                    webServer::refreshMarkers),
+                configuration,
+                markers),
             new ImportSubCommand(this, waypoints),
             new LoginSubCommand(webSettings, configuration, webSessions),
             new LogoutSubCommand(webSessions),

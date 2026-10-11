@@ -16,19 +16,16 @@ import java.util.Map;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.chat.Messages;
+import net.aerulion.taerra.config.ConfigEditor;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.permission.TaerraPermission;
-import net.aerulion.taerra.util.Names;
-import net.aerulion.taerra.web.http.TaerraWebServer;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.World;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public final class ConfigSubCommand implements TaerraSubCommand {
 
@@ -50,20 +47,17 @@ public final class ConfigSubCommand implements TaerraSubCommand {
     SETTINGS.put("markers.worldborder.shown-by-default", BoolArgumentType.bool());
   }
 
-  private final @NotNull Plugin plugin;
+  private final @NotNull ConfigEditor editor;
   private final @NotNull TaerraConfig config;
-  private final @NotNull TaerraWebServer webServer;
   private final @NotNull MarkerRegistry markers;
 
   public ConfigSubCommand(
-      final @NotNull Plugin plugin,
+      final @NotNull ConfigEditor editor,
       final @NotNull TaerraConfig config,
-      final @NotNull TaerraWebServer webServer,
       final @NotNull MarkerRegistry markers) {
     super();
-    this.plugin = plugin;
+    this.editor = editor;
     this.config = config;
-    this.webServer = webServer;
     this.markers = markers;
   }
 
@@ -169,7 +163,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                                 .clickEvent(
                                     ClickEvent.suggestCommand("/taerra config " + key + " ")))
                         .append(Component.text("  "))
-                        .append(Messages.value(this.plugin.getConfig().get(key)))
+                        .append(Messages.value(String.valueOf(this.editor.get(key))))
                         .build()));
     feedback(context, Messages.lines(lines));
     return SUCCESS;
@@ -180,7 +174,9 @@ public final class ConfigSubCommand implements TaerraSubCommand {
     feedback(
         context,
         Messages.info(
-            "config.value", Messages.value(key), Messages.value(this.plugin.getConfig().get(key))));
+            "config.value",
+            Messages.value(key),
+            Messages.value(String.valueOf(this.editor.get(key)))));
     return SUCCESS;
   }
 
@@ -188,40 +184,27 @@ public final class ConfigSubCommand implements TaerraSubCommand {
       final @NotNull CommandContext<CommandSourceStack> context,
       final @NotNull String key,
       final @NotNull Object given) {
-    @NotNull Object value = "\"\"".equals(given) ? "" : given;
-    if (key.equals("web.name") && !value.toString().isBlank()) {
-      final @Nullable String name = Names.of(value.toString());
-      if (name == null) {
-        feedback(context, Messages.error("config.bad_name"));
-        return SUCCESS;
-      }
-      value = name;
-    }
-    this.plugin.getConfig().set(key, value);
-    this.plugin.saveConfig();
-    if (key.startsWith("web.")) {
-      this.plugin
-          .getServer()
-          .getScheduler()
-          .runTaskAsynchronously(this.plugin, this.webServer::restart);
-      feedback(
-          context, Messages.success("config.set_web", Messages.value(key), Messages.value(value)));
-      return SUCCESS;
-    }
-    if (key.startsWith("join-hint.")) {
-      feedback(context, Messages.success("config.set", Messages.value(key), Messages.value(value)));
-      return SUCCESS;
-    }
+    final ConfigEditor.@NotNull Change change = this.editor.set(key, given);
     feedback(
         context,
-        Messages.success("config.set_restart", Messages.value(key), Messages.value(value)));
+        switch (change.effect()) {
+          case REJECTED -> Messages.error("config.bad_name");
+          case WEB_RESTARTED ->
+              Messages.success(
+                  "config.set_web", Messages.value(key), Messages.value(change.value()));
+          case APPLIED ->
+              Messages.success("config.set", Messages.value(key), Messages.value(change.value()));
+          case NEEDS_RESTART ->
+              Messages.success(
+                  "config.set_restart", Messages.value(key), Messages.value(change.value()));
+        });
     return SUCCESS;
   }
 
   private int setWorldPrivate(
       final @NotNull CommandContext<CommandSourceStack> context, final boolean hidden) {
     final @NotNull String worldName = WorldKeys.id(context.getArgument("world", World.class));
-    this.config.setWorldPrivate(this.plugin, worldName, hidden);
+    this.editor.setWorldPrivate(worldName, hidden);
     feedback(
         context,
         hidden
@@ -236,12 +219,10 @@ public final class ConfigSubCommand implements TaerraSubCommand {
   private int setLayerPrivate(
       final @NotNull CommandContext<CommandSourceStack> context, final boolean hidden) {
     final @NotNull String layerId = StringArgumentType.getString(context, "layer");
-    if (this.markers.existingLayer(layerId) == null && !this.config.layerPrivate(layerId)) {
+    if (!this.editor.setLayerPrivate(layerId, hidden)) {
       feedback(context, Messages.error("config.unknown_layer", Messages.value(layerId)));
       return SUCCESS;
     }
-    this.config.setLayerPrivate(this.plugin, layerId, hidden);
-    this.webServer.refreshMarkers();
     feedback(
         context,
         hidden
@@ -256,7 +237,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
   private int setWorld(
       final @NotNull CommandContext<CommandSourceStack> context, final boolean enabled) {
     final @NotNull String worldName = WorldKeys.id(context.getArgument("world", World.class));
-    this.config.setWorldEnabled(this.plugin, worldName, enabled);
+    this.editor.setWorldEnabled(worldName, enabled);
     feedback(
         context,
         enabled
