@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.model.WorldKeys;
@@ -36,6 +37,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
 
   private final @NotNull Set<ChunkKey> changed = ConcurrentHashMap.newKeySet();
   private final @NotNull Object refreshLock = new Object();
+  private final @NotNull AtomicLong epoch = new AtomicLong();
 
   private final @NotNull Map<String, Long2LongOpenHashMap> heights = new ConcurrentHashMap<>();
   private final @NotNull BlockShapeResolver shapes;
@@ -83,6 +85,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       final int chunkX,
       final int chunkZ) {
     final @NotNull ChunkKey key = new ChunkKey(WorldKeys.id(world), chunkX, chunkZ);
+    final long epoch = this.epoch.get();
     final @Nullable ChunkColumns cached = this.cache.getIfPresent(key);
     if (cached != null) {
       return cached;
@@ -97,15 +100,24 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
             ? provider.sourceForChunk(chunkX, chunkZ)
             : null;
     if (source == null) {
-      if (current) {
+      if (current && epoch == this.epoch.get()) {
         recordHeights(WorldKeys.id(world), chunkX, chunkZ, ChunkColumns.MISSING_HEIGHTS);
       }
       return null;
     }
     final @NotNull ChunkColumns columns = sample(world, source, chunkX, chunkZ);
     if (current) {
-      recordHeights(WorldKeys.id(world), chunkX, chunkZ, columns.heights());
-      this.cache.put(key, columns);
+      this.cache
+          .asMap()
+          .compute(
+              key,
+              (ignored, existing) -> {
+                if (existing != null || epoch != this.epoch.get()) {
+                  return existing;
+                }
+                recordHeights(WorldKeys.id(world), chunkX, chunkZ, columns.heights());
+                return columns;
+              });
     }
     return columns;
   }
@@ -153,6 +165,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
             if (snapshots.containsKey(chunk.toKey())) {
               sampleAndStore(world, live, chunk.x(), chunk.z());
             } else {
+              this.epoch.incrementAndGet();
               this.cache.invalidate(new ChunkKey(WorldKeys.id(world), chunk.x(), chunk.z()));
             }
           }
@@ -180,6 +193,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
 
   @Override
   public void forget(final @NotNull String worldName, final @NotNull Collection<Long> chunks) {
+    this.epoch.incrementAndGet();
     this.cache.invalidateAll(
         chunks.stream()
             .map(
@@ -191,6 +205,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
 
   @Override
   public void forgetWorld(final @NotNull String worldName) {
+    this.epoch.incrementAndGet();
     this.cache.asMap().keySet().removeIf(key -> key.worldName().equals(worldName));
     this.heights.remove(worldName);
   }
