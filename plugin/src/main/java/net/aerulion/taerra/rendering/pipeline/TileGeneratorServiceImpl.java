@@ -605,14 +605,17 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     try {
       final @NotNull List<TileCoordinate> stale =
           this.storage.tilesOlderThan(render.worldName(), cutoff);
+      int removed = 0;
       for (final @NotNull TileCoordinate tile : stale) {
-        deleteStoredTile(tile);
-        enqueueParentTile(tile, RenderPriority.FULL_RENDER_ZOOM_PARENT);
+        if (this.storage.tileFile(tile).lastModified() < cutoff && deleteStoredTile(tile)) {
+          enqueueParentTile(tile, RenderPriority.FULL_RENDER_ZOOM_PARENT);
+          removed++;
+        }
       }
-      if (!stale.isEmpty()) {
+      if (removed > 0) {
         this.plugin
             .getLogger()
-            .info("Removed " + stale.size() + " stale tiles from " + render.worldName());
+            .info("Removed " + removed + " stale tiles from " + render.worldName());
       }
     } catch (final IOException e) {
       this.plugin
