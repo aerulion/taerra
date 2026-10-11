@@ -36,7 +36,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
   private final @NotNull Cache<ChunkKey, ChunkColumns> cache;
 
   private final @NotNull Set<ChunkKey> changed = ConcurrentHashMap.newKeySet();
-  private final @NotNull Object refreshLock = new Object();
+  private final @NotNull Map<String, Object> refreshLocks = new ConcurrentHashMap<>();
   private final @NotNull AtomicLong epoch = new AtomicLong();
 
   private final @NotNull Map<String, Long2LongOpenHashMap> heights = new ConcurrentHashMap<>();
@@ -141,7 +141,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
 
   @Override
   public int refreshChanged(final @NotNull World world) throws Exception {
-    synchronized (this.refreshLock) {
+    synchronized (this.refreshLocks.computeIfAbsent(WorldKeys.id(world), ignored -> new Object())) {
       final @NotNull List<ChunkCoordinate> changed = new ArrayList<>();
       for (final @NotNull ChunkKey key : this.changed) {
         if (key.worldName().equals(WorldKeys.id(world)) && this.changed.remove(key)) {
