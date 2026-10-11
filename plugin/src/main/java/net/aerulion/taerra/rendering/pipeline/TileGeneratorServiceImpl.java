@@ -602,7 +602,10 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     try {
       final @NotNull List<TileCoordinate> stale =
           this.storage.tilesOlderThan(render.worldName(), cutoff);
-      stale.forEach(this::deleteStoredTile);
+      for (final @NotNull TileCoordinate tile : stale) {
+        deleteStoredTile(tile);
+        enqueueParentTile(tile, RenderPriority.FULL_RENDER_ZOOM_PARENT);
+      }
       if (!stale.isEmpty()) {
         this.plugin
             .getLogger()
