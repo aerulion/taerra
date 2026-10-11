@@ -290,7 +290,10 @@ public final class ManualRenderSession {
     return fresh;
   }
 
-  public synchronized void cancel(final String reason) {
+  public synchronized boolean cancel(final String reason) {
+    if (!this.active) {
+      return false;
+    }
     this.active = false;
     this.phase = "canceled";
     this.finishedAtNanos = System.nanoTime();
@@ -298,6 +301,7 @@ public final class ManualRenderSession {
     this.queuedTiles.clear();
     this.inFlightTiles.clear();
     this.knownTiles.clear();
+    return true;
   }
 
   public void setLastMessage(final String lastMessage) {

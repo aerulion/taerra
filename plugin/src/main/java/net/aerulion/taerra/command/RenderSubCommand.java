@@ -211,45 +211,50 @@ public final class RenderSubCommand implements TaerraSubCommand {
   }
 
   private int cancel(final @NotNull CommandContext<? extends CommandSourceStack> context) {
-    final @NotNull ManualRenderSessionSnapshot session =
-        this.generator.statusSnapshot().manualRenderSession();
-    final int discarded =
-        this.generator.cancelManualRender("Canceled by " + sender(context).getName());
-    if (session.active() || discarded > 0) {
-      this.plugin
-          .getServer()
-          .getScheduler()
-          .runTaskAsynchronously(this.plugin, this.renderQueue::save);
-      feedback(
-          context,
-          withLimitNote(
-              session,
-              Messages.success(
-                  "render.canceled", Messages.tr("unit.tiles", Messages.value(discarded)))));
-    } else {
-      feedback(context, Messages.error("render.idle"));
-    }
+    final @NotNull String reason = "Canceled by " + sender(context).getName();
+    async(
+        () -> {
+          final @NotNull ManualRenderSessionSnapshot session =
+              this.generator.statusSnapshot().manualRenderSession();
+          final int discarded = this.generator.cancelManualRender(reason);
+          if (!session.active() && discarded == 0) {
+            sendSync(context, Messages.error("render.idle"));
+            return;
+          }
+          this.renderQueue.save();
+          sendSync(
+              context,
+              withLimitNote(
+                  session,
+                  Messages.success(
+                      "render.canceled", Messages.tr("unit.tiles", Messages.value(discarded)))));
+        });
     return SUCCESS;
   }
 
   private int flush(final @NotNull CommandContext<? extends CommandSourceStack> context) {
-    final @NotNull ManualRenderSessionSnapshot session =
-        this.generator.statusSnapshot().manualRenderSession();
-    final int discarded =
-        this.generator.cancelManualRender("Flushed by " + sender(context).getName())
-            + this.renderQueue.discardQueued(RenderPriority.LIVE_ZOOM_0)
-            + this.changes.discard();
-    this.plugin
-        .getServer()
-        .getScheduler()
-        .runTaskAsynchronously(this.plugin, this.renderQueue::save);
-    feedback(
-        context,
-        withLimitNote(
-            session,
-            Messages.success(
-                "render.flushed", Messages.tr("unit.tiles", Messages.value(discarded)))));
+    final @NotNull String reason = "Flushed by " + sender(context).getName();
+    async(
+        () -> {
+          final @NotNull ManualRenderSessionSnapshot session =
+              this.generator.statusSnapshot().manualRenderSession();
+          final int discarded =
+              this.generator.cancelManualRender(reason)
+                  + this.renderQueue.discardQueued(RenderPriority.LIVE_ZOOM_0)
+                  + this.changes.discard();
+          this.renderQueue.save();
+          sendSync(
+              context,
+              withLimitNote(
+                  session,
+                  Messages.success(
+                      "render.flushed", Messages.tr("unit.tiles", Messages.value(discarded)))));
+        });
     return SUCCESS;
+  }
+
+  private void async(final @NotNull Runnable task) {
+    this.plugin.getServer().getScheduler().runTaskAsynchronously(this.plugin, task);
   }
 
   private int image(

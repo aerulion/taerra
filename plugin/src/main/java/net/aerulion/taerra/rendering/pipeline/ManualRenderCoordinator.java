@@ -90,18 +90,20 @@ final class ManualRenderCoordinator {
     }
   }
 
-  synchronized int submit(
+  int submit(
       final @NotNull ManualRenderSession session,
       final @NotNull RegionScanResult result,
       final @NotNull String plannedMessage) {
     final @NotNull List<TileCoordinate> tiles = new ArrayList<>(result.zoom0Tiles());
-    if (session != this.session
-        || !session.activate(
-            result.totalRegions(), result.discoveredChunks(), tiles, plannedMessage)) {
-      return 0;
+    synchronized (session) {
+      if (session != this.session
+          || !session.activate(
+              result.totalRegions(), result.discoveredChunks(), tiles, plannedMessage)) {
+        return 0;
+      }
+      this.complete = result.unreadableRegions() == 0;
+      this.renderQueue.enqueueAll(tiles, RenderPriority.FULL_RENDER_ZOOM_0);
     }
-    this.complete = result.unreadableRegions() == 0;
-    this.renderQueue.enqueueAll(tiles, RenderPriority.FULL_RENDER_ZOOM_0);
     session.setLastMessage(
         plannedMessage
             + " | queued="
@@ -119,12 +121,10 @@ final class ManualRenderCoordinator {
   synchronized int cancel(final @NotNull String reason) {
     this.cancels.incrementAndGet();
     final @NotNull ManualRenderSession session = this.session;
-    final int discarded = this.renderQueue.discardQueued(RenderPriority.FULL_RENDER_ZOOM_0);
-    if (session.isActive()) {
-      session.cancel(reason);
+    if (session.cancel(reason)) {
       this.history.record(session.toCompletedRender());
     }
-    return discarded;
+    return this.renderQueue.discardQueued(RenderPriority.FULL_RENDER_ZOOM_0);
   }
 
   void queueIsometricCoverage(

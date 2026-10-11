@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import net.aerulion.taerra.model.RegionCoordinate;
 import net.aerulion.taerra.model.TileCoordinate;
 import org.jetbrains.annotations.NotNull;
@@ -29,9 +31,9 @@ public final class RenderQueueImpl implements RenderQueue {
   private final @NotNull Map<TileCoordinate, RenderPriority> inFlightPriorities;
   private final @NotNull Map<TileCoordinate, RenderPriority> requeuePriorities;
 
-  private final int @NotNull [] queuedCounts;
-  private int baseInFlightCount;
-  private int zoomInFlightCount;
+  private final @NotNull AtomicIntegerArray queuedCounts;
+  private volatile int baseInFlightCount;
+  private volatile int zoomInFlightCount;
 
   public RenderQueueImpl(final @NotNull RenderQueueStore store) {
     super();
@@ -39,8 +41,8 @@ public final class RenderQueueImpl implements RenderQueue {
     this.queues = new EnumMap<>(RenderPriority.class);
     this.queuedPriorities = new HashMap<>();
     this.inFlightPriorities = new HashMap<>();
-    this.requeuePriorities = new HashMap<>();
-    this.queuedCounts = new int[RenderPriority.values().length];
+    this.requeuePriorities = new ConcurrentHashMap<>();
+    this.queuedCounts = new AtomicIntegerArray(RenderPriority.values().length);
 
     for (final RenderPriority priority : RenderPriority.values()) {
       this.queues.put(priority, new ArrayDeque<>());
@@ -56,7 +58,7 @@ public final class RenderQueueImpl implements RenderQueue {
   }
 
   @Override
-  public synchronized void enqueueAll(
+  public void enqueueAll(
       final @NotNull Collection<TileCoordinate> coordinates,
       final @NotNull RenderPriority priority) {
     for (final @NotNull TileCoordinate coordinate : coordinates) {
@@ -167,12 +169,12 @@ public final class RenderQueueImpl implements RenderQueue {
   }
 
   @Override
-  public synchronized @NotNull RenderQueueSnapshot snapshot() {
+  public @NotNull RenderQueueSnapshot snapshot() {
     return new RenderQueueSnapshot(
-        this.queuedCounts[RenderPriority.LIVE_ZOOM_0.ordinal()],
-        this.queuedCounts[RenderPriority.FULL_RENDER_ZOOM_0.ordinal()],
-        this.queuedCounts[RenderPriority.LIVE_ZOOM_PARENT.ordinal()],
-        this.queuedCounts[RenderPriority.FULL_RENDER_ZOOM_PARENT.ordinal()],
+        this.queuedCounts.get(RenderPriority.LIVE_ZOOM_0.ordinal()),
+        this.queuedCounts.get(RenderPriority.FULL_RENDER_ZOOM_0.ordinal()),
+        this.queuedCounts.get(RenderPriority.LIVE_ZOOM_PARENT.ordinal()),
+        this.queuedCounts.get(RenderPriority.FULL_RENDER_ZOOM_PARENT.ordinal()),
         this.baseInFlightCount,
         this.zoomInFlightCount,
         this.requeuePriorities.size());
@@ -236,15 +238,15 @@ public final class RenderQueueImpl implements RenderQueue {
       final @NotNull TileCoordinate coord, final @NotNull RenderPriority priority) {
     final @Nullable RenderPriority previous = this.queuedPriorities.put(coord, priority);
     if (previous != null) {
-      this.queuedCounts[previous.ordinal()]--;
+      this.queuedCounts.decrementAndGet(previous.ordinal());
     }
-    this.queuedCounts[priority.ordinal()]++;
+    this.queuedCounts.incrementAndGet(priority.ordinal());
   }
 
   private void clearQueued(final @NotNull TileCoordinate coord) {
     final RenderPriority previous = this.queuedPriorities.remove(coord);
     if (previous != null) {
-      this.queuedCounts[previous.ordinal()]--;
+      this.queuedCounts.decrementAndGet(previous.ordinal());
     }
   }
 
@@ -292,7 +294,7 @@ public final class RenderQueueImpl implements RenderQueue {
 
   private @Nullable RenderPriority nextPriority(final @NotNull List<RenderPriority> priorities) {
     for (final @NotNull RenderPriority priority : priorities) {
-      if (this.queuedCounts[priority.ordinal()] > 0) {
+      if (this.queuedCounts.get(priority.ordinal()) > 0) {
         return priority;
       }
     }
