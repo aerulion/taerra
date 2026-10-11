@@ -9,5 +9,5 @@ public sealed interface RenderQueueStore permits RenderQueueStoreImpl {
   @NotNull
   Map<TileCoordinate, RenderPriority> load();
 
-  void save(@NotNull Map<TileCoordinate, RenderPriority> tasks);
+  boolean save(@NotNull Map<TileCoordinate, RenderPriority> tasks);
 }

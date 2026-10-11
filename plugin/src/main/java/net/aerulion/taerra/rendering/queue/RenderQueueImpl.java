@@ -34,6 +34,8 @@ public final class RenderQueueImpl implements RenderQueue {
   private final @NotNull AtomicIntegerArray queuedCounts;
   private volatile int baseInFlightCount;
   private volatile int zoomInFlightCount;
+  private long version;
+  private long savedVersion = -1L;
 
   public RenderQueueImpl(final @NotNull RenderQueueStore store) {
     super();
@@ -189,14 +191,21 @@ public final class RenderQueueImpl implements RenderQueue {
   public void save() {
     synchronized (this.store) {
       final @NotNull Map<TileCoordinate, RenderPriority> allTasks;
+      final long version;
       synchronized (this) {
+        version = this.version;
+        if (version == this.savedVersion) {
+          return;
+        }
         allTasks = new HashMap<>(this.queuedPriorities);
         this.inFlightPriorities.forEach(
             (coord, priority) -> allTasks.merge(coord, priority, RenderPriority::higherPriority));
         this.requeuePriorities.forEach(
             (coord, priority) -> allTasks.merge(coord, priority, RenderPriority::higherPriority));
       }
-      this.store.save(allTasks);
+      if (this.store.save(allTasks)) {
+        this.savedVersion = version;
+      }
     }
   }
 
@@ -211,6 +220,7 @@ public final class RenderQueueImpl implements RenderQueue {
 
     final RenderPriority inFlightPriority = this.inFlightPriorities.get(coord);
     if (inFlightPriority != null) {
+      this.version++;
       this.requeuePriorities.put(
           coord, RenderPriority.higherPriority(this.requeuePriorities.get(coord), priority));
       return false;
@@ -236,6 +246,7 @@ public final class RenderQueueImpl implements RenderQueue {
 
   private void setQueued(
       final @NotNull TileCoordinate coord, final @NotNull RenderPriority priority) {
+    this.version++;
     final @Nullable RenderPriority previous = this.queuedPriorities.put(coord, priority);
     if (previous != null) {
       this.queuedCounts.decrementAndGet(previous.ordinal());
@@ -244,6 +255,7 @@ public final class RenderQueueImpl implements RenderQueue {
   }
 
   private void clearQueued(final @NotNull TileCoordinate coord) {
+    this.version++;
     final RenderPriority previous = this.queuedPriorities.remove(coord);
     if (previous != null) {
       this.queuedCounts.decrementAndGet(previous.ordinal());
@@ -252,6 +264,7 @@ public final class RenderQueueImpl implements RenderQueue {
 
   private void setInFlight(
       final @NotNull TileCoordinate coord, final @NotNull RenderPriority priority) {
+    this.version++;
     final @Nullable RenderPriority previous = this.inFlightPriorities.put(coord, priority);
     if (previous != null) {
       adjustInFlight(previous, -1);
@@ -260,6 +273,7 @@ public final class RenderQueueImpl implements RenderQueue {
   }
 
   private @Nullable RenderPriority clearInFlight(final @NotNull TileCoordinate coord) {
+    this.version++;
     final RenderPriority previous = this.inFlightPriorities.remove(coord);
     if (previous != null) {
       adjustInFlight(previous, -1);

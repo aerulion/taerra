@@ -1,12 +1,13 @@
 package net.aerulion.taerra.rendering.queue;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,30 +94,33 @@ public final class RenderQueueStoreImpl implements RenderQueueStore {
   }
 
   @Override
-  public synchronized void save(final @NotNull Map<TileCoordinate, RenderPriority> tasks) {
+  public synchronized boolean save(final @NotNull Map<TileCoordinate, RenderPriority> tasks) {
     try {
       Files.createDirectories(this.file.getParent());
-
-      final @NotNull List<StoredRenderTask> stored = new ArrayList<>(tasks.size());
-      for (final Map.@NotNull Entry<TileCoordinate, RenderPriority> entry : tasks.entrySet()) {
-        final @NotNull TileCoordinate coord = entry.getKey();
-        stored.add(
-            new StoredRenderTask(
-                coord.world(),
-                coord.view().id(),
-                coord.rotation().id(),
-                coord.zoom(),
-                coord.x(),
-                coord.z(),
-                entry.getValue().name()));
-      }
-
       final @NotNull Path temp = this.file.resolveSibling(this.file.getFileName() + ".tmp");
-      this.mapper.writeValue(temp.toFile(), stored);
+      try (final @NotNull JsonGenerator generator =
+              this.mapper.createGenerator(temp.toFile(), JsonEncoding.UTF8)) {
+        generator.writeStartArray();
+        for (final Map.@NotNull Entry<TileCoordinate, RenderPriority> entry : tasks.entrySet()) {
+          final @NotNull TileCoordinate coord = entry.getKey();
+          generator.writeObject(
+              new StoredRenderTask(
+                  coord.world(),
+                  coord.view().id(),
+                  coord.rotation().id(),
+                  coord.zoom(),
+                  coord.x(),
+                  coord.z(),
+                  entry.getValue().name()));
+        }
+        generator.writeEndArray();
+      }
       Files.move(
           temp, this.file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+      return true;
     } catch (final IOException e) {
       this.logger.warning("Failed to save the render queue: " + e.getMessage());
+      return false;
     }
   }
 }
