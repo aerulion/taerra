@@ -31,6 +31,7 @@ import net.aerulion.taerra.rendering.region.RegionScanResult;
 import net.aerulion.taerra.rendering.sample.CachedChunkColumnsSource;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsCache;
 import net.aerulion.taerra.rendering.session.CompletedRender;
+import net.aerulion.taerra.rendering.session.ManualRenderSession;
 import net.aerulion.taerra.rendering.session.ManualRenderSessionSnapshot;
 import net.aerulion.taerra.rendering.session.RenderHistory;
 import net.aerulion.taerra.rendering.source.RegionFileChunkSourceProvider;
@@ -181,23 +182,29 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   }
 
   @Override
-  public boolean tryBeginManualRender(final @NotNull String mode, final @NotNull String worldName) {
+  public @Nullable ManualRenderSession tryBeginManualRender(
+      final @NotNull String mode, final @NotNull String worldName) {
     return this.manualRenders.tryBegin(mode, worldName);
   }
 
   @Override
   public void updateManualRenderScanProgress(
-      final @NotNull String worldName, final @NotNull RegionScanProgress progress) {
-    this.manualRenders.updateScanProgress(worldName, progress);
+      final @NotNull ManualRenderSession session, final @NotNull RegionScanProgress progress) {
+    this.manualRenders.updateScanProgress(session, progress);
   }
 
   @Override
   public int submitManualRender(
-      final @NotNull String mode,
-      final @NotNull String worldName,
+      final @NotNull ManualRenderSession session,
       final @NotNull RegionScanResult result,
       final @NotNull String plannedMessage) {
-    return this.manualRenders.submit(mode, worldName, result, plannedMessage);
+    return this.manualRenders.submit(session, result, plannedMessage);
+  }
+
+  @Override
+  public int cancelManualRender(
+      final @NotNull ManualRenderSession session, final @NotNull String reason) {
+    return this.manualRenders.cancel(session, reason);
   }
 
   @Override

@@ -157,10 +157,6 @@ public final class ManualRenderSession {
     return this.worldName.equals(worldName);
   }
 
-  public boolean matches(final String mode, final String worldName) {
-    return this.mode.equals(mode) && this.worldName.equals(worldName);
-  }
-
   public void updateScan(
       final int totalRegions,
       final int scannedRegions,
@@ -175,11 +171,14 @@ public final class ManualRenderSession {
         "Discovered " + discoveredTiles + " zoom-0 tiles from " + discoveredChunks + " chunks";
   }
 
-  public synchronized void activate(
+  public synchronized boolean activate(
       final int totalRegions,
       final int discoveredChunks,
       final @NotNull List<TileCoordinate> tiles,
       final String plannedMessage) {
+    if (!this.active) {
+      return false;
+    }
     this.phase = "rendering";
     this.totalRegions = totalRegions;
     this.scannedRegions = totalRegions;
@@ -206,6 +205,7 @@ public final class ManualRenderSession {
     this.topDownTiles = this.totalTiles;
     this.topDownZoom0Tiles = tiles.size();
     this.lastMessage = plannedMessage;
+    return true;
   }
 
   public void recordRegionTiming(

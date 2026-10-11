@@ -37,6 +37,7 @@ import net.aerulion.taerra.rendering.region.RegionFileScanner;
 import net.aerulion.taerra.rendering.region.RegionScanListener;
 import net.aerulion.taerra.rendering.region.RegionScanResult;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsCache;
+import net.aerulion.taerra.rendering.session.ManualRenderSession;
 import net.aerulion.taerra.rendering.session.ManualRenderSessionSnapshot;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.storage.WorldImageExport;
@@ -459,7 +460,9 @@ public final class RenderSubCommand implements TaerraSubCommand {
               Messages.command("/taerra config world " + worldName + " enable")));
       return false;
     }
-    if (!this.generator.tryBeginManualRender(mode, worldName)) {
+    final @Nullable ManualRenderSession session =
+        this.generator.tryBeginManualRender(mode, worldName);
+    if (session == null) {
       audience.sendMessage(
           Messages.error(
               "render.busy",
@@ -475,15 +478,15 @@ public final class RenderSubCommand implements TaerraSubCommand {
           try {
             final @NotNull RegionScanResult scanResult =
                 scan.apply(
-                    progress -> this.generator.updateManualRenderScanProgress(worldName, progress));
+                    progress -> this.generator.updateManualRenderScanProgress(session, progress));
             final @NotNull List<Component> lines = new ArrayList<>();
 
             if (scanResult.zoom0Tiles().isEmpty()) {
-              this.generator.cancelManualRender("Nothing to render");
+              this.generator.cancelManualRender(session, "Nothing to render");
               lines.add(Messages.error("render.nothing", Messages.world(worldName)));
             } else {
               final int queuedTiles =
-                  this.generator.submitManualRender(mode, worldName, scanResult, "Queued " + mode);
+                  this.generator.submitManualRender(session, scanResult, "Queued " + mode);
               if (queuedTiles == 0) {
                 return;
               }
@@ -515,7 +518,7 @@ public final class RenderSubCommand implements TaerraSubCommand {
             sendSync(audience, Messages.lines(lines));
           } catch (final Exception e) {
             final @NotNull String failure = Throwables.describe(e);
-            this.generator.cancelManualRender("Render failed: " + failure);
+            this.generator.cancelManualRender(session, "Render failed: " + failure);
             sendSync(
                 audience,
                 Messages.error(

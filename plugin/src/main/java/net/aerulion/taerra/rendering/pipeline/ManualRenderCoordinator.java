@@ -64,18 +64,18 @@ final class ManualRenderCoordinator {
     return this.session.snapshot();
   }
 
-  synchronized boolean tryBegin(final @NotNull String mode, final @NotNull String worldName) {
+  synchronized @Nullable ManualRenderSession tryBegin(
+      final @NotNull String mode, final @NotNull String worldName) {
     if (this.session.isActive()) {
-      return false;
+      return null;
     }
     this.session = ManualRenderSession.scanning(mode, worldName, this.depth);
-    return true;
+    return this.session;
   }
 
   void updateScanProgress(
-      final @NotNull String worldName, final @NotNull RegionScanProgress progress) {
-    final @NotNull ManualRenderSession session = this.session;
-    if (session.isActive() && session.matches(worldName)) {
+      final @NotNull ManualRenderSession session, final @NotNull RegionScanProgress progress) {
+    if (session == this.session && session.isActive()) {
       session.updateScan(
           progress.totalRegions(),
           progress.scannedRegions(),
@@ -84,19 +84,17 @@ final class ManualRenderCoordinator {
     }
   }
 
-  int submit(
-      final @NotNull String mode,
-      final @NotNull String worldName,
+  synchronized int submit(
+      final @NotNull ManualRenderSession session,
       final @NotNull RegionScanResult result,
       final @NotNull String plannedMessage) {
-    final @NotNull ManualRenderSession session = this.session;
-    if (!session.isActive() || !session.matches(mode, worldName)) {
+    final @NotNull List<TileCoordinate> tiles = new ArrayList<>(result.zoom0Tiles());
+    if (session != this.session
+        || !session.activate(
+            result.totalRegions(), result.discoveredChunks(), tiles, plannedMessage)) {
       return 0;
     }
-
     this.scannedEveryRegion = result.unreadableRegions() == 0;
-    final @NotNull List<TileCoordinate> tiles = new ArrayList<>(result.zoom0Tiles());
-    session.activate(result.totalRegions(), result.discoveredChunks(), tiles, plannedMessage);
     this.renderQueue.enqueueAll(tiles, RenderPriority.FULL_RENDER_ZOOM_0);
     session.setLastMessage(
         plannedMessage
@@ -107,7 +105,12 @@ final class ManualRenderCoordinator {
     return tiles.size();
   }
 
-  int cancel(final @NotNull String reason) {
+  synchronized int cancel(
+      final @NotNull ManualRenderSession session, final @NotNull String reason) {
+    return session == this.session ? cancel(reason) : 0;
+  }
+
+  synchronized int cancel(final @NotNull String reason) {
     this.cancels.incrementAndGet();
     final @NotNull ManualRenderSession session = this.session;
     final int discarded = this.renderQueue.discardQueued(RenderPriority.FULL_RENDER_ZOOM_0);

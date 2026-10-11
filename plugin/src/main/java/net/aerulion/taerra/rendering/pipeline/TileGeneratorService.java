@@ -3,6 +3,7 @@ package net.aerulion.taerra.rendering.pipeline;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.rendering.region.RegionScanProgress;
 import net.aerulion.taerra.rendering.region.RegionScanResult;
+import net.aerulion.taerra.rendering.session.ManualRenderSession;
 import net.aerulion.taerra.rendering.session.RenderHistory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,16 +17,18 @@ public sealed interface TileGeneratorService permits TileGeneratorServiceImpl {
 
   void shutdown();
 
-  boolean tryBeginManualRender(@NotNull String mode, @NotNull String worldName);
+  @Nullable
+  ManualRenderSession tryBeginManualRender(@NotNull String mode, @NotNull String worldName);
 
   void updateManualRenderScanProgress(
-      @NotNull String worldName, @NotNull RegionScanProgress progress);
+      @NotNull ManualRenderSession session, @NotNull RegionScanProgress progress);
 
   int submitManualRender(
-      @NotNull String mode,
-      @NotNull String worldName,
+      @NotNull ManualRenderSession session,
       @NotNull RegionScanResult result,
       @NotNull String plannedMessage);
+
+  int cancelManualRender(@NotNull ManualRenderSession session, @NotNull String reason);
 
   int cancelManualRender(@NotNull String reason);
 

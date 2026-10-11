@@ -34,6 +34,18 @@ class ManualRenderSessionTest {
     return session;
   }
 
+  @Test
+  @DisplayName("a scan that ends after its render was canceled does not bring it back")
+  void canceledSessionStaysCanceled() {
+    final @NotNull ManualRenderSession session =
+        ManualRenderSession.scanning("full", "world", tile -> DEPTH);
+    session.cancel("canceled");
+
+    assertFalse(session.activate(1, 16, topDown(4), "planned"));
+    assertFalse(session.isActive());
+    assertEquals(0, session.snapshot().queuedTiles());
+  }
+
   private static @NotNull TileCoordinate topDownAt(final int zoom) {
     return TileCoordinate.topDown("world", zoom, 0, 0);
   }
