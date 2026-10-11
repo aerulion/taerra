@@ -37,6 +37,7 @@ import net.aerulion.taerra.rendering.region.RegionFileScanner;
 import net.aerulion.taerra.rendering.region.RegionScanListener;
 import net.aerulion.taerra.rendering.region.RegionScanResult;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsCache;
+import net.aerulion.taerra.rendering.session.ManualRenderSessionSnapshot;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.storage.WorldImageExport;
 import net.aerulion.taerra.storage.WorldImageExporter;
@@ -195,19 +196,35 @@ public final class RenderSubCommand implements TaerraSubCommand {
                                             IntegerArgumentType.getInteger(context, "zoom"))))));
   }
 
+  private static @NotNull Component withLimitNote(
+      final @NotNull ManualRenderSessionSnapshot session, final @NotNull Component message) {
+    if (!session.active() || !TileGeneratorService.LIMIT_RENDER.equals(session.mode())) {
+      return message;
+    }
+    return Messages.lines(
+        List.of(
+            message,
+            Messages.warning(
+                "render.limit_kept",
+                Messages.command("/taerra render full " + session.worldName()))));
+  }
+
   private int cancel(final @NotNull CommandContext<? extends CommandSourceStack> context) {
-    final boolean active = this.generator.statusSnapshot().manualRenderSession().active();
+    final @NotNull ManualRenderSessionSnapshot session =
+        this.generator.statusSnapshot().manualRenderSession();
     final int discarded =
         this.generator.cancelManualRender("Canceled by " + sender(context).getName());
-    if (active || discarded > 0) {
+    if (session.active() || discarded > 0) {
       this.plugin
           .getServer()
           .getScheduler()
           .runTaskAsynchronously(this.plugin, this.renderQueue::save);
       feedback(
           context,
-          Messages.success(
-              "render.canceled", Messages.tr("unit.tiles", Messages.value(discarded))));
+          withLimitNote(
+              session,
+              Messages.success(
+                  "render.canceled", Messages.tr("unit.tiles", Messages.value(discarded)))));
     } else {
       feedback(context, Messages.error("render.idle"));
     }
@@ -215,6 +232,8 @@ public final class RenderSubCommand implements TaerraSubCommand {
   }
 
   private int flush(final @NotNull CommandContext<? extends CommandSourceStack> context) {
+    final @NotNull ManualRenderSessionSnapshot session =
+        this.generator.statusSnapshot().manualRenderSession();
     final int discarded =
         this.generator.cancelManualRender("Flushed by " + sender(context).getName())
             + this.renderQueue.discardQueued(RenderPriority.LIVE_ZOOM_0)
@@ -225,7 +244,10 @@ public final class RenderSubCommand implements TaerraSubCommand {
         .runTaskAsynchronously(this.plugin, this.renderQueue::save);
     feedback(
         context,
-        Messages.success("render.flushed", Messages.tr("unit.tiles", Messages.value(discarded))));
+        withLimitNote(
+            session,
+            Messages.success(
+                "render.flushed", Messages.tr("unit.tiles", Messages.value(discarded)))));
     return SUCCESS;
   }
 
