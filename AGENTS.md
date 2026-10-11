@@ -36,6 +36,13 @@ The look is fixed product identity: full-block cubes, one colour per face, light
 Web identity is the in-game `/taerra login` one-time link and its 30-day session, with permission-gated worlds,
 layers and teleport. Extend that model; don't add external authentication.
 
+Commands (`command/`), web routes (`web/http/route/`) and listeners are dispatchers: they parse input, check who
+may do it and turn a result into chat or an HTTP status. What happens lives in a service beside its domain
+(`rendering/RenderService`, `waypoint/WaypointEditor`, `config/ConfigEditor`, `world/Teleports`, ...), which returns
+a result instead of chat and, when it touches the world, hops onto the main thread itself. A command and a route
+doing the same thing share that service, never each other. Chat text is built in `chat/` (`Messages`, and
+`RenderFeedback` for renders started from chat or the map); `web.*` settings are read through `config/WebSettings`.
+
 ## Commands
 
 ```bash
