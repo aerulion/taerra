@@ -58,6 +58,7 @@ import net.aerulion.taerra.storage.TileCacheImpl;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.storage.TileStorageImpl;
 import net.aerulion.taerra.util.Throwables;
+import net.aerulion.taerra.waypoint.DynmapImport;
 import net.aerulion.taerra.waypoint.PersonalWaypoints;
 import net.aerulion.taerra.waypoint.Waypoints;
 import net.aerulion.taerra.waypoint.WaypointsImpl;
@@ -371,7 +372,7 @@ public final class Taerra extends JavaPlugin {
                     webServer::refreshMarkers),
                 configuration,
                 markers),
-            new ImportSubCommand(this, waypoints),
+            new ImportSubCommand(new DynmapImport(this, waypoints)),
             new LoginSubCommand(webSettings, configuration, webSessions),
             new LogoutSubCommand(webSessions),
             new DevicesSubCommand(webSessions)));

@@ -5,22 +5,10 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.permission.TaerraPermission;
-import net.aerulion.taerra.waypoint.DynmapMarkers;
-import net.aerulion.taerra.waypoint.Waypoints;
+import net.aerulion.taerra.waypoint.DynmapImport;
 import net.kyori.adventure.key.KeyPattern;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,13 +16,11 @@ public final class ImportSubCommand implements TaerraSubCommand {
 
   private static final @NotNull String DYNMAP_MARKERS = "dynmap/markers.yml";
 
-  private final @NotNull Plugin plugin;
-  private final @NotNull Waypoints waypoints;
+  private final @NotNull DynmapImport dynmap;
 
-  public ImportSubCommand(final @NotNull Plugin plugin, final @NotNull Waypoints waypoints) {
+  public ImportSubCommand(final @NotNull DynmapImport dynmap) {
     super();
-    this.plugin = plugin;
-    this.waypoints = waypoints;
+    this.dynmap = dynmap;
   }
 
   @Override
@@ -64,62 +50,34 @@ public final class ImportSubCommand implements TaerraSubCommand {
 
   private int importDynmap(
       final @NotNull CommandContext<CommandSourceStack> context, final @NotNull String path) {
-    final @NotNull File file = new File(this.plugin.getDataFolder().getParentFile(), path);
-    if (!file.isFile()) {
+    final DynmapImport.@Nullable Report report = this.dynmap.run(path);
+    if (report == null) {
       feedback(context, Messages.error("import.missing", Messages.value("plugins/" + path)));
       return SUCCESS;
     }
-    final DynmapMarkers.@NotNull Parsed parsed =
-        DynmapMarkers.parse(YamlConfiguration.loadConfiguration(file));
-    final @NotNull Set<String> taken = new HashSet<>();
-    this.waypoints.names().forEach(name -> taken.add(name.toLowerCase(Locale.ROOT)));
-    final @NotNull List<Waypoints.Waypoint> imported = new ArrayList<>();
-    final @NotNull Set<String> groups = new HashSet<>();
-    int existing = 0;
-    int unknownWorlds = 0;
-    for (final DynmapMarkers.@NotNull Found found : parsed.points()) {
-      final @Nullable World world = this.plugin.getServer().getWorld(found.world());
-      if (world == null) {
-        unknownWorlds++;
-      } else if (!taken.add(found.name().toLowerCase(Locale.ROOT))) {
-        existing++;
-      } else {
-        imported.add(
-            new Waypoints.Waypoint(
-                found.name(),
-                new Location(world, found.x(), found.y(), found.z()),
-                Color.fromRGB(found.rgb()),
-                found.group()));
-        final @Nullable String groupId = Waypoints.groupLayerId(found.group());
-        if (groupId != null) {
-          groups.add(groupId);
-        }
-      }
-    }
-    parsed.hiddenGroups().forEach(this.waypoints::hideByDefault);
-    this.waypoints.addAll(imported);
-
-    if (parsed.points().isEmpty() && parsed.shapes() == 0) {
+    if (report.empty()) {
       feedback(context, Messages.info("import.none"));
       return SUCCESS;
     }
-    feedback(context, Messages.success("import.done", Messages.value(imported.size())));
-    if (!groups.isEmpty()) {
+    feedback(context, Messages.success("import.done", Messages.value(report.imported())));
+    if (report.groups() > 0) {
       feedback(
           context,
           Messages.info(
               "import.groups",
-              Messages.value(groups.size()),
+              Messages.value(report.groups()),
               Messages.suggest("/taerra config layer", Messages.tr("import.private_hint"))));
     }
-    if (existing > 0) {
-      feedback(context, Messages.info("import.existing", Messages.value(existing)));
+    if (report.existing() > 0) {
+      feedback(context, Messages.info("import.existing", Messages.value(report.existing())));
     }
-    if (unknownWorlds > 0) {
-      feedback(context, Messages.warning("import.unknown_worlds", Messages.value(unknownWorlds)));
+    if (report.unknownWorlds() > 0) {
+      feedback(
+          context,
+          Messages.warning("import.unknown_worlds", Messages.value(report.unknownWorlds())));
     }
-    if (parsed.shapes() > 0) {
-      feedback(context, Messages.info("import.shapes", Messages.value(parsed.shapes())));
+    if (report.shapes() > 0) {
+      feedback(context, Messages.info("import.shapes", Messages.value(report.shapes())));
     }
     return SUCCESS;
   }
