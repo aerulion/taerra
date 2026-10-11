@@ -3,6 +3,7 @@ package net.aerulion.taerra.listener;
 import java.util.concurrent.TimeUnit;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.config.TaerraConfig;
+import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.web.auth.ModHandshake;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -20,12 +21,17 @@ public final class JoinHint implements Listener {
 
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig config;
+  private final @NotNull WebSettings web;
   private final @NotNull NamespacedKey lastShown;
 
-  public JoinHint(final @NotNull Plugin plugin, final @NotNull TaerraConfig config) {
+  public JoinHint(
+      final @NotNull Plugin plugin,
+      final @NotNull TaerraConfig config,
+      final @NotNull WebSettings web) {
     super();
     this.plugin = plugin;
     this.config = config;
+    this.web = web;
     this.lastShown = new NamespacedKey(plugin, "join_hint");
   }
 
@@ -53,8 +59,6 @@ public final class JoinHint implements Listener {
       return;
     }
     data.set(this.lastShown, PersistentDataType.LONG, now);
-    player.sendMessage(
-        Messages.joinHint(
-            this.plugin.getConfig().getString("web.public-url", "").strip().replaceAll("/+$", "")));
+    player.sendMessage(Messages.joinHint(this.web.publicUrl()));
   }
 }

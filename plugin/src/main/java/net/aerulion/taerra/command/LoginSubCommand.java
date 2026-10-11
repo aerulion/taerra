@@ -7,28 +7,28 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.config.TaerraConfig;
+import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.web.auth.WebGrants;
 import net.aerulion.taerra.web.auth.WebSessions;
 import net.aerulion.taerra.web.player.PlayerAvatars;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class LoginSubCommand implements TaerraSubCommand {
 
-  private final @NotNull Plugin plugin;
+  private final @NotNull WebSettings web;
   private final @NotNull TaerraConfig config;
   private final @NotNull WebSessions sessions;
 
   public LoginSubCommand(
-      final @NotNull Plugin plugin,
+      final @NotNull WebSettings web,
       final @NotNull TaerraConfig config,
       final @NotNull WebSessions sessions) {
     super();
-    this.plugin = plugin;
+    this.web = web;
     this.config = config;
     this.sessions = sessions;
   }
@@ -49,14 +49,6 @@ public final class LoginSubCommand implements TaerraSubCommand {
     return builder()
         .executes(this::login)
         .then(Commands.argument("code", StringArgumentType.greedyString()).executes(this::pair));
-  }
-
-  private @NotNull String localUrl() {
-    final @NotNull String ip = this.plugin.getServer().getIp();
-    return "http://"
-        + (ip.isBlank() ? "localhost" : ip)
-        + ":"
-        + this.plugin.getConfig().getInt("web.port", 8100);
   }
 
   private int pair(final @NotNull CommandContext<CommandSourceStack> context) {
@@ -91,16 +83,12 @@ public final class LoginSubCommand implements TaerraSubCommand {
         this.sessions.createCode(
             player.getUniqueId(), player.getName(), PlayerAvatars.skin(player));
     this.sessions.grant(player.getUniqueId(), WebGrants.of(player, this.config));
-    final @NotNull String configured =
-        this.plugin.getConfig().getString("web.public-url", "").strip().replaceAll("/+$", "");
     feedback(
         context,
         Messages.info(
             "login.link",
-            Messages.link(
-                (configured.isEmpty() ? localUrl() : configured) + "/#login=" + code,
-                Messages.tr("login.open"))));
-    if (configured.isEmpty() && TaerraPermission.COMMAND_CONFIG.check(player)) {
+            Messages.link(this.web.baseUrl() + "/#login=" + code, Messages.tr("login.open"))));
+    if (this.web.publicUrl().isEmpty() && TaerraPermission.COMMAND_CONFIG.check(player)) {
       feedback(
           context,
           Messages.warning(

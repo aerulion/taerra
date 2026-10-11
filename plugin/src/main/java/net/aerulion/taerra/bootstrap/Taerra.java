@@ -17,6 +17,7 @@ import net.aerulion.taerra.command.StatusSubCommand;
 import net.aerulion.taerra.command.TaerraCommands;
 import net.aerulion.taerra.command.WaypointSubCommand;
 import net.aerulion.taerra.config.TaerraConfig;
+import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.integration.ChunkyGeneration;
 import net.aerulion.taerra.integration.WorldBorders;
 import net.aerulion.taerra.integration.WorldGuardRegions;
@@ -157,6 +158,7 @@ public final class Taerra extends JavaPlugin {
       Colormaps.load(getLogger());
 
       final @NotNull TaerraConfig configuration = TaerraConfig.load(this);
+      final @NotNull WebSettings webSettings = new WebSettings(this);
 
       TaerraPermission.registerPermissions(this);
       this.translations = Messages.registerTranslations();
@@ -195,9 +197,12 @@ public final class Taerra extends JavaPlugin {
           new MapWebSocketHandlerImpl(this, configuration, webSessions);
       webSessions.onChange(webSocketHandler::revalidate);
       WebGrants.start(this, configuration, webSessions);
-      final @NotNull ModHandshake modHandshake = new ModHandshake(this, configuration, webSessions);
+      final @NotNull ModHandshake modHandshake =
+          new ModHandshake(this, configuration, webSettings, webSessions);
       modHandshake.start();
-      getServer().getPluginManager().registerEvents(new JoinHint(this, configuration), this);
+      getServer()
+          .getPluginManager()
+          .registerEvents(new JoinHint(this, configuration, webSettings), this);
       final @NotNull TileUpdateBroadcaster tileUpdateBroadcaster =
           new TileUpdateBroadcasterImpl(this, webSocketHandler);
       this.tileUpdateBroadcaster = tileUpdateBroadcaster;
@@ -244,6 +249,7 @@ public final class Taerra extends JavaPlugin {
           new TaerraWebServerImpl(
               this,
               configuration,
+              webSettings,
               tileStorage,
               webSocketHandler,
               generatorService,
@@ -305,6 +311,7 @@ public final class Taerra extends JavaPlugin {
           waypoints,
           worldLimits,
           configuration,
+          webSettings,
           webServer,
           webSessions,
           markers);
@@ -334,6 +341,7 @@ public final class Taerra extends JavaPlugin {
       final @NotNull Waypoints waypoints,
       final @NotNull WorldLimits worldLimits,
       final @NotNull TaerraConfig configuration,
+      final @NotNull WebSettings webSettings,
       final @NotNull TaerraWebServer webServer,
       final @NotNull WebSessions webSessions,
       final @NotNull MarkerRegistryInternal markers) {
@@ -346,7 +354,7 @@ public final class Taerra extends JavaPlugin {
             new WaypointSubCommand(waypoints),
             new ConfigSubCommand(this, configuration, webServer, markers),
             new ImportSubCommand(this, waypoints),
-            new LoginSubCommand(this, configuration, webSessions),
+            new LoginSubCommand(webSettings, configuration, webSessions),
             new LogoutSubCommand(webSessions),
             new DevicesSubCommand(webSessions)));
   }

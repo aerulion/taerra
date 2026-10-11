@@ -36,6 +36,7 @@ import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.command.RenderSubCommand;
 import net.aerulion.taerra.config.TaerraConfig;
+import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.marker.MarkerRegistryInternal;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.model.MapRotation;
@@ -83,6 +84,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
 
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig taerraConfig;
+  private final @NotNull WebSettings web;
   private final @NotNull TileStorage tileStorage;
   private final @NotNull MapWebSocketHandler wsHandler;
   private final @NotNull TileGeneratorService generatorService;
@@ -107,6 +109,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   public TaerraWebServerImpl(
       final @NotNull Plugin plugin,
       final @NotNull TaerraConfig taerraConfig,
+      final @NotNull WebSettings web,
       final @NotNull TileStorage tileStorage,
       final @NotNull MapWebSocketHandler wsHandler,
       final @NotNull TileGeneratorService generatorService,
@@ -120,6 +123,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     super();
     this.plugin = plugin;
     this.taerraConfig = taerraConfig;
+    this.web = web;
     this.tileStorage = tileStorage;
     this.wsHandler = wsHandler;
     this.generatorService = generatorService;
@@ -355,27 +359,14 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
             "<span class=\"server-name\" id=\"server-name\">" + escaped + "</span>");
   }
 
-  private @NotNull String serverName() {
-    final @Nullable String name = Names.of(this.plugin.getConfig().getString("web.name", ""));
-    return name == null ? "" : name;
-  }
-
   private void handleIndexRequest(final @NotNull Context ctx) {
     ctx.header("Cache-Control", "no-cache")
-        .html(
-            indexPage(
-                this.indexHtml,
-                serverName(),
-                this.plugin
-                    .getConfig()
-                    .getString("web.public-url", "")
-                    .strip()
-                    .replaceAll("/+$", "")));
+        .html(indexPage(this.indexHtml, this.web.name(), this.web.publicUrl()));
   }
 
   private void handleManifestRequest(final @NotNull Context ctx) {
     final @NotNull ObjectNode manifest = this.manifest.deepCopy();
-    final @NotNull String name = serverName();
+    final @NotNull String name = this.web.name();
     if (!name.isEmpty()) {
       manifest.put("name", name).put("short_name", name);
     }
@@ -385,7 +376,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   }
 
   private void handleConfigRequest(final @NotNull Context ctx) {
-    final @NotNull String name = serverName();
+    final @NotNull String name = this.web.name();
     ctx.json(
         Map.of(
             "name",
@@ -481,14 +472,14 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
               });
 
       this.app = app;
-      if (!this.plugin.getConfig().getString("web.name", "").isBlank() && serverName().isEmpty()) {
+      if (this.web.nameRejected()) {
         this.plugin
             .getLogger()
             .warning(
                 "Ignoring web.name: names are up to 32 letters, digits, spaces and - _ . , : ' & ( ) # ! ? +");
       }
-      final @NotNull String host = this.plugin.getConfig().getString("web.host", "0.0.0.0");
-      final int port = this.plugin.getConfig().getInt("web.port", 8100);
+      final @NotNull String host = this.web.host();
+      final int port = this.web.port();
       app.start(host, port);
 
       this.progressTask =
@@ -745,11 +736,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 "code",
                 code,
                 "base",
-                this.plugin
-                    .getConfig()
-                    .getString("web.public-url", "")
-                    .strip()
-                    .replaceAll("/+$", ""),
+                this.web.publicUrl(),
                 "seconds",
                 WebSessions.CODE_LIFETIME.toSeconds()));
   }

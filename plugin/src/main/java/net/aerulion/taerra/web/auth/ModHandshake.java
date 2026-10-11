@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.aerulion.taerra.config.TaerraConfig;
+import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.web.player.PlayerAvatars;
 import org.bukkit.entity.Player;
@@ -27,6 +28,7 @@ public final class ModHandshake implements Listener {
 
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig config;
+  private final @NotNull WebSettings web;
   private final @NotNull WebSessions sessions;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private final @NotNull Map<UUID, String> tokens = new ConcurrentHashMap<>();
@@ -34,10 +36,12 @@ public final class ModHandshake implements Listener {
   public ModHandshake(
       final @NotNull Plugin plugin,
       final @NotNull TaerraConfig config,
+      final @NotNull WebSettings web,
       final @NotNull WebSessions sessions) {
     super();
     this.plugin = plugin;
     this.config = config;
+    this.web = web;
     this.sessions = sessions;
   }
 
@@ -72,10 +76,8 @@ public final class ModHandshake implements Listener {
   private void send(final @NotNull Player player) {
     final @NotNull Map<String, Object> hello = new HashMap<>();
     hello.put("protocol", PROTOCOL);
-    hello.put(
-        "url",
-        this.plugin.getConfig().getString("web.public-url", "").strip().replaceAll("/+$", ""));
-    hello.put("port", this.plugin.getConfig().getInt("web.port", 8100));
+    hello.put("url", this.web.publicUrl());
+    hello.put("port", this.web.port());
     final @Nullable String token = token(player);
     if (token != null) {
       hello.put("token", token);
