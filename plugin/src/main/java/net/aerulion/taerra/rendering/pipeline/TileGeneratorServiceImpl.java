@@ -337,6 +337,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
         this.plugin
             .getLogger()
             .warning("Skipping tiles of unloaded world " + tasks.getFirst().coordinate().world());
+        this.manualRenders.markIncomplete(tasks.getFirst().coordinate().world());
         finishTiles(tileCoordinates, priority);
         return;
       }
@@ -446,6 +447,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
                   + ": "
                   + Throwables.describe(e),
               e);
+      this.manualRenders.markIncomplete(tasks.getFirst().coordinate().world());
       finishTiles(tileCoordinates, priority);
     } finally {
       slotCounter.decrementAndGet();
@@ -554,6 +556,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
               Level.WARNING,
               "Failed to render zoomed-out tile " + coord + ": " + Throwables.describe(e),
               e);
+      this.manualRenders.markIncomplete(coord.world());
     } finally {
       slotCounter.decrementAndGet();
     }
@@ -579,7 +582,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     }
     final boolean sweeps =
         FULL_RENDER.equals(completed.mode()) || LIMIT_RENDER.equals(completed.mode());
-    if (sweeps && this.manualRenders.scannedEveryRegion()) {
+    if (sweeps && this.manualRenders.complete()) {
       sweepStaleTiles(completed);
     } else if (sweeps) {
       this.plugin
@@ -587,7 +590,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
           .warning(
               "Kept the old tiles of "
                   + completed.worldName()
-                  + " because some region files could not be read");
+                  + " because some of its regions could not be read or rendered");
     }
     for (final @NotNull MapView view : MapView.values()) {
       for (final @NotNull MapRotation rotation :

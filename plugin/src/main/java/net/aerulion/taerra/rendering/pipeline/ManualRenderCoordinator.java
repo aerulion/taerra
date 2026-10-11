@@ -29,7 +29,7 @@ final class ManualRenderCoordinator {
   private final @NotNull RenderHistory history = new RenderHistory();
   private final @NotNull AtomicInteger cancels = new AtomicInteger();
   private volatile @NotNull ManualRenderSession session = ManualRenderSession.idle();
-  private volatile boolean scannedEveryRegion;
+  private volatile boolean complete;
 
   ManualRenderCoordinator(
       final @NotNull RenderQueue renderQueue,
@@ -55,8 +55,14 @@ final class ManualRenderCoordinator {
     return this.cancels.get();
   }
 
-  boolean scannedEveryRegion() {
-    return this.scannedEveryRegion;
+  boolean complete() {
+    return this.complete;
+  }
+
+  void markIncomplete(final @NotNull String worldName) {
+    if (rendering(worldName)) {
+      this.complete = false;
+    }
   }
 
   @NotNull
@@ -94,7 +100,7 @@ final class ManualRenderCoordinator {
             result.totalRegions(), result.discoveredChunks(), tiles, plannedMessage)) {
       return 0;
     }
-    this.scannedEveryRegion = result.unreadableRegions() == 0;
+    this.complete = result.unreadableRegions() == 0;
     this.renderQueue.enqueueAll(tiles, RenderPriority.FULL_RENDER_ZOOM_0);
     session.setLastMessage(
         plannedMessage
