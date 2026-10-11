@@ -73,6 +73,7 @@ import net.aerulion.taerra.web.socket.MapWebSocketHandler;
 import net.aerulion.taerra.web.socket.MapWebSocketHandlerImpl;
 import net.aerulion.taerra.web.socket.TileUpdateBroadcaster;
 import net.aerulion.taerra.web.socket.TileUpdateBroadcasterImpl;
+import net.aerulion.taerra.world.Teleports;
 import net.kyori.adventure.translation.GlobalTranslator;
 import net.kyori.adventure.translation.Translator;
 import org.bukkit.World;
@@ -265,7 +266,8 @@ public final class Taerra extends JavaPlugin {
               waypoints,
               personalWaypoints,
               renders,
-              renderFeedback);
+              renderFeedback,
+              new Teleports(this));
       this.webServer = webServer;
       webServer.start();
       tileUpdateBroadcaster.start();

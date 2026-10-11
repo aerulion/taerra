@@ -43,11 +43,9 @@ import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
 import net.aerulion.taerra.model.WorldKeys;
-import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.rendering.RenderService;
 import net.aerulion.taerra.rendering.iso.IsoTileGeometry;
 import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
-import net.aerulion.taerra.rendering.sample.ColumnRunSampler;
 import net.aerulion.taerra.storage.EncodedTile;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.util.HexColors;
@@ -64,13 +62,14 @@ import net.aerulion.taerra.web.player.PlayerPositionBroadcaster;
 import net.aerulion.taerra.web.socket.MapWebSocketHandler;
 import net.aerulion.taerra.web.socket.MapWebSocketHandlerImpl;
 import net.aerulion.taerra.web.stats.RenderStatsPayloadSerializer;
+import net.aerulion.taerra.world.Teleports;
+import net.aerulion.taerra.world.WorldPositions;
 import net.kyori.adventure.audience.Audience;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
@@ -98,6 +97,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private final @NotNull Map<UUID, NavigationTarget> navigations = new ConcurrentHashMap<>();
   private final @NotNull RenderService renders;
   private final @NotNull RenderFeedback renderFeedback;
+  private final @NotNull Teleports teleports;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private final @NotNull PlayerAvatars avatars = new PlayerAvatars();
   private @Nullable Javalin app;
@@ -122,7 +122,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       final @NotNull Waypoints waypoints,
       final @NotNull PersonalWaypoints personalWaypoints,
       final @NotNull RenderService renders,
-      final @NotNull RenderFeedback renderFeedback) {
+      final @NotNull RenderFeedback renderFeedback,
+      final @NotNull Teleports teleports) {
     super();
     this.plugin = plugin;
     this.taerraConfig = taerraConfig;
@@ -138,6 +139,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     this.personalWaypoints = personalWaypoints;
     this.renders = renders;
     this.renderFeedback = renderFeedback;
+    this.teleports = teleports;
   }
 
   private static int environmentSortOrder(final @NotNull String environmentName) {
@@ -234,8 +236,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     final @NotNull NamespacedKey key = world.getKey();
     final @Nullable List<List<Double>> points = request.points();
     if (points == null) {
-      return WaypointTransfer.insideBorder(world, request.x(), request.z())
-          ? standingY(world, request.x(), request.y(), request.z())
+      return WorldPositions.insideBorder(world, request.x(), request.z())
+          ? WorldPositions.standingY(world, request.x(), request.y(), request.z())
               .thenApply(
                   y ->
                       Marker.point(
@@ -243,7 +245,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
           : null;
     }
     if (points.stream()
-        .anyMatch(point -> !WaypointTransfer.nearBorder(world, point.get(0), point.get(2)))) {
+        .anyMatch(point -> !WorldPositions.nearBorder(world, point.get(0), point.get(2)))) {
       return null;
     }
     if ("area".equals(request.type())) {
@@ -259,7 +261,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
         points.stream()
             .map(
                 point ->
-                    standingY(
+                    WorldPositions.standingY(
                             world,
                             (int) Math.floor(point.get(0)),
                             point.get(1) == null ? null : (int) Math.floor(point.get(1)),
@@ -273,44 +275,6 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                   Marker.line(id, key, placed.stream().map(CompletableFuture::join).toList(), name);
               return request.smooth() ? line.smoothed() : line;
             });
-  }
-
-  private static @NotNull CompletableFuture<Integer> standingY(
-      final @NotNull World world, final int x, final @Nullable Integer y, final int z) {
-    return y != null
-        ? CompletableFuture.completedFuture(
-            Math.clamp(y, world.getMinHeight(), world.getMaxHeight()))
-        : world.getChunkAtAsync(x >> 4, z >> 4).thenApply(_ -> surfaceY(world, x, z));
-  }
-
-  private static @NotNull CompletableFuture<Integer> clearY(
-      final @NotNull World world, final int x, final @Nullable Integer y, final int z) {
-    return world
-        .getChunkAtAsync(x >> 4, z >> 4)
-        .thenApply(
-            _ -> {
-              if (y != null) {
-                final int feet = Math.clamp(y, world.getMinHeight(), world.getMaxHeight());
-                if (!world.getBlockAt(x, feet, z).isSolid()
-                    && !world.getBlockAt(x, feet + 1, z).isSolid()) {
-                  return feet;
-                }
-              }
-              return surfaceY(world, x, z);
-            });
-  }
-
-  private static int surfaceY(final @NotNull World world, final int x, final int z) {
-    if (world.hasCeiling()) {
-      for (int y = ColumnRunSampler.ceilingY(world); y > world.getMinHeight(); y--) {
-        if (world.getBlockAt(x, y - 1, z).isSolid()
-            && !world.getBlockAt(x, y, z).isSolid()
-            && !world.getBlockAt(x, y + 1, z).isSolid()) {
-          return y;
-        }
-      }
-    }
-    return world.getHighestBlockYAt(x, z) + 1;
   }
 
   private @NotNull Viewer viewer(final @NotNull Context ctx) {
@@ -781,52 +745,20 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       return;
     }
     final boolean announce = !this.modHandshake.isMod(ctx.cookie(WebSessions.COOKIE));
-    ctx.future(() -> teleport(uuid, request, announce).thenAccept(status -> ctx.status(status)));
-  }
-
-  private @NotNull CompletableFuture<Integer> teleport(
-      final @NotNull UUID uuid, final @NotNull TeleportRequest request, final boolean announce) {
-    final @NotNull CompletableFuture<Integer> result = new CompletableFuture<>();
-    Bukkit.getScheduler()
-        .runTask(
-            this.plugin,
-            () -> {
-              final @Nullable Player player = Bukkit.getPlayer(uuid);
-              final @Nullable World world = WorldKeys.resolve(request.world());
-              if (player == null) {
-                result.complete(409);
-                return;
-              }
-              if (!TaerraPermission.WEB_TELEPORT.check(player) || world == null) {
-                result.complete(403);
-                return;
-              }
-              final int x = request.x();
-              final int z = request.z();
-              if (!WaypointTransfer.insideBorder(world, x, z)) {
-                result.complete(400);
-                return;
-              }
-              clearY(world, x, request.y(), z)
-                  .thenCompose(
-                      y ->
-                          player
-                              .teleportAsync(
-                                  new org.bukkit.Location(
-                                      world, x + .5, y, z + .5, player.getYaw(), player.getPitch()),
-                                  PlayerTeleportEvent.TeleportCause.PLUGIN)
-                              .thenApply(
-                                  teleported -> {
-                                    if (teleported && announce) {
-                                      player.sendMessage(
-                                          Messages.webTeleport(
-                                              x + " " + y + " " + z, WorldKeys.id(world)));
-                                    }
-                                    return teleported ? 204 : 409;
-                                  }))
-                  .whenComplete((status, error) -> result.complete(error == null ? status : 500));
-            });
-    return result;
+    ctx.future(
+        () ->
+            this.teleports
+                .teleport(uuid, request.world(), request.x(), request.y(), request.z(), announce)
+                .thenAccept(
+                    outcome ->
+                        ctx.status(
+                            switch (outcome) {
+                              case TELEPORTED -> 204;
+                              case OFFLINE, REFUSED -> 409;
+                              case FORBIDDEN -> 403;
+                              case OUTSIDE_BORDER -> 400;
+                              case FAILED -> 500;
+                            })));
   }
 
   private void handleWaypointGroupsRequest(final @NotNull Context ctx) {

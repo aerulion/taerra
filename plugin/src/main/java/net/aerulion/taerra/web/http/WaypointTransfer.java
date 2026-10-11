@@ -14,10 +14,9 @@ import net.aerulion.taerra.util.HexColors;
 import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.waypoint.PersonalWaypoints;
 import net.aerulion.taerra.waypoint.Waypoints;
+import net.aerulion.taerra.world.WorldPositions;
 import org.bukkit.Color;
-import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.WorldBorder;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,17 +28,6 @@ final class WaypointTransfer {
 
   private WaypointTransfer() {
     super();
-  }
-
-  static boolean insideBorder(final @NotNull World world, final int x, final int z) {
-    return world.getWorldBorder().isInside(new Location(world, x + .5, 0, z + .5));
-  }
-
-  static boolean nearBorder(final @NotNull World world, final double x, final double z) {
-    final @NotNull WorldBorder border = world.getWorldBorder();
-    final double reach = border.getSize() / 2 + 1;
-    return Math.abs(x - border.getCenter().getX()) <= reach
-        && Math.abs(z - border.getCenter().getZ()) <= reach;
   }
 
   static @NotNull Map<String, Object> json(final PersonalWaypoints.@NotNull Saved saved) {
@@ -126,7 +114,7 @@ final class WaypointTransfer {
     }
     final int blockX = (int) Math.floor(x.doubleValue());
     final int blockZ = (int) Math.floor(z.doubleValue());
-    if (!insideBorder(world, blockX, blockZ)) {
+    if (!WorldPositions.insideBorder(world, blockX, blockZ)) {
       return null;
     }
     final int blockY =
@@ -184,7 +172,7 @@ final class WaypointTransfer {
       }
       final double x = values[0];
       final double z = values[size - 1];
-      if (!nearBorder(world, x, z)) {
+      if (!WorldPositions.nearBorder(world, x, z)) {
         return null;
       }
       points.add(
