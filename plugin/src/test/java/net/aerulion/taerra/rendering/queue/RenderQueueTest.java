@@ -119,6 +119,18 @@ class RenderQueueTest {
   }
 
   @Test
+  @DisplayName("a full render takes over tiles waiting in the throttled live lane")
+  void fullRenderTakesOverLiveTiles() {
+    this.tracker.enqueue(tile(0, 0), RenderPriority.LIVE_ZOOM_0);
+    this.tracker.enqueue(tile(0, 0), RenderPriority.FULL_RENDER_ZOOM_0);
+    assertEquals(0, this.tracker.snapshot().queuedLiveZoom0());
+    assertEquals(1, this.tracker.snapshot().queuedFullZoom0());
+
+    assertEquals(tile(0, 0), this.tracker.pollNextBaseBatch(16, false).getFirst().coordinate());
+    assertCountersConsistent();
+  }
+
+  @Test
   @DisplayName("a tile dirtied while in flight is re-queued when it completes")
   void requeueWhileInFlight() {
     this.tracker.enqueue(tile(0, 0), RenderPriority.LIVE_ZOOM_0);

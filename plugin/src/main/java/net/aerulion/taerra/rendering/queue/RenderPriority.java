@@ -44,14 +44,4 @@ public enum RenderPriority {
   public boolean isLive() {
     return this.live;
   }
-
-  public boolean outranks(final @Nullable RenderPriority other) {
-    if (other == null) {
-      return true;
-    }
-    if (this.zoom0 != other.zoom0) {
-      throw new IllegalArgumentException("Cannot compare render priorities from different lanes");
-    }
-    return this.orderWithinLane < other.orderWithinLane;
-  }
 }

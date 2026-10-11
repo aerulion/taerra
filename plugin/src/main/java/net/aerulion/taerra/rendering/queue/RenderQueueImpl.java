@@ -219,7 +219,7 @@ public final class RenderQueueImpl implements RenderQueue {
       return true;
     }
 
-    if (priority.outranks(existingPriority)) {
+    if (priority != existingPriority) {
       setQueued(coord, priority);
       this.queues.get(priority).addFirst(coord);
     }
