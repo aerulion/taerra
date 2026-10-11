@@ -48,6 +48,7 @@ import net.aerulion.taerra.rendering.queue.ChangeBufferImpl;
 import net.aerulion.taerra.rendering.queue.RenderQueue;
 import net.aerulion.taerra.rendering.queue.RenderQueueImpl;
 import net.aerulion.taerra.rendering.queue.RenderQueueStoreImpl;
+import net.aerulion.taerra.rendering.queue.WorldChanges;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsCache;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsCacheImpl;
 import net.aerulion.taerra.rendering.style.MapStyle;
@@ -290,11 +291,12 @@ public final class Taerra extends JavaPlugin {
           .getPluginManager()
           .registerEvents(
               new WorldChangeListener(
-                  changeBuffer,
-                  chunkColumnsCache,
-                  configuration,
-                  isoTileService,
-                  chunkyGenerating == null ? _ -> false : chunkyGenerating),
+                  new WorldChanges(
+                      changeBuffer,
+                      chunkColumnsCache,
+                      configuration,
+                      isoTileService,
+                      chunkyGenerating == null ? _ -> false : chunkyGenerating)),
               this);
 
       playerBroadcaster.start();
