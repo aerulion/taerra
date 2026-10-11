@@ -68,7 +68,7 @@ public final class ChangeBufferImpl implements ChangeBuffer {
         () -> {
           try {
             flush();
-          } catch (final Exception e) {
+          } catch (final Throwable e) {
             this.plugin
                 .getLogger()
                 .log(Level.WARNING, "Failed to queue world changes: " + e.getMessage(), e);

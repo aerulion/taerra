@@ -516,7 +516,7 @@ public final class RenderSubCommand implements TaerraSubCommand {
                       "render.unreadable", Messages.value(scanResult.unreadableRegions())));
             }
             sendSync(audience, Messages.lines(lines));
-          } catch (final Exception e) {
+          } catch (final Throwable e) {
             final @NotNull String failure = Throwables.describe(e);
             this.generator.cancelManualRender(session, "Render failed: " + failure);
             sendSync(

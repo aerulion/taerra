@@ -268,7 +268,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
 
     try {
       dispatchWork();
-    } catch (final Exception e) {
+    } catch (final Throwable e) {
       this.plugin
           .getLogger()
           .log(Level.WARNING, "Failed to dispatch render work: " + Throwables.describe(e), e);
@@ -431,7 +431,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
             persistNanos);
       }
       this.totalZoom0Nanos.add(System.nanoTime() - startedAt);
-    } catch (final Exception e) {
+    } catch (final Throwable e) {
       if (this.stopping.get()) {
         this.manualRenders.markReturned(tileCoordinates);
         tileCoordinates.forEach(this.renderQueue::markFailed);
@@ -543,7 +543,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       } else if (deleteStoredTile(coord)) {
         pyramidChanged(coord);
       }
-    } catch (final Exception e) {
+    } catch (final Throwable e) {
       if (this.stopping.get()) {
         this.renderQueue.markFailed(coord);
         return;

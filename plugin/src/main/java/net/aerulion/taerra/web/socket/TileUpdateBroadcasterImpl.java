@@ -65,7 +65,7 @@ public final class TileUpdateBroadcasterImpl implements TileUpdateBroadcaster {
         () -> {
           try {
             flush();
-          } catch (final Exception e) {
+          } catch (final Throwable e) {
             this.plugin
                 .getLogger()
                 .log(Level.WARNING, "Failed to send tile updates: " + e.getMessage(), e);
