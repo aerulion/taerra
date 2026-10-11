@@ -2,6 +2,7 @@ package net.aerulion.taerra.rendering.pipeline;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.ToIntFunction;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.rendering.iso.IsoTileService;
@@ -26,6 +27,7 @@ final class ManualRenderCoordinator {
   private final @NotNull IsoTileService isoTileService;
   private final @NotNull ToIntFunction<TileCoordinate> depth;
   private final @NotNull RenderHistory history = new RenderHistory();
+  private final @NotNull AtomicInteger cancels = new AtomicInteger();
   private volatile @NotNull ManualRenderSession session = ManualRenderSession.idle();
   private volatile boolean scannedEveryRegion;
 
@@ -47,6 +49,10 @@ final class ManualRenderCoordinator {
   @NotNull
   RenderHistory history() {
     return this.history;
+  }
+
+  int cancels() {
+    return this.cancels.get();
   }
 
   boolean scannedEveryRegion() {
@@ -102,6 +108,7 @@ final class ManualRenderCoordinator {
   }
 
   int cancel(final @NotNull String reason) {
+    this.cancels.incrementAndGet();
     final @NotNull ManualRenderSession session = this.session;
     final int discarded = this.renderQueue.discardQueued(RenderPriority.FULL_RENDER_ZOOM_0);
     if (session.isActive()) {
@@ -116,7 +123,8 @@ final class ManualRenderCoordinator {
       final @NotNull List<TileCoordinate> batch,
       final @NotNull List<RenderedTile> renderedTiles,
       final @NotNull ChunkColumnsSource source,
-      final @NotNull RenderPriority priority) {
+      final @NotNull RenderPriority priority,
+      final int cancelsAtStart) {
     final @NotNull ManualRenderSession session = this.session;
     final int measured =
         session.isActive() ? (int) batch.stream().filter(session::owns).count() : 0;
@@ -130,7 +138,7 @@ final class ManualRenderCoordinator {
         this.renderQueue.enqueueAllAhead(fresh, RenderPriority.FULL_RENDER_ZOOM_0);
       }
     }
-    if (priority.isLive()) {
+    if (priority.isLive() || cancelsAtStart != this.cancels.get()) {
       return;
     }
     final @NotNull List<TileCoordinate> orphans =

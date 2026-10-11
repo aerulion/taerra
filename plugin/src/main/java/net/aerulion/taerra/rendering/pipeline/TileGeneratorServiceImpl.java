@@ -319,6 +319,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   private void processBaseBatch(
       final @NotNull List<RenderQueueTask> tasks, final @NotNull AtomicInteger slotCounter) {
     final long startedAt = System.nanoTime();
+    final int cancels = this.manualRenders.cancels();
     final @NotNull RenderPriority priority = tasks.getFirst().priority();
     final @NotNull List<TileCoordinate> tileCoordinates =
         tasks.stream().map(RenderQueueTask::coordinate).toList();
@@ -364,7 +365,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
           chunksRead = provider.chunksRead();
 
           this.manualRenders.queueIsometricCoverage(
-              world, tileCoordinates, renderedTiles, source, priority);
+              world, tileCoordinates, renderedTiles, source, priority, cancels);
         }
         if (priority.isLive()) {
           this.liveRecorder.recordBatch(
