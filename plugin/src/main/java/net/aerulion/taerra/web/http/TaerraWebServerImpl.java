@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 import net.aerulion.taerra.api.marker.LineMarker;
 import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.chat.Messages;
-import net.aerulion.taerra.command.RenderSubCommand;
+import net.aerulion.taerra.chat.RenderFeedback;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.marker.MarkerRegistryInternal;
@@ -44,6 +44,7 @@ import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.permission.TaerraPermission;
+import net.aerulion.taerra.rendering.RenderService;
 import net.aerulion.taerra.rendering.iso.IsoTileGeometry;
 import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
 import net.aerulion.taerra.rendering.sample.ColumnRunSampler;
@@ -95,7 +96,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private final @NotNull Waypoints waypoints;
   private final @NotNull PersonalWaypoints personalWaypoints;
   private final @NotNull Map<UUID, NavigationTarget> navigations = new ConcurrentHashMap<>();
-  private final @NotNull RenderSubCommand render;
+  private final @NotNull RenderService renders;
+  private final @NotNull RenderFeedback renderFeedback;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private final @NotNull PlayerAvatars avatars = new PlayerAvatars();
   private @Nullable Javalin app;
@@ -119,7 +121,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       final @NotNull ModHandshake modHandshake,
       final @NotNull Waypoints waypoints,
       final @NotNull PersonalWaypoints personalWaypoints,
-      final @NotNull RenderSubCommand render) {
+      final @NotNull RenderService renders,
+      final @NotNull RenderFeedback renderFeedback) {
     super();
     this.plugin = plugin;
     this.taerraConfig = taerraConfig;
@@ -133,7 +136,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     this.modHandshake = modHandshake;
     this.waypoints = waypoints;
     this.personalWaypoints = personalWaypoints;
-    this.render = render;
+    this.renders = renders;
+    this.renderFeedback = renderFeedback;
   }
 
   private static int environmentSortOrder(final @NotNull String environmentName) {
@@ -1228,8 +1232,11 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
               final @Nullable Player player =
                   viewer.uuid() == null ? null : Bukkit.getPlayer(viewer.uuid());
               result.complete(
-                  this.render.chunks(
-                          player == null ? Audience.empty() : player, world, chunks, hide)
+                  this.renderFeedback.report(
+                          player == null ? Audience.empty() : player,
+                          WorldKeys.id(world),
+                          RenderFeedback.area(chunks.size(), hide),
+                          this.renders.area(world, chunks, hide))
                       ? 202
                       : 409);
             });

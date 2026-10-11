@@ -12,6 +12,9 @@ public sealed interface TileGeneratorService permits TileGeneratorServiceImpl {
 
   @NotNull String FULL_RENDER = "full_render";
   @NotNull String LIMIT_RENDER = "limit_render";
+  @NotNull String RADIUS_RENDER = "radius_render";
+  @NotNull String AREA_RENDER = "area_render";
+  @NotNull String HIDE_RENDER = "hide_render";
 
   void start();
 

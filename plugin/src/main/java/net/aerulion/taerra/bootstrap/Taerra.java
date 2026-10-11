@@ -6,6 +6,7 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import net.aerulion.taerra.api.TaerraApi;
 import net.aerulion.taerra.chat.Messages;
+import net.aerulion.taerra.chat.RenderFeedback;
 import net.aerulion.taerra.command.ConfigSubCommand;
 import net.aerulion.taerra.command.DevicesSubCommand;
 import net.aerulion.taerra.command.ImportSubCommand;
@@ -28,6 +29,7 @@ import net.aerulion.taerra.listener.world.WorldChangeListener;
 import net.aerulion.taerra.marker.MarkerRegistryImpl;
 import net.aerulion.taerra.marker.MarkerRegistryInternal;
 import net.aerulion.taerra.permission.TaerraPermission;
+import net.aerulion.taerra.rendering.RenderService;
 import net.aerulion.taerra.rendering.block.Fluids;
 import net.aerulion.taerra.rendering.color.BiomeTintMapperImpl;
 import net.aerulion.taerra.rendering.color.BlockDataStore;
@@ -49,6 +51,7 @@ import net.aerulion.taerra.rendering.sample.ChunkColumnsCache;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsCacheImpl;
 import net.aerulion.taerra.rendering.style.MapStyle;
 import net.aerulion.taerra.rendering.topdown.TopDownTileRendererImpl;
+import net.aerulion.taerra.storage.MapImageExports;
 import net.aerulion.taerra.storage.TileCache;
 import net.aerulion.taerra.storage.TileCacheImpl;
 import net.aerulion.taerra.storage.TileStorage;
@@ -232,16 +235,16 @@ public final class Taerra extends JavaPlugin {
       final @NotNull ChangeBuffer changeBuffer =
           new ChangeBufferImpl(this, renderQueue, configuration.updateInterval());
       this.changeBuffer = changeBuffer;
-      final @NotNull RenderSubCommand render =
-          new RenderSubCommand(
+      final @NotNull RenderService renders =
+          new RenderService(
               this,
               generatorService,
               renderQueue,
               changeBuffer,
-              tileStorage,
               chunkColumnsCache,
               worldLimits,
               configuration);
+      final @NotNull RenderFeedback renderFeedback = new RenderFeedback(this);
       final @NotNull PersonalWaypoints personalWaypoints =
           new PersonalWaypoints(this, markers, new File(getDataFolder(), "personal-waypoints"));
       getServer().getPluginManager().registerEvents(personalWaypoints, this);
@@ -259,7 +262,8 @@ public final class Taerra extends JavaPlugin {
               modHandshake,
               waypoints,
               personalWaypoints,
-              render);
+              renders,
+              renderFeedback);
       this.webServer = webServer;
       webServer.start();
       tileUpdateBroadcaster.start();
@@ -304,7 +308,9 @@ public final class Taerra extends JavaPlugin {
 
       registerCommands(
           generatorService,
-          render,
+          renders,
+          renderFeedback,
+          new MapImageExports(this, tileStorage),
           tileCache,
           isoTileService,
           chunkColumnsCache,
@@ -334,7 +340,9 @@ public final class Taerra extends JavaPlugin {
 
   private void registerCommands(
       final @NotNull TileGeneratorService generatorService,
-      final @NotNull RenderSubCommand render,
+      final @NotNull RenderService renders,
+      final @NotNull RenderFeedback renderFeedback,
+      final @NotNull MapImageExports exports,
       final @NotNull TileCache tileCache,
       final @NotNull IsoTileService isoTileService,
       final @NotNull ChunkColumnsCache chunkColumnsCache,
@@ -349,8 +357,8 @@ public final class Taerra extends JavaPlugin {
         this,
         List.of(
             new StatusSubCommand(generatorService, tileCache, isoTileService, chunkColumnsCache),
-            render,
-            new LimitSubCommand(render, worldLimits),
+            new RenderSubCommand(renders, renderFeedback, exports),
+            new LimitSubCommand(renders, renderFeedback, worldLimits),
             new WaypointSubCommand(waypoints),
             new ConfigSubCommand(this, configuration, webServer, markers),
             new ImportSubCommand(this, waypoints),

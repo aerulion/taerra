@@ -11,11 +11,12 @@ import io.papermc.paper.command.brigadier.argument.position.ColumnBlockPosition;
 import io.papermc.paper.command.brigadier.argument.resolvers.ColumnBlockPositionResolver;
 import java.util.Locale;
 import net.aerulion.taerra.chat.Messages;
+import net.aerulion.taerra.chat.RenderFeedback;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.model.WorldLimit;
 import net.aerulion.taerra.permission.TaerraPermission;
-import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
+import net.aerulion.taerra.rendering.RenderService;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import org.bukkit.World;
@@ -24,13 +25,17 @@ import org.jetbrains.annotations.Nullable;
 
 public final class LimitSubCommand implements TaerraSubCommand {
 
-  private final @NotNull RenderSubCommand render;
+  private final @NotNull RenderService renders;
+  private final @NotNull RenderFeedback feedback;
   private final @NotNull WorldLimits limits;
 
   public LimitSubCommand(
-      final @NotNull RenderSubCommand render, final @NotNull WorldLimits limits) {
+      final @NotNull RenderService renders,
+      final @NotNull RenderFeedback feedback,
+      final @NotNull WorldLimits limits) {
     super();
-    this.render = render;
+    this.renders = renders;
+    this.feedback = feedback;
     this.limits = limits;
   }
 
@@ -151,18 +156,13 @@ public final class LimitSubCommand implements TaerraSubCommand {
   private int apply(
       final @NotNull CommandContext<CommandSourceStack> context, final @Nullable WorldLimit limit) {
     final @NotNull World world = world(context);
-    final @NotNull String worldName = WorldKeys.id(world);
-    this.render.start(
+    this.feedback.report(
         sender(context),
-        TileGeneratorService.LIMIT_RENDER,
-        world,
+        WorldKeys.id(world),
         limit == null
             ? Messages.tr("render.what.unlimited")
             : Messages.tr("render.what.limited", describe(limit)),
-        listener -> {
-          this.limits.set(worldName, limit);
-          return this.render.scanFull(world, listener);
-        });
+        this.renders.limit(world, limit));
     return SUCCESS;
   }
 }
