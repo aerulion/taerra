@@ -16,20 +16,17 @@ public sealed interface RenderQueue permits RenderQueueImpl {
   void enqueueAllAhead(@NotNull List<TileCoordinate> coordinates, @NotNull RenderPriority priority);
 
   @NotNull
-  List<RenderQueueTask> pollNextBaseBatch(int maxBatchSize, boolean liveAllowed);
+  List<RenderQueueTask> pollNextBaseBatch(int maxBatchSize);
 
   @Nullable
-  RenderQueueTask pollNextZoomTask(boolean liveAllowed);
+  RenderQueueTask pollNextZoomTask();
 
   void markClean(@NotNull TileCoordinate coord);
 
   void markFailed(@NotNull TileCoordinate coord);
 
   @Nullable
-  RenderPriority nextBasePriority(boolean liveAllowed);
-
-  @Nullable
-  RenderPriority nextZoomPriority(boolean liveAllowed);
+  RenderPriority nextBasePriority();
 
   int discardQueued(@NotNull RenderPriority priority);
 

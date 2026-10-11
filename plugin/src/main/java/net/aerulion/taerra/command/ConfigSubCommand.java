@@ -40,7 +40,6 @@ public final class ConfigSubCommand implements TaerraSubCommand {
     SETTINGS.put("web.name", StringArgumentType.greedyString());
     SETTINGS.put("join-hint.interval-days", IntegerArgumentType.integer(0));
     SETTINGS.put("rendering.render-threads", IntegerArgumentType.integer(0));
-    SETTINGS.put("rendering.max-tiles-per-second", IntegerArgumentType.integer(0));
     SETTINGS.put("rendering.update-interval", IntegerArgumentType.integer(0));
     SETTINGS.put("cache.max-tiles", IntegerArgumentType.integer(1));
     SETTINGS.put("cache.max-chunks", IntegerArgumentType.integer(256));

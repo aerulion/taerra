@@ -73,9 +73,8 @@ public final class RenderQueueImpl implements RenderQueue {
   }
 
   @Override
-  public synchronized @NotNull List<RenderQueueTask> pollNextBaseBatch(
-      final int maxBatchSize, final boolean liveAllowed) {
-    final @Nullable RenderQueueTask seedTask = pollNext(BASE_PRIORITY_ORDER, liveAllowed);
+  public synchronized @NotNull List<RenderQueueTask> pollNextBaseBatch(final int maxBatchSize) {
+    final @Nullable RenderQueueTask seedTask = pollNext(BASE_PRIORITY_ORDER);
     if (seedTask == null) {
       return List.of();
     }
@@ -111,8 +110,8 @@ public final class RenderQueueImpl implements RenderQueue {
   }
 
   @Override
-  public synchronized @Nullable RenderQueueTask pollNextZoomTask(final boolean liveAllowed) {
-    return pollNext(ZOOM_PRIORITY_ORDER, liveAllowed);
+  public synchronized @Nullable RenderQueueTask pollNextZoomTask() {
+    return pollNext(ZOOM_PRIORITY_ORDER);
   }
 
   @Override
@@ -137,13 +136,8 @@ public final class RenderQueueImpl implements RenderQueue {
   }
 
   @Override
-  public synchronized @Nullable RenderPriority nextBasePriority(final boolean liveAllowed) {
-    return nextPriority(BASE_PRIORITY_ORDER, liveAllowed);
-  }
-
-  @Override
-  public synchronized @Nullable RenderPriority nextZoomPriority(final boolean liveAllowed) {
-    return nextPriority(ZOOM_PRIORITY_ORDER, liveAllowed);
+  public synchronized @Nullable RenderPriority nextBasePriority() {
+    return nextPriority(BASE_PRIORITY_ORDER);
   }
 
   @Override
@@ -267,12 +261,8 @@ public final class RenderQueueImpl implements RenderQueue {
     }
   }
 
-  private @Nullable RenderQueueTask pollNext(
-      final @NotNull List<RenderPriority> priorities, final boolean liveAllowed) {
+  private @Nullable RenderQueueTask pollNext(final @NotNull List<RenderPriority> priorities) {
     for (final @NotNull RenderPriority priority : priorities) {
-      if (priority.isLive() && !liveAllowed) {
-        continue;
-      }
       final ArrayDeque<TileCoordinate> queue = this.queues.get(priority);
       while (!queue.isEmpty()) {
         final TileCoordinate coord = queue.pollFirst();
@@ -288,10 +278,9 @@ public final class RenderQueueImpl implements RenderQueue {
     return null;
   }
 
-  private @Nullable RenderPriority nextPriority(
-      final @NotNull List<RenderPriority> priorities, final boolean liveAllowed) {
+  private @Nullable RenderPriority nextPriority(final @NotNull List<RenderPriority> priorities) {
     for (final @NotNull RenderPriority priority : priorities) {
-      if ((liveAllowed || !priority.isLive()) && this.queuedCounts[priority.ordinal()] > 0) {
+      if (this.queuedCounts[priority.ordinal()] > 0) {
         return priority;
       }
     }

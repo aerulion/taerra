@@ -213,8 +213,7 @@ public final class Taerra extends JavaPlugin {
               tileStorage,
               renderQueue,
               tileUpdateBroadcaster,
-              configuration.renderThreads(),
-              configuration.maxTilesPerSecond());
+              configuration.renderThreads());
       this.generatorService = generatorService;
 
       final @NotNull MarkerRegistryInternal markers = new MarkerRegistryImpl();

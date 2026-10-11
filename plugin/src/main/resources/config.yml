@@ -26,9 +26,6 @@ join-hint:
 rendering:
   # Number of threads for tile rendering (0 = half the CPU cores, leaving at least two free for the server)
   render-threads: 0
-  # How many live-update render jobs may start per second, each up to 16 neighboring tiles
-  # (0 = unlimited). Full renders started with /taerra render are not limited by this.
-  max-tiles-per-second: 10
   # How often world changes are rendered, in seconds. Every change is recorded, player edits and natural
   # activity alike, so the map is always brought up to date; it just is not redrawn the moment something moves.
   # A tile changed many times in between is rendered once. 0 = render changes immediately.

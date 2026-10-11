@@ -78,7 +78,6 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   private final @NotNull LiveRenderRecorder liveRecorder = new LiveRenderRecorder();
   private final @NotNull ManualRenderCoordinator manualRenders;
   private final @NotNull PyramidDepths depths;
-  private final @NotNull DispatchThrottle throttle;
   private final int baseThreads;
   private final int zoomThreads;
 
@@ -93,8 +92,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       final @NotNull TileStorage storage,
       final @NotNull RenderQueue renderQueue,
       final @NotNull TileUpdateBroadcaster tileUpdateBroadcaster,
-      final int threadCount,
-      final int maxTilesPerSecond) {
+      final int threadCount) {
     super();
     this.plugin = plugin;
     this.topDownRenderer = topDownRenderer;
@@ -106,7 +104,6 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     this.tileUpdateBroadcaster = tileUpdateBroadcaster;
     this.depths = new PyramidDepths(storage::tilesAt);
     this.manualRenders = new ManualRenderCoordinator(renderQueue, isoTileService, this::depth);
-    this.throttle = new DispatchThrottle(maxTilesPerSecond);
 
     final @NotNull RenderWorkerAllocation workerAllocation =
         RenderWorkerAllocation.fromConfiguredThreads(threadCount);
@@ -143,7 +140,6 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     this.running.set(true);
     this.stopping.set(false);
     this.startTimeMillis = System.currentTimeMillis();
-    this.throttle.reset();
 
     this.scheduler.scheduleWithFixedDelay(
         this::dispatchSafely, 0L, DISPATCH_INTERVAL_MS, TimeUnit.MILLISECONDS);
@@ -280,8 +276,6 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   }
 
   private void dispatchWork() {
-    this.throttle.refill();
-
     while (this.running.get()
         && this.baseInFlight.get() < this.baseThreads
         && (dispatchBaseBatch(this.baseExecutorService, this.baseInFlight)
@@ -295,13 +289,9 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
 
   private boolean dispatchZoomTask(
       final @NotNull ExecutorService executor, final @NotNull AtomicInteger slotCounter) {
-    final @Nullable RenderQueueTask task =
-        this.renderQueue.pollNextZoomTask(this.throttle.hasPermit());
+    final @Nullable RenderQueueTask task = this.renderQueue.pollNextZoomTask();
     if (task == null) {
       return false;
-    }
-    if (task.priority().isLive()) {
-      this.throttle.consume();
     }
     slotCounter.incrementAndGet();
     executor.execute(() -> processZoomTask(task, slotCounter));
@@ -310,19 +300,15 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
 
   private boolean dispatchBaseBatch(
       final @NotNull ExecutorService executor, final @NotNull AtomicInteger slotCounter) {
-    final boolean liveAllowed = this.throttle.hasPermit();
-    final @Nullable RenderPriority next = this.renderQueue.nextBasePriority(liveAllowed);
+    final @Nullable RenderPriority next = this.renderQueue.nextBasePriority();
     if (next == null) {
       return false;
     }
 
     final @NotNull List<RenderQueueTask> batch =
-        this.renderQueue.pollNextBaseBatch(batchSizeFor(next), liveAllowed);
+        this.renderQueue.pollNextBaseBatch(batchSizeFor(next));
     if (batch.isEmpty()) {
       return false;
-    }
-    if (batch.getFirst().priority().isLive()) {
-      this.throttle.consume();
     }
 
     slotCounter.incrementAndGet();

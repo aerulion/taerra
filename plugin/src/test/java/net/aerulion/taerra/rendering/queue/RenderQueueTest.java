@@ -41,7 +41,7 @@ class RenderQueueTest {
 
     int batches = 0;
     List<RenderQueueTask> batch;
-    while (!(batch = this.tracker.pollNextBaseBatch(16, true)).isEmpty()) {
+    while (!(batch = this.tracker.pollNextBaseBatch(16)).isEmpty()) {
       batches++;
       final @NotNull MapView view = batch.getFirst().coordinate().view();
       for (final @NotNull RenderQueueTask task : batch) {
@@ -59,10 +59,10 @@ class RenderQueueTest {
     this.tracker.enqueueAllAhead(
         List.of(tile(0, 0), tile(1, 0)), RenderPriority.FULL_RENDER_ZOOM_0);
 
-    final @NotNull List<RenderQueueTask> batch = this.tracker.pollNextBaseBatch(1, true);
+    final @NotNull List<RenderQueueTask> batch = this.tracker.pollNextBaseBatch(1);
     assertEquals(tile(0, 0), batch.getFirst().coordinate());
-    assertEquals(tile(1, 0), this.tracker.pollNextBaseBatch(1, true).getFirst().coordinate());
-    assertEquals(tile(100, 0), this.tracker.pollNextBaseBatch(1, true).getFirst().coordinate());
+    assertEquals(tile(1, 0), this.tracker.pollNextBaseBatch(1).getFirst().coordinate());
+    assertEquals(tile(100, 0), this.tracker.pollNextBaseBatch(1).getFirst().coordinate());
     assertCountersConsistent();
   }
 
@@ -94,7 +94,7 @@ class RenderQueueTest {
     assertEquals(2, this.tracker.snapshot().queuedLiveZoom0());
     assertCountersConsistent();
 
-    final @NotNull List<RenderQueueTask> batch = this.tracker.pollNextBaseBatch(16, true);
+    final @NotNull List<RenderQueueTask> batch = this.tracker.pollNextBaseBatch(16);
     assertEquals(2, batch.size());
     assertEquals(0, this.tracker.snapshot().queuedLiveZoom0());
     assertEquals(2, this.tracker.snapshot().baseInFlight());
@@ -119,14 +119,14 @@ class RenderQueueTest {
   }
 
   @Test
-  @DisplayName("a full render takes over tiles waiting in the throttled live lane")
+  @DisplayName("a full render takes over tiles waiting in the live lane")
   void fullRenderTakesOverLiveTiles() {
     this.tracker.enqueue(tile(0, 0), RenderPriority.LIVE_ZOOM_0);
     this.tracker.enqueue(tile(0, 0), RenderPriority.FULL_RENDER_ZOOM_0);
     assertEquals(0, this.tracker.snapshot().queuedLiveZoom0());
     assertEquals(1, this.tracker.snapshot().queuedFullZoom0());
 
-    assertEquals(tile(0, 0), this.tracker.pollNextBaseBatch(16, false).getFirst().coordinate());
+    assertEquals(tile(0, 0), this.tracker.pollNextBaseBatch(16).getFirst().coordinate());
     assertCountersConsistent();
   }
 
@@ -134,7 +134,7 @@ class RenderQueueTest {
   @DisplayName("a tile dirtied while in flight is re-queued when it completes")
   void requeueWhileInFlight() {
     this.tracker.enqueue(tile(0, 0), RenderPriority.LIVE_ZOOM_0);
-    this.tracker.pollNextBaseBatch(16, true);
+    this.tracker.pollNextBaseBatch(16);
 
     this.tracker.enqueue(tile(0, 0), RenderPriority.LIVE_ZOOM_0);
     assertEquals(0, this.tracker.snapshot().queuedLiveZoom0(), "should not queue while in flight");
@@ -148,7 +148,7 @@ class RenderQueueTest {
   @DisplayName("a failed tile is retried")
   void failedTileIsRetried() {
     this.tracker.enqueue(tile(0, 0), RenderPriority.LIVE_ZOOM_0);
-    this.tracker.pollNextBaseBatch(16, true);
+    this.tracker.pollNextBaseBatch(16);
     this.tracker.markFailed(tile(0, 0));
 
     assertEquals(1, this.tracker.snapshot().queuedLiveZoom0());
@@ -162,7 +162,7 @@ class RenderQueueTest {
     this.tracker.enqueue(tile(0, 0), RenderPriority.LIVE_ZOOM_0);
     this.tracker.enqueue(tile(1, 0), RenderPriority.FULL_RENDER_ZOOM_0);
 
-    final @NotNull List<RenderQueueTask> batch = this.tracker.pollNextBaseBatch(16, true);
+    final @NotNull List<RenderQueueTask> batch = this.tracker.pollNextBaseBatch(16);
     assertEquals(1, batch.size(), "the bulk tile must not join a live batch");
     assertSame(RenderPriority.LIVE_ZOOM_0, batch.getFirst().priority());
     assertCountersConsistent();
@@ -175,7 +175,7 @@ class RenderQueueTest {
     this.tracker.enqueue(tile(1, 0), RenderPriority.FULL_RENDER_ZOOM_0);
     this.tracker.enqueue(tile(8, 0), RenderPriority.FULL_RENDER_ZOOM_0);
 
-    final @NotNull List<RenderQueueTask> batch = this.tracker.pollNextBaseBatch(64, true);
+    final @NotNull List<RenderQueueTask> batch = this.tracker.pollNextBaseBatch(64);
     assertEquals(2, batch.size(), "tiles from a different region must not be batched together");
     assertCountersConsistent();
   }
@@ -183,26 +183,9 @@ class RenderQueueTest {
   @Test
   @DisplayName("zoom work is reported separately from zoom-0 work")
   void zoomTasksTrackedSeparately() {
-    assertNull(this.tracker.nextZoomPriority(true));
-
     this.tracker.enqueue(TileCoordinate.topDown("world", 1, 0, 0), RenderPriority.LIVE_ZOOM_PARENT);
-    assertSame(RenderPriority.LIVE_ZOOM_PARENT, this.tracker.nextZoomPriority(true));
-    assertNull(this.tracker.nextBasePriority(true), "a zoom tile is not zoom-0 work");
-    assertCountersConsistent();
-  }
-
-  @Test
-  @DisplayName("throttled live work does not hold back the full render queued behind it")
-  void throttledLiveWorkDoesNotBlockFullRender() {
-    final @NotNull TileCoordinate live = TileCoordinate.topDown("world", 1, 0, 0);
-    final @NotNull TileCoordinate full = TileCoordinate.topDown("world", 1, 5, 0);
-    this.tracker.enqueue(live, RenderPriority.LIVE_ZOOM_PARENT);
-    this.tracker.enqueue(full, RenderPriority.FULL_RENDER_ZOOM_PARENT);
-
-    assertSame(RenderPriority.FULL_RENDER_ZOOM_PARENT, this.tracker.nextZoomPriority(false));
-    assertEquals(full, this.tracker.pollNextZoomTask(false).coordinate());
-    assertNull(this.tracker.pollNextZoomTask(false), "live work waits for a permit");
-    assertEquals(live, this.tracker.pollNextZoomTask(true).coordinate());
+    assertEquals(1, this.tracker.snapshot().queuedLiveZoom());
+    assertNull(this.tracker.nextBasePriority(), "a zoom tile is not zoom-0 work");
     assertCountersConsistent();
   }
 

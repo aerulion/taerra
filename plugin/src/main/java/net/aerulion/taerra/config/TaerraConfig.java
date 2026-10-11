@@ -11,7 +11,6 @@ import org.jetbrains.annotations.NotNull;
 
 public record TaerraConfig(
     int renderThreads,
-    int maxTilesPerSecond,
     int updateInterval,
     int maxCacheTiles,
     int maxCacheChunks,
@@ -33,7 +32,6 @@ public record TaerraConfig(
         configuredThreads > 0
             ? configuredThreads
             : defaultRenderThreads(Runtime.getRuntime().availableProcessors()),
-        file.getInt("rendering.max-tiles-per-second", 10),
         file.getInt("rendering.update-interval", 900),
         Math.max(1, file.getInt("cache.max-tiles", 500)),
         Math.max(256, file.getInt("cache.max-chunks", 8192)),

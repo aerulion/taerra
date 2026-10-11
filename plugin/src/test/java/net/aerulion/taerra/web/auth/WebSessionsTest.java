@@ -271,7 +271,6 @@ class WebSessionsTest {
         new TaerraConfig(
             1,
             0,
-            0,
             1,
             256,
             new CopyOnWriteArrayList<>(List.of("minecraft:overworld", "minecraft:the_end")),
