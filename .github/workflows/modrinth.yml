@@ -42,6 +42,7 @@ jobs:
       url: ${{ steps.publish.outputs.url }}
       description: ${{ steps.publish.outputs.description }}
       icon: ${{ steps.publish.outputs.icon }}
+      uploaded: ${{ steps.publish.outputs.uploaded }}
     steps:
       - name: 📥 Checkout the build
         uses: actions/checkout@v7
@@ -98,48 +99,55 @@ jobs:
           project="$(modrinth "${api}/project/${SLUG}")"
           id="$(jq -r '.id' <<< "${project}")"
 
-          # The notes cover everything since this loader's newest version on Modrinth, whose number ends in its commit.
-          previous="$(modrinth --get "${api}/project/${id}/version" --data-urlencode "loaders=[\"${loader}\"]" \
-            | jq -r 'max_by(.date_published).version_number // empty')"
-          if [ "${previous}" = "${version}" ]; then
-            echo "::error::${version} is already the newest ${part} version on Modrinth."
-            exit 1
-          fi
-          if [ -n "${previous}" ] && git cat-file -e "${previous##*-}^{commit}" 2>/dev/null; then
-            changelog="$(AUDIENCE=players .github/actions/github-release/release-notes.sh \
-              "${prefix}" "${TAG}" "${previous##*-}")"
-          else
-            changelog='The first release on Modrinth.'
-          fi
-
-          dependencies='[]'
-          if [ "${loader}" = 'fabric' ]; then
-            dependencies="$(jq -nc \
-              --arg api "$(modrinth "${api}/project/fabric-api" | jq -r '.id')" \
-              --arg menu "$(modrinth "${api}/project/modmenu" | jq -r '.id')" \
-              '[{project_id: $api, dependency_type: "required"}, {project_id: $menu, dependency_type: "optional"}]')"
-          fi
-
+          versions="$(modrinth --get "${api}/project/${id}/version" --data-urlencode "loaders=[\"${loader}\"]")"
           name="TAERRA Build ${BUILD} for ${part}"
-          jq -n --arg name "${name}" --arg version "${version}" --arg changelog "${changelog}" \
-            --argjson dependencies "${dependencies}" --arg minecraft "${minecraft}" --arg channel "${CHANNEL}" \
-            --arg loader "${loader}" --arg project "${id}" '{
-              name: $name,
-              version_number: $version,
-              changelog: $changelog,
-              dependencies: $dependencies,
-              game_versions: [$minecraft],
-              version_type: $channel,
-              loaders: [$loader],
-              featured: ($channel == "release"),
-              project_id: $project,
-              file_parts: ["file"],
-              primary_file: "file"
-            }' > data.json
-          uploaded="$(modrinth --form 'data=<data.json;type=application/json' --form "file=@dist/${file}" \
-            "${api}/version" | jq -r '.id')"
+          existing="$(jq -c --arg version "${version}" 'map(select(.version_number == $version)) | first // empty' \
+            <<< "${versions}")"
+          if [ -n "${existing}" ]; then
+            uploaded="$(jq -r '.id' <<< "${existing}")"
+            changelog="$(jq -r '.changelog' <<< "${existing}")"
+            new=false
+            echo "${name} (${version}) is already on Modrinth."
+          else
+            # The notes cover everything since this loader's newest version on Modrinth, whose number ends in its commit.
+            previous="$(jq -r 'max_by(.date_published).version_number // empty' <<< "${versions}")"
+            if [ -n "${previous}" ] && git cat-file -e "${previous##*-}^{commit}" 2>/dev/null; then
+              changelog="$(AUDIENCE=players .github/actions/github-release/release-notes.sh \
+                "${prefix}" "${TAG}" "${previous##*-}")"
+            else
+              changelog='The first release on Modrinth.'
+            fi
+
+            dependencies='[]'
+            if [ "${loader}" = 'fabric' ]; then
+              dependencies="$(jq -nc \
+                --arg api "$(modrinth "${api}/project/fabric-api" | jq -r '.id')" \
+                --arg menu "$(modrinth "${api}/project/modmenu" | jq -r '.id')" \
+                '[{project_id: $api, dependency_type: "required"}, {project_id: $menu, dependency_type: "optional"}]')"
+            fi
+
+            jq -n --arg name "${name}" --arg version "${version}" --arg changelog "${changelog}" \
+              --argjson dependencies "${dependencies}" --arg minecraft "${minecraft}" --arg channel "${CHANNEL}" \
+              --arg loader "${loader}" --arg project "${id}" '{
+                name: $name,
+                version_number: $version,
+                changelog: $changelog,
+                dependencies: $dependencies,
+                game_versions: [$minecraft],
+                version_type: $channel,
+                loaders: [$loader],
+                featured: ($channel == "release"),
+                project_id: $project,
+                file_parts: ["file"],
+                primary_file: "file"
+              }' > data.json
+            uploaded="$(modrinth --form 'data=<data.json;type=application/json' --form "file=@dist/${file}" \
+              "${api}/version" | jq -r '.id')"
+            new=true
+            echo "Published ${name} (${version}, ${CHANNEL})."
+          fi
           url="https://modrinth.com/project/${SLUG}/version/${uploaded}"
-          echo "Published ${name} (${version}, ${CHANNEL}): ${url}"
+          echo "${url}"
 
           mirror="https://taerra.dev/download/#${PART}-${BUILD}"
           links="📥 [Download on Modrinth](${url}) or [on taerra.dev](${mirror})"
@@ -157,6 +165,7 @@ jobs:
           fi
           delimiter="EOF-$(openssl rand -hex 8)"
           {
+            echo "uploaded=${new}"
             echo "title=${title}"
             echo "url=${url}"
             echo "icon=$(jq -r '.icon_url // empty' <<< "${project}")"
@@ -168,7 +177,7 @@ jobs:
   central:
     name: 🏛️ Maven Central
     needs: publish
-    if: inputs.part == 'plugin'
+    if: inputs.part == 'plugin' && needs.publish.outputs.uploaded == 'true'
     uses: ./.github/workflows/build.yml
     with:
       ref: plugin-${{ inputs.build }}
@@ -190,7 +199,7 @@ jobs:
     uses: ./.github/workflows/downloads.yml
     with:
       part: ${{ inputs.part }}
-      build: ${{ inputs.build }}
+      build: ${{ fromJSON(inputs.build) }}
     secrets:
       MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
 

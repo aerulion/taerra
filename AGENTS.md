@@ -112,7 +112,8 @@ calls pick `/users/...` or `/orgs/...` from the repository owner type.
 
 `modrinth.yml` is the only way to Modrinth: run by hand with plugin or mod and a build number, it uploads that GitHub
 release's jar, never a rebuild, as a Paper or Fabric version of the one project, slug `taerra` (`MODRINTH_TOKEN` secret). Its changelog is `release-notes.sh` with `AUDIENCE=players` since the commit in the
-newest Modrinth version number of that loader.
+newest Modrinth version number of that loader. Run again for a build already on Modrinth, it skips the upload and
+Maven Central and only mirrors and announces that version, which finishes a run that failed after its upload.
 
 Every version on Modrinth is mirrored on taerra.dev/download/, every build, never only the newest. After the upload,
 `modrinth.yml` calls `downloads.yml` (also run by hand for a build already on Modrinth): it looks the version up with
