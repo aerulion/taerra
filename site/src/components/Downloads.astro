@@ -4,6 +4,8 @@ import Download from '../icons/download.svg';
 import Copy from '../icons/copy.svg';
 import Check from '../icons/check.svg';
 import backdrop from '../assets/backdrop.png';
+import detail from '../assets/detail.png';
+import ingame from '../../../branding/ingame/ingame-4.png';
 import {copy} from '../data/taerra';
 import {
     anchor,
@@ -32,6 +34,7 @@ const filters = [
     }))
 ];
 const phrase = (text: string) => t.phrases[text] ?? text;
+const shots = {plugin: detail, mod: ingame};
 ---
 
 <main class="downloads">
@@ -49,56 +52,67 @@ const phrase = (text: string) => t.phrases[text] ?? text;
             <div class="latest">
                 {parts.map((part, i) => {
                     const build = latest(part);
-                    const {label, loader, install} = t.parts[part];
+                    const {audience, title, text, download} = t.parts[part];
                     return (
-                        <article id={`latest-${part}`} class="card" style={`--stagger: ${i}`}>
-                            <div class="card-head">
-                                <p class="part pixel">
-                                    {label}
-                                    <span>{loader}</span>
-                                </p>
-                                {build && build.channel !== 'release' && (
-                                    <span class="tag tag--channel pixel">{t.channels[build.channel]}</span>
+                        <article
+                            id={`latest-${part}`}
+                            class="card"
+                            data-part={part}
+                            style={`--stagger: ${i}`}
+                            aria-labelledby={`latest-${part}-title`}
+                        >
+                            <div class="shot">
+                                <Image
+                                    src={shots[part]}
+                                    alt=""
+                                    loading="eager"
+                                    widths={part === 'mod' ? [800, 1200, 1600] : [480, 720, 960]}
+                                    sizes={
+                                        part === 'mod'
+                                            ? '(max-width: 900px) 143vw, 860px'
+                                            : '(max-width: 900px) 100vw, 600px'
+                                    }
+                                />
+                            </div>
+                            <div class="card-body">
+                                <p class="audience pixel">{audience}</p>
+                                <h2 id={`latest-${part}-title`}>{title}</h2>
+                                <p class="text">{text}</p>
+                                <p class="needs">{start.requirements[part].needs}</p>
+                                {build ? (
+                                    <>
+                                        <div class="get">
+                                            <a class="btn btn--primary" href={file(build)} download>
+                                                <Download aria-hidden="true" />
+                                                {download}
+                                            </a>
+                                            <a class="more" href={`#${anchor(build)}`}>
+                                                {t.changes}
+                                            </a>
+                                            {mirror.modrinth && (
+                                                <a class="more" href={modrinthUrl(build)}>
+                                                    {t.modrinth}
+                                                </a>
+                                            )}
+                                        </div>
+                                        <p class="facts">
+                                            <span class="tag pixel">
+                                                {t.build} {build.build}
+                                            </span>
+                                            {build.channel !== 'release' && (
+                                                <span class="tag tag--channel pixel">{t.channels[build.channel]}</span>
+                                            )}
+                                            <time datetime={build.published}>{date(build.published, lang)}</time>
+                                            <span>
+                                                {t.minecraft} {build.minecraft.join(', ')}
+                                            </span>
+                                            <span>{size(build.size, lang)}</span>
+                                        </p>
+                                    </>
+                                ) : (
+                                    <p class="none">{t.none}</p>
                                 )}
                             </div>
-                            {build ? (
-                                <>
-                                    <h2 class="number">
-                                        <span class="pixel">{t.latest}</span>
-                                        <span class="value pixel">
-                                            {t.build} {build.build}
-                                        </span>
-                                    </h2>
-                                    <p class="facts">
-                                        <time datetime={build.published}>{date(build.published, lang)}</time>
-                                        <span>
-                                            {t.minecraft} {build.minecraft.join(', ')}
-                                        </span>
-                                        <span>{size(build.size, lang)}</span>
-                                    </p>
-                                    <div class="needs">
-                                        <p>{install}</p>
-                                        <p>{start.requirements[part].needs}</p>
-                                    </div>
-                                    <div class="get">
-                                        <a class="btn btn--primary" href={file(build)} download>
-                                            <Download aria-hidden="true" />
-                                            {t.download}
-                                        </a>
-                                        <a class="more" href={`#${anchor(build)}`}>
-                                            {t.changes}
-                                        </a>
-                                        {mirror.modrinth && (
-                                            <a class="more" href={modrinthUrl(build)}>
-                                                {t.modrinth}
-                                            </a>
-                                        )}
-                                    </div>
-                                    <code class="file">{build.file}</code>
-                                </>
-                            ) : (
-                                <p class="none">{t.none}</p>
-                            )}
                         </article>
                     );
                 })}
@@ -141,7 +155,7 @@ const phrase = (text: string) => t.phrases[text] ?? text;
                     <ol class="timeline">
                         {mirror.builds.map((build) => {
                             const id = anchor(build);
-                            const {label, loader} = t.parts[build.part];
+                            const {label, loader, title} = t.parts[build.part];
                             return (
                                 <li {id} class="entry" data-part={build.part}>
                                     <p class="build pixel">
@@ -149,10 +163,11 @@ const phrase = (text: string) => t.phrases[text] ?? text;
                                         {build.build}
                                     </p>
                                     <div class="body">
+                                        <h3 class="name">
+                                            {label}
+                                            <span class="pixel">{loader}</span>
+                                        </h3>
                                         <p class="meta">
-                                            <span class="tag pixel">
-                                                {label} · {loader}
-                                            </span>
                                             {build.channel !== 'release' && (
                                                 <span class="tag tag--channel pixel">{t.channels[build.channel]}</span>
                                             )}
@@ -168,7 +183,7 @@ const phrase = (text: string) => t.phrases[text] ?? text;
                                                 {changelog(build.changelog).map(({heading, blocks}) => (
                                                     <div class="changes">
                                                         {heading && (
-                                                            <h3 class="pixel">{t.sections[heading] ?? heading}</h3>
+                                                            <h4 class="pixel">{t.sections[heading] ?? heading}</h4>
                                                         )}
                                                         {blocks.map((block) =>
                                                             'list' in block ? (
@@ -195,7 +210,12 @@ const phrase = (text: string) => t.phrases[text] ?? text;
                                         </details>
                                     </div>
                                     <div class="get">
-                                        <a class="btn btn--dark" href={file(build)} download>
+                                        <a
+                                            class="btn btn--dark"
+                                            href={file(build)}
+                                            download
+                                            aria-label={`${t.download}: ${title}, ${t.build} ${build.build}`}
+                                        >
                                             <Download aria-hidden="true" />
                                             {t.download}
                                             <span class="size">{size(build.size, lang)}</span>
@@ -311,7 +331,7 @@ const phrase = (text: string) => t.phrases[text] ?? text;
         background: linear-gradient(180deg, rgb(0 0 0 / 0.88) 20%, rgb(0 0 0 / 0.7) 60%, rgb(0 0 0 / 0.92));
     }
 
-    .heading > *,
+    .intro .heading > *,
     .card {
         animation: rise 0.9s var(--ease-out) both;
     }
@@ -328,10 +348,6 @@ const phrase = (text: string) => t.phrases[text] ?? text;
         animation-delay: calc(0.24s + var(--stagger) * 0.1s);
     }
 
-    .archive .heading > * {
-        animation: none;
-    }
-
     .latest {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -341,90 +357,78 @@ const phrase = (text: string) => t.phrases[text] ?? text;
     .card {
         position: relative;
         display: grid;
-        grid-template-rows: auto auto auto 1fr auto auto;
-        gap: 16px;
-        padding: clamp(24px, 3vw, 32px);
+        grid-template-rows: auto 1fr;
+        overflow: hidden;
         background: var(--stone-900);
         border: 2px solid var(--black);
         box-shadow: var(--slab-shadow);
         scroll-margin-top: 96px;
     }
 
-    .card::before {
+    .shot {
+        position: relative;
+        aspect-ratio: 2 / 1;
+        overflow: hidden;
+        border-bottom: 2px solid var(--black);
+    }
+
+    .shot::after {
         content: '';
         position: absolute;
-        inset: -2px -2px auto;
-        height: 6px;
-        background: linear-gradient(var(--accent-hi) 33%, var(--accent) 33%);
+        inset: 0;
+        background: linear-gradient(180deg, transparent 72%, rgb(30 30 31 / 0.9));
     }
 
-    .card-head {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
+    .shot :global(img) {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
-    .part {
-        display: flex;
-        align-items: baseline;
-        gap: 12px;
-        color: var(--accent-hi);
-        font-size: 14px;
+    .card[data-part='mod'] .shot :global(img) {
+        width: 143%;
+        max-width: none;
+        height: auto;
+        margin: -24.1% 0 0 -28.6%;
     }
 
-    .part span {
-        color: var(--stone-200);
-        font-size: 10px;
-    }
-
-    .number {
+    .card-body {
+        position: relative;
+        z-index: 1;
         display: grid;
-        gap: 10px;
-        font-weight: 400;
+        grid-template-rows: auto auto auto 1fr auto auto;
+        gap: 14px;
+        margin-top: -48px;
+        padding: 0 clamp(24px, 3vw, 32px) clamp(24px, 3vw, 32px);
     }
 
-    .number > span:first-child {
-        color: var(--stone-200);
+    .audience {
+        justify-self: start;
+        padding: 8px 10px 7px;
+        background: var(--accent);
+        color: var(--white);
         font-size: 10px;
+        box-shadow:
+            inset 0 -3px var(--accent-lo),
+            inset 2px 2px rgb(255 255 255 / 0.2);
     }
 
-    .number .value {
-        font-size: clamp(28px, 4.4vw, 52px);
-        white-space: nowrap;
-        text-shadow: 0 4px 0 var(--black);
+    .card h2 {
+        font-size: clamp(30px, 3.4vw, 40px);
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -0.02em;
     }
 
-    .facts {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px 20px;
+    .text {
         color: var(--stone-100);
-        font-size: 16px;
-    }
-
-    .facts > * + *::before {
-        content: '';
-        display: inline-block;
-        width: 6px;
-        height: 6px;
-        margin-right: 20px;
-        translate: 0 -3px;
-        background: var(--stone-600);
+        font-size: 17px;
+        text-wrap: pretty;
     }
 
     .needs {
-        display: grid;
-        gap: 4px;
-        align-content: start;
         color: var(--stone-200);
         font-size: 15px;
-    }
-
-    .needs p:first-child {
-        color: var(--white);
-        font-weight: 600;
     }
 
     .get {
@@ -432,6 +436,7 @@ const phrase = (text: string) => t.phrases[text] ?? text;
         flex-wrap: wrap;
         align-items: center;
         gap: 12px 20px;
+        margin-top: 6px;
     }
 
     .get .btn :global(svg) {
@@ -458,10 +463,13 @@ const phrase = (text: string) => t.phrases[text] ?? text;
         text-decoration-color: var(--accent-hi);
     }
 
-    .file {
-        overflow-wrap: anywhere;
+    .facts {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 14px;
         color: var(--stone-200);
-        font-size: 12px;
+        font-size: 14px;
     }
 
     .none {
@@ -471,24 +479,23 @@ const phrase = (text: string) => t.phrases[text] ?? text;
     .tag {
         display: inline-flex;
         align-items: center;
-        min-height: 22px;
-        padding: 2px 8px 0;
+        height: 22px;
+        padding: 0 8px;
         background: var(--stone-700);
         color: var(--stone-100);
         font-size: 8px;
-        box-shadow: inset 0 -2px var(--stone-800);
+        line-height: 1;
+        white-space: nowrap;
     }
 
     .tag--channel {
         background: var(--accent-lo);
         color: var(--accent-hi);
-        box-shadow: inset 0 -2px rgb(0 0 0 / 0.3);
     }
 
     .tag--latest {
         background: var(--accent);
         color: var(--white);
-        box-shadow: inset 0 -2px var(--accent-lo);
     }
 
     .updates {
@@ -600,12 +607,18 @@ const phrase = (text: string) => t.phrases[text] ?? text;
         font-size: 8px;
     }
 
-    .entry[data-part='plugin'] .build {
-        color: var(--white);
+    .name {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1.1;
     }
 
-    .entry[data-part='mod'] .build {
-        color: var(--accent-hi);
+    .name span {
+        color: var(--stone-200);
+        font-size: 10px;
     }
 
     .body {
@@ -669,7 +682,7 @@ const phrase = (text: string) => t.phrases[text] ?? text;
         gap: 8px;
     }
 
-    .changes h3 {
+    .changes h4 {
         color: var(--accent-hi);
         font-size: 10px;
     }

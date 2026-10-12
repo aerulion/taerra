@@ -398,14 +398,32 @@ export const de: Copy = {
         meta: {
             title: 'TAERRA herunterladen: jeder Build von Plugin und Mod',
             description:
-                'Lade das TAERRA-Plugin für Paper und die Fabric-Mod herunter: den neuesten Build und jeden davor, jeweils mit allem, was sich geändert hat.'
+                'Lade das TAERRA-Plugin für Paper und die Fabric-Mod herunter: den neuesten Build und jeden davor, jeweils mit allem, was sich geändert hat.',
+            image: {
+                src: '/og-download.png',
+                alt: 'Das TAERRA-Logo mit Download-Buttons für das Paper-Plugin und die Fabric-Mod neben einer isometrischen Minecraft-Welt'
+            }
         },
         kicker: 'Downloads',
         title: 'TAERRA holen',
-        lede: 'Das Plugin rendert die Karte auf deinem Paper-Server. Die Mod ist optional und zeigt Spieler:innen dieselbe Karte im Spiel. Hier liegt jeder Build, der neueste zuerst.',
+        lede: 'Du betreibst einen Server? Dann brauchst du das Plugin. Du spielst auf einem Server mit TAERRA? Hol dir die Mod: Sie ist optional und bringt dieselbe Karte in dein Spiel.',
         parts: {
-            plugin: {label: 'Plugin', loader: 'Paper', install: 'Für den Server. Leg die Jar in plugins/.'},
-            mod: {label: 'Mod', loader: 'Fabric', install: 'Für Spieler:innen. Leg die Jar in mods/.'}
+            plugin: {
+                label: 'Plugin',
+                loader: 'Paper',
+                audience: 'Für Server-Betreiber:innen',
+                title: 'Das Plugin',
+                text: 'Rendert die Karte auf deinem Server und liefert sie an jeden Browser aus. Leg die Jar in plugins/.',
+                download: 'Plugin herunterladen'
+            },
+            mod: {
+                label: 'Mod',
+                loader: 'Fabric',
+                audience: 'Für Spieler:innen',
+                title: 'Die Mod',
+                text: 'Die Karte des Servers in deinem Spiel, mit Minikarte und Wegpunkten in der Welt. Leg die Jar in mods/.',
+                download: 'Mod herunterladen'
+            }
         },
         latest: 'Neuester Build',
         build: 'Build',

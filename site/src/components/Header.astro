@@ -33,7 +33,7 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
                 </option>
             ))}
         </select>
-        <a class="btn btn--primary" href={download}>
+        <a class="btn btn--primary" href={download} aria-current={Astro.url.pathname === download ? 'page' : undefined}>
             {header.download}
         </a>
     </div>

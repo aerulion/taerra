@@ -425,14 +425,32 @@ const en = {
         meta: {
             title: 'Download TAERRA: every build of the plugin and the mod',
             description:
-                'Download the TAERRA plugin for Paper and the Fabric mod: the newest build and every one before it, each with what changed.'
+                'Download the TAERRA plugin for Paper and the Fabric mod: the newest build and every one before it, each with what changed.',
+            image: {
+                src: '/og-download.png',
+                alt: 'The TAERRA logo with download buttons for the Paper plugin and the Fabric mod, beside an isometric Minecraft world'
+            }
         },
         kicker: 'Downloads',
         title: 'Get TAERRA',
-        lede: 'The plugin renders the map on your Paper server. The mod is optional and shows players the same map in game. Every build is here, newest first.',
+        lede: 'Running a server? You need the plugin. Playing on a server that runs TAERRA? Get the mod: it is optional and brings the same map into your game.',
         parts: {
-            plugin: {label: 'Plugin', loader: 'Paper', install: 'For the server. Put the jar in plugins/.'},
-            mod: {label: 'Mod', loader: 'Fabric', install: 'For players. Put the jar in mods/.'}
+            plugin: {
+                label: 'Plugin',
+                loader: 'Paper',
+                audience: 'For server owners',
+                title: 'The plugin',
+                text: 'Renders the map on your server and serves it to every browser. Put the jar in plugins/.',
+                download: 'Download the plugin'
+            },
+            mod: {
+                label: 'Mod',
+                loader: 'Fabric',
+                audience: 'For players',
+                title: 'The mod',
+                text: 'The server’s map in your game, with a minimap and waypoints in the world. Put the jar in mods/.',
+                download: 'Download the mod'
+            }
         },
         latest: 'Latest build',
         build: 'Build',

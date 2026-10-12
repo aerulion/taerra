@@ -6,6 +6,6 @@ import {copy} from '../../../data/taerra';
 const {meta} = copy(Astro.currentLocale).downloads;
 ---
 
-<Layout path="download/" title={meta.title} description={meta.description}>
+<Layout path="download/" title={meta.title} description={meta.description} image={meta.image}>
     <Downloads />
 </Layout>

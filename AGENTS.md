@@ -91,8 +91,9 @@ changed, then:
 - plugin: tag `plugin-<n>`, plugin and API jars attached, API published to GitHub Packages
 - mod: tag `mod-<n>`, mod jar attached
 - website: `site.yml` builds `main` with `.github/actions/build-site`, the deploy goes to GitHub Pages, then the one
-  `site` tag moves to that commit (no release). `site.yml` is the only way to Pages; its build and deploy jobs each
-  have a concurrency group, so deploys from release runs and the download mirror land in order
+  `site` tag moves to that commit (no release). `site.yml` is the only way to Pages, and runs by hand for a deploy
+  alone; its build and deploy jobs each have a concurrency group, so deploys from release runs, the download mirror and
+  hand runs land in order
 
 With `release-tags: 'true'`, `classify-changes` diffs each stream against the newest `plugin-`/`mod-` tag HEAD descends
 from, or the `site` tag, falling back to `github.event.before`. Required: GitHub keeps one pending run per concurrency
@@ -147,11 +148,12 @@ plugin's and the mod's latest release and every mirrored build with its changelo
 `src/data/downloads.ts`; with no `site/downloads/` it shows none. Each locale has its own `404.astro`, out of the
 sitemap; GitHub Pages serves the English one for every missing path, so it sends `/de/…` and German browsers on to
 `/de/404/`. The look is the web map's: its tokens, fonts and slab buttons, the copper edge. Its pictures are rendered by
-`branding/generate.py site/` into `src/assets/` and `public/og.png`; the in-game shots and the web map's icons are
-imported from where they live. Motion is subtle and off under `prefers-reduced-motion`: `data-reveal` elements rise in
-as they scroll into view (`--stagger` delays them), the hero world floats and, until it is turned by hand, folds from
-the top-down map into each isometric rotation and back (`branding/render.html` centres all five pictures on the world's
-middle at sea level, at one scale, for that), and the mod screenshots open in a `<dialog>` viewer.
+`branding/generate.py site/` into `src/assets/` and `public/og.png` (`og-download.png` for the download page); the
+in-game shots and the web map's icons are imported from where they live. Motion is subtle and off under
+`prefers-reduced-motion`: `data-reveal` elements rise in as they scroll into view (`--stagger` delays them), the hero
+world floats and, until it is turned by hand, folds from the top-down map into each isometric rotation and back
+(`branding/render.html` centres all five pictures on the world's middle at sea level, at one scale, for that), and the
+mod screenshots open in a `<dialog>` viewer.
 
 The page's own footer (`Footer.astro`: links, the Mojang disclaimer, the build's commit from `PUBLIC_COMMIT_HASH`, which
 `build-site` sets and which is never a link) ends with `src/components/aerulion/`, the aerulion credit shared by every
