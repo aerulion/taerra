@@ -49,15 +49,18 @@ export const de: Copy = {
         lede: 'Alles wird auf deinem Server gerendert, in eigenen Threads. Besucher:innen laden nur fertige Bilder, deshalb ist die Karte auf dem Handy so schnell wie auf einem Gaming-PC.',
         stats: [
             {
-                value: '2:21 min',
+                value: '2:21',
+                unit: 'min',
                 label: 'für eine Welt mit 6.000 Blöcken Radius, etwa 440.000 Chunks, in allen Ansichten auf einmal. Ein anderes verbreitetes Karten-Plugin brauchte für dieselbe Welt über sechzehn Stunden.'
             },
             {
-                value: '~2 ms',
+                value: '~2',
+                unit: 'ms',
                 label: 'pro Tick auf dem Hauptthread für Live-Updates. Vollständige Renders nehmen ihm nichts weg.'
             },
             {
-                value: '½',
+                value: '50',
+                unit: '%',
                 label: 'deiner CPU-Kerne rendern standardmäßig, mindestens zwei bleiben immer für das Spiel.'
             }
         ],

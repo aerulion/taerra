@@ -14,9 +14,12 @@ const {speed} = copy(Astro.currentLocale);
             <p class="lede">{speed.lede}</p>
         </div>
         <dl class="stats">
-            {speed.stats.map(({value, label}, i) => (
+            {speed.stats.map(({value, unit, label}, i) => (
                 <div class="stat" data-reveal style={`--stagger: ${i}`}>
-                    <dt data-time={/^\d+:\d\d$/.test(value) ? value : undefined}>{value}</dt>
+                    <dt>
+                        <span data-time={/^\d+:\d\d$/.test(value) ? value : undefined}>{value}</span>
+                        {unit && <span class="unit">{unit}</span>}
+                    </dt>
                     <dd>{label}</dd>
                 </div>
             ))}
@@ -85,6 +88,13 @@ const {speed} = copy(Astro.currentLocale);
         line-height: 1;
         letter-spacing: -0.03em;
         font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .unit {
+        margin-left: 0.3em;
+        font-size: 0.45em;
+        letter-spacing: 0;
     }
 
     dd {

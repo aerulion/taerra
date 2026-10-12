@@ -16,6 +16,7 @@ export type Marked = [string, string, string];
 
 export interface Stat {
     value: string;
+    unit?: string;
     label: string;
 }
 
@@ -96,11 +97,20 @@ const en = {
         lede: 'Everything is rendered on your server, on its own threads. Visitors only download finished images, so the map is as fast on a phone as on a gaming PC.',
         stats: [
             {
-                value: '2:21 min',
+                value: '2:21',
+                unit: 'min',
                 label: 'for a 6,000-block-radius world, about 440,000 chunks, in every view at once. Another widely used map plugin needed more than sixteen hours for the same world.'
             },
-            {value: '~2 ms', label: 'per tick on the main thread for live updates. Full renders take nothing from it.'},
-            {value: '½', label: 'of your CPU cores render by default, always leaving at least two to the game.'}
+            {
+                value: '~2',
+                unit: 'ms',
+                label: 'per tick on the main thread for live updates. Full renders take nothing from it.'
+            },
+            {
+                value: '50',
+                unit: '%',
+                label: 'of your CPU cores render by default, always leaving at least two to the game.'
+            }
         ] satisfies Stat[],
         footnote: 'Measured on an Intel Core Ultra 7 265 with 64 GB of RAM.'
     },
