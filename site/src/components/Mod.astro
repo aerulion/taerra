@@ -4,9 +4,12 @@ import Expand from '../icons/expand.svg';
 import Previous from '../icons/previous.svg';
 import Next from '../icons/next.svg';
 import Close from '../icons/close.svg';
-import ingameMap from '../../../branding/ingame/ingame-2.png';
-import ingameLayers from '../../../branding/ingame/ingame-3.png';
-import ingameLabels from '../../../branding/ingame/ingame-4.png';
+import map from '../../../branding/ingame/mod-map.png';
+import minimap from '../../../branding/ingame/mod-minimap.png';
+import labels from '../../../branding/ingame/mod-labels.png';
+import navigation from '../../../branding/ingame/mod-navigation.png';
+import list from '../../../branding/ingame/mod-list.png';
+import layers from '../../../branding/ingame/mod-layers.png';
 import {getRelativeLocaleUrl} from 'astro:i18n';
 import Cards from './Cards.astro';
 import Keys from './Keys.astro';
@@ -15,18 +18,11 @@ import {copy} from '../data/taerra';
 const {mod} = copy(Astro.currentLocale);
 const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 const {viewer} = mod;
-const pictures = {
-    map: ingameMap,
-    minimap: undefined,
-    labels: ingameLabels,
-    navigation: undefined,
-    list: undefined,
-    layers: ingameLayers
-};
+const pictures = {map, minimap, labels, navigation, list, layers};
 const rows = await Promise.all(
     (Object.keys(pictures) as (keyof typeof pictures)[]).map(async (key) => {
         const src = pictures[key];
-        const full = src && (await getImage({src, layout: 'full-width', format: 'avif'}));
+        const full = await getImage({src, layout: 'full-width', format: 'avif'});
         return {key, src, full, ...mod.rows[key]};
     })
 );
@@ -52,33 +48,26 @@ const rows = await Promise.all(
         <div class="rows">
             {rows.map(({key, src, full, title, text, alt}, i) => (
                 <div class:list={['row', {'row--flip': i % 2}]} id={`mod-${key}`}>
-                    {src && full ? (
-                        <a
-                            class="zoom"
-                            data-reveal
-                            href={full.src}
-                            data-srcset={full.srcSet.attribute}
-                            data-caption={title}
-                            aria-label={`${viewer.open}: ${title}`}
-                        >
-                            <Picture
-                                {src}
-                                formats={['avif']}
-                                fallbackFormat="webp"
-                                width={1200}
-                                sizes="(min-width: 861px) 700px, 100vw"
-                                {alt}
-                            />
-                            <span class="badge" aria-hidden="true">
-                                <Expand />
-                            </span>
-                        </a>
-                    ) : (
-                        <div class="placeholder" data-reveal role="img" aria-label={alt}>
-                            <span class="pixel">{mod.placeholder}</span>
-                            <p>{alt}</p>
-                        </div>
-                    )}
+                    <a
+                        class="zoom"
+                        data-reveal
+                        href={full.src}
+                        data-srcset={full.srcSet.attribute}
+                        data-caption={title}
+                        aria-label={`${viewer.open}: ${title}`}
+                    >
+                        <Picture
+                            {src}
+                            formats={['avif']}
+                            fallbackFormat="webp"
+                            width={1200}
+                            sizes="(min-width: 861px) 700px, 100vw"
+                            {alt}
+                        />
+                        <span class="badge" aria-hidden="true">
+                            <Expand />
+                        </span>
+                    </a>
                     <div class="text" data-reveal style="--stagger: 1">
                         <h3>{title}</h3>
                         <p>
@@ -238,30 +227,6 @@ const rows = await Promise.all(
     .text p {
         color: var(--stone-100);
         text-wrap: pretty;
-    }
-
-    .placeholder {
-        display: grid;
-        place-content: center;
-        justify-items: center;
-        gap: 12px;
-        aspect-ratio: 16 / 9;
-        padding: 24px;
-        background: repeating-linear-gradient(-45deg, var(--stone-900) 0 16px, var(--void) 16px 32px);
-        border: 2px dashed var(--stone-600);
-        border-bottom: 6px solid var(--accent);
-        text-align: center;
-    }
-
-    .placeholder span {
-        color: var(--accent-hi);
-        font-size: 10px;
-    }
-
-    .placeholder p {
-        max-width: 40ch;
-        color: var(--stone-200);
-        font-size: 15px;
     }
 
     .more {

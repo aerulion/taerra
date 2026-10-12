@@ -193,32 +193,32 @@ export const de: Copy = {
             map: {
                 title: 'Die ganze Karte auf M',
                 text: 'Drück [M] für die Weltkarte, mit allem, was die Web-Karte kann: beide Ansichten und alle vier Drehungen, farbig oder grau, Ebenen, die Spielerliste und der Folgemodus. [K] durchsucht Spieler:innen, Markierungen, Welten und Koordinaten. Ein Rechtsklick auf jede Stelle startet die Navigation dorthin, setzt einen Wegpunkt oder kopiert ihre Koordinaten oder einen Link.',
-                alt: 'Die Weltkarte der Mod in der isometrischen Ansicht, die ganze Welt als ein schräger Block vor dem Spiel dahinter'
+                alt: 'Die Weltkarte der Mod in der isometrischen Ansicht, die ganze Welt als ein schräger Block vor dem Spiel, mit Wegpunkten am Spawn und an einem Dorf'
             },
             minimap: {
                 title: 'Eine Minikarte nach deinem Geschmack',
                 text: 'Stell ihre Größe ein, zoome mit [=] und [-], setz sie auf eine Seite deiner Wahl und lass sie sich mit dir drehen. Darunter wählst du die Zeilen, die du brauchst: Koordinaten und ihre Nether-Gegenstücke, Chunk, Blickrichtung, Biom, Wetter, Uhrzeit und Tag, Lichtlevel, echte Uhrzeit und FPS. Markierungen jenseits ihres Rands bleiben im Blick, damit nichts in der Nähe verloren geht.',
-                alt: 'Eine Nahaufnahme der Minikarte in der Bildschirmecke, darunter Koordinaten, Biom und Uhrzeit'
+                alt: 'Ein Kirschhain im Spiel, oben rechts die Minikarte, darunter Koordinaten und Biom'
             },
             labels: {
                 title: 'Wegpunkte, wo sie sind',
                 text: 'Wegpunkte schweben als Beschriftung über den Orten, die sie markieren, mit der Entfernung zu jedem, damit du ohne Karte hinfindest. [B] blendet sie aus, wenn du freie Sicht willst.',
-                alt: 'Eine Spielfigur auf einem grasbewachsenen Hügel, Wegpunkt-Beschriftungen über der Landschaft und eine Minikarte oben rechts'
+                alt: 'Ebenen von einem Hügel aus, mit den Beschriftungen Village und Lumber Camp samt Entfernung über den Orten, die sie markieren, und der Minikarte in der Ecke'
             },
             navigation: {
                 title: 'Finde den Weg dorthin',
                 text: 'Navigiere zu einem Wegpunkt, zu Spieler:innen oder zu jeder Stelle, gestartet auf der Karte im Spiel oder auf der Web-Karte, während du spielst. Ein Leuchtfeuerstrahl steigt am Ziel auf, und ein Pfeil oben am Bildschirm zeigt Richtung und Entfernung, durch ein Portal, wenn das Ziel in einer anderen Dimension liegt.',
-                alt: 'Navigation im Spiel: Am Ziel steigt ein Leuchtfeuerstrahl auf, oben am Bildschirm ein Pfeil mit der Entfernung'
+                alt: 'Navigation im Spiel: Am Ziel steigt ein Leuchtfeuerstrahl auf, oben am Bildschirm zeigt der Pfeil seine Koordinaten und die Entfernung'
             },
             list: {
                 title: 'Deine Wegpunkte, eine Taste entfernt',
                 text: '[H] setzt einen dort, wo du stehst, und auf der Karte zeichnest du auch Gebiete und Linien. [J] öffnet deine Liste: filtere sie, sortiere nach Name oder Entfernung, blende einzelne aus und exportiere sie als Datei zum Teilen oder Sichern, oder importiere eine. Wenn du stirbst, markiert ein Wegpunkt „Letzter Tod“ die Stelle.',
-                alt: 'Die Liste „Meine Wegpunkte“ mit Wegpunkten, Gebieten und Linien, nach Entfernung sortiert'
+                alt: 'Die Liste „Meine Wegpunkte“ mit drei Wegpunkten, jeder mit Welt, Koordinaten und Entfernung und Knöpfen zum Anzeigen, Verschieben, Hinnavigieren, Zentrieren, Bearbeiten und Löschen'
             },
             layers: {
                 title: 'Ebenen und Werkzeuge fürs Team',
                 text: 'WorldGuard-Regionen und Weltgrenzen sind Ebenen, die du einschaltest. Mit Berechtigung wählst du Chunks aus, um sie neu zu rendern oder zu verstecken, während ihr dort baut, und siehst den Fortschritt eines Renders direkt auf der Karte.',
-                alt: 'Eine nahe isometrische Ansicht von Wald und Flüssen mit grün umrandeten WorldGuard-Regionen und offener Ebenenliste'
+                alt: 'Eine nahe isometrische Ansicht einer Küste mit grün umrandeten WorldGuard-Regionen, einem Bereich mit Warnstreifen und 112 Chunks, die zum Neurendern ausgewählt sind'
             }
         },
         more: {
@@ -244,7 +244,6 @@ export const de: Copy = {
                 {title: 'Deutsch und Englisch', text: 'Jeder Bildschirm und jede Meldung spricht beides.'}
             ]
         },
-        placeholder: 'Screenshot folgt',
         viewer: {
             label: 'Screenshot-Ansicht',
             open: 'Vergrößern',

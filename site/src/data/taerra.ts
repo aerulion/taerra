@@ -234,32 +234,32 @@ const en = {
             map: {
                 title: 'The whole map on M',
                 text: 'Press [M] for the full world map, with everything the web map has: both views and all four rotations, color or gray, layers, the player list and follow mode. [K] searches players, markers, worlds and coordinates. Right-click any spot to navigate there, set a waypoint, or copy its coordinates or a link to it.',
-                alt: 'The mod’s world map in the isometric view, the whole world as one tilted block over the game behind it'
+                alt: 'The mod’s world map in the isometric view, the whole world as one tilted block over the game, with waypoints at spawn and a village'
             },
             minimap: {
                 title: 'A minimap, your way',
                 text: 'Size it, zoom it with [=] and [-], put it on either side and let it turn with you. Below it, pick the lines you need: coordinates and their Nether counterparts, chunk, facing, biome, weather, time and day, light level, real time and FPS. Markers past its edge stay in view, so nothing nearby gets lost.',
-                alt: 'A close-up of the minimap in the corner of the screen, with coordinates, biome and the time listed below it'
+                alt: 'A cherry grove in game, with the minimap in the top right corner and the coordinates and biome below it'
             },
             labels: {
                 title: 'Waypoints where they are',
                 text: 'Waypoints float as labels over the places they mark, with the distance to each, so you find your way without opening a map. [B] hides them when you want a clear view.',
-                alt: 'A player standing on a grassy hill, waypoint labels floating over the landscape and a minimap in the top right corner'
+                alt: 'Plains seen from a hill, with the labels Village and Lumber Camp and their distances floating over the places they mark and the minimap in the corner'
             },
             navigation: {
                 title: 'Find your way there',
                 text: 'Navigate to a waypoint, a player or any spot, started on the map in game or from the web map while you play. A beacon beam rises at the target, and an arrow at the top of the screen shows the way and the distance, through a portal when it is in another dimension.',
-                alt: 'Navigating in game: a beacon beam rises at the target, and an arrow with the distance sits at the top of the screen'
+                alt: 'Navigating in game: a beacon beam rises at the target, and the arrow at the top of the screen shows its coordinates and the distance'
             },
             list: {
                 title: 'Your waypoints, one key away',
                 text: '[H] sets one where you stand, and on the map you draw areas and lines too. [J] opens your list: filter it, sort it by name or distance, hide single ones, and export them as a file to share or keep, or import one. When you die, a Last Death waypoint marks the spot.',
-                alt: 'The My Waypoints list, with waypoints, areas and lines sorted by distance'
+                alt: 'The My Waypoints list with three waypoints, each with its world, coordinates and distance and buttons to show, move, navigate to, center, edit and delete it'
             },
             layers: {
                 title: 'Layers and staff tools',
                 text: 'WorldGuard regions and world borders are layers you switch on. With permission, select chunks to render them again or hide them while you build, and watch a render’s progress right on the map.',
-                alt: 'A close isometric view of forest and rivers with WorldGuard regions outlined in green and the layer list open'
+                alt: 'A close isometric view of a coast with WorldGuard regions outlined in green, a hidden area in caution stripes and 112 chunks selected for rendering again'
             }
         },
         more: {
@@ -285,7 +285,6 @@ const en = {
                 {title: 'English and German', text: 'Every screen and message speaks both.'}
             ] satisfies Feature[]
         },
-        placeholder: 'Screenshot to come',
         viewer: {
             label: 'Screenshot viewer',
             open: 'Enlarge',
