@@ -141,12 +141,13 @@ jobs:
           url="https://modrinth.com/project/${SLUG}/version/${uploaded}"
           echo "Published ${name} (${version}, ${CHANNEL}): ${url}"
 
-          link='Download on Modrinth'
+          mirror="https://taerra.dev/download/#${PART}-${BUILD}"
+          links="📥 [Download on Modrinth](${url}) or [on taerra.dev](${mirror})"
           case "$(jq -r '.status' <<< "${project}")" in
             approved | archived | unlisted) ;;
             *)
-              url="https://taerra.dev/download/#${PART}-${BUILD}"
-              link='Download'
+              url="${mirror}"
+              links="📥 [Download on taerra.dev](${mirror})"
               ;;
           esac
 
@@ -160,7 +161,7 @@ jobs:
             echo "url=${url}"
             echo "icon=$(jq -r '.icon_url // empty' <<< "${project}")"
             echo "description<<${delimiter}"
-            printf '%s\n\n📥 [%s](%s)\n' "${changelog}" "${link}" "${url}"
+            printf '%s\n\n%s\n' "${changelog}" "${links}"
             echo "${delimiter}"
           } >> "$GITHUB_OUTPUT"
 

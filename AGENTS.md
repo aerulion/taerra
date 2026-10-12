@@ -119,8 +119,8 @@ the token, checks the GitHub release's jar against Modrinth's SHA-512, attaches 
 `modrinth.json` to that release, then deploys the site. `site/scripts/downloads.sh` (`bun run downloads`, run by
 `build-site`, needs `gh`) fetches every release with a `modrinth.json` and its jar into `site/downloads/`, ignored by
 git, and the page serves the jars from `/download/<file>.jar`. Files only ever come from the GitHub releases, never
-from Modrinth's CDN. The Discord embed links the Modrinth version once the project is public and the mirror until
-then.
+from Modrinth's CDN. The Discord embed links the Modrinth version and the mirror once the project is public there,
+and only the mirror until then.
 
 For the plugin, `modrinth.yml` then calls `build.yml` with `central: true`: it rebuilds and tests the tag under the
 same version and publishes the API to Maven Central, signed, through the Central Portal API (`CENTRAL_USERNAME`,
