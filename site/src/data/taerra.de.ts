@@ -335,7 +335,8 @@ export const de: Copy = {
                 {command: '/taerra import dynmap <datei>', text: 'Markierungen aus dynmap importieren'},
                 {command: '/taerra login [code]', text: 'Bei der Web-Karte anmelden'},
                 {command: '/taerra logout [name]', text: 'In jedem Browser von der Web-Karte abmelden'},
-                {command: '/taerra devices', text: 'Deine Geräte auf der Web-Karte sehen und abmelden'}
+                {command: '/taerra devices', text: 'Deine Geräte auf der Web-Karte sehen und abmelden'},
+                {command: '/taerra mod', text: 'Sehen, wer mit der TAERRA-Mod spielt, und mit welchem Build'}
             ]
         },
         permissions: {
@@ -353,6 +354,7 @@ export const de: Copy = {
                 {permission: 'taerra.command.waypoint', standard: 'OP', text: '`/taerra waypoint`'},
                 {permission: 'taerra.command.config', standard: 'OP', text: '`/taerra config` und `/taerra import`'},
                 {permission: 'taerra.command.logout.others', standard: 'OP', text: 'Andere Spieler:innen abmelden'},
+                {permission: 'taerra.command.mod', standard: 'OP', text: '`/taerra mod`'},
                 {
                     permission: 'taerra.web.teleport',
                     standard: 'OP',

@@ -1,6 +1,8 @@
 package net.aerulion.taerra.mod.session;
 
+import com.google.gson.JsonObject;
 import java.nio.charset.StandardCharsets;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -19,6 +21,19 @@ public record HandshakePayload(String json) implements CustomPacketPayload {
             buffer.readBytes(bytes);
             return new HandshakePayload(new String(bytes, StandardCharsets.UTF_8));
           });
+
+  public static @NotNull HandshakePayload version() {
+    final @NotNull JsonObject json = new JsonObject();
+    json.addProperty(
+        "version",
+        FabricLoader.getInstance()
+            .getModContainer("taerra")
+            .orElseThrow()
+            .getMetadata()
+            .getVersion()
+            .getFriendlyString());
+    return new HandshakePayload(json.toString());
+  }
 
   @Override
   public @NotNull Type<HandshakePayload> type() {

@@ -21,10 +21,11 @@ It is a public plugin: nothing in it may be specific to one server network.
 
 **Rendering is server side only.** The mod is a viewer: it draws the tiles the plugin serves and talks to the same
 `/api/...` routes as the web map in `plugin/src/main/resources/web/`. Never render, or share rendering code, on the
-client. A change to a route or its JSON lands together with the web map and mod changes it needs, in one commit.
-The mod learns the web map's address and session from the plugin's `taerra:web` join message (`ModHandshake`), which
-carries a protocol number: bump `ModHandshake.PROTOCOL` and the mod's `TaerraClient.PROTOCOL` together whenever a
-route, its JSON or that message changes in a way an older mod would misread.
+client. A change to a route or its JSON lands together with the web map and mod changes it needs, in one commit. The mod
+learns the web map's address and session from the plugin's `taerra:web` join message (`ModHandshake`), which carries a
+protocol number: bump `ModHandshake.PROTOCOL` and the mod's `TaerraClient.PROTOCOL` together whenever a route, its JSON
+or that message changes in a way an older mod would misread. The mod answers on the same channel with its version once
+the server registers it, which `/taerra mod` lists; a player whose mod predates that answer shows as an older mod.
 
 The plugin reads chunks straight from the region files, without the game's data fixers. `rendering/source/ChunkFormat`
 maps each chunk's `DataVersion` to the reader for that format, back to 26.2 and no further: a Minecraft update that

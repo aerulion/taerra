@@ -2,6 +2,7 @@ package net.aerulion.taerra.web.auth;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -17,14 +18,17 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRegisterChannelEvent;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.messaging.PluginMessageListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class ModHandshake implements Listener {
+public final class ModHandshake implements Listener, PluginMessageListener {
 
   public static final @NotNull String CHANNEL = "taerra:web";
 
   public static final int PROTOCOL = 2;
+
+  private static final int MAX_VERSION_LENGTH = 64;
 
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig config;
@@ -32,6 +36,7 @@ public final class ModHandshake implements Listener {
   private final @NotNull WebSessions sessions;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private final @NotNull Map<UUID, String> tokens = new ConcurrentHashMap<>();
+  private final @NotNull Map<UUID, String> versions = new ConcurrentHashMap<>();
 
   public ModHandshake(
       final @NotNull Plugin plugin,
@@ -45,8 +50,16 @@ public final class ModHandshake implements Listener {
     this.sessions = sessions;
   }
 
+  public static boolean uses(final @NotNull Player player) {
+    return player.getListeningPluginChannels().contains(CHANNEL);
+  }
+
   public void start() {
     this.plugin.getServer().getMessenger().registerOutgoingPluginChannel(this.plugin, CHANNEL);
+    this.plugin
+        .getServer()
+        .getMessenger()
+        .registerIncomingPluginChannel(this.plugin, CHANNEL, this);
     this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
   }
 
@@ -59,7 +72,7 @@ public final class ModHandshake implements Listener {
 
   @EventHandler
   public void onJoin(final @NotNull PlayerJoinEvent event) {
-    if (event.getPlayer().getListeningPluginChannels().contains(CHANNEL)) {
+    if (uses(event.getPlayer())) {
       send(event.getPlayer());
     }
   }
@@ -67,6 +80,28 @@ public final class ModHandshake implements Listener {
   @EventHandler
   public void onQuit(final @NotNull PlayerQuitEvent event) {
     this.sessions.end(this.tokens.remove(event.getPlayer().getUniqueId()));
+    this.versions.remove(event.getPlayer().getUniqueId());
+  }
+
+  @Override
+  public void onPluginMessageReceived(
+      final @NotNull String channel, final @NotNull Player player, final byte @NotNull [] message) {
+    if (!CHANNEL.equals(channel)) {
+      return;
+    }
+    final @NotNull String version;
+    try {
+      version = this.mapper.readTree(message).path("version").asText("");
+    } catch (final IOException e) {
+      return;
+    }
+    if (version.length() <= MAX_VERSION_LENGTH && version.matches("[\\w.+-]+")) {
+      this.versions.put(player.getUniqueId(), version);
+    }
+  }
+
+  public @Nullable String version(final @NotNull Player player) {
+    return this.versions.get(player.getUniqueId());
   }
 
   public boolean isMod(final @Nullable String token) {

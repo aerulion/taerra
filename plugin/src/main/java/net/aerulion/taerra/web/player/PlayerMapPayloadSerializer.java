@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.permission.TaerraPermission;
+import net.aerulion.taerra.web.auth.ModHandshake;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ARGB;
 import org.bukkit.GameMode;
@@ -40,6 +41,7 @@ public final class PlayerMapPayloadSerializer {
     data.put("z", loc.getBlockZ());
     data.put("yaw", loc.getYaw());
     data.put("color", String.format("#%06x", locatorBarColor(player)));
+    data.put("mod", ModHandshake.uses(player));
     return data;
   }
 

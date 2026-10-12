@@ -98,6 +98,8 @@
   "players.hidden": "Versteckt",
   "players.anonymous": "Anonyme Person",
   "players.hiddenPlayer": "Versteckte Person",
+  "players.mod": "Mod",
+  "players.modHint": "Spielt mit der TAERRA-Mod",
   "private.label": "Privat",
   "private.hint": "Privat: nur für angemeldete Spieler:innen mit Berechtigung sichtbar",
   "personal.label": "Persönlich",

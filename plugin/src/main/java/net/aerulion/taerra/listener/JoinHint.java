@@ -46,8 +46,7 @@ public final class JoinHint implements Listener {
   }
 
   private void show(final @NotNull Player player) {
-    if (this.config.enabledWorlds().isEmpty()
-        || player.getListeningPluginChannels().contains(ModHandshake.CHANNEL)) {
+    if (this.config.enabledWorlds().isEmpty() || ModHandshake.uses(player)) {
       return;
     }
     final long now = System.currentTimeMillis();

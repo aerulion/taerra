@@ -23,6 +23,7 @@ public sealed interface TaerraSubCommand
         LimitSubCommand,
         LoginSubCommand,
         LogoutSubCommand,
+        ModSubCommand,
         RenderSubCommand,
         StatusSubCommand,
         WaypointSubCommand {

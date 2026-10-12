@@ -370,7 +370,8 @@ const en = {
                 {command: '/taerra import dynmap <file>', text: 'Import markers from dynmap'},
                 {command: '/taerra login [code]', text: 'Log in to the web map'},
                 {command: '/taerra logout [player]', text: 'Log out of the web map in every browser'},
-                {command: '/taerra devices', text: 'See and log out your web map devices'}
+                {command: '/taerra devices', text: 'See and log out your web map devices'},
+                {command: '/taerra mod', text: 'See who plays with the TAERRA mod, and which build'}
             ] satisfies Command[]
         },
         permissions: {
@@ -388,6 +389,7 @@ const en = {
                 {permission: 'taerra.command.waypoint', standard: 'op', text: '`/taerra waypoint`'},
                 {permission: 'taerra.command.config', standard: 'op', text: '`/taerra config` and `/taerra import`'},
                 {permission: 'taerra.command.logout.others', standard: 'op', text: 'Logging other players out'},
+                {permission: 'taerra.command.mod', standard: 'op', text: '`/taerra mod`'},
                 {permission: 'taerra.web.teleport', standard: 'op', text: 'Teleporting from the map while logged in'},
                 {
                     permission: 'taerra.web.see-hidden',

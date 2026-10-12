@@ -9,6 +9,10 @@ public final class Formats {
     super();
   }
 
+  public static @NotNull String build(final @NotNull String version) {
+    return version.replaceFirst("^(\\d+)-(\\p{XDigit}+)$", "Build $1 ($2)");
+  }
+
   public static @NotNull String duration(final long millis) {
     if (millis < 0L) {
       return "unknown";

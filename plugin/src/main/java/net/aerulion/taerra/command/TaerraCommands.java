@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.aerulion.taerra.chat.Formats;
 import net.aerulion.taerra.chat.Messages;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
@@ -54,13 +55,7 @@ public final class TaerraCommands {
       final @NotNull List<? extends TaerraSubCommand> subCommands,
       final @NotNull CommandSender sender) {
     final @NotNull List<Component> lines = new ArrayList<>();
-    lines.add(
-        Messages.header(
-            Messages.value(
-                plugin
-                    .getPluginMeta()
-                    .getVersion()
-                    .replaceFirst("^(\\d+)-(\\p{XDigit}+)$", "Build $1 ($2)"))));
+    lines.add(Messages.header(Messages.value(Formats.build(plugin.getPluginMeta().getVersion()))));
     for (final @NotNull TaerraSubCommand subCommand : subCommands) {
       if (subCommand.permission().check(sender)) {
         final @NotNull Component description = Messages.tr("command." + subCommand.name());

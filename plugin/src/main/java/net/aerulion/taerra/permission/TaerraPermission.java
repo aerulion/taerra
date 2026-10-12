@@ -42,6 +42,10 @@ public enum TaerraPermission {
       "Gives the user the right to log other players out of the web map with '/taerra logout"
           + " <player>'.",
       PermissionDefault.OP),
+  COMMAND_MOD(
+      "command.mod",
+      "Gives the user the right to see who plays with the TAERRA mod with '/taerra mod'.",
+      PermissionDefault.OP),
   WEB_SEE_HIDDEN(
       "web.see-hidden",
       "Lets the user see hidden players on the web map, marked as hidden, while logged in.",

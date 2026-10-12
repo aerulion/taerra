@@ -13,6 +13,7 @@ import net.aerulion.taerra.command.ImportSubCommand;
 import net.aerulion.taerra.command.LimitSubCommand;
 import net.aerulion.taerra.command.LoginSubCommand;
 import net.aerulion.taerra.command.LogoutSubCommand;
+import net.aerulion.taerra.command.ModSubCommand;
 import net.aerulion.taerra.command.RenderSubCommand;
 import net.aerulion.taerra.command.StatusSubCommand;
 import net.aerulion.taerra.command.TaerraCommands;
@@ -328,6 +329,7 @@ public final class Taerra extends JavaPlugin {
           webSettings,
           webServer,
           webSessions,
+          modHandshake,
           markers);
 
       final long duration = System.currentTimeMillis() - startTime;
@@ -360,6 +362,7 @@ public final class Taerra extends JavaPlugin {
       final @NotNull WebSettings webSettings,
       final @NotNull TaerraWebServer webServer,
       final @NotNull WebSessions webSessions,
+      final @NotNull ModHandshake modHandshake,
       final @NotNull MarkerRegistryInternal markers) {
     TaerraCommands.register(
         this,
@@ -381,6 +384,7 @@ public final class Taerra extends JavaPlugin {
             new ImportSubCommand(new DynmapImport(this, waypoints)),
             new LoginSubCommand(webSettings, configuration, webSessions),
             new LogoutSubCommand(webSessions),
-            new DevicesSubCommand(webSessions)));
+            new DevicesSubCommand(webSessions),
+            new ModSubCommand(modHandshake)));
   }
 }

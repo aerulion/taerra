@@ -26,9 +26,7 @@ public final class WebGrants {
     return Stream.concat(
             Stream.concat(
                 config.webPermissions().stream(),
-                player.getListeningPluginChannels().contains(ModHandshake.CHANNEL)
-                    ? Stream.of(MOD)
-                    : Stream.empty()),
+                ModHandshake.uses(player) ? Stream.of(MOD) : Stream.empty()),
             Stream.of(
                 TaerraPermission.WEB_TELEPORT.node(),
                 TaerraPermission.WEB_SEE_HIDDEN.node(),

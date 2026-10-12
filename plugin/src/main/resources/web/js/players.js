@@ -107,6 +107,7 @@ class PlayerManager {
             entry.body.classList.toggle('is-hidden', player.hidden === true);
             entry.button.classList.toggle('is-hidden', player.hidden === true);
             entry.tag.hidden = player.hidden !== true;
+            entry.mod.hidden = player.mod !== true;
             entry.coords.textContent = `${player.x}, ${player.y}, ${player.z}`;
             if (entry.marker.isPopupOpen()) {
                 entry.marker.getPopup().update();
@@ -186,9 +187,11 @@ class PlayerManager {
         entry.button.dataset.followingLabel = t('players.following');
         entry.coords = element('span', 'player__coords');
         entry.tag = element('span', 'player__tag', t('players.hidden'));
+        entry.mod = element('span', 'player__tag player__tag--mod', t('players.mod'));
+        entry.mod.title = t('players.modHint');
         entry.world = element('span', 'player__world');
         const details = element('span', 'player__details');
-        details.append(entry.coords, entry.tag);
+        details.append(entry.coords, entry.tag, entry.mod);
         entry.button.append(avatar(player, 32), element('span', 'player__name', player.name), details, entry.world);
         entry.button.addEventListener('click', () => {
             if (this.followed === player.uuid) {

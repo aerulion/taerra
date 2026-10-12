@@ -107,6 +107,7 @@ Every setting can also be changed in game with `/taerra config`.
 | `/taerra login [code]` | Log in to the web map |
 | `/taerra logout [player]` | Log out of the web map in every browser |
 | `/taerra devices` | See and log out your web map devices |
+| `/taerra mod` | See who plays with the TAERRA mod, and which build |
 
 ![Permissions](https://assets.corpium.net/taerra/section-permissions.png?v=259ea2d6)
 
@@ -119,6 +120,7 @@ Every setting can also be changed in game with `/taerra config`.
 | `taerra.command.waypoint` | op | `/taerra waypoint` |
 | `taerra.command.config` | op | `/taerra config` and `/taerra import` |
 | `taerra.command.logout.others` | op | Logging other players out |
+| `taerra.command.mod` | op | `/taerra mod` |
 | `taerra.web.teleport` | op | Teleporting from the map while logged in |
 | `taerra.web.see-hidden` | op | Seeing hidden players on the map while logged in |
 | `taerra.web.render` | op | Rendering selected chunks again while logged in |

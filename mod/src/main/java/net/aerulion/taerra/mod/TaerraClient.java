@@ -25,6 +25,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.networking.v1.ServerboundPlayChannelEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
@@ -61,8 +62,15 @@ public final class TaerraClient implements ClientModInitializer {
     this.session = new MapSessionImpl(PROTOCOL, settings);
     this.screenView = new MapViewImpl(settings, 4, false);
     PayloadTypeRegistry.clientboundPlay().register(HandshakePayload.TYPE, HandshakePayload.CODEC);
+    PayloadTypeRegistry.serverboundPlay().register(HandshakePayload.TYPE, HandshakePayload.CODEC);
     ClientPlayNetworking.registerGlobalReceiver(
         HandshakePayload.TYPE, (payload, context) -> this.session.connect(payload));
+    ServerboundPlayChannelEvents.REGISTER.register(
+        (handler, sender, client, channels) -> {
+          if (channels.contains(HandshakePayload.TYPE.id())) {
+            sender.sendPacket(HandshakePayload.version());
+          }
+        });
     ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> close());
     ClientConfigurationConnectionEvents.INIT.register(
         (handler, client) -> client.execute(this::close));

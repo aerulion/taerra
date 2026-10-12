@@ -100,6 +100,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
       final @NotNull Map<String, Object> data, final @NotNull UUID uuid) {
     final @NotNull Map<String, Object> anonymous = new HashMap<>(data);
     anonymous.remove("name");
+    anonymous.remove("mod");
     anonymous.put("anonymous", true);
     anonymous.put("color", ANONYMOUS_COLOR);
     anonymous.put(

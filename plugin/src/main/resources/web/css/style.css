@@ -1501,12 +1501,17 @@ h2 .badge {
 
 .player__tag {
     flex: none;
-    padding: 2px 4px;
+    padding: 2px calc(4px - .06em) 2px 4px;
     background: var(--stone-900);
     color: var(--stone-200);
-    font: 700 7.5px/1 var(--font-display);
+    font: 700 8px/1 var(--font-display);
     letter-spacing: .06em;
     text-transform: uppercase;
+}
+
+.player__tag--mod {
+    background: var(--accent-lo);
+    color: var(--accent-hi);
 }
 
 .player.is-elsewhere {
