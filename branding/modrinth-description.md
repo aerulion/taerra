@@ -64,7 +64,7 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 
 ![Speed](https://assets.corpium.net/taerra/section-speed.png?v=b898f732)
 
-- **A whole world in minutes.** A 6,000-block-radius world, about 560,000 chunks, renders in every view, top-down and all four isometric rotations, in **2 minutes 46 seconds** on an Intel Core Ultra 7 265 with 64 GB of RAM.
+- **A whole world in minutes.** A 6,000-block-radius world, about 440,000 chunks, renders in every view, top-down and all four isometric rotations, in **2 minutes 21 seconds** on an Intel Core Ultra 7 265 with 64 GB of RAM.
 - **Easy on your server.** Live updates cost the main thread about 2 ms per tick, full renders nothing at all: rendering runs on its own threads, half your CPU cores by default, always leaving at least two to the game.
 - **Light on disk.** Tiles are stored as compact indexed PNGs and only rewritten when they actually changed.
 
