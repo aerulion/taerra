@@ -1,7 +1,8 @@
 name: Classify changed files
 description: >-
   Splits a diff into the three release streams. mod/ is the mod, shared build files are both, site/ and the files it
-  takes from elsewhere are the website, the rest of branding/ and Markdown are none, anything else is the plugin.
+  takes from elsewhere are the website, the rest of branding/ and .github/, and Markdown are none, anything else is the
+  plugin.
 
 inputs:
   base:
@@ -89,7 +90,7 @@ runs:
               '' | *.md) ;;
               site/* | .github/actions/build-site/* | .github/workflows/site.yml | branding/ingame/* | branding/images/youtube/*)
                 if [ "${stream}" = 'site' ]; then return 0; fi ;;
-              branding/*) ;;
+              branding/* | .github/*) ;;
               plugin/src/main/resources/web/fonts/QuinqueFive-Regular.woff2 | plugin/src/main/resources/web/favicon.ico \
                 | plugin/src/main/resources/web/images/*)
                 if [ "${stream}" != 'mod' ]; then return 0; fi ;;

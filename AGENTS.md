@@ -86,7 +86,7 @@ misses the userdev CI cache.
 `release.yml` runs on every push to `main`. `.github/actions/classify-changes` splits the push into three streams:
 `mod/` is the mod, shared build files (`gradle/`, `build-logic/`, root `*.gradle.kts`, `gradle.properties`, wrapper)
 are both the plugin and the mod, `site/` and what it takes from `branding/` and the web map are the website, the rest
-of `branding/` and Markdown are none, anything else is the plugin. `build.yml` runs once if the plugin or the mod
+of `branding/` and `.github/`, and Markdown are none, anything else is the plugin. `build.yml` runs once if the plugin or the mod
 changed, then:
 
 - plugin: tag `plugin-<n>`, plugin and API jars attached, API published to GitHub Packages
