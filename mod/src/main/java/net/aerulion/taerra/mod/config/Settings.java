@@ -27,6 +27,10 @@ public sealed interface Settings permits SettingsImpl {
 
   void setMinimapRotates(boolean rotates);
 
+  boolean offMapDirection();
+
+  void setOffMapDirection(boolean direction);
+
   boolean grayMap();
 
   void setGrayMap(boolean gray);

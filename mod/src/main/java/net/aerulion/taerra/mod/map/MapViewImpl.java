@@ -561,6 +561,20 @@ public final class MapViewImpl implements MapView {
     };
   }
 
+  private double[] offMap(
+      final double @NotNull [] shown, final int x0, final int y0, final int x1, final int y1) {
+    if (!this.settings.offMapDirection()) {
+      return unturn(Math.clamp(shown[0], x0 + 4, x1 - 4), Math.clamp(shown[1], y0 + 4, y1 - 4));
+    }
+    final double dx = shown[0] - this.screenX;
+    final double dy = shown[1] - this.screenY;
+    final double scale =
+        Math.min(
+            1,
+            Math.min(((x1 - x0) / 2.0 - 4) / Math.abs(dx), ((y1 - y0) / 2.0 - 4) / Math.abs(dy)));
+    return unturn(this.screenX + dx * scale, this.screenY + dy * scale);
+  }
+
   private double[] onScreen(final double @NotNull [] point) {
     final double cos = Math.cos(this.spin);
     final double sin = Math.sin(this.spin);
@@ -1034,9 +1048,7 @@ public final class MapViewImpl implements MapView {
         MapIcons.decoration(inside ? "target_x" : "target_point");
     icon(
         graphics,
-        inside
-            ? point
-            : unturn(Math.clamp(shown[0], x0 + 4, x1 - 4), Math.clamp(shown[1], y0 + 4, y1 - 4)),
+        inside ? point : offMap(shown, x0, y0, x1, y1),
         0,
         () ->
             graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, 0, 0, 8, 8, target.color()));
@@ -1069,8 +1081,7 @@ public final class MapViewImpl implements MapView {
       final double @NotNull [] shown = onScreen(at);
       if (shown[0] < x0 || shown[0] >= x1 || shown[1] < y0 || shown[1] >= y1) {
         if (this.minimap) {
-          final double @NotNull [] pin =
-              unturn(Math.clamp(shown[0], x0 + 4, x1 - 4), Math.clamp(shown[1], y0 + 4, y1 - 4));
+          final double @NotNull [] pin = offMap(shown, x0, y0, x1, y1);
           final @NotNull TextureAtlasSprite offMap = MapIcons.decoration("player_off_map");
           icon(
               graphics,

@@ -25,6 +25,7 @@ public final class SettingsImpl implements Settings {
   private boolean minimapLeft;
   private int minimapZoom = 3;
   private boolean minimapRotates;
+  private boolean offMapDirection;
   private boolean grayMap;
   private boolean allWorldPlayers;
   private boolean waypointLabels = true;
@@ -103,6 +104,16 @@ public final class SettingsImpl implements Settings {
   @Override
   public void setMinimapRotates(final boolean rotates) {
     this.minimapRotates = rotates;
+  }
+
+  @Override
+  public boolean offMapDirection() {
+    return this.offMapDirection;
+  }
+
+  @Override
+  public void setOffMapDirection(final boolean direction) {
+    this.offMapDirection = direction;
   }
 
   @Override

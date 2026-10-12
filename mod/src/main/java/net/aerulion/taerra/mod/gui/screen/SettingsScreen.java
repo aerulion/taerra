@@ -84,6 +84,15 @@ public final class SettingsScreen extends OptionsSubScreen {
             settings.minimapLeft(),
             settings::setMinimapLeft),
         OptionInstance.createBoolean(
+            "taerra.options.offmap",
+            OptionInstance.cachedConstantTooltip(
+                Component.translatable("taerra.options.offmap.tooltip")),
+            (_, direction) ->
+                Component.translatable(
+                    direction ? "taerra.options.offmap.direction" : "taerra.options.offmap.edge"),
+            settings.offMapDirection(),
+            settings::setOffMapDirection),
+        OptionInstance.createBoolean(
             "taerra.options.colors",
             OptionInstance.noTooltip(),
             (_, gray) ->
