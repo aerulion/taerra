@@ -99,7 +99,7 @@ const en = {
             {
                 value: '2:21',
                 unit: 'min',
-                label: 'for a 6,000-block-radius world, about 440,000 chunks, in every view at once. Another widely used map plugin needed more than sixteen hours for the same world.'
+                label: 'for a 6,000-block-radius world, about 440,000 chunks, in every view at once.'
             },
             {
                 value: '~2',

@@ -51,7 +51,7 @@ export const de: Copy = {
             {
                 value: '2:21',
                 unit: 'min',
-                label: 'für eine Welt mit 6.000 Blöcken Radius, etwa 440.000 Chunks, in allen Ansichten auf einmal. Ein anderes verbreitetes Karten-Plugin brauchte für dieselbe Welt über sechzehn Stunden.'
+                label: 'für eine Welt mit 6.000 Blöcken Radius, etwa 440.000 Chunks, in allen Ansichten auf einmal.'
             },
             {
                 value: '~2',
