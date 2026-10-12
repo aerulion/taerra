@@ -1,0 +1,806 @@
+---
+import {Image} from 'astro:assets';
+import Download from '../icons/download.svg';
+import Copy from '../icons/copy.svg';
+import Check from '../icons/check.svg';
+import backdrop from '../assets/backdrop.png';
+import {copy} from '../data/taerra';
+import {
+    anchor,
+    changelog,
+    date,
+    inline,
+    latest,
+    mirror,
+    modrinthUrl,
+    parts,
+    size,
+    type Build,
+    type Part
+} from '../data/downloads';
+
+const lang = Astro.currentLocale ?? 'en';
+const {downloads: t, start} = copy(lang);
+const file = (build: Build) => `/download/${build.file}`;
+const newest = new Set(parts.map(latest).flatMap((build) => (build ? [anchor(build)] : [])));
+const filters = [
+    {value: 'all', label: t.archive.all, count: mirror.builds.length},
+    ...parts.map((part: Part) => ({
+        value: part,
+        label: t.parts[part].label,
+        count: mirror.builds.filter((build) => build.part === part).length
+    }))
+];
+const phrase = (text: string) => t.phrases[text] ?? text;
+---
+
+<main class="downloads">
+    <section class="intro" aria-labelledby="downloads-title">
+        <Image class="backdrop" src={backdrop} alt="" layout="full-width" priority />
+        <div class="shade"></div>
+        <div class="container">
+            <div class="heading">
+                <p class="kicker pixel">{t.kicker}</p>
+                <h1 id="downloads-title" class="title">
+                    {t.title}
+                </h1>
+                <p class="lede">{t.lede}</p>
+            </div>
+            <div class="latest">
+                {parts.map((part, i) => {
+                    const build = latest(part);
+                    const {label, loader, install} = t.parts[part];
+                    return (
+                        <article id={`latest-${part}`} class="card" style={`--stagger: ${i}`}>
+                            <div class="card-head">
+                                <p class="part pixel">
+                                    {label}
+                                    <span>{loader}</span>
+                                </p>
+                                {build && build.channel !== 'release' && (
+                                    <span class="tag tag--channel pixel">{t.channels[build.channel]}</span>
+                                )}
+                            </div>
+                            {build ? (
+                                <>
+                                    <h2 class="number">
+                                        <span class="pixel">{t.latest}</span>
+                                        <span class="value pixel">
+                                            {t.build} {build.build}
+                                        </span>
+                                    </h2>
+                                    <p class="facts">
+                                        <time datetime={build.published}>{date(build.published, lang)}</time>
+                                        <span>
+                                            {t.minecraft} {build.minecraft.join(', ')}
+                                        </span>
+                                        <span>{size(build.size, lang)}</span>
+                                    </p>
+                                    <div class="needs">
+                                        <p>{install}</p>
+                                        <p>{start.requirements[part].needs}</p>
+                                    </div>
+                                    <div class="get">
+                                        <a class="btn btn--primary" href={file(build)} download>
+                                            <Download aria-hidden="true" />
+                                            {t.download}
+                                        </a>
+                                        <a class="more" href={`#${anchor(build)}`}>
+                                            {t.changes}
+                                        </a>
+                                        {mirror.modrinth && (
+                                            <a class="more" href={modrinthUrl(build)}>
+                                                {t.modrinth}
+                                            </a>
+                                        )}
+                                    </div>
+                                    <code class="file">{build.file}</code>
+                                </>
+                            ) : (
+                                <p class="none">{t.none}</p>
+                            )}
+                        </article>
+                    );
+                })}
+            </div>
+            <dl class="updates">
+                <dt class="pixel">{start.requirements.updates.part}</dt>
+                <dd>{start.requirements.updates.needs}</dd>
+            </dl>
+        </div>
+        <div class="edge"></div>
+    </section>
+
+    <section class="section archive" aria-labelledby="archive-title">
+        <div class="container">
+            <div class="heading" data-reveal>
+                <p class="kicker pixel">{t.archive.kicker}</p>
+                <h2 id="archive-title" class="title">
+                    {t.archive.title}
+                </h2>
+                <p class="lede">{t.archive.lede}</p>
+            </div>
+            {mirror.builds.length ? (
+                <>
+                    <fieldset class="filter">
+                        <legend class="visually-hidden">{t.archive.filter}</legend>
+                        {filters.map(({value, label, count}) => (
+                            <label>
+                                <input
+                                    class="visually-hidden"
+                                    type="radio"
+                                    name="part"
+                                    {value}
+                                    checked={value === 'all'}
+                                />
+                                <span>{label}</span>
+                                <span class="count">{count}</span>
+                            </label>
+                        ))}
+                    </fieldset>
+                    <ol class="timeline">
+                        {mirror.builds.map((build) => {
+                            const id = anchor(build);
+                            const {label, loader} = t.parts[build.part];
+                            return (
+                                <li {id} class="entry" data-part={build.part}>
+                                    <p class="build pixel">
+                                        <span>{t.build}</span>
+                                        {build.build}
+                                    </p>
+                                    <div class="body">
+                                        <p class="meta">
+                                            <span class="tag pixel">
+                                                {label} · {loader}
+                                            </span>
+                                            {build.channel !== 'release' && (
+                                                <span class="tag tag--channel pixel">{t.channels[build.channel]}</span>
+                                            )}
+                                            {newest.has(id) && <span class="tag tag--latest pixel">{t.latest}</span>}
+                                            <time datetime={build.published}>{date(build.published, lang)}</time>
+                                            <span>
+                                                {t.minecraft} {build.minecraft.join(', ')}
+                                            </span>
+                                        </p>
+                                        <details open={newest.has(id)}>
+                                            <summary>{t.changes}</summary>
+                                            <div class="changelog">
+                                                {changelog(build.changelog).map(({heading, blocks}) => (
+                                                    <div class="changes">
+                                                        {heading && (
+                                                            <h3 class="pixel">{t.sections[heading] ?? heading}</h3>
+                                                        )}
+                                                        {blocks.map((block) =>
+                                                            'list' in block ? (
+                                                                <ul>
+                                                                    {block.list.map((item) => (
+                                                                        <li>
+                                                                            {inline(item).map(({code, text}) =>
+                                                                                code ? <code>{text}</code> : text
+                                                                            )}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            ) : (
+                                                                <p>
+                                                                    {inline(phrase(block.text)).map(({code, text}) =>
+                                                                        code ? <code>{text}</code> : text
+                                                                    )}
+                                                                </p>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </details>
+                                    </div>
+                                    <div class="get">
+                                        <a class="btn btn--dark" href={file(build)} download>
+                                            <Download aria-hidden="true" />
+                                            {t.download}
+                                            <span class="size">{size(build.size, lang)}</span>
+                                        </a>
+                                        <button
+                                            class="hash"
+                                            type="button"
+                                            data-hash={build.sha512}
+                                            data-copied={t.copied}
+                                            title={`${t.hash} ${build.sha512}`}
+                                        >
+                                            <Copy class="idle" aria-hidden="true" />
+                                            <Check class="done" aria-hidden="true" />
+                                            <span class="visually-hidden">{t.copy}</span>
+                                            <code aria-hidden="true">
+                                                {t.hash} {build.sha512.slice(0, 8)}…
+                                            </code>
+                                            <span class="visually-hidden" aria-live="polite" />
+                                        </button>
+                                        {mirror.modrinth && (
+                                            <a class="more" href={modrinthUrl(build)}>
+                                                {t.modrinth}
+                                            </a>
+                                        )}
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ol>
+                </>
+            ) : (
+                <p class="empty">{t.archive.empty}</p>
+            )}
+        </div>
+    </section>
+</main>
+
+<script>
+    for (const button of document.querySelectorAll<HTMLButtonElement>('button[data-hash]')) {
+        const status = button.querySelector('[aria-live]')!;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        button.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(button.dataset.hash!);
+            } catch (error) {
+                console.debug(error);
+                return;
+            }
+            clearTimeout(timer);
+            button.classList.add('is-copied');
+            status.textContent = button.dataset.copied!;
+            timer = setTimeout(() => {
+                button.classList.remove('is-copied');
+                status.textContent = '';
+            }, 1600);
+        });
+    }
+
+    const reveal = () => {
+        const entry = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+        if (!entry?.classList.contains('entry')) return;
+        const all = document.querySelector<HTMLInputElement>('input[name="part"][value="all"]');
+        if (all) all.checked = true;
+        entry.querySelector('details')?.setAttribute('open', '');
+    };
+    reveal();
+    addEventListener('hashchange', reveal);
+</script>
+
+<style>
+    .intro {
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    .intro > .container {
+        display: grid;
+        gap: clamp(32px, 4vw, 48px);
+        padding-block: clamp(48px, 7vw, 96px);
+    }
+
+    .intro .heading {
+        margin: 0;
+    }
+
+    .intro :global(.backdrop),
+    .shade {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .intro :global(.backdrop) {
+        animation: drift 40s ease-in-out infinite alternate;
+    }
+
+    @keyframes drift {
+        from {
+            scale: 1.04;
+        }
+
+        to {
+            scale: 1.1;
+            translate: 1% -1%;
+        }
+    }
+
+    .shade {
+        background: linear-gradient(180deg, rgb(0 0 0 / 0.88) 20%, rgb(0 0 0 / 0.7) 60%, rgb(0 0 0 / 0.92));
+    }
+
+    .heading > *,
+    .card {
+        animation: rise 0.9s var(--ease-out) both;
+    }
+
+    .intro .heading > :nth-child(2) {
+        animation-delay: 0.08s;
+    }
+
+    .intro .heading > :nth-child(3) {
+        animation-delay: 0.16s;
+    }
+
+    .card {
+        animation-delay: calc(0.24s + var(--stagger) * 0.1s);
+    }
+
+    .archive .heading > * {
+        animation: none;
+    }
+
+    .latest {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .card {
+        position: relative;
+        display: grid;
+        grid-template-rows: auto auto auto 1fr auto auto;
+        gap: 16px;
+        padding: clamp(24px, 3vw, 32px);
+        background: var(--stone-900);
+        border: 2px solid var(--black);
+        box-shadow: var(--slab-shadow);
+        scroll-margin-top: 96px;
+    }
+
+    .card::before {
+        content: '';
+        position: absolute;
+        inset: -2px -2px auto;
+        height: 6px;
+        background: linear-gradient(var(--accent-hi) 33%, var(--accent) 33%);
+    }
+
+    .card-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .part {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        color: var(--accent-hi);
+        font-size: 14px;
+    }
+
+    .part span {
+        color: var(--stone-200);
+        font-size: 10px;
+    }
+
+    .number {
+        display: grid;
+        gap: 10px;
+        font-weight: 400;
+    }
+
+    .number > span:first-child {
+        color: var(--stone-200);
+        font-size: 10px;
+    }
+
+    .number .value {
+        font-size: clamp(28px, 4.4vw, 52px);
+        white-space: nowrap;
+        text-shadow: 0 4px 0 var(--black);
+    }
+
+    .facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 20px;
+        color: var(--stone-100);
+        font-size: 16px;
+    }
+
+    .facts > * + *::before {
+        content: '';
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        margin-right: 20px;
+        translate: 0 -3px;
+        background: var(--stone-600);
+    }
+
+    .needs {
+        display: grid;
+        gap: 4px;
+        align-content: start;
+        color: var(--stone-200);
+        font-size: 15px;
+    }
+
+    .needs p:first-child {
+        color: var(--white);
+        font-weight: 600;
+    }
+
+    .get {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px 20px;
+    }
+
+    .get .btn :global(svg) {
+        width: 16px;
+        height: 16px;
+    }
+
+    .card .btn {
+        min-height: 52px;
+        padding-inline: 24px;
+        font-size: 18px;
+    }
+
+    .more {
+        color: var(--stone-100);
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration-color: var(--stone-600);
+        text-underline-offset: 4px;
+    }
+
+    .more:hover {
+        color: var(--white);
+        text-decoration-color: var(--accent-hi);
+    }
+
+    .file {
+        overflow-wrap: anywhere;
+        color: var(--stone-200);
+        font-size: 12px;
+    }
+
+    .none {
+        color: var(--stone-200);
+    }
+
+    .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 22px;
+        padding: 2px 8px 0;
+        background: var(--stone-700);
+        color: var(--stone-100);
+        font-size: 8px;
+        box-shadow: inset 0 -2px var(--stone-800);
+    }
+
+    .tag--channel {
+        background: var(--accent-lo);
+        color: var(--accent-hi);
+        box-shadow: inset 0 -2px rgb(0 0 0 / 0.3);
+    }
+
+    .tag--latest {
+        background: var(--accent);
+        color: var(--white);
+        box-shadow: inset 0 -2px var(--accent-lo);
+    }
+
+    .updates {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 8px 20px;
+        max-width: 80ch;
+    }
+
+    .updates dt {
+        color: var(--accent-hi);
+        font-size: 10px;
+    }
+
+    .updates dd {
+        color: var(--stone-100);
+        font-size: 16px;
+    }
+
+    .filter {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-bottom: 32px;
+        padding: 4px;
+        background: var(--black);
+        border: 2px solid var(--stone-900);
+        box-shadow: inset 0 2px rgb(0 0 0 / 0.6);
+    }
+
+    .filter label {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 40px;
+        padding: 0 16px 2px;
+        color: var(--stone-100);
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+            background 0.2s ease,
+            color 0.2s ease;
+    }
+
+    .filter label:hover {
+        color: var(--white);
+        background: var(--stone-800);
+    }
+
+    .filter label:has(:checked) {
+        background: var(--accent);
+        color: var(--white);
+        box-shadow:
+            inset 0 -3px var(--accent-lo),
+            inset 2px 2px rgb(255 255 255 / 0.2);
+    }
+
+    .filter label:has(:focus-visible) {
+        outline: 2px solid var(--accent-hi);
+        outline-offset: 2px;
+    }
+
+    .count {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 400;
+        opacity: 0.75;
+    }
+
+    .archive:has(input[value='plugin']:checked) .entry[data-part='mod'],
+    .archive:has(input[value='mod']:checked) .entry[data-part='plugin'] {
+        display: none;
+    }
+
+    .timeline {
+        position: relative;
+        display: grid;
+        gap: 12px;
+        padding: 0;
+        list-style: none;
+    }
+
+    .entry {
+        display: grid;
+        grid-template-columns: 112px minmax(0, 1fr) auto;
+        gap: 24px;
+        align-items: start;
+        padding: 24px;
+        background: var(--stone-900);
+        border: 2px solid var(--black);
+        box-shadow: var(--slab-shadow);
+        scroll-margin-top: 96px;
+        transition: border-color 0.3s ease;
+    }
+
+    .entry:target {
+        border-color: var(--accent);
+    }
+
+    .build {
+        display: grid;
+        gap: 8px;
+        font-size: 30px;
+    }
+
+    .build span {
+        color: var(--stone-200);
+        font-size: 8px;
+    }
+
+    .entry[data-part='plugin'] .build {
+        color: var(--white);
+    }
+
+    .entry[data-part='mod'] .build {
+        color: var(--accent-hi);
+    }
+
+    .body {
+        display: grid;
+        gap: 12px;
+    }
+
+    .meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        color: var(--stone-200);
+        font-size: 15px;
+    }
+
+    summary {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        width: fit-content;
+        color: var(--stone-100);
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        list-style: none;
+    }
+
+    summary::-webkit-details-marker {
+        display: none;
+    }
+
+    summary::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        background: var(--accent-hi);
+        clip-path: polygon(0 0, 100% 50%, 0 100%);
+        transition: rotate 0.2s var(--ease-out);
+    }
+
+    details[open] summary::before {
+        rotate: 90deg;
+    }
+
+    summary:hover {
+        color: var(--white);
+    }
+
+    .changelog {
+        display: grid;
+        gap: 16px;
+        margin-top: 16px;
+        padding: 16px 20px;
+        background: var(--black);
+        box-shadow: inset 0 2px rgb(0 0 0 / 0.6);
+    }
+
+    .changes {
+        display: grid;
+        gap: 8px;
+    }
+
+    .changes h3 {
+        color: var(--accent-hi);
+        font-size: 10px;
+    }
+
+    .changes ul {
+        display: grid;
+        gap: 6px;
+        padding: 0;
+        list-style: none;
+    }
+
+    .changes li {
+        position: relative;
+        padding-left: 20px;
+        color: var(--stone-100);
+        font-size: 16px;
+    }
+
+    .changes li::before {
+        content: '';
+        position: absolute;
+        top: 0.6em;
+        left: 0;
+        width: 8px;
+        height: 8px;
+        background: var(--stone-600);
+    }
+
+    .changes p {
+        color: var(--stone-200);
+        font-size: 16px;
+    }
+
+    .changes code {
+        padding: 1px 5px;
+        background: var(--stone-800);
+    }
+
+    .entry .get {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .size {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 400;
+        opacity: 0.75;
+    }
+
+    .hash {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 32px;
+        padding: 0 10px;
+        background: none;
+        border: 1px solid var(--stone-700);
+        color: var(--stone-200);
+        font: inherit;
+        cursor: pointer;
+        transition:
+            border-color 0.2s ease,
+            color 0.2s ease;
+    }
+
+    .hash:hover {
+        border-color: var(--stone-200);
+        color: var(--white);
+    }
+
+    .hash code {
+        font-size: 12px;
+    }
+
+    .hash :global(svg) {
+        width: 12px;
+        height: 12px;
+    }
+
+    .hash :global(.done),
+    .hash.is-copied :global(.idle) {
+        display: none;
+    }
+
+    .hash.is-copied {
+        border-color: var(--accent);
+        color: var(--accent-hi);
+    }
+
+    .hash.is-copied :global(.done) {
+        display: block;
+    }
+
+    .entry .more {
+        text-align: center;
+    }
+
+    .empty {
+        padding: 32px;
+        background: var(--stone-900);
+        color: var(--stone-200);
+        border: 2px solid var(--black);
+    }
+
+    @media (max-width: 900px) {
+        .latest {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    @media (max-width: 720px) {
+        .entry {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 16px;
+            padding: 20px;
+        }
+
+        .build {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            font-size: 24px;
+        }
+
+        .entry .get {
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+    }
+</style>

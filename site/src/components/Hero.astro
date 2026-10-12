@@ -7,11 +7,13 @@ import world0 from '../assets/world-0.png';
 import world1 from '../assets/world-1.png';
 import world2 from '../assets/world-2.png';
 import world3 from '../assets/world-3.png';
+import {getRelativeLocaleUrl} from 'astro:i18n';
 import {copy, links} from '../data/taerra';
 
 const {hero} = copy(Astro.currentLocale);
 const [before, live, after] = hero.title;
 const worlds = [world0, world1, world2, world3];
+const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 ---
 
 <section id="top" class="hero">
@@ -28,8 +30,8 @@ const worlds = [world0, world1, world2, world3];
             <p class="tagline">{hero.tagline}</p>
             <p class="lede">{hero.lede}</p>
             <div class="actions">
-                <a class="btn btn--primary" href={links.modrinth}>
-                    {hero.modrinth}
+                <a class="btn btn--primary" href={download}>
+                    {hero.download}
                 </a>
                 <a class="btn" href={links.demo}>
                     {hero.demo}

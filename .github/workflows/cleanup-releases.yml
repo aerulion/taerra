@@ -8,7 +8,9 @@ on:
         required: true
         type: string
       keep-latest:
-        description: How many of the most recent releases of this stream to keep.
+        description: >-
+          How many of the most recent releases of this stream to keep. Releases mirrored on taerra.dev, the ones with a
+          modrinth.json, are always kept.
         required: true
         type: number
 
@@ -50,7 +52,9 @@ jobs:
             const owned = releases
               .filter(release => release.tag_name.startsWith(tagPrefix))
               .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            const obsolete = owned.slice(keepLatest);
+            const obsolete = owned
+              .slice(keepLatest)
+              .filter(release => !release.assets.some(asset => asset.name === 'modrinth.json'));
 
             console.log(`Found ${owned.length} "${tagPrefix}" releases, keeping ${owned.length - obsolete.length}`);
 

@@ -87,7 +87,7 @@ runs:
           while IFS= read -r file; do
             case "${file}" in
               '' | *.md) ;;
-              site/* | .github/actions/build-site/* | branding/ingame/* | branding/images/youtube/*)
+              site/* | .github/actions/build-site/* | .github/workflows/site.yml | branding/ingame/* | branding/images/youtube/*)
                 if [ "${stream}" = 'site' ]; then return 0; fi ;;
               branding/*) ;;
               plugin/src/main/resources/web/fonts/QuinqueFive-Regular.woff2 | plugin/src/main/resources/web/favicon.ico \

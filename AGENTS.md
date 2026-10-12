@@ -90,8 +90,9 @@ changed, then:
 
 - plugin: tag `plugin-<n>`, plugin and API jars attached, API published to GitHub Packages
 - mod: tag `mod-<n>`, mod jar attached
-- website: `.github/actions/build-site` checks and builds it, the deploy goes to GitHub Pages, then the one `site` tag
-  moves to that commit (no release)
+- website: `site.yml` builds `main` with `.github/actions/build-site`, the deploy goes to GitHub Pages, then the one
+  `site` tag moves to that commit (no release). `site.yml` is the only way to Pages; its build and deploy jobs each
+  have a concurrency group, so deploys from release runs and the download mirror land in order
 
 With `release-tags: 'true'`, `classify-changes` diffs each stream against the newest `plugin-`/`mod-` tag HEAD descends
 from, or the `site` tag, falling back to `github.event.before`. Required: GitHub keeps one pending run per concurrency
@@ -101,7 +102,8 @@ group, so a cancelled run's commits would otherwise never be classified.
 the `commit-msg` hook enforces. Its pathspecs must match `classify-changes`; edit both together, and the hook's types
 together with the notes' sections. Both resolve the previous tag with `git describe` (ancestry), never tag dates.
 
-Both streams share one release list, so `cleanup-releases.yml` refuses to run without a tag prefix.
+Both streams share one release list, so `cleanup-releases.yml` refuses to run without a tag prefix. It never deletes a
+release with a `modrinth.json`: those are the download mirror.
 `cleanup-packages.yml` only deletes versions matching `^\d+-[0-9a-f]{7,}$` and fails if nothing matches, and
 `pr-cleanup.yml` matches the `pr<n>-` prefix; both follow the version format in `settings.gradle.kts`. The package API
 calls pick `/users/...` or `/orgs/...` from the repository owner type.
@@ -109,6 +111,15 @@ calls pick `/users/...` or `/orgs/...` from the repository owner type.
 `modrinth.yml` is the only way to Modrinth: run by hand with plugin or mod and a build number, it uploads that GitHub
 release's jar, never a rebuild, as a Paper or Fabric version of the one project, slug `taerra` (`MODRINTH_TOKEN` secret). Its changelog is `release-notes.sh` with `AUDIENCE=players` since the commit in the
 newest Modrinth version number of that loader.
+
+Every version on Modrinth is mirrored on taerra.dev/download/, every build, never only the newest. After the upload,
+`modrinth.yml` calls `downloads.yml` (also run by hand for a build already on Modrinth): it looks the version up with
+the token, checks the GitHub release's jar against Modrinth's SHA-512, attaches what Modrinth shows for it as
+`modrinth.json` to that release, then deploys the site. `site/scripts/downloads.sh` (`bun run downloads`, run by
+`build-site`, needs `gh`) fetches every release with a `modrinth.json` and its jar into `site/downloads/`, ignored by
+git, and the page serves the jars from `/download/<file>.jar`. Files only ever come from the GitHub releases, never
+from Modrinth's CDN. The Discord embed links the Modrinth version once the project is public and the mirror until
+then.
 
 For the plugin, `modrinth.yml` then calls `build.yml` with `central: true`: it rebuilds and tests the tag under the
 same version and publishes the API to Maven Central, signed, through the Central Portal API (`CENTRAL_USERNAME`,
@@ -118,21 +129,24 @@ member has Javadoc; the `javadoc` task runs doclint with `missing` and fails the
 
 The Discord channel is public and the repository private, so only `modrinth.yml` posts there, and nothing public
 (Discord, Modrinth notes, the mod and plugin metadata, the web map) links into the repository. The public links are
-taerra.dev and two redirects on its domain, `download.taerra.dev` to the Modrinth page and `discord.taerra.dev` to the
-Discord invite, set up with the domain's DNS rather than in this repository: link those, not modrinth.com or the invite,
-except for a link to one Modrinth version. Messages are embeds through `notify-discord.yml`, which blocks mentions.
-Discord needs the `DISCORD_WEBHOOK_ID` and `DISCORD_WEBHOOK_TOKEN` secrets.
+taerra.dev and two redirects on its domain, `download.taerra.dev` to the download page (the Modrinth page once the
+project is public there) and `discord.taerra.dev` to the Discord invite, set up with the domain's DNS rather than in
+this repository: link those, not modrinth.com or the invite, except for a link to one Modrinth version. Messages are
+embeds through `notify-discord.yml`, which blocks mentions. Discord needs the `DISCORD_WEBHOOK_ID` and
+`DISCORD_WEBHOOK_TOKEN` secrets.
 
 ## Website
 
-`site/` is taerra.dev, a single promo page for players and server owners; aerulion.net/work/taerra stays the technical deep
-dive. Astro with Bun, following aerulion.github.io: Prettier, ESLint and `astro check` (`bun run check`), fonts through
-Astro's fonts API (QuinqueFive from the plugin's copy, the rest from Fontsource). Copy lives in `src/data/taerra.ts`
-(English, at `/`) and `taerra.de.ts` (German, at `/de/`, in the web map's du voice), never in components, and takes
-its facts from `branding/modrinth-description.md`; change all three together. `/` sends German browsers to `/de/`
-until the header's language picker stores a choice. Each locale has its own `404.astro`, out of the sitemap; GitHub
-Pages serves the English one for every missing path, so it sends `/de/…` and German browsers on to `/de/404/`. The
-look is the web map's: its tokens, fonts and slab buttons, the copper edge. Its pictures are rendered by
+`site/` is taerra.dev, a promo page for players and server owners and its download page; aerulion.net/work/taerra stays
+the technical deep dive. Astro with Bun, following aerulion.github.io: Prettier, ESLint and `astro check` (`bun run
+check`), fonts through Astro's fonts API (QuinqueFive from the plugin's copy, the rest from Fontsource). Copy lives in
+`src/data/taerra.ts` (English, at `/`) and `taerra.de.ts` (German, at `/de/`, in the web map's du voice), never in
+components, and takes its facts from `branding/modrinth-description.md`; change all three together. Each English page
+sends German browsers to its `/de/` twin until the header's language picker stores a choice. The download page lists the
+plugin's and the mod's latest release and every mirrored build with its changelog, Modrinth's Markdown parsed by
+`src/data/downloads.ts`; with no `site/downloads/` it shows none. Each locale has its own `404.astro`, out of the
+sitemap; GitHub Pages serves the English one for every missing path, so it sends `/de/…` and German browsers on to
+`/de/404/`. The look is the web map's: its tokens, fonts and slab buttons, the copper edge. Its pictures are rendered by
 `branding/generate.py site/` into `src/assets/` and `public/og.png`; the in-game shots and the web map's icons are
 imported from where they live. Motion is subtle and off under `prefers-reduced-motion`: `data-reveal` elements rise in
 as they scroll into view (`--stagger` delays them), the hero world floats and, until it is turned by hand, folds from

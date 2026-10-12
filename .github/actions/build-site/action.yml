@@ -1,7 +1,7 @@
 name: Build the website
 description: >-
-  Checks taerra.dev in site/ the way `bun run check` does, then builds it into site/dist. Needs the repository checked
-  out, with the files the page takes from branding/ and the plugin.
+  Checks taerra.dev in site/ the way `bun run check` does, fetches every build mirrored for download, then builds it
+  into site/dist. Needs the repository checked out, with the files the page takes from branding/ and the plugin.
 
 runs:
   using: composite
@@ -38,6 +38,14 @@ runs:
       shell: bash
       working-directory: site
       run: bun run lint
+
+    - name: 📥 Fetch the mirrored downloads
+      if: ${{ !cancelled() }}
+      shell: bash
+      working-directory: site
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: bun run downloads
 
     - name: 🏗️ Check types and build
       if: ${{ !cancelled() }}

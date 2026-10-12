@@ -1,7 +1,6 @@
 import {de} from './taerra.de';
 
 export const links = {
-    modrinth: 'https://download.taerra.dev',
     demo: 'https://map.corpium.net/',
     discord: 'https://discord.taerra.dev',
     deepDive: 'https://aerulion.net/work/taerra/'
@@ -74,7 +73,7 @@ const en = {
         title: ['Your world, ', 'live', ' in 3D'] as Marked,
         tagline: 'One map, rendered on your server: in the browser, and in game.',
         lede: 'TAERRA turns your Minecraft worlds into a live map anyone can open: every block a lit, shaded cube, seen from above or at an angle from all four sides. Players get the same map in game, with everything the browser has and a minimap on top.',
-        modrinth: 'Get it on Modrinth',
+        download: 'Get TAERRA',
         demo: 'See it live',
         note: 'Free for every server, commercial ones included.',
         alt: 'A whole Minecraft world rendered by TAERRA as one isometric block of terrain',
@@ -306,17 +305,17 @@ const en = {
                 command: '/taerra config web.name "My Server"'
             }
         ] satisfies Step[],
-        requirements: [
-            {part: 'Plugin', needs: 'Paper 26.3 and Java 25. Spigot and Folia are not supported.'},
-            {part: 'Mod', needs: 'Fabric Loader, Fabric API and Minecraft 26.3, on a server running the plugin'},
-            {
+        requirements: {
+            plugin: {part: 'Plugin', needs: 'Paper 26.3 and Java 25. Spigot and Folia are not supported.'},
+            mod: {part: 'Mod', needs: 'Fabric Loader, Fabric API and Minecraft 26.3, on a server running the plugin'},
+            updates: {
                 part: 'Updates',
                 needs: 'Update the plugin first. A mod newer than the plugin asks players to have the server updated. Plugin and mod share one build counter, so their numbers skip and don’t have to match.'
             }
-        ],
+        },
         more: [
-            'Every setting can be changed in game with /taerra config. Downloads and changelogs are on the ',
-            'Modrinth page',
+            'Every setting can be changed in game with /taerra config. Every build and what changed in it is on the ',
+            'download page',
             '.'
         ] as Marked
     },
@@ -415,17 +414,60 @@ const en = {
         kicker: 'Early access',
         title: 'Try it out, break it, report it',
         text: 'TAERRA already runs on live servers, and it is still growing: things can change between versions, and you may find rough edges. If something breaks or looks wrong, every report on Discord makes it better for everyone.',
-        modrinth: 'Get it on Modrinth',
+        download: 'Get TAERRA',
         discord: 'Join the Discord',
         demo: 'See it live',
         license: 'Free to use on any server, commercial ones included. Closed source for now.',
         deepDive: ['Curious how it works under the hood? Read the ', 'technical deep dive', '.'] as Marked
     },
 
+    downloads: {
+        meta: {
+            title: 'Download TAERRA: every build of the plugin and the mod',
+            description:
+                'Download the TAERRA plugin for Paper and the Fabric mod: the newest build and every one before it, each with what changed.'
+        },
+        kicker: 'Downloads',
+        title: 'Get TAERRA',
+        lede: 'The plugin renders the map on your Paper server. The mod is optional and shows players the same map in game. Every build is here, newest first.',
+        parts: {
+            plugin: {label: 'Plugin', loader: 'Paper', install: 'For the server. Put the jar in plugins/.'},
+            mod: {label: 'Mod', loader: 'Fabric', install: 'For players. Put the jar in mods/.'}
+        },
+        latest: 'Latest build',
+        build: 'Build',
+        download: 'Download',
+        none: 'No build released yet.',
+        minecraft: 'Minecraft',
+        changes: 'What changed',
+        modrinth: 'On Modrinth',
+        channels: {release: 'Release', beta: 'Beta', alpha: 'Alpha'},
+        archive: {
+            kicker: 'Archive',
+            title: 'Every build',
+            lede: 'Older builds stay here in case you need to go back. Plugin and mod share one build counter, so their numbers skip.',
+            filter: 'Show builds',
+            all: 'All',
+            empty: 'Builds show up here as soon as one is released.'
+        },
+        hash: 'SHA-512',
+        copy: 'Copy the SHA-512 checksum',
+        copied: 'Copied',
+        sections: {
+            Features: 'New',
+            Fixes: 'Fixed',
+            Performance: 'Faster',
+            Contributors: 'Contributors'
+        } as Record<string, string>,
+        phrases: {
+            'The first release on Modrinth.': 'The first released build.'
+        } as Record<string, string>
+    },
+
     footer: {
         elsewhere: 'TAERRA elsewhere',
         nav: {
-            modrinth: 'Download on Modrinth',
+            download: 'Downloads',
             demo: 'Live map',
             discord: 'Discord',
             deepDive: 'Technical deep dive'

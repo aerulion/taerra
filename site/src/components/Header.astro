@@ -2,11 +2,12 @@
 import {Image} from 'astro:assets';
 import icon from '../../../plugin/src/main/resources/web/images/icon.svg';
 import {getRelativeLocaleUrl} from 'astro:i18n';
-import {copy, languages, links, type Language} from '../data/taerra';
+import {copy, languages, type Language} from '../data/taerra';
 
 const {header} = copy(Astro.currentLocale);
 const codes = Object.keys(languages) as Language[];
 const home = getRelativeLocaleUrl(Astro.currentLocale ?? 'en');
+const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 ---
 
 <header>
@@ -32,7 +33,7 @@ const home = getRelativeLocaleUrl(Astro.currentLocale ?? 'en');
                 </option>
             ))}
         </select>
-        <a class="btn btn--primary" href={links.modrinth}>
+        <a class="btn btn--primary" href={download}>
             {header.download}
         </a>
     </div>
@@ -137,7 +138,7 @@ const home = getRelativeLocaleUrl(Astro.currentLocale ?? 'en');
         }
     }
 
-    @media (max-width: 380px) {
+    @media (max-width: 420px) {
         .lockup span {
             display: none;
         }

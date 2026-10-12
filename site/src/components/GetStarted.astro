@@ -1,8 +1,10 @@
 ---
-import {copy, links} from '../data/taerra';
+import {getRelativeLocaleUrl} from 'astro:i18n';
+import {copy} from '../data/taerra';
 
 const {start} = copy(Astro.currentLocale);
 const [before, link, after] = start.more;
+const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 ---
 
 <section id="start" class="section" aria-labelledby="start-title">
@@ -26,7 +28,7 @@ const [before, link, after] = start.more;
             ))}
         </ol>
         <dl class="requirements">
-            {start.requirements.map(({part, needs}) => (
+            {Object.values(start.requirements).map(({part, needs}) => (
                 <div>
                     <dt class="pixel">{part}</dt>
                     <dd>{needs}</dd>
@@ -35,7 +37,7 @@ const [before, link, after] = start.more;
         </dl>
         <p class="more">
             {before}
-            <a href={links.modrinth}>{link}</a>
+            <a href={download}>{link}</a>
             {after}
         </p>
     </div>

@@ -141,6 +141,15 @@ jobs:
           url="https://modrinth.com/project/${SLUG}/version/${uploaded}"
           echo "Published ${name} (${version}, ${CHANNEL}): ${url}"
 
+          link='Download on Modrinth'
+          case "$(jq -r '.status' <<< "${project}")" in
+            approved | archived | unlisted) ;;
+            *)
+              url="https://taerra.dev/download/#${PART}-${BUILD}"
+              link='Download'
+              ;;
+          esac
+
           title="${name} is out"
           if [ "${CHANNEL}" != 'release' ]; then
             title="${name} (${CHANNEL})"
@@ -151,7 +160,7 @@ jobs:
             echo "url=${url}"
             echo "icon=$(jq -r '.icon_url // empty' <<< "${project}")"
             echo "description<<${delimiter}"
-            printf '%s\n\n📥 [Download on Modrinth](%s)\n' "${changelog}" "${url}"
+            printf '%s\n\n📥 [%s](%s)\n' "${changelog}" "${link}" "${url}"
             echo "${delimiter}"
           } >> "$GITHUB_OUTPUT"
 
@@ -170,9 +179,23 @@ jobs:
       SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
       SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
 
+  downloads:
+    name: 📥 Mirror on taerra.dev
+    needs: publish
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/downloads.yml
+    with:
+      part: ${{ inputs.part }}
+      build: ${{ inputs.build }}
+    secrets:
+      MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+
   announce:
     name: 💬 Announce on Discord
-    needs: publish
+    needs: [ publish, downloads ]
     if: inputs.announce
     uses: ./.github/workflows/notify-discord.yml
     with:

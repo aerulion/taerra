@@ -26,7 +26,7 @@ export const de: Copy = {
         title: ['Deine Welt, ', 'live', ' in 3D'] as Marked,
         tagline: 'Eine Karte, gerendert auf deinem Server: im Browser und im Spiel.',
         lede: 'TAERRA macht aus deinen Minecraft-Welten eine Live-Karte, die alle öffnen können: jeder Block ein beleuchteter, schattierter Würfel, von oben oder schräg von allen vier Seiten. Spieler:innen bekommen dieselbe Karte im Spiel, mit allem, was der Browser kann, und dazu einer Minikarte.',
-        modrinth: 'Auf Modrinth holen',
+        download: 'TAERRA holen',
         demo: 'Live ansehen',
         note: 'Kostenlos für jeden Server, auch für kommerzielle.',
         alt: 'Eine ganze Minecraft-Welt, von TAERRA als ein isometrischer Block Landschaft gerendert',
@@ -264,17 +264,17 @@ export const de: Copy = {
                 command: '/taerra config web.name "Mein Server"'
             }
         ],
-        requirements: [
-            {part: 'Plugin', needs: 'Paper 26.3 und Java 25. Spigot und Folia werden nicht unterstützt.'},
-            {part: 'Mod', needs: 'Fabric Loader, Fabric API und Minecraft 26.3, auf einem Server mit dem Plugin'},
-            {
+        requirements: {
+            plugin: {part: 'Plugin', needs: 'Paper 26.3 und Java 25. Spigot und Folia werden nicht unterstützt.'},
+            mod: {part: 'Mod', needs: 'Fabric Loader, Fabric API und Minecraft 26.3, auf einem Server mit dem Plugin'},
+            updates: {
                 part: 'Updates',
                 needs: 'Aktualisiere zuerst das Plugin. Ist die Mod neuer als das Plugin, bittet sie die Spieler:innen, den Server aktualisieren zu lassen. Plugin und Mod teilen sich einen Build-Zähler, ihre Nummern springen also und müssen nicht übereinstimmen.'
             }
-        ],
+        },
         more: [
-            'Jede Einstellung lässt sich im Spiel mit /taerra config ändern. Downloads und Changelogs findest du auf der ',
-            'Modrinth-Seite',
+            'Jede Einstellung lässt sich im Spiel mit /taerra config ändern. Alle Builds und was sich in ihnen geändert hat, findest du auf der ',
+            'Download-Seite',
             '.'
         ] as Marked
     },
@@ -383,7 +383,7 @@ export const de: Copy = {
         kicker: 'Early Access',
         title: 'Ausprobieren, kaputt machen, melden',
         text: 'TAERRA läuft schon auf echten Servern und wächst noch: Zwischen Versionen kann sich etwas ändern, und hier und da gibt es Ecken und Kanten. Wenn etwas kaputtgeht oder falsch aussieht, macht jede Meldung auf Discord es für alle besser.',
-        modrinth: 'Auf Modrinth holen',
+        download: 'TAERRA holen',
         discord: 'Zum Discord',
         demo: 'Live ansehen',
         license: 'Kostenlos auf jedem Server, auch auf kommerziellen. Vorerst Closed Source.',
@@ -394,10 +394,54 @@ export const de: Copy = {
         ] as Marked
     },
 
+    downloads: {
+        meta: {
+            title: 'TAERRA herunterladen: jeder Build von Plugin und Mod',
+            description:
+                'Lade das TAERRA-Plugin für Paper und die Fabric-Mod herunter: den neuesten Build und jeden davor, jeweils mit allem, was sich geändert hat.'
+        },
+        kicker: 'Downloads',
+        title: 'TAERRA holen',
+        lede: 'Das Plugin rendert die Karte auf deinem Paper-Server. Die Mod ist optional und zeigt Spieler:innen dieselbe Karte im Spiel. Hier liegt jeder Build, der neueste zuerst.',
+        parts: {
+            plugin: {label: 'Plugin', loader: 'Paper', install: 'Für den Server. Leg die Jar in plugins/.'},
+            mod: {label: 'Mod', loader: 'Fabric', install: 'Für Spieler:innen. Leg die Jar in mods/.'}
+        },
+        latest: 'Neuester Build',
+        build: 'Build',
+        download: 'Herunterladen',
+        none: 'Noch kein Build veröffentlicht.',
+        minecraft: 'Minecraft',
+        changes: 'Änderungen',
+        modrinth: 'Auf Modrinth',
+        channels: {release: 'Release', beta: 'Beta', alpha: 'Alpha'},
+        archive: {
+            kicker: 'Archiv',
+            title: 'Jeder Build',
+            lede: 'Ältere Builds bleiben hier, falls du zurück musst. Plugin und Mod teilen sich einen Build-Zähler, deshalb springen ihre Nummern.',
+            filter: 'Builds zeigen',
+            all: 'Alle',
+            empty: 'Sobald ein Build veröffentlicht ist, steht er hier.'
+        },
+        hash: 'SHA-512',
+        copy: 'SHA-512-Prüfsumme kopieren',
+        copied: 'Kopiert',
+        sections: {
+            Features: 'Neu',
+            Fixes: 'Behoben',
+            Performance: 'Schneller',
+            Contributors: 'Mitwirkende'
+        } as Record<string, string>,
+        phrases: {
+            'Internal improvements only.': 'Nur Verbesserungen unter der Haube.',
+            'The first release on Modrinth.': 'Der erste veröffentlichte Build.'
+        } as Record<string, string>
+    },
+
     footer: {
         elsewhere: 'TAERRA anderswo',
         nav: {
-            modrinth: 'Download auf Modrinth',
+            download: 'Downloads',
             demo: 'Live-Karte',
             discord: 'Discord',
             deepDive: 'Technischer Deep Dive (Englisch)'

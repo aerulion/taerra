@@ -15,7 +15,7 @@ audience="${AUDIENCE:-contributors}"
 cd "$(git rev-parse --show-toplevel)"
 
 case "${prefix}" in
-  plugin-) paths=( '.' ':(exclude)mod' ':(exclude)branding' ':(exclude)site' ':(exclude).github/actions/build-site' ':(exclude)*.md' ) ;;
+  plugin-) paths=( '.' ':(exclude)mod' ':(exclude)branding' ':(exclude)site' ':(exclude).github/actions/build-site' ':(exclude).github/workflows/site.yml' ':(exclude)*.md' ) ;;
   mod-) paths=( 'mod' 'gradle' 'build-logic' 'settings.gradle.kts' 'build.gradle.kts' 'gradle.properties' 'gradlew' 'gradlew.bat' ':(exclude)*.md' ) ;;
   *)
     echo "::error::Unknown tag prefix '${prefix}'." >&2

@@ -1,0 +1,109 @@
+name: 📥 Mirror on taerra.dev
+
+on:
+  workflow_dispatch:
+    inputs:
+      part:
+        description: What to mirror.
+        required: true
+        type: choice
+        options: [ plugin, mod ]
+      build:
+        description: The build number of a version already on Modrinth.
+        required: true
+        type: number
+  workflow_call:
+    inputs:
+      part:
+        required: true
+        type: string
+      build:
+        required: true
+        type: number
+    secrets:
+      MODRINTH_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    name: 📝 Record the Modrinth version
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📝 Attach modrinth.json to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          SLUG: taerra
+          PART: ${{ inputs.part }}
+          BUILD: ${{ inputs.build }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${MODRINTH_TOKEN}" ]; then
+            echo "::error::Set the MODRINTH_TOKEN secret."
+            exit 1
+          fi
+          if [[ ! "${BUILD}" =~ ^[0-9]+$ ]]; then
+            echo "::error::'${BUILD}' is not a build number."
+            exit 1
+          fi
+          case "${PART}" in
+            plugin) loader='paper' ;;
+            mod) loader='fabric' ;;
+            *)
+              echo "::error::'${PART}' is neither plugin nor mod."
+              exit 1
+              ;;
+          esac
+          TAG="${PART}-${BUILD}"
+
+          version="$(curl --silent --show-error --fail-with-body --retry 3 --max-time 120 \
+            --user-agent "aerulion/taerra release pipeline (${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY})" \
+            --header "Authorization: ${MODRINTH_TOKEN}" --get "https://api.modrinth.com/v2/project/${SLUG}/version" \
+            --data-urlencode "loaders=[\"${loader}\"]" \
+            | jq -c --arg build "${BUILD}" 'map(select(.version_number | startswith($build + "-"))) | first // empty')"
+          if [ -z "${version}" ]; then
+            echo "::error::Build ${BUILD} is not on Modrinth for ${loader}."
+            exit 1
+          fi
+          file="$(jq -c '[.files[] | select(.primary)] + .files | .[0]' <<< "${version}")"
+          name="$(jq -r '.filename' <<< "${file}")"
+
+          mkdir dist
+          gh release download "${TAG}" --repo "${GITHUB_REPOSITORY}" --dir dist --pattern "${name}"
+          if [ "$(sha512sum "dist/${name}" | cut -d ' ' -f 1)" != "$(jq -r '.hashes.sha512' <<< "${file}")" ]; then
+            echo "::error::${name} in ${TAG} is not the file Modrinth has for build ${BUILD}."
+            exit 1
+          fi
+
+          jq --arg part "${PART}" --argjson file "${file}" '{
+            part: $part,
+            build: (.version_number | split("-")[0] | tonumber),
+            version: .version_number,
+            name: .name,
+            channel: .version_type,
+            minecraft: .game_versions,
+            published: .date_published,
+            changelog: .changelog,
+            file: $file.filename,
+            size: $file.size,
+            sha512: $file.hashes.sha512,
+            modrinth: .id
+          }' <<< "${version}" > dist/modrinth.json
+          gh release upload "${TAG}" dist/modrinth.json --repo "${GITHUB_REPOSITORY}" --clobber
+          echo "Mirrored $(jq -r .name dist/modrinth.json) as ${name}."
+
+  site:
+    name: 🌐 Website
+    needs: record
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/site.yml

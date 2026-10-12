@@ -1,10 +1,12 @@
 ---
 import {Image} from 'astro:assets';
 import backdrop from '../assets/backdrop.png';
+import {getRelativeLocaleUrl} from 'astro:i18n';
 import {copy, links} from '../data/taerra';
 
 const {closing} = copy(Astro.currentLocale);
 const [before, link, after] = closing.deepDive;
+const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 ---
 
 <section class="closing" aria-labelledby="closing-title">
@@ -18,8 +20,8 @@ const [before, link, after] = closing.deepDive;
             <p class="lede">{closing.text}</p>
         </div>
         <div class="actions" data-reveal style="--stagger: 1">
-            <a class="btn btn--primary" href={links.modrinth}>
-                {closing.modrinth}
+            <a class="btn btn--primary" href={download}>
+                {closing.download}
             </a>
             <a class="btn" href={links.discord}>
                 {closing.discord}

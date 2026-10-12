@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Downloads from '../../components/Downloads.astro';
+import {copy} from '../../data/taerra';
+
+const {meta} = copy(Astro.currentLocale).downloads;
+---
+
+<Layout path="download/" title={meta.title} description={meta.description}>
+    <Downloads />
+</Layout>

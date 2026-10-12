@@ -13,19 +13,22 @@ import GetStarted from '../components/GetStarted.astro';
 import Reference from '../components/Reference.astro';
 import Closing from '../components/Closing.astro';
 import Footer from '../components/Footer.astro';
-import {copy, languages, links} from '../data/taerra';
+import {copy, languages} from '../data/taerra';
 
 interface Props {
     notFound?: boolean;
+    path?: string;
+    title?: string;
+    description?: string;
 }
 
 const lang = Astro.currentLocale ?? 'en';
 const {meta, notFound: missing} = copy(lang);
-const {notFound = false} = Astro.props;
+const {notFound = false, path = notFound ? '404' : ''} = Astro.props;
 const noindex = notFound;
-const title = notFound ? missing.title : meta.title;
-const {description} = meta;
-const german = getRelativeLocaleUrl('de', notFound ? '404' : '');
+const title = Astro.props.title ?? (notFound ? missing.title : meta.title);
+const description = Astro.props.description ?? meta.description;
+const german = getRelativeLocaleUrl('de', path);
 const redirect = `try {
     const wanted = localStorage.getItem('language') ?? (navigator.languages ?? [navigator.language])[0];
     const german = ${notFound ? "location.pathname.startsWith('/de/') || " : ''}wanted?.toLowerCase().startsWith('de');
@@ -52,7 +55,7 @@ const structuredData = {
             applicationCategory: 'GameApplication',
             operatingSystem: 'Paper 26.3, Fabric',
             offers: {'@type': 'Offer', price: 0, priceCurrency: 'EUR'},
-            downloadUrl: links.modrinth,
+            downloadUrl: getAbsoluteLocaleUrl('en', 'download/'),
             author: {'@type': 'Person', name: 'aerulion', url: 'https://aerulion.net'}
         }
     ]
@@ -75,9 +78,9 @@ const structuredData = {
                 <meta name="robots" content="index, follow, max-image-preview:large" />
                 <link rel="canonical" href={canonical} />
                 {Object.keys(languages).map((code) => (
-                    <link rel="alternate" hreflang={code} href={getAbsoluteLocaleUrl(code)} />
+                    <link rel="alternate" hreflang={code} href={getAbsoluteLocaleUrl(code, path)} />
                 ))}
-                <link rel="alternate" hreflang="x-default" href={getAbsoluteLocaleUrl('en')} />
+                <link rel="alternate" hreflang="x-default" href={getAbsoluteLocaleUrl('en', path)} />
             </>
         )}
         <meta name="theme-color" content="#000000" />

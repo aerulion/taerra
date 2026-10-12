@@ -8,9 +8,11 @@ import shot1 from '../../../branding/ingame/ingame-1.png';
 import shot2 from '../../../branding/ingame/ingame-2.png';
 import shot3 from '../../../branding/ingame/ingame-3.png';
 import shot4 from '../../../branding/ingame/ingame-4.png';
-import {copy, links} from '../data/taerra';
+import {getRelativeLocaleUrl} from 'astro:i18n';
+import {copy} from '../data/taerra';
 
 const {mod} = copy(Astro.currentLocale);
+const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 
 const {viewer} = mod;
 const shots = await Promise.all(
@@ -39,7 +41,7 @@ const shots = await Promise.all(
                 </ul>
                 <p class="note">{mod.note}</p>
                 <div class="actions">
-                    <a class="btn btn--primary" href={links.modrinth}>
+                    <a class="btn btn--primary" href={`${download}#latest-mod`}>
                         {mod.download}
                     </a>
                 </div>

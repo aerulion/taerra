@@ -8,8 +8,9 @@ import {copy, links} from '../data/taerra';
 
 const {header, hero, footer} = copy(Astro.currentLocale);
 const home = getRelativeLocaleUrl(Astro.currentLocale ?? 'en');
+const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 const nav = [
-    {label: footer.nav.modrinth, href: links.modrinth},
+    {label: footer.nav.download, href: download},
     {label: footer.nav.demo, href: links.demo},
     {label: footer.nav.discord, href: links.discord},
     {label: footer.nav.deepDive, href: links.deepDive}
