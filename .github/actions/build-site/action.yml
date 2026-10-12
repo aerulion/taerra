@@ -47,6 +47,16 @@ runs:
         GH_TOKEN: ${{ github.token }}
       run: bun run downloads
 
+    - name: 🖼️ Restore the optimized images
+      uses: actions/cache@v6
+      with:
+        path: site/node_modules/.astro/assets
+        key: >-
+          ${{ runner.os }}-astro-images-${{ hashFiles('site/bun.lock', 'site/astro.config.mjs', 'site/src/**/*.astro',
+          'site/src/**/*.png', 'site/src/**/*.svg', 'branding/ingame/*.png', 'branding/images/**',
+          'plugin/src/main/resources/web/**/*.svg') }}
+        restore-keys: ${{ runner.os }}-astro-images-
+
     - name: 🏗️ Check types and build
       if: ${{ !cancelled() }}
       shell: bash
