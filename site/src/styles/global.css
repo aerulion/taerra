@@ -1,4 +1,14 @@
+@font-face {
+    font-family: 'QuinqueFive';
+    font-display: swap;
+    ascent-override: 80%;
+    descent-override: 20%;
+    line-gap-override: 0%;
+    src: url('../../../plugin/src/main/resources/web/fonts/QuinqueFive-Regular.woff2') format('woff2');
+}
+
 :root {
+    --font-display: 'QuinqueFive', system-ui, sans-serif;
     --black: #000;
     --void: #0b0b0c;
     --stone-900: #1e1e1f;

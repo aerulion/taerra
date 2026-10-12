@@ -6,6 +6,8 @@ import Check from '../icons/check.svg';
 import backdrop from '../assets/backdrop.png';
 import detail from '../assets/detail.png';
 import ingame from '../../../branding/ingame/ingame-4.png';
+import paper from '../assets/platforms/paper.svg';
+import fabric from '../assets/platforms/fabric.png';
 import {copy} from '../data/taerra';
 import {
     anchor,
@@ -23,18 +25,21 @@ import {
 
 const lang = Astro.currentLocale ?? 'en';
 const {downloads: t, start} = copy(lang);
+const logos = {plugin: paper, mod: fabric};
 const file = (build: Build) => `/download/${build.file}`;
 const newest = new Set(parts.map(latest).flatMap((build) => (build ? [anchor(build)] : [])));
 const filters = [
-    {value: 'all', label: t.archive.all, count: mirror.builds.length},
+    {value: 'all', label: t.archive.all, logo: undefined, count: mirror.builds.length},
     ...parts.map((part: Part) => ({
         value: part,
         label: t.parts[part].label,
+        logo: logos[part],
         count: mirror.builds.filter((build) => build.part === part).length
     }))
 ];
 const phrase = (text: string) => t.phrases[text] ?? text;
 const shots = {plugin: detail, mod: ingame};
+const [creditBefore, creditLink, creditAfter] = t.credit;
 ---
 
 <main class="downloads">
@@ -76,7 +81,10 @@ const shots = {plugin: detail, mod: ingame};
                                 <p class="audience pixel">{audience}</p>
                             </div>
                             <div class="card-body">
-                                <h2 id={`latest-${part}-title`}>{title}</h2>
+                                <h2 id={`latest-${part}-title`}>
+                                    <img class="logo" src={logos[part].src} alt="" width="42" height="42" />
+                                    {title}
+                                </h2>
                                 <p class="text">{text}</p>
                                 <p class="needs">{start.requirements[part].needs}</p>
                                 {build ? (
@@ -138,7 +146,7 @@ const shots = {plugin: detail, mod: ingame};
                 <>
                     <fieldset class="filter">
                         <legend class="visually-hidden">{t.archive.filter}</legend>
-                        {filters.map(({value, label, count}) => (
+                        {filters.map(({value, label, logo, count}) => (
                             <label>
                                 <input
                                     class="visually-hidden"
@@ -147,6 +155,7 @@ const shots = {plugin: detail, mod: ingame};
                                     {value}
                                     checked={value === 'all'}
                                 />
+                                {logo && <img class="logo" src={logo.src} alt="" width="28" height="28" />}
                                 <span>{label}</span>
                                 <span class="count">{count}</span>
                             </label>
@@ -155,7 +164,7 @@ const shots = {plugin: detail, mod: ingame};
                     <ol class="timeline">
                         {mirror.builds.map((build) => {
                             const id = anchor(build);
-                            const {label, loader, title} = t.parts[build.part];
+                            const {title} = t.parts[build.part];
                             return (
                                 <li {id} class="entry" data-part={build.part}>
                                     <p class="build pixel">
@@ -164,8 +173,14 @@ const shots = {plugin: detail, mod: ingame};
                                     </p>
                                     <div class="body">
                                         <h3 class="name">
-                                            {label}
-                                            <span class="pixel">{loader}</span>
+                                            <img
+                                                class="logo"
+                                                src={logos[build.part].src}
+                                                alt=""
+                                                width="28"
+                                                height="28"
+                                            />
+                                            {title}
                                         </h3>
                                         <p class="meta">
                                             {build.channel !== 'release' && (
@@ -245,6 +260,11 @@ const shots = {plugin: detail, mod: ingame};
                             );
                         })}
                     </ol>
+                    <p class="credit">
+                        {creditBefore}
+                        <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">{creditLink}</a>
+                        {creditAfter}
+                    </p>
                 </>
             ) : (
                 <p class="empty">{t.archive.empty}</p>
@@ -406,7 +426,7 @@ const shots = {plugin: detail, mod: ingame};
         left: clamp(24px, 3vw, 32px);
         bottom: 16px;
         z-index: 1;
-        padding: 8px 10px 7px;
+        padding: 7px 10px 10px;
         background: var(--accent);
         color: var(--white);
         font-size: 10px;
@@ -481,23 +501,32 @@ const shots = {plugin: detail, mod: ingame};
     .tag {
         display: inline-flex;
         align-items: center;
-        height: 22px;
-        padding: 0 8px;
+        height: 24px;
+        padding: 0 8px 3px;
         background: var(--stone-700);
         color: var(--stone-100);
         font-size: 8px;
         line-height: 1;
         white-space: nowrap;
+        box-shadow:
+            inset 0 -3px var(--stone-900),
+            inset 2px 2px rgb(255 255 255 / 0.1);
     }
 
     .tag--channel {
         background: var(--accent-lo);
         color: var(--accent-hi);
+        box-shadow:
+            inset 0 -3px rgb(0 0 0 / 0.35),
+            inset 2px 2px rgb(255 255 255 / 0.12);
     }
 
     .tag--latest {
         background: var(--accent);
         color: var(--white);
+        box-shadow:
+            inset 0 -3px var(--accent-lo),
+            inset 2px 2px rgb(255 255 255 / 0.2);
     }
 
     .updates {
@@ -611,16 +640,41 @@ const shots = {plugin: detail, mod: ingame};
 
     .name {
         display: flex;
-        align-items: baseline;
-        gap: 12px;
+        align-items: center;
+        gap: 10px;
         font-size: 22px;
         font-weight: 800;
         line-height: 1.1;
     }
 
-    .name span {
+    .logo {
+        width: auto;
+        flex: none;
+        image-rendering: pixelated;
+    }
+
+    .card h2 {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .card h2 .logo {
+        height: 42px;
+    }
+
+    .name .logo {
+        height: 28px;
+    }
+
+    .filter .logo {
+        height: 28px;
+    }
+
+    .credit {
+        margin-top: 32px;
         color: var(--stone-200);
-        font-size: 10px;
+        font-size: 13px;
     }
 
     .body {

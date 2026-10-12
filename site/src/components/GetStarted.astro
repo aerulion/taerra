@@ -93,14 +93,13 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
     }
 
     .requirements div {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr);
         align-items: baseline;
         gap: 8px 20px;
     }
 
     dt {
-        min-width: 8ch;
         color: var(--accent-hi);
         font-size: 10px;
     }
@@ -117,6 +116,10 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 
     @media (max-width: 600px) {
         .steps {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .requirements div {
             grid-template-columns: minmax(0, 1fr);
         }
     }

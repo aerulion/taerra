@@ -4,13 +4,6 @@ import {nyxFonts} from './src/components/aerulion/fonts.mjs';
 
 const fonts = [
     {
-        name: 'QuinqueFive',
-        cssVariable: '--font-display',
-        provider: fontProviders.local(),
-        options: {variants: [{src: ['../plugin/src/main/resources/web/fonts/QuinqueFive-Regular.woff2'], weight: 400}]},
-        fallbacks: ['system-ui', 'sans-serif']
-    },
-    {
         name: 'Schibsted Grotesk',
         cssVariable: '--font-body',
         provider: fontProviders.fontsource(),

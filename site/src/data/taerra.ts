@@ -439,7 +439,7 @@ const en = {
                 label: 'Plugin',
                 loader: 'Paper',
                 audience: 'For server owners',
-                title: 'The plugin',
+                title: 'Paper Plugin',
                 text: 'Renders the map on your server and serves it to every browser. Put the jar in plugins/.',
                 download: 'Download the plugin'
             },
@@ -447,7 +447,7 @@ const en = {
                 label: 'Mod',
                 loader: 'Fabric',
                 audience: 'For players',
-                title: 'The mod',
+                title: 'Fabric Mod',
                 text: 'The server’s map in your game, with a minimap and waypoints in the world. Put the jar in mods/.',
                 download: 'Download the mod'
             }
@@ -468,6 +468,11 @@ const en = {
             all: 'All',
             empty: 'Builds show up here as soon as one is released.'
         },
+        credit: [
+            'The Paper logo belongs to PaperMC. The Fabric logo is by FabricMC, under ',
+            'CC BY-NC-SA 4.0',
+            '.'
+        ] as Marked,
         hash: 'SHA-512',
         copy: 'Copy the SHA-512 checksum',
         copied: 'Copied',

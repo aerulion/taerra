@@ -412,7 +412,7 @@ export const de: Copy = {
                 label: 'Plugin',
                 loader: 'Paper',
                 audience: 'Für Server-Betreiber:innen',
-                title: 'Das Plugin',
+                title: 'Paper-Plugin',
                 text: 'Rendert die Karte auf deinem Server und liefert sie an jeden Browser aus. Leg die Jar in plugins/.',
                 download: 'Plugin herunterladen'
             },
@@ -420,7 +420,7 @@ export const de: Copy = {
                 label: 'Mod',
                 loader: 'Fabric',
                 audience: 'Für Spieler:innen',
-                title: 'Die Mod',
+                title: 'Fabric-Mod',
                 text: 'Die Karte des Servers in deinem Spiel, mit Minikarte und Wegpunkten in der Welt. Leg die Jar in mods/.',
                 download: 'Mod herunterladen'
             }
@@ -441,6 +441,11 @@ export const de: Copy = {
             all: 'Alle',
             empty: 'Sobald ein Build veröffentlicht ist, steht er hier.'
         },
+        credit: [
+            'Das Paper-Logo gehört PaperMC. Das Fabric-Logo stammt von FabricMC, unter ',
+            'CC BY-NC-SA 4.0',
+            '.'
+        ] as Marked,
         hash: 'SHA-512',
         copy: 'SHA-512-Prüfsumme kopieren',
         copied: 'Kopiert',

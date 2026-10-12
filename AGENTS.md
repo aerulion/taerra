@@ -140,18 +140,19 @@ embeds through `notify-discord.yml`, which blocks mentions. Discord needs the `D
 
 `site/` is taerra.dev, a promo page for players and server owners and its download page; aerulion.net/work/taerra stays
 the technical deep dive. Astro with Bun, following aerulion.github.io: Prettier, ESLint and `astro check` (`bun run
-check`), fonts through Astro's fonts API (QuinqueFive from the plugin's copy, the rest from Fontsource). Copy lives in
-`src/data/taerra.ts` (English, at `/`) and `taerra.de.ts` (German, at `/de/`, in the web map's du voice), never in
-components, and takes its facts from `branding/modrinth-description.md`; change all three together. Each English page
-sends German browsers to its `/de/` twin until the header's language picker stores a choice. The download page lists the
-plugin's and the mod's latest release and every mirrored build with its changelog, Modrinth's Markdown parsed by
-`src/data/downloads.ts`; with no `site/downloads/` it shows none. Each locale has its own `404.astro`, out of the
-sitemap; GitHub Pages serves the English one for every missing path, so it sends `/de/…` and German browsers on to
-`/de/404/`. The look is the web map's: its tokens, fonts and slab buttons, the copper edge. Its pictures are rendered by
-`branding/generate.py site/` into `src/assets/` and `public/og.png` (`og-download.png` for the download page); the
-in-game shots and the web map's icons are imported from where they live. Motion is subtle and off under
-`prefers-reduced-motion`: `data-reveal` elements rise in as they scroll into view (`--stagger` delays them), the hero
-world floats and, until it is turned by hand, folds from the top-down map into each isometric rotation and back
+check`), fonts from Fontsource through Astro's fonts API, except QuinqueFive: `global.css` declares the plugin's copy
+with the web map's metric overrides, which cut its line box to the capitals so centring centres them, and the layout
+preloads it. Copy lives in `src/data/taerra.ts` (English, at `/`) and `taerra.de.ts` (German, at `/de/`, in the web
+map's du voice), never in components, and takes its facts from `branding/modrinth-description.md`; change all three
+together. Each English page sends German browsers to its `/de/` twin until the header's language picker stores a choice.
+The download page lists the plugin's and the mod's latest release and every mirrored build with its changelog,
+Modrinth's Markdown parsed by `src/data/downloads.ts`; with no `site/downloads/` it shows none. Each locale has its own
+`404.astro`, out of the sitemap; GitHub Pages serves the English one for every missing path, so it sends `/de/…` and
+German browsers on to `/de/404/`. The look is the web map's: its tokens, fonts and slab buttons, the copper edge. Its
+pictures are rendered by `branding/generate.py site/` into `src/assets/` and `public/og.png` (`og-download.png` for the
+download page); the in-game shots and the web map's icons are imported from where they live. Motion is subtle and off
+under `prefers-reduced-motion`: `data-reveal` elements rise in as they scroll into view (`--stagger` delays them), the
+hero world floats and, until it is turned by hand, folds from the top-down map into each isometric rotation and back
 (`branding/render.html` centres all five pictures on the world's middle at sea level, at one scale, for that), and the
 mod screenshots open in a `<dialog>` viewer.
 

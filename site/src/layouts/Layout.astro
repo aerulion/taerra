@@ -1,6 +1,7 @@
 ---
 import {Font} from 'astro:assets';
 import '../styles/global.css';
+import quinqueFive from '../../../plugin/src/main/resources/web/fonts/QuinqueFive-Regular.woff2?url';
 import {getAbsoluteLocaleUrl, getRelativeLocaleUrl} from 'astro:i18n';
 import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
@@ -90,7 +91,7 @@ const structuredData = {
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-        <Font cssVariable="--font-display" preload />
+        <link rel="preload" href={quinqueFive} as="font" type="font/woff2" crossorigin />
         <Font cssVariable="--font-body" preload />
         <Font cssVariable="--font-mono" />
 
