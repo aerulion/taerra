@@ -515,7 +515,7 @@ const en = {
         elsewhere: 'TAERRA elsewhere',
         nav: {
             download: 'Downloads',
-            demo: 'Live map',
+            demo: 'Live demo',
             discord: 'Discord',
             deepDive: 'Technical deep dive'
         },

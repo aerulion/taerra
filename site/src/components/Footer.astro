@@ -4,16 +4,20 @@ import icon from '../../../plugin/src/main/resources/web/images/icon.svg';
 import {getRelativeLocaleUrl} from 'astro:i18n';
 import AerulionFooter from './aerulion/AerulionFooter.astro';
 import {PUBLIC_COMMIT_HASH} from 'astro:env/server';
+import Download from '../icons/download.svg';
+import Pin from '../icons/pin.svg';
+import Book from '../icons/book.svg';
+import discord from '../assets/platforms/discord-white.svg';
 import {copy, links} from '../data/taerra';
 
 const {header, hero, footer} = copy(Astro.currentLocale);
 const home = getRelativeLocaleUrl(Astro.currentLocale ?? 'en');
 const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 const nav = [
-    {label: footer.nav.download, href: download},
-    {label: footer.nav.demo, href: links.demo},
-    {label: footer.nav.discord, href: links.discord},
-    {label: footer.nav.deepDive, href: links.deepDive}
+    {label: footer.nav.download, href: download, Icon: Download},
+    {label: footer.nav.demo, href: links.demo, Icon: Pin},
+    {label: footer.nav.discord, href: links.discord, Icon: undefined},
+    {label: footer.nav.deepDive, href: links.deepDive, Icon: Book}
 ];
 ---
 
@@ -30,9 +34,18 @@ const nav = [
                 </div>
                 <nav aria-label={footer.elsewhere}>
                     <ul>
-                        {nav.map(({label, href}) => (
+                        {nav.map(({label, href, Icon}) => (
                             <li>
-                                <a {href}>{label}</a>
+                                <a {href}>
+                                    <span class="slot" aria-hidden="true">
+                                        {Icon ? (
+                                            <Icon class="icon" />
+                                        ) : (
+                                            <img class="discord" src={discord.src} alt="" width="21" height="16" />
+                                        )}
+                                    </span>
+                                    {label}
+                                </a>
                             </li>
                         ))}
                     </ul>
@@ -91,6 +104,9 @@ const nav = [
     }
 
     ul a {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
         color: var(--stone-100);
         font-size: 16px;
         font-weight: 600;
@@ -99,6 +115,25 @@ const nav = [
 
     ul a:hover {
         color: var(--white);
+    }
+
+    .slot {
+        display: grid;
+        place-items: center;
+        width: 22px;
+        height: 16px;
+        flex: none;
+        color: var(--white);
+    }
+
+    .slot :global(.icon) {
+        width: 16px;
+        height: 16px;
+    }
+
+    .discord {
+        width: 21px;
+        height: 16px;
     }
 
     .fine {

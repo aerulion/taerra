@@ -2,6 +2,7 @@
 import {Image} from 'astro:assets';
 import backdrop from '../assets/backdrop.png';
 import {getRelativeLocaleUrl} from 'astro:i18n';
+import discord from '../assets/platforms/discord-black.svg';
 import {copy, links} from '../data/taerra';
 
 const {closing} = copy(Astro.currentLocale);
@@ -24,6 +25,7 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
                 {closing.download}
             </a>
             <a class="btn" href={links.discord}>
+                <img class="discord" src={discord.src} alt="" width="21" height="16" />
                 {closing.discord}
             </a>
             <a class="btn btn--dark" href={links.demo}>
@@ -67,5 +69,10 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 
     .deep-dive {
         margin-top: 8px;
+    }
+
+    .discord {
+        width: 21px;
+        height: 16px;
     }
 </style>

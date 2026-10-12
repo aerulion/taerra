@@ -489,7 +489,7 @@ export const de: Copy = {
         elsewhere: 'TAERRA anderswo',
         nav: {
             download: 'Downloads',
-            demo: 'Live-Karte',
+            demo: 'Live-Demo',
             discord: 'Discord',
             deepDive: 'Technischer Deep Dive (Englisch)'
         },
