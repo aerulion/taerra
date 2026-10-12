@@ -73,9 +73,9 @@ const shots = {plugin: detail, mod: ingame};
                                             : '(max-width: 900px) 100vw, 600px'
                                     }
                                 />
+                                <p class="audience pixel">{audience}</p>
                             </div>
                             <div class="card-body">
-                                <p class="audience pixel">{audience}</p>
                                 <h2 id={`latest-${part}-title`}>{title}</h2>
                                 <p class="text">{text}</p>
                                 <p class="needs">{start.requirements[part].needs}</p>
@@ -396,14 +396,16 @@ const shots = {plugin: detail, mod: ingame};
         position: relative;
         z-index: 1;
         display: grid;
-        grid-template-rows: auto auto auto 1fr auto auto;
+        grid-template-rows: auto auto 1fr auto auto;
         gap: 14px;
-        margin-top: -48px;
-        padding: 0 clamp(24px, 3vw, 32px) clamp(24px, 3vw, 32px);
+        padding: clamp(20px, 2.6vw, 28px) clamp(24px, 3vw, 32px) clamp(24px, 3vw, 32px);
     }
 
     .audience {
-        justify-self: start;
+        position: absolute;
+        left: clamp(24px, 3vw, 32px);
+        bottom: 16px;
+        z-index: 1;
         padding: 8px 10px 7px;
         background: var(--accent);
         color: var(--white);
