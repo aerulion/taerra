@@ -7,7 +7,7 @@ const [before, link, after] = start.more;
 const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 ---
 
-<section id="start" class="section" aria-labelledby="start-title">
+<section id="start" class="section start" aria-labelledby="start-title">
     <div class="container">
         <div class="heading" data-reveal>
             <p class="kicker pixel">{start.kicker}</p>
@@ -44,6 +44,10 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 </section>
 
 <style>
+    .start {
+        border-top: 1px solid var(--stone-700);
+    }
+
     .steps {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));

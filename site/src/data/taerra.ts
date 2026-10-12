@@ -160,47 +160,39 @@ const en = {
                 features: [
                     {
                         title: 'Logins without passwords',
-                        text: 'The map shows a short code to type after /taerra login in game, and the browser logs in by itself. A logged-in browser shows a QR code for your phone. Codes work once, browsers stay logged in for 30 days, and players are told in game whenever a browser logs in as them and can log out any device.'
-                    },
-                    {
-                        title: 'Private worlds and layers',
-                        text: 'Hide a world or a layer from everyone except logged-in players with the right permission.'
-                    },
-                    {
-                        title: 'Teleport from the map',
-                        text: 'Logged-in players with permission right-click anywhere on the map to go there.'
+                        text: 'Type the short code the map shows after /taerra login, and the browser logs itself in for 30 days, then hands the login to your phone as a QR code. Codes work once, and players see every login in game.'
                     },
                     {
                         title: 'Waypoints, areas and lines',
-                        text: 'In named groups and colors, private ones too, each with an optional description. Players with permission draw, move and recolor them right on the map, areas from selected chunks or point by point, lines straight or smooth, and the mod shows waypoints as labels in the world itself.'
+                        text: 'In named groups and colors, private ones too, each with an optional description. Players with permission draw, move and recolor them on the map: areas chunk by chunk or point by point, lines straight or smooth.'
                     },
                     {
                         title: 'Waypoints of your own',
-                        text: "Every logged-in player keeps up to 100 waypoints, areas and lines only they see, in the browser and in game, drawn as gems and dashed lines so they never pass for the server's. A list, in the browser and in the mod, sorts them by name or distance, hides single ones and exports them as a JSON file to share or back up. When you die, a Last Death waypoint marks the spot. Other plugins can show players their own markers the same way, like their homes."
+                        text: 'Every logged-in player keeps up to 100 waypoints, areas and lines only they see, in the browser and in game, and a Last Death waypoint marks where they died. Other plugins can show players their own markers too, like their homes.'
                     },
                     {
                         title: 'Privacy built in',
-                        text: 'Spectators, vanished and invisible players stay off the map, and players who hide from server lists show as an anonymous dot. Player heads come from your server, so viewing it never reveals a visitor to Mojang.'
+                        text: 'Spectators, vanished and invisible players stay off the map, and players who hide from server lists show as an anonymous dot. Player heads come from your server, so viewing the map never reveals a visitor to Mojang.'
+                    },
+                    {
+                        title: 'Private worlds and layers',
+                        text: 'Hide a world or a layer from everyone except logged-in players with the right permission, and choose who may teleport, draw markers or render from the map.'
+                    },
+                    {
+                        title: 'Right-click anywhere',
+                        text: 'Copy coordinates, or a link that opens the map right there. Logged-in players with permission teleport to the spot in one click.'
                     },
                     {
                         title: 'One jar',
-                        text: 'No external database, no CDN, no web admin panel. Everything is configured in game.'
-                    },
-                    {
-                        title: 'Share any place',
-                        text: 'Right-click to copy coordinates, or a link that opens the map right there.'
+                        text: 'No external database, no CDN, no web server or admin panel to set up. Everything is configured in game with /taerra config.'
                     },
                     {
                         title: 'Search everything',
-                        text: 'Press / to find players, markers, worlds and coordinates across every world. The mod has the same search on a key of its own.'
+                        text: 'Press [/] to find players, markers, worlds and coordinates across every world. The mod has the same search on a key of its own.'
                     },
                     {
-                        title: 'Hide what is not ready',
-                        text: 'Select chunks to render them again, or to cover them in caution stripes while staff build there.'
-                    },
-                    {
-                        title: 'Fits your world',
-                        text: 'Limit the map to a circle, square or rectangle, so it ends where your playable area does.'
+                        title: 'Show only what is ready',
+                        text: 'Limit the map to a circle, square or rectangle, so it ends where your playable area does, and cover chunks in caution stripes while staff build there.'
                     },
                     {
                         title: 'Installs like an app',
@@ -236,32 +228,64 @@ const en = {
         kicker: 'Fabric mod',
         title: 'The same map, in game',
         lede: 'The optional Fabric mod brings your server’s map to your players. Join a server running TAERRA and it connects by itself, already logged in, so no /taerra login is needed in game.',
-        points: [
-            'A full world map that does everything the web map does: both views and all four rotations, layers, players and follow mode, waypoints, search, teleporting, chunk selection and render progress',
-            'A minimap you can size, zoom, place on either side and turn with the player, with the lines you pick below it, from coordinates and biome to time and weather',
-            'Waypoints in the world, as labels where they are',
-            'Navigation to a waypoint, a player or any spot, started in game or from the web map: a beacon beam where it is and an arrow with the distance, through the Nether too'
-        ],
-        note: 'It renders nothing itself: it draws the images the server already made. Needs Fabric API; Mod Menu is optional.',
+        note: 'Needs Fabric API and a server running the plugin. Mod Menu is optional.',
         download: 'Get the mod',
-        shots: [
-            {
-                caption: 'The world map, in game',
-                alt: 'The mod’s full-screen world map from straight above: green islands and coastline in a blue sea'
+        rows: {
+            map: {
+                title: 'The whole map on M',
+                text: 'Press [M] for the full world map, with everything the web map has: both views and all four rotations, color or gray, layers, the player list and follow mode. [K] searches players, markers, worlds and coordinates. Right-click any spot to navigate there, set a waypoint, or copy its coordinates or a link to it.',
+                alt: 'The mod’s world map in the isometric view, the whole world as one tilted block over the game behind it'
             },
-            {
-                caption: 'Isometric, from all four sides',
-                alt: 'The same world map in the isometric view, the whole world as one tilted block over the game behind it'
+            minimap: {
+                title: 'A minimap, your way',
+                text: 'Size it, zoom it with [=] and [-], put it on either side and let it turn with you. Below it, pick the lines you need: coordinates and their Nether counterparts, chunk, facing, biome, weather, time and day, light level, real time and FPS. Markers past its edge stay in view, so nothing nearby gets lost.',
+                alt: 'A close-up of the minimap in the corner of the screen, with coordinates, biome and the time listed below it'
             },
-            {
-                caption: 'Regions and waypoints',
-                alt: 'A close isometric view of forest and rivers with WorldGuard regions outlined in green and the layer list open'
-            },
-            {
-                caption: 'A minimap, and waypoints in the world',
+            labels: {
+                title: 'Waypoints where they are',
+                text: 'Waypoints float as labels over the places they mark, with the distance to each, so you find your way without opening a map. [B] hides them when you want a clear view.',
                 alt: 'A player standing on a grassy hill, waypoint labels floating over the landscape and a minimap in the top right corner'
+            },
+            navigation: {
+                title: 'Find your way there',
+                text: 'Navigate to a waypoint, a player or any spot, started on the map in game or from the web map while you play. A beacon beam rises at the target, and an arrow at the top of the screen shows the way and the distance, through a portal when it is in another dimension.',
+                alt: 'Navigating in game: a beacon beam rises at the target, and an arrow with the distance sits at the top of the screen'
+            },
+            list: {
+                title: 'Your waypoints, one key away',
+                text: '[H] sets one where you stand, and on the map you draw areas and lines too. [J] opens your list: filter it, sort it by name or distance, hide single ones, and export them as a file to share or keep, or import one. When you die, a Last Death waypoint marks the spot.',
+                alt: 'The My Waypoints list, with waypoints, areas and lines sorted by distance'
+            },
+            layers: {
+                title: 'Layers and staff tools',
+                text: 'WorldGuard regions and world borders are layers you switch on. With permission, select chunks to render them again or hide them while you build, and watch a render’s progress right on the map.',
+                alt: 'A close isometric view of forest and rivers with WorldGuard regions outlined in green and the layer list open'
             }
-        ],
+        },
+        more: {
+            title: 'And also',
+            items: [
+                {title: 'Teleport from the map', text: 'Right-click to go anywhere, where the server lets you.'},
+                {
+                    title: 'Your devices',
+                    text: 'See every browser logged in as you, and log any of them out, from the settings.'
+                },
+                {
+                    title: 'Every key yours',
+                    text: 'Change any key in Minecraft’s controls. The settings open from the world map or Mod Menu.'
+                },
+                {
+                    title: 'Always in step',
+                    text: 'When the mod and the server’s plugin don’t match, it tells you which one to update.'
+                },
+                {
+                    title: 'Light on your game',
+                    text: 'It renders nothing itself: it draws the images the server already made.'
+                },
+                {title: 'English and German', text: 'Every screen and message speaks both.'}
+            ] satisfies Feature[]
+        },
+        placeholder: 'Screenshot to come',
         viewer: {
             label: 'Screenshot viewer',
             open: 'Enlarge',

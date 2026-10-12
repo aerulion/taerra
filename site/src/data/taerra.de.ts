@@ -119,47 +119,39 @@ export const de: Copy = {
                 features: [
                     {
                         title: 'Anmelden ohne Passwort',
-                        text: 'Die Karte zeigt einen kurzen Code, den Spieler:innen im Spiel nach /taerra login eingeben, und der Browser meldet sich von selbst an. Ein angemeldeter Browser zeigt einen QR-Code fürs Handy. Codes funktionieren einmal, Browser bleiben 30 Tage angemeldet, und Spieler:innen erfahren im Spiel, wann immer sich ein Browser als sie anmeldet, und können jedes Gerät abmelden.'
-                    },
-                    {
-                        title: 'Private Welten und Ebenen',
-                        text: 'Verstecke eine Welt oder Ebene vor allen außer angemeldeten Spieler:innen mit der passenden Berechtigung.'
-                    },
-                    {
-                        title: 'Teleport von der Karte',
-                        text: 'Angemeldete Spieler:innen mit Berechtigung klicken mit rechts auf eine beliebige Stelle der Karte, um dorthin zu gelangen.'
+                        text: 'Gib den kurzen Code, den die Karte zeigt, nach /taerra login ein, und der Browser meldet sich von selbst für 30 Tage an und reicht die Anmeldung per QR-Code an dein Handy weiter. Codes gelten einmal, und Spieler:innen sehen jede Anmeldung im Spiel.'
                     },
                     {
                         title: 'Wegpunkte, Flächen und Linien',
-                        text: 'In benannten Gruppen und Farben, auch privaten, jeweils mit optionaler Beschreibung. Spieler:innen mit Berechtigung zeichnen, verschieben und färben sie direkt auf der Karte, Flächen aus ausgewählten Chunks oder Punkt für Punkt, Linien gerade oder weich, und die Mod zeigt Wegpunkte als Beschriftung in der Welt selbst.'
+                        text: 'In benannten Gruppen und Farben, auch privaten, jeweils mit optionaler Beschreibung. Spieler:innen mit Berechtigung zeichnen, verschieben und färben sie auf der Karte: Flächen Chunk für Chunk oder Punkt für Punkt, Linien gerade oder weich.'
                     },
                     {
                         title: 'Eigene Wegpunkte',
-                        text: 'Alle angemeldeten Spieler:innen haben bis zu 100 Wegpunkte, Flächen und Linien, die nur sie sehen, im Browser und im Spiel, gezeichnet als Edelsteine und gestrichelte Linien, damit sie nie mit denen des Servers verwechselt werden. Eine Liste, im Browser und in der Mod, sortiert sie nach Name oder Entfernung, verbirgt einzelne und exportiert sie als JSON-Datei zum Teilen oder Sichern. Wenn du stirbst, markiert ein Wegpunkt „Letzter Tod“ die Stelle. Andere Plugins zeigen Spieler:innen so auch ihre eigenen Markierungen, etwa ihre Homes.'
+                        text: 'Alle angemeldeten Spieler:innen haben bis zu 100 Wegpunkte, Flächen und Linien, die nur sie sehen, im Browser und im Spiel, und ein Wegpunkt „Letzter Tod“ markiert, wo sie gestorben sind. Andere Plugins zeigen Spieler:innen so auch eigene Markierungen, etwa ihre Homes.'
                     },
                     {
                         title: 'Datenschutz eingebaut',
-                        text: 'Spieler:innen im Zuschauermodus, unsichtbar oder per Vanish versteckt, bleiben von der Karte fern, und wer sich in Serverlisten verbirgt, erscheint als anonymer Punkt. Die Köpfe der Spieler:innen kommen von deinem Server, deshalb verrät das Ansehen der Karte niemanden an Mojang.'
+                        text: 'Spieler:innen im Zuschauermodus, unsichtbar oder per Vanish versteckt, bleiben von der Karte fern, und wer sich in Serverlisten verbirgt, erscheint als anonymer Punkt. Die Köpfe kommen von deinem Server, deshalb verrät die Karte niemanden an Mojang.'
+                    },
+                    {
+                        title: 'Private Welten und Ebenen',
+                        text: 'Verstecke eine Welt oder Ebene vor allen außer angemeldeten Spieler:innen mit der passenden Berechtigung, und lege fest, wer von der Karte aus teleportieren, Markierungen zeichnen oder rendern darf.'
+                    },
+                    {
+                        title: 'Rechtsklick auf jede Stelle',
+                        text: 'Kopiere Koordinaten oder einen Link, der die Karte genau dort öffnet. Angemeldete Spieler:innen mit Berechtigung teleportieren sich mit einem Klick dorthin.'
                     },
                     {
                         title: 'Eine Jar',
-                        text: 'Keine externe Datenbank, kein CDN, kein Web-Adminpanel. Alles wird im Spiel eingestellt.'
-                    },
-                    {
-                        title: 'Jeden Ort teilen',
-                        text: 'Rechtsklick, um Koordinaten zu kopieren oder einen Link, der die Karte genau dort öffnet.'
+                        text: 'Keine externe Datenbank, kein CDN, kein Webserver und kein Adminpanel einzurichten. Alles wird im Spiel mit /taerra config eingestellt.'
                     },
                     {
                         title: 'Alles durchsuchen',
-                        text: 'Drück /, um Spieler:innen, Marker, Welten und Koordinaten in jeder Welt zu finden. Die Mod hat dieselbe Suche auf einer eigenen Taste.'
+                        text: 'Drück [/], um Spieler:innen, Marker, Welten und Koordinaten in jeder Welt zu finden. Die Mod hat dieselbe Suche auf einer eigenen Taste.'
                     },
                     {
-                        title: 'Verstecken, was noch nicht fertig ist',
-                        text: 'Wähle Chunks aus, um sie neu zu rendern oder mit Warnstreifen abzudecken, solange das Team dort baut.'
-                    },
-                    {
-                        title: 'Passt zu deiner Welt',
-                        text: 'Begrenze die Karte auf einen Kreis, ein Quadrat oder ein Rechteck, damit sie dort endet, wo dein Spielbereich endet.'
+                        title: 'Nur zeigen, was fertig ist',
+                        text: 'Begrenze die Karte auf einen Kreis, ein Quadrat oder ein Rechteck, damit sie endet, wo dein Spielbereich endet, und decke Chunks mit Warnstreifen ab, solange das Team dort baut.'
                     },
                     {
                         title: 'Installierbar wie eine App',
@@ -195,32 +187,64 @@ export const de: Copy = {
         kicker: 'Fabric-Mod',
         title: 'Dieselbe Karte im Spiel',
         lede: 'Die optionale Fabric-Mod bringt die Karte deines Servers zu deinen Spieler:innen. Betritt einen Server mit TAERRA, und sie verbindet sich von selbst, schon angemeldet, ganz ohne /taerra login.',
-        points: [
-            'Eine ganze Weltkarte, die alles kann, was die Web-Karte kann: beide Ansichten und alle vier Drehungen, Ebenen, Spieler:innen und Folgemodus, Wegpunkte, Suche, Teleport, Chunk-Auswahl und Render-Fortschritt',
-            'Eine Minikarte, die du in Größe und Zoom anpassen, links oder rechts platzieren und mit deiner Blickrichtung drehen kannst, mit den Zeilen darunter, die du willst, von Koordinaten und Biom bis Uhrzeit und Wetter',
-            'Wegpunkte in der Welt, als Beschriftung dort, wo sie sind',
-            'Navigation zu einem Wegpunkt, Spieler:innen oder jedem Ort, gestartet im Spiel oder auf der Web-Karte: ein Leuchtfeuerstrahl, wo er ist, und ein Pfeil mit der Entfernung, auch durch den Nether'
-        ],
-        note: 'Sie rendert selbst nichts: Sie zeichnet die Bilder, die der Server schon gemacht hat. Braucht Fabric API; Mod Menu ist optional.',
+        note: 'Braucht Fabric API und einen Server mit dem Plugin. Mod Menu ist optional.',
         download: 'Mod holen',
-        shots: [
-            {
-                caption: 'Die Weltkarte im Spiel',
-                alt: 'Die Vollbild-Weltkarte der Mod senkrecht von oben: grüne Inseln und Küsten in einem blauen Meer'
+        rows: {
+            map: {
+                title: 'Die ganze Karte auf M',
+                text: 'Drück [M] für die Weltkarte, mit allem, was die Web-Karte kann: beide Ansichten und alle vier Drehungen, farbig oder grau, Ebenen, die Spielerliste und der Folgemodus. [K] durchsucht Spieler:innen, Markierungen, Welten und Koordinaten. Ein Rechtsklick auf jede Stelle startet die Navigation dorthin, setzt einen Wegpunkt oder kopiert ihre Koordinaten oder einen Link.',
+                alt: 'Die Weltkarte der Mod in der isometrischen Ansicht, die ganze Welt als ein schräger Block vor dem Spiel dahinter'
             },
-            {
-                caption: 'Isometrisch, von allen vier Seiten',
-                alt: 'Dieselbe Weltkarte in der isometrischen Ansicht, die ganze Welt als ein schräger Block vor dem Spiel dahinter'
+            minimap: {
+                title: 'Eine Minikarte nach deinem Geschmack',
+                text: 'Stell ihre Größe ein, zoome mit [=] und [-], setz sie auf eine Seite deiner Wahl und lass sie sich mit dir drehen. Darunter wählst du die Zeilen, die du brauchst: Koordinaten und ihre Nether-Gegenstücke, Chunk, Blickrichtung, Biom, Wetter, Uhrzeit und Tag, Lichtlevel, echte Uhrzeit und FPS. Markierungen jenseits ihres Rands bleiben im Blick, damit nichts in der Nähe verloren geht.',
+                alt: 'Eine Nahaufnahme der Minikarte in der Bildschirmecke, darunter Koordinaten, Biom und Uhrzeit'
             },
-            {
-                caption: 'Regionen und Wegpunkte',
-                alt: 'Eine nahe isometrische Ansicht von Wald und Flüssen mit grün umrandeten WorldGuard-Regionen und offener Ebenenliste'
-            },
-            {
-                caption: 'Eine Minikarte und Wegpunkte in der Welt',
+            labels: {
+                title: 'Wegpunkte, wo sie sind',
+                text: 'Wegpunkte schweben als Beschriftung über den Orten, die sie markieren, mit der Entfernung zu jedem, damit du ohne Karte hinfindest. [B] blendet sie aus, wenn du freie Sicht willst.',
                 alt: 'Eine Spielfigur auf einem grasbewachsenen Hügel, Wegpunkt-Beschriftungen über der Landschaft und eine Minikarte oben rechts'
+            },
+            navigation: {
+                title: 'Finde den Weg dorthin',
+                text: 'Navigiere zu einem Wegpunkt, zu Spieler:innen oder zu jeder Stelle, gestartet auf der Karte im Spiel oder auf der Web-Karte, während du spielst. Ein Leuchtfeuerstrahl steigt am Ziel auf, und ein Pfeil oben am Bildschirm zeigt Richtung und Entfernung, durch ein Portal, wenn das Ziel in einer anderen Dimension liegt.',
+                alt: 'Navigation im Spiel: Am Ziel steigt ein Leuchtfeuerstrahl auf, oben am Bildschirm ein Pfeil mit der Entfernung'
+            },
+            list: {
+                title: 'Deine Wegpunkte, eine Taste entfernt',
+                text: '[H] setzt einen dort, wo du stehst, und auf der Karte zeichnest du auch Gebiete und Linien. [J] öffnet deine Liste: filtere sie, sortiere nach Name oder Entfernung, blende einzelne aus und exportiere sie als Datei zum Teilen oder Sichern, oder importiere eine. Wenn du stirbst, markiert ein Wegpunkt „Letzter Tod“ die Stelle.',
+                alt: 'Die Liste „Meine Wegpunkte“ mit Wegpunkten, Gebieten und Linien, nach Entfernung sortiert'
+            },
+            layers: {
+                title: 'Ebenen und Werkzeuge fürs Team',
+                text: 'WorldGuard-Regionen und Weltgrenzen sind Ebenen, die du einschaltest. Mit Berechtigung wählst du Chunks aus, um sie neu zu rendern oder zu verstecken, während ihr dort baut, und siehst den Fortschritt eines Renders direkt auf der Karte.',
+                alt: 'Eine nahe isometrische Ansicht von Wald und Flüssen mit grün umrandeten WorldGuard-Regionen und offener Ebenenliste'
             }
-        ],
+        },
+        more: {
+            title: 'Außerdem',
+            items: [
+                {title: 'Teleport von der Karte', text: 'Rechtsklick, und du bist dort, wo der Server es dir erlaubt.'},
+                {
+                    title: 'Deine Geräte',
+                    text: 'Sieh jeden Browser, der als du angemeldet ist, und melde ihn in den Einstellungen ab.'
+                },
+                {
+                    title: 'Jede Taste gehört dir',
+                    text: 'Ändere jede Taste in der Steuerung von Minecraft. Die Einstellungen öffnest du auf der Weltkarte oder in Mod Menu.'
+                },
+                {
+                    title: 'Immer im Takt',
+                    text: 'Passen Mod und Plugin des Servers nicht zusammen, sagt sie dir, was aktualisiert werden muss.'
+                },
+                {
+                    title: 'Leicht für dein Spiel',
+                    text: 'Sie rendert selbst nichts: Sie zeichnet die Bilder, die der Server schon gemacht hat.'
+                },
+                {title: 'Deutsch und Englisch', text: 'Jeder Bildschirm und jede Meldung spricht beides.'}
+            ]
+        },
+        placeholder: 'Screenshot folgt',
         viewer: {
             label: 'Screenshot-Ansicht',
             open: 'Vergrößern',

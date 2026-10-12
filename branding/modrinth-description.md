@@ -72,9 +72,9 @@ TAERRA is closed source for now. Once its license is settled, the source code wi
 
 The optional Fabric mod brings the server's map into the game. Join a server running TAERRA, and it connects by itself, already logged in, so no `/taerra login` is needed in game:
 
-- a **full world map** that does everything the web map does: both views and all four rotations, layers, players and follow mode, waypoints, search, teleporting, chunk selection, and render progress
+- a **full world map** on M that does everything the web map does: both views and all four rotations, layers, players and follow mode, waypoints, search on K, teleporting, chunk selection, and render progress. Right-click any spot to navigate there, set a waypoint, or copy its coordinates or a link
 - a **minimap** you can size, zoom, place on either side, and turn with the player, with the lines you pick below it: coordinates, Nether coordinates, chunk, facing, biome, weather, time, day, light level, real time, and FPS
-- **waypoints in the world** as labels where they are, a list of your own on its own key, J by default, and a key to set one where you stand, H by default
+- **waypoints in the world** as labels where they are, with the distance, hidden and shown with B, a list of your own on J to filter, sort, hide, export and import them, and a key to set one where you stand, H by default
 - **navigation** to a waypoint, a player, or any spot on the map, started in game or from the web map while you play: a beacon beam where it is, and an arrow with the distance at the top of the screen, through the Nether too
 
 It only works on servers running the TAERRA plugin, and it renders nothing itself: it draws the images the server already made. It needs Fabric API. Mod Menu is optional, for the settings screen.
