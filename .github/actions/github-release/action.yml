@@ -1,6 +1,6 @@
 name: Create a GitHub release
 description: >-
-  Creates, or on a re-run updates, one stream's release, with notes from release-notes.sh. Needs a checkout with
+  Creates as a prerelease, or on a re-run updates, one stream's release, with notes from release-notes.sh. Needs a checkout with
   history and tags.
 
 inputs:
@@ -70,5 +70,5 @@ runs:
           gh release upload "${TAG}" --repo "${REPOSITORY}" --clobber "${assets[@]}"
         else
           gh release create "${TAG}" --repo "${REPOSITORY}" \
-            --title "${TITLE}" --notes-file "${notes}" --target "${SHA}" "${assets[@]}"
+            --title "${TITLE}" --notes-file "${notes}" --target "${SHA}" --prerelease "${assets[@]}"
         fi

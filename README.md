@@ -75,10 +75,11 @@ Every push to `main` releases whichever parts it changed.
 | shared build files | both                              | both          |
 | `site/`            | taerra.dev → GitHub Pages         | moves `site`  |
 
-`<n>` is the release workflow's run number, shared by both streams, so each stream's tags skip numbers. The shared
-build files are `gradle/`, `build-logic/`, the root build scripts and the wrapper. The website also counts the in-game
-shots, the showreel thumbnail and the web map's font and icons it takes from elsewhere; the rest of `branding/`, `.github/`
-and Markdown are excluded everywhere. Anything else counts as the plugin, so a new top-level file releases a build rather
+Each release starts as a GitHub prerelease: it is a development build until it is published to Modrinth. `<n>` is the
+release workflow's run number, shared by both streams, so each stream's tags skip numbers. The shared build files are
+`gradle/`, `build-logic/`, the root build scripts and the wrapper. The website also counts the in-game shots, the
+showreel thumbnail and the web map's font and icons it takes from elsewhere; the rest of `branding/`, `.github/` and
+Markdown are excluded everywhere. Anything else counts as the plugin, so a new top-level file releases a build rather
 than silently not releasing one.
 
 Every release runs the whole Gradle build first, and the API is published in a second step, after every test has
@@ -89,12 +90,13 @@ Workflows that release, deploy or publish only run in `aerulion/taerra`, never i
 
 ## Modrinth
 
-Plugin and mod are one Modrinth project, told apart by loader. Nothing reaches it on its own: run the
-**Publish to Modrinth** workflow. By default it releases the newest `plugin-<n>` and the newest `mod-<n>` that are not on
-Modrinth yet; pick `plugin` or `mod` and a build number to release one part alone. It uploads each release's jar, never a
+Plugin and mod are one Modrinth project, told apart by loader. Nothing reaches it on its own: run the **Publish to
+Modrinth** workflow. By default it releases the newest `plugin-<n>` and the newest `mod-<n>` that are not on Modrinth
+yet; pick `plugin` or `mod` and a build number to release one part alone. It uploads each release's jar, never a
 rebuild, with the player-facing changes since the previous Modrinth version of that loader, mirrors it on
-[taerra.dev/download](https://taerra.dev/download/), deploys the website and announces each part on Discord. Only the
-ten most recent builds per stream still have a release to publish from.
+[taerra.dev/download](https://taerra.dev/download/), turns its GitHub prerelease into a full release (the plugin's as
+Latest), deploys the website and announces each part on Discord. Only the ten most recent builds per stream still have a
+release to publish from.
 
 | Secret                                         | Value                                                                  |
 |------------------------------------------------|------------------------------------------------------------------------|

@@ -41,7 +41,7 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - name: 📝 Attach modrinth.json to the release
+      - name: 📝 Attach modrinth.json and promote the release
         env:
           GH_TOKEN: ${{ github.token }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
@@ -103,6 +103,7 @@ jobs:
             modrinth: .id
           }' <<< "${version}" > dist/modrinth.json
           gh release upload "${TAG}" dist/modrinth.json --repo "${GITHUB_REPOSITORY}" --clobber
+          gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" --prerelease=false --latest="$([ "${PART}" = plugin ] && echo true || echo false)"
           echo "Mirrored $(jq -r .name dist/modrinth.json) as ${name}."
 
   site:
