@@ -12,7 +12,9 @@ concurrency:
     pr-${{ github.event.pull_request.number }}${{ (github.event.action == 'edited'
     || ((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'deploy'))
     && '-meta' || '' }}
-  cancel-in-progress: true
+  cancel-in-progress: >-
+    ${{ github.event.action != 'edited'
+    && ((github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'deploy') }}
 
 env:
   API_COORDINATES: net.aerulion:taerra-api
@@ -217,9 +219,9 @@ jobs:
     name: ✅ Checks
     timeout-minutes: 60
     needs: [ changes, commit-messages, build, site ]
-    if: always()
+    if: ${{ !cancelled() }}
     permissions:
-      checks: read
+      actions: read
     runs-on: ubuntu-latest
     steps:
       - name: ✅ Collect the results
@@ -243,28 +245,40 @@ jobs:
               return;
             }
 
-            const sha = context.payload.pull_request.head.sha;
+            const sha = context.payload.pull_request.head.sha.substring(0, 7);
+            const {owner, repo} = context.repo;
             for (;;) {
-              const {data} = await github.rest.checks.listForRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: sha,
-                check_name: '✅ Checks',
-                filter: 'all'
+              const {data} = await github.rest.actions.listWorkflowRuns({
+                owner,
+                repo,
+                workflow_id: 'pr.yml',
+                head_sha: context.payload.pull_request.head.sha,
+                event: 'pull_request',
+                per_page: 100
               });
-              const previous = data.check_runs
-                .filter(run => !run.details_url?.includes(`/runs/${context.runId}/`))
-                .sort((a, b) => new Date(b.started_at) - new Date(a.started_at))[0];
-              if (!previous) {
-                core.setFailed(`Nothing has validated ${sha.substring(0, 7)} yet.`);
-                return;
+              const runs = data.workflow_runs
+                .filter(run => run.id !== context.runId && run.conclusion !== 'cancelled')
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+              let validation;
+              for (const run of runs) {
+                const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+                  owner,
+                  repo,
+                  run_id: run.id,
+                  per_page: 100
+                });
+                const changes = jobs.find(job => job.name === '🔍 Detect changed parts');
+                if (changes && changes.conclusion !== 'skipped') {
+                  validation = jobs.find(job => job.name === '✅ Checks');
+                  break;
+                }
               }
-              if (previous.status === 'completed') {
-                if (!['success', 'neutral', 'skipped'].includes(previous.conclusion)) {
-                  core.setFailed(`The validation of ${sha.substring(0, 7)} concluded ${previous.conclusion}.`);
+              if (validation?.status === 'completed') {
+                if (validation.conclusion !== 'success') {
+                  core.setFailed(`The validation of ${sha} concluded ${validation.conclusion}.`);
                 }
                 return;
               }
-              console.log(`Waiting for the validation of ${sha.substring(0, 7)}.`);
+              console.log(`Waiting for the validation of ${sha}.`);
               await new Promise(resolve => setTimeout(resolve, 30000));
             }
