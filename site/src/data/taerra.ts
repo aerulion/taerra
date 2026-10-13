@@ -3,6 +3,7 @@ import {de} from './taerra.de';
 export const links = {
     demo: 'https://map.corpium.net/',
     discord: 'https://discord.taerra.dev',
+    source: 'https://github.com/aerulion/taerra',
     deepDive: 'https://aerulion.net/work/taerra/'
 };
 
@@ -452,7 +453,7 @@ const en = {
         download: 'Get TAERRA',
         discord: 'Join the Discord',
         demo: 'See it live',
-        license: 'Free to use on any server, commercial ones included. Closed source for now.',
+        license: 'Free to use on any server, commercial ones included. Source available on GitHub.',
         deepDive: ['Curious how it works under the hood? Read the ', 'technical deep dive', '.'] as Marked
     },
 
@@ -528,6 +529,7 @@ const en = {
             download: 'Downloads',
             demo: 'Live demo',
             discord: 'Discord',
+            source: 'Source code',
             deepDive: 'Technical deep dive'
         },
         build: 'Build',

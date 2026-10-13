@@ -23,21 +23,6 @@ CHROMES = (
 )
 
 
-def license_text(markdown):
-    """LICENSE.md as plain text, for hosting where Markdown is not rendered."""
-    lines = []
-    for line in markdown.splitlines():
-        # Bold only marks defined terms, which plain text puts in quotes.
-        line = re.sub(r"\*\*(.+?)\*\*", r'"\1"', line)
-        line = re.sub(r"`(.+?)`|<(https?://[^>]+)>", lambda m: m.group(1) or m.group(2), line)
-        if heading := re.match(r"(#+) (.*)", line):
-            level, line = heading.groups()
-            lines += [line, ("=" if level == "#" else "-") * len(line)]
-        elif line != "---":
-            lines.append(line)
-    return "\n".join(lines) + "\n"
-
-
 def stamp_assets(markdown):
     """Gives every hosted asset in the description a ?v= of its content, so caches fetch it anew once it changed."""
     def stamp(match):
@@ -56,8 +41,6 @@ def main():
                         help="the plugin folder holding tiles/ and tiles-iso/ (default: the dev server's)")
     parser.add_argument("--chrome", help="Chrome or Chromium executable")
     args = parser.parse_args()
-
-    (HERE / "license.txt").write_text(license_text((HERE.parent / "LICENSE.md").read_text()))
 
     chrome = next(filter(None, map(shutil.which, [args.chrome] if args.chrome else CHROMES)), None)
     if not chrome:

@@ -25,7 +25,7 @@ jobs:
   changes:
     name: 🔍 Detect changed parts
     timeout-minutes: 10
-    if: github.ref == 'refs/heads/main'
+    if: github.repository == 'aerulion/taerra' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       plugin: ${{ steps.detect.outputs.plugin }}

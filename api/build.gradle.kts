@@ -52,7 +52,7 @@ publishing {
                 licenses {
                     license {
                         name = "TAERRA License"
-                        url = "https://assets.corpium.net/taerra/license.txt"
+                        url = "https://github.com/aerulion/taerra/blob/main/LICENSE.md"
                     }
                 }
                 developers {
@@ -61,7 +61,10 @@ publishing {
                         name = "aerulion"
                     }
                 }
-                scm { url = "https://taerra.dev" }
+                scm {
+                    url = "https://github.com/aerulion/taerra"
+                    connection = "scm:git:https://github.com/aerulion/taerra.git"
+                }
             }
         }
     }

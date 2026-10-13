@@ -66,10 +66,9 @@ curtain to close. `aerulion/mark.svg`, `Tektur-Bold.woff2` and `IBMPlexMono-Regu
 come from the aerulion.github.io brand folder.
 
 `modrinth-description.md` is the Modrinth project description. Its showreel is embedded by its YouTube ID. Every paragraph and list item in it is one line, never
-wrapped: Modrinth renders hard line breaks inconsistently. Its images, and the license Modrinth links to, are hosted
-under <https://assets.corpium.net/taerra/>, each by its file name: upload `description-header.png`, every
-`section-*.png` and `license.txt` there after regenerating them. `license.txt` is `LICENSE.md` as plain text, written
-on every run, so edit the Markdown. Every run also gives those URLs in the description a `?v=` of the file's content, so
+wrapped: Modrinth renders hard line breaks inconsistently. Its images are hosted
+under <https://assets.corpium.net/taerra/>, each by its file name: upload `description-header.png` and every
+`section-*.png` there after regenerating them. Every run also gives those URLs in the description a `?v=` of the file's content, so
 Modrinth's image proxy fetches a changed image anew: paste the description into Modrinth again after uploading.
 `python3 branding/generate.py none` only does that, rendering nothing.
 

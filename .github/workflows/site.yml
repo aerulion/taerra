@@ -11,6 +11,7 @@ jobs:
   build:
     name: 🌐 Build website
     timeout-minutes: 20
+    if: github.repository == 'aerulion/taerra'
     runs-on: ubuntu-latest
     concurrency:
       group: site-build

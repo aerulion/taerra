@@ -414,7 +414,7 @@ export const de: Copy = {
         download: 'TAERRA holen',
         discord: 'Zum Discord',
         demo: 'Live ansehen',
-        license: 'Kostenlos auf jedem Server, auch auf kommerziellen. Vorerst Closed Source.',
+        license: 'Kostenlos auf jedem Server, auch auf kommerziellen. Quellcode einsehbar auf GitHub.',
         deepDive: [
             'Neugierig, wie es unter der Haube funktioniert? Lies den ',
             'technischen Deep Dive',
@@ -495,6 +495,7 @@ export const de: Copy = {
             download: 'Downloads',
             demo: 'Live-Demo',
             discord: 'Discord',
+            source: 'Quellcode',
             deepDive: 'Technischer Deep Dive (Englisch)'
         },
         build: 'Build',

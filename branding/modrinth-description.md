@@ -18,8 +18,6 @@ TAERRA is early in its development. It already runs on live servers, but it is n
 
 If something breaks or looks wrong, please report it on [Discord](https://discord.taerra.dev): every report helps make TAERRA better for everyone.
 
-TAERRA is closed source for now. Once its license is settled, the source code will be made available.
-
 ![Features](https://assets.corpium.net/taerra/section-features.png?v=b03ca4e5)
 
 ### A map worth looking at
@@ -144,6 +142,6 @@ Render threads and cache sizes are configurable, so you decide how much CPU and 
 
 See TAERRA running on a real server at [map.corpium.net](https://map.corpium.net/), and if you are curious how it works under the hood, read the [technical deep dive](https://aerulion.net/work/taerra/). Questions, ideas, and bug reports are welcome on [Discord](https://discord.taerra.dev).
 
-TAERRA is free to use on any server, commercial ones included. It is closed source; the [license](https://assets.corpium.net/taerra/license.txt?v=fa512c7e) has the details.
+TAERRA is free to use on any server, commercial ones included. Its source code is available on [GitHub](https://github.com/aerulion/taerra), and the [license](https://github.com/aerulion/taerra/blob/main/LICENSE.md) has the details.
 
 <sub>NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</sub>

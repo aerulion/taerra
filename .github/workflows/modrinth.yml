@@ -40,6 +40,7 @@ jobs:
   publish:
     name: 🟢 Publish to Modrinth
     timeout-minutes: 20
+    if: github.repository == 'aerulion/taerra'
     runs-on: ubuntu-latest
     outputs:
       targets: ${{ steps.publish.outputs.targets }}

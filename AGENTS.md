@@ -132,11 +132,13 @@ and only the mirror until then.
 For the plugin, `modrinth.yml` then calls `build.yml` with `central: true`: it rebuilds and tests the tag under the
 same version and publishes the API to Maven Central, signed, through the Central Portal API (`CENTRAL_USERNAME`,
 `CENTRAL_PASSWORD`, `SIGNING_KEY`, `SIGNING_PASSWORD` secrets). Central versions are permanent, so nothing else
-publishes there. The API's POM is public and links only to taerra.dev and the hosted license. Every public API type and
+publishes there. The API's POM links to taerra.dev, the repository and its `LICENSE.md`. Every public API type and
 member has Javadoc; the `javadoc` task runs doclint with `missing` and fails the build without it.
 
-The Discord channel is public and the repository private, so only `modrinth.yml` posts there, and nothing public
-(Discord, Modrinth notes, the mod and plugin metadata, the web map) links into the repository. The public links are
+The repository is public and source available under `LICENSE.md`, which allows forks but not re-uploads. Forks may
+enable Actions, so every workflow that releases, deploys or publishes runs only in `aerulion/taerra`: its first job
+checks `github.repository`, and every later job needs it. Public pages link the repository only as its source code and
+its `LICENSE.md`; only `modrinth.yml` posts to the public Discord channel. The other public links are
 taerra.dev and two redirects on its domain, `download.taerra.dev` to the download page (the Modrinth page once the
 project is public there) and `discord.taerra.dev` to the Discord invite, set up with the domain's DNS rather than in
 this repository: link those, not modrinth.com or the invite, except for a link to one Modrinth version. Messages are
@@ -170,8 +172,7 @@ aerulion.net it is English on every page, its imprint and privacy links too. Cop
 `nyxFonts` into `astro.config` and place it last in the page's footer.
 
 It is the website stream of `release.yml`, checked by `pr.yml` with the same `build-site` action, and `release.yml` also
-rebuilds it on 1 January for the footer's year. It is public, so like everything else public it never links into the
-repository.
+rebuilds it on 1 January for the footer's year.
 
 ## Pull requests
 

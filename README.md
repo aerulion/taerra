@@ -51,7 +51,7 @@ the lot, then runs the full build, so what it leaves behind is what the pipeline
 Build numbers, not semver. `<build>` is the run number of the release workflow.
 
 ```
-412-a1b2c3d        release, tagged build-412 (plugin) or mod-412 (mod)
+412-a1b2c3d        release, tagged plugin-412 (plugin) or mod-412 (mod)
 pr57-88-a1b2c3d    snapshot from PR #57
 a1b2c3d-dev        local build (-dirty-dev with uncommitted changes)
 ```
@@ -157,3 +157,9 @@ dependencies {
   compileOnly("net.aerulion", "taerra-api", "412-a1b2c3d")
 }
 ```
+
+## License
+
+TAERRA is source available, not open source. [`LICENSE.md`](LICENSE.md) lets you use it freely, commercial servers
+included, and publish forks that change it under their own name. It does not let you re-upload TAERRA or use its name
+and logo for your own work. Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).
