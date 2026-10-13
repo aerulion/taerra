@@ -12,7 +12,7 @@ One map, rendered on your server: in the browser, and in game.
 | `plugin/`      | The Paper plugin: renders the tiles, serves the web map     |
 | `api/`         | The API other plugins add markers and layers through        |
 | `mod/`         | The Fabric mod: map screen and minimap, a viewer only       |
-| `tools/mcdata` | Generates `block_data.json` from the vanilla assets         |
+| `tools/mcdata` | Generates `block_data.json` and `colormaps.json`            |
 | `branding/`    | Renders the logo and store images from the map tiles        |
 | `site/`        | taerra.dev, the project's web page (Astro, Bun)             |
 
@@ -24,7 +24,9 @@ one commit.
 
 * **JDK 25**. With [sdkman](https://sdkman.io), a one-time `sdk env install` in the repo installs the pinned Temurin 25
   from `.sdkmanrc` (with `sdkman_auto_env=true` it switches automatically on every entry into the directory).
-* **Python 3**. Only for `tools/mcdata`, see its [README](tools/mcdata/README.md).
+* **Python 3**. Only for `tools/mcdata`, see its [README](tools/mcdata/README.md), and `branding/`, see
+  [its README](branding/README.md).
+* **Bun**. Only for the website in `site/`.
 
 ## Tasks
 
@@ -33,6 +35,7 @@ one commit.
 ./gradlew build                      # compile, test, jar
 ./gradlew :plugin:test --tests "WebSessionsTest"
 ./gradlew -q printVersion            # the version this build publishes under
+cd site && bun install && bun run dev # taerra.dev on http://localhost:4321
 ```
 
 **Run `preCommit` before committing.** CI fails on unformatted Java, Kotlin build scripts or JSON. `preCommit` formats
@@ -57,45 +60,62 @@ a1b2c3d-dev        local build (-dirty-dev with uncommitted changes)
 ```
 
 Only a release starts with a number, so PR and local builds always sort below one. `./gradlew -q printVersion` is the
-single source of truth; no workflow assembles a version string.
+single source of truth; no workflow assembles a version string. People read it as "Build 412": the jars are
+`taerra-paper-build-412-a1b2c3d.jar` and `taerra-fabric-build-412-a1b2c3d.jar`, while Maven coordinates and the plugin
+and mod metadata keep the plain version.
 
 ## Releases
 
 Every push to `main` releases whichever parts it changed.
 
-| Touches            | Releases                          | Tags         |
-|--------------------|-----------------------------------|--------------|
-| anything else      | plugin jar, API → GitHub Packages | `build-<n>`  |
-| `mod/`             | mod jar                           | `mod-<n>`    |
-| shared build files | both                              | both         |
-| `site/`            | taerra.dev → GitHub Pages         | moves `site` |
+| Touches            | Releases                          | Tags          |
+|--------------------|-----------------------------------|---------------|
+| anything else      | plugin jar, API → GitHub Packages | `plugin-<n>`  |
+| `mod/`             | mod jar                           | `mod-<n>`     |
+| shared build files | both                              | both          |
+| `site/`            | taerra.dev → GitHub Pages         | moves `site`  |
 
-The shared build files are `gradle/`, `build-logic/`, the root build scripts and the wrapper. The website also counts
-the in-game shots, the showreel thumbnail and the web map's font and icons it takes from elsewhere; the rest of
-`branding/` and Markdown are excluded everywhere. Anything else counts as the plugin, so a new top-level file releases a
-build rather than silently not releasing one.
+`<n>` is the release workflow's run number, shared by both streams, so each stream's tags skip numbers. The shared
+build files are `gradle/`, `build-logic/`, the root build scripts and the wrapper. The website also counts the in-game
+shots, the showreel thumbnail and the web map's font and icons it takes from elsewhere; the rest of `branding/`, `.github/`
+and Markdown are excluded everywhere. Anything else counts as the plugin, so a new top-level file releases a build rather
+than silently not releasing one.
 
 Every release runs the whole Gradle build first, and the API is published in a second step, after every test has
-passed. The ten most recent releases per stream and the ten most recent API versions are kept. `manual-cleanup.yml` runs the same cleanup on demand.
+passed. The ten most recent releases per stream and the ten most recent API versions are kept, and so is every release
+mirrored on taerra.dev. `manual-cleanup.yml` runs the same cleanup on demand.
+
+Workflows that release, deploy or publish only run in `aerulion/taerra`, never in a fork.
 
 ## Modrinth
 
 Plugin and mod are one Modrinth project, told apart by loader. Nothing reaches it on its own: run the
-**Publish to Modrinth** workflow with a build's tag (`build-<n>` or `mod-<n>`) and a channel, and it uploads that
-build's jar with the player-facing changes since the previous Modrinth version, then announces it on Discord. Only the
+**Publish to Modrinth** workflow. By default it releases the newest `plugin-<n>` and the newest `mod-<n>` that are not on
+Modrinth yet; pick `plugin` or `mod` and a build number to release one part alone. It uploads each release's jar, never a
+rebuild, with the player-facing changes since the previous Modrinth version of that loader, mirrors it on
+[taerra.dev/download](https://taerra.dev/download/), deploys the website and announces each part on Discord. Only the
 ten most recent builds per stream still have a release to publish from.
 
-It needs the `MODRINTH_TOKEN` secret, a personal access token with the *Read projects* and *Create versions* scopes
-(the project is a draft until approved, so even reading it needs the token).
+| Secret                                         | Value                                                                  |
+|------------------------------------------------|------------------------------------------------------------------------|
+| `MODRINTH_TOKEN`                               | A personal access token with the *Read projects* and *Create versions* scopes; the project is a draft until approved, so even reading it needs the token |
+| `DISCORD_WEBHOOK_ID`, `DISCORD_WEBHOOK_TOKEN`  | The webhook of the public announcement channel                         |
 
-Publishing a `build-<n>` tag also rebuilds and tests that tag and publishes its API to Maven Central under the same
-version. Central versions can never be deleted, so this is the only path there. It needs:
+Publishing a plugin build also rebuilds and tests its tag and publishes its API to Maven Central under the same version.
+Central versions can never be deleted, so this is the only path there. It needs:
 
 | Secret                                  | Value                                                                  |
 |-----------------------------------------|------------------------------------------------------------------------|
 | `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`  | A Central Portal user token, from an account that owns `net.aerulion` |
 | `SIGNING_KEY`                           | An ASCII-armored PGP secret key whose public key is on a keyserver     |
 | `SIGNING_PASSWORD`                      | Its passphrase                                                         |
+
+## Website
+
+`site/` is [taerra.dev](https://taerra.dev), the project's page and its download page, built with Astro and Bun. CI
+runs `bun run check` (Prettier, ESLint, `astro check`) on every pull request that touches it. The download page lists
+every build mirrored from Modrinth: `bun run downloads` fetches them from the GitHub releases, which needs the `gh` CLI,
+and without it the page shows none. `site.yml` is the only way to GitHub Pages and can be run by hand for a deploy alone.
 
 ## Commit messages
 
@@ -141,7 +161,8 @@ the label is on:
 | any part   | the plugin and mod jars as workflow artifacts               |
 
 All of it is listed in one comment on the PR. Removing the label or closing the PR deletes the API versions; the jar
-artifacts expire on their own.
+artifacts expire on their own. A pull request from a fork gets no secrets and no write access, so it is validated but
+gets no snapshot.
 
 ## API
 
