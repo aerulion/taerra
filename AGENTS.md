@@ -137,8 +137,8 @@ member has Javadoc; the `javadoc` task runs doclint with `missing` and fails the
 
 The repository is public and source available under `LICENSE.md`, which allows forks but not re-uploads. Forks may
 enable Actions, so every workflow that releases, deploys or publishes runs only in `aerulion/taerra`: its first job
-checks `github.repository`, and every later job needs it. Public pages link the repository only as its source code and
-its `LICENSE.md`; only `modrinth.yml` posts to the public Discord channel. The other public links are
+checks `github.repository`, and every later job needs it. Public pages link the repository only as its source code, its
+issue tracker and its `LICENSE.md`; only `modrinth.yml` posts to the public Discord channel. The other public links are
 taerra.dev and two redirects on its domain, `download.taerra.dev` to the download page (the Modrinth page once the
 project is public there) and `discord.taerra.dev` to the Discord invite, set up with the domain's DNS rather than in
 this repository: link those, not modrinth.com or the invite, except for a link to one Modrinth version. Messages are

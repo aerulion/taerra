@@ -7,7 +7,8 @@
   "authors": [ "aerulion" ],
   "contact": {
     "homepage": "https://taerra.dev",
-    "sources": "https://github.com/aerulion/taerra"
+    "sources": "https://github.com/aerulion/taerra",
+    "issues": "https://github.com/aerulion/taerra/issues"
   },
   "icon": "assets/taerra/icon.png",
   "license": "LicenseRef-TAERRA-License",
