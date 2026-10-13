@@ -7,6 +7,7 @@ import {copy, links} from '../data/taerra';
 
 const {closing} = copy(Astro.currentLocale);
 const [before, link, after] = closing.deepDive;
+const [textBefore, textLink, textAfter] = closing.text;
 const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 ---
 
@@ -18,7 +19,11 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
             <h2 id="closing-title" class="title">
                 {closing.title}
             </h2>
-            <p class="lede">{closing.text}</p>
+            <p class="lede">
+                {textBefore}
+                <a href={links.issues}>{textLink}</a>
+                {textAfter}
+            </p>
         </div>
         <div class="actions" data-reveal style="--stagger: 1">
             <a class="btn btn--primary" href={download}>

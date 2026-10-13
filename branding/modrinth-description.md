@@ -16,7 +16,7 @@ Everything is rendered on the server. Visitors and players only download finishe
 
 TAERRA is early in its development. It already runs on live servers, but it is not feature complete yet, and you may run into bugs or rough edges. Things can still change between versions as it grows.
 
-If something breaks or looks wrong, please report it on [Discord](https://discord.taerra.dev): every report helps make TAERRA better for everyone.
+If something breaks or looks wrong, please report it on [GitHub](https://github.com/aerulion/taerra/issues): every report helps make TAERRA better for everyone. Questions are welcome on [Discord](https://discord.taerra.dev).
 
 ![Features](https://assets.corpium.net/taerra/section-features.png?v=b03ca4e5)
 
@@ -140,7 +140,7 @@ Render threads and cache sizes are configurable, so you decide how much CPU and 
 
 ![More](https://assets.corpium.net/taerra/section-more.png?v=73f34c18)
 
-See TAERRA running on a real server at [map.corpium.net](https://map.corpium.net/), and if you are curious how it works under the hood, read the [technical deep dive](https://aerulion.net/work/taerra/). Questions, ideas, and bug reports are welcome on [Discord](https://discord.taerra.dev).
+See TAERRA running on a real server at [map.corpium.net](https://map.corpium.net/), and if you are curious how it works under the hood, read the [technical deep dive](https://aerulion.net/work/taerra/). Questions and ideas are welcome on [Discord](https://discord.taerra.dev), bug reports on [GitHub](https://github.com/aerulion/taerra/issues).
 
 TAERRA is free to use on any server, commercial ones included. Its source code is available on [GitHub](https://github.com/aerulion/taerra), and the [license](https://github.com/aerulion/taerra/blob/main/LICENSE.md) has the details.
 

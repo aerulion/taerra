@@ -4,6 +4,7 @@ export const links = {
     demo: 'https://map.corpium.net/',
     discord: 'https://discord.taerra.dev',
     source: 'https://github.com/aerulion/taerra',
+    issues: 'https://github.com/aerulion/taerra/issues',
     deepDive: 'https://aerulion.net/work/taerra/'
 };
 
@@ -449,7 +450,11 @@ const en = {
     closing: {
         kicker: 'Early access',
         title: 'Try it out, break it, report it',
-        text: 'TAERRA already runs on live servers, and it is still growing: things can change between versions, and you may find rough edges. If something breaks or looks wrong, every report on Discord makes it better for everyone.',
+        text: [
+            'TAERRA already runs on live servers, and it is still growing: things can change between versions, and you may find rough edges. If something breaks or looks wrong, ',
+            'report it on GitHub',
+            '. Every report makes it better for everyone, and questions are welcome on Discord.'
+        ] as Marked,
         download: 'Get TAERRA',
         discord: 'Join the Discord',
         demo: 'See it live',

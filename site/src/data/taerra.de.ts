@@ -410,7 +410,11 @@ export const de: Copy = {
     closing: {
         kicker: 'Early Access',
         title: 'Ausprobieren, kaputt machen, melden',
-        text: 'TAERRA läuft schon auf echten Servern und wächst noch: Zwischen Versionen kann sich etwas ändern, und hier und da gibt es Ecken und Kanten. Wenn etwas kaputtgeht oder falsch aussieht, macht jede Meldung auf Discord es für alle besser.',
+        text: [
+            'TAERRA läuft schon auf echten Servern und wächst noch: Zwischen Versionen kann sich etwas ändern, und hier und da gibt es Ecken und Kanten. Wenn etwas kaputtgeht oder falsch aussieht, ',
+            'melde es auf GitHub',
+            '. Jede Meldung macht es für alle besser, und Fragen sind auf Discord willkommen.'
+        ] as Marked,
         download: 'TAERRA holen',
         discord: 'Zum Discord',
         demo: 'Live ansehen',
