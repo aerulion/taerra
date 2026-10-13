@@ -8,7 +8,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: pr-${{ github.event.pull_request.number }}${{ github.event.action == 'edited' && '-title' || '' }}
+  group: >-
+    pr-${{ github.event.pull_request.number }}${{ (github.event.action == 'edited'
+    || ((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'deploy'))
+    && '-meta' || '' }}
   cancel-in-progress: true
 
 env:
@@ -208,4 +211,60 @@ jobs:
                 issue_number: context.payload.pull_request.number,
                 body
               });
+            }
+
+  checks:
+    name: ✅ Checks
+    timeout-minutes: 60
+    needs: [ changes, commit-messages, build, site ]
+    if: always()
+    permissions:
+      checks: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: ✅ Collect the results
+        uses: actions/github-script@v9
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          META: >-
+            ${{ github.event.action == 'edited'
+            || ((github.event.action == 'labeled' || github.event.action == 'unlabeled')
+            && github.event.label.name != 'deploy') }}
+        with:
+          script: |
+            const failed = Object.entries(JSON.parse(process.env.NEEDS))
+              .filter(([, job]) => job.result === 'failure' || job.result === 'cancelled')
+              .map(([name]) => name);
+            if (failed.length > 0) {
+              core.setFailed(`Failed: ${failed.join(', ')}.`);
+              return;
+            }
+            if (process.env.META !== 'true') {
+              return;
+            }
+
+            const sha = context.payload.pull_request.head.sha;
+            for (;;) {
+              const {data} = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: sha,
+                check_name: '✅ Checks',
+                filter: 'all'
+              });
+              const previous = data.check_runs
+                .filter(run => !run.details_url?.includes(`/runs/${context.runId}/`))
+                .sort((a, b) => new Date(b.started_at) - new Date(a.started_at))[0];
+              if (!previous) {
+                core.setFailed(`Nothing has validated ${sha.substring(0, 7)} yet.`);
+                return;
+              }
+              if (previous.status === 'completed') {
+                if (!['success', 'neutral', 'skipped'].includes(previous.conclusion)) {
+                  core.setFailed(`The validation of ${sha.substring(0, 7)} concluded ${previous.conclusion}.`);
+                }
+                return;
+              }
+              console.log(`Waiting for the validation of ${sha.substring(0, 7)}.`);
+              await new Promise(resolve => setTimeout(resolve, 30000));
             }

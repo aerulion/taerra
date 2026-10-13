@@ -154,7 +154,9 @@ These types are also the sections the release notes group by, so a well-formed h
 
 ## Pull requests
 
-Every pull request is validated. Add the `deploy` label and the PR also gets a snapshot, refreshed on every push while
+Every pull request is validated, and the **✅ Checks** job sums the result up: it is the one check `main` requires. A
+title edit or a label other than `deploy` checks the title and repeats the last validation's result rather than running
+it again. Add the `deploy` label and the PR also gets a snapshot, refreshed on every push while
 the label is on:
 
 | PR changes | Gets                                                        |
