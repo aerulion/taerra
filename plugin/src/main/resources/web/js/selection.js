@@ -1,7 +1,7 @@
 import {accountManager} from './account.js';
 import {numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
-import {element, markerManager, spline} from './markers.js';
+import {element, groundNow, markerManager, spline} from './markers.js';
 import {DEFAULT_COLOR, waypointEditor, waypointUrl} from './waypoints.js';
 
 const $ = (id) => document.getElementById(id);
@@ -72,6 +72,7 @@ function corners(ring) {
 }
 
 const chunkOf = (block) => Math.floor(block / CHUNK);
+const touching = (at) => at % CHUNK === 0 ? [at / CHUNK - 1, at / CHUNK] : [chunkOf(at)];
 
 function inside(outline, x, z) {
     let crossings = 0;
@@ -99,6 +100,7 @@ class ChunkSelection {
         this.rings = [];
         this.traced = false;
         this.grounds = new Map();
+        this.levels = new Map();
         this.stroke = null;
         this.pan = null;
         this.status = null;
@@ -195,6 +197,7 @@ class ChunkSelection {
         this.smooth = editing?.smooth ?? false;
         this.color = editing?.color ?? DEFAULT_COLOR;
         this.grounds.clear();
+        this.levels.clear();
         map.closePopup();
         map.dragging.disable();
         map.boxZoom.disable();
@@ -281,8 +284,9 @@ class ChunkSelection {
         const map = mapManager.getMap();
         let nearest = -1;
         let best = HANDLE_PIXELS;
-        this.points.forEach(([x, z], i) => {
-            const distance = map.latLngToContainerPoint(this.ground(x, z)).distanceTo(point);
+        const handles = this.handles();
+        this.points.forEach((_, i) => {
+            const distance = map.latLngToContainerPoint(handles[i]).distanceTo(point);
             if (distance <= best) {
                 best = distance;
                 nearest = i;
@@ -293,7 +297,7 @@ class ChunkSelection {
 
     segmentAt(point) {
         const map = mapManager.getMap();
-        const screen = this.points.map(([x, z]) => map.latLngToContainerPoint(this.ground(x, z)));
+        const screen = this.handles().map(handle => map.latLngToContainerPoint(handle));
         const closed = this.kind === 'area' && screen.length >= 3;
         for (let i = 0; i < screen.length - (closed ? 0 : 1); i++) {
             const a = screen[i];
@@ -479,6 +483,57 @@ class ChunkSelection {
         return mapManager.project(x, y + 1, z);
     }
 
+    draped(points) {
+        if (this.kind !== 'area' || !mapManager.isIsometric() || points.length < 3) {
+            return null;
+        }
+        return groundNow(points).map(side => side.map(([x, y, z]) => {
+            if (y === undefined) {
+                this.missing = true;
+            }
+            return mapManager.project(x, y ?? UNKNOWN_GROUND + 1, z);
+        }));
+    }
+
+    handles() {
+        return this.draped(this.points)?.map(side => side[0]) ?? this.points.map(([x, z]) => this.ground(x, z));
+    }
+
+    level(x, z, selected = null) {
+        if (!mapManager.isIsometric()) {
+            return mapManager.project(x, 0, z);
+        }
+        const levels = touching(x).flatMap(chunkX => touching(z)
+            .filter(chunkZ => !selected || selected.has(key(chunkX, chunkZ)))
+            .map(chunkZ => this.chunkLevel(chunkX, chunkZ)));
+        return mapManager.project(x, levels.reduce((sum, y) => sum + y, 0) / levels.length + 1, z);
+    }
+
+    chunkLevel(chunkX, chunkZ) {
+        const cell = key(chunkX, chunkZ);
+        const known = this.levels.get(cell);
+        if (known !== undefined) {
+            return known;
+        }
+        const heights = [];
+        for (let x = 2; x < CHUNK; x += 4) {
+            for (let z = 2; z < CHUNK; z += 4) {
+                const surface = mapManager.surfaceHeightAt(chunkX * CHUNK + x, chunkZ * CHUNK + z);
+                if (Number.isFinite(surface)) {
+                    heights.push(surface);
+                }
+            }
+        }
+        if (heights.length === 0) {
+            this.missing = true;
+            return UNKNOWN_GROUND;
+        }
+        heights.sort((a, b) => a - b);
+        const y = heights[heights.length >> 1];
+        this.levels.set(cell, y);
+        return y;
+    }
+
     redraw() {
         cancelAnimationFrame(this.frame);
         this.frame = requestAnimationFrame(() => this.draw());
@@ -497,14 +552,14 @@ class ChunkSelection {
         const marker = this.kind !== 'chunks';
         const color = marker ? this.color : LINE;
         if (this.chunks.size > 0) {
-            this.add(L.polygon(this.outlines().map(ring => ring.map(([x, z]) => this.ground(x, z))), {
+            this.add(L.polygon(this.outlines().map(ring => this.draped(corners(ring))?.flat() ?? ring.map(([x, z]) => this.level(x, z, this.chunks))), {
                 color, opacity: marker ? 1 : .75, weight: marker ? 2 : 1,
                 fillColor: color, fillOpacity: marker ? .3 : .25, interactive: false
             }));
         }
         const outline = this.outline();
         if (outline && outline.length > 1) {
-            this.add(L.polygon(outline.map(([x, z]) => this.ground(x, z)), {
+            this.add(L.polygon(outline.map(([x, z]) => this.level(x, z)), {
                 color: this.stroke.erase ? ERASE_LINE : LINE, weight: 2, fill: false, interactive: false
             }));
         }
@@ -513,12 +568,12 @@ class ChunkSelection {
                 const path = this.smooth && this.points.length > 2 ? spline(this.points) : this.points;
                 this.add(L.polyline(path.map(([x, z]) => this.ground(x, z)), {color, weight: 3, interactive: false}));
             } else {
-                this.add(L.polygon(this.points.map(([x, z]) => this.ground(x, z)), {
+                this.add(L.polygon(this.draped(this.points)?.flat() ?? this.points.map(([x, z]) => this.ground(x, z)), {
                     color, weight: 2, fillColor: color, fillOpacity: .3, interactive: false
                 }));
             }
-            for (const [x, z] of this.points) {
-                this.add(L.circleMarker(this.ground(x, z), {
+            for (const handle of this.handles()) {
+                this.add(L.circleMarker(handle, {
                     radius: 4, color: '#000', weight: 1, fillColor: LINE, fillOpacity: 1, interactive: false
                 }));
             }

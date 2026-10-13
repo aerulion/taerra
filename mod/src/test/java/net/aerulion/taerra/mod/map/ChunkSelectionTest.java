@@ -1,5 +1,6 @@
 package net.aerulion.taerra.mod.map;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,5 +68,20 @@ class ChunkSelectionTest {
 
     assertEquals(2, selection.rings().size());
     assertEquals(16, selection.rings().get(0).length + selection.rings().get(1).length);
+  }
+
+  @Test
+  @DisplayName("a chunk corner touches the four chunks around it, any other point only its own")
+  void touchesChunksAroundCorners() {
+    assertArrayEquals(new int[] {-2, -1}, ChunkSelection.touching(-16));
+    assertArrayEquals(new int[] {-1, 0}, ChunkSelection.touching(0));
+    assertArrayEquals(new int[] {-1}, ChunkSelection.touching(-.5));
+    assertArrayEquals(new int[] {1}, ChunkSelection.touching(31.5));
+  }
+
+  @Test
+  @DisplayName("a chunk's level ignores a few tall columns")
+  void levelIgnoresTallColumns() {
+    assertEquals(64, ChunkSelection.median(new int[] {64, 64, 90, 64, 120, 63, 0}, 6));
   }
 }

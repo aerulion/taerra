@@ -96,19 +96,33 @@ function groundKey(marker) {
     return marker.groundKey ??= `${marker.id} ${marker.points}`;
 }
 
-async function groundUnder(marker) {
-    const [cx, cz] = marker.points.reduce(([sx, sz], [x, z]) => [sx + x, sz + z], [0, 0])
-        .map(sum => sum / marker.points.length);
-    const sides = edgePoints(marker.points).map(side => side.map(([x, z]) => ({
+function samples(points) {
+    const [cx, cz] = points.reduce(([sx, sz], [x, z]) => [sx + x, sz + z], [0, 0])
+        .map(sum => sum / points.length);
+    return edgePoints(points).map(side => side.map(([x, z]) => ({
         x, z, pick: mapManager.topPick(Math.floor(x + Math.sign(cx - x) * .5), Math.floor(z + Math.sign(cz - z) * .5))
     })));
-    const buffers = new Map();
-    const picks = new Map(sides.flat().map(({pick}) => [pick.key, pick]));
-    await Promise.all([...picks.values()].map(async pick => buffers.set(pick.key, await mapManager.loadPick(pick))));
+}
+
+function drape(sides, buffers) {
     return sides.map(side => {
         const ground = smoothed(side.map(({pick}) => pick.height(buffers.get(pick.key))));
         return level(side.map(({x, z}, i) => [x, Number.isFinite(ground[i]) ? ground[i] + 1 : undefined, z]));
     });
+}
+
+async function groundUnder(marker) {
+    const sides = samples(marker.points);
+    const buffers = new Map();
+    const picks = new Map(sides.flat().map(({pick}) => [pick.key, pick]));
+    await Promise.all([...picks.values()].map(async pick => buffers.set(pick.key, await mapManager.loadPick(pick))));
+    return drape(sides, buffers);
+}
+
+export function groundNow(points) {
+    const sides = samples(points);
+    const buffers = new Map(sides.flat().map(({pick}) => [pick.key, mapManager.cachedPick(pick.key, pick.url)]));
+    return drape(sides, buffers);
 }
 
 function level(points) {

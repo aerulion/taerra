@@ -2,6 +2,7 @@ package net.aerulion.taerra.mod.map;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -108,6 +109,17 @@ public final class ChunkSelection {
       Math.floorDiv(Math.max(fromX, toX), CHUNK),
       Math.floorDiv(Math.max(fromZ, toZ), CHUNK)
     };
+  }
+
+  public static int @NotNull [] touching(final double at) {
+    final int chunk = (int) Math.floor(at / CHUNK);
+    return at % CHUNK == 0 ? new int[] {chunk - 1, chunk} : new int[] {chunk};
+  }
+
+  public static int median(final int @NotNull [] heights, final int count) {
+    final int[] sorted = Arrays.copyOf(heights, count);
+    Arrays.sort(sorted);
+    return sorted[count / 2];
   }
 
   public static @NotNull List<double[]> corners(final int @NotNull [][] ring) {

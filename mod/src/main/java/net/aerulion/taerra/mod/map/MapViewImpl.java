@@ -89,6 +89,8 @@ public final class MapViewImpl implements MapView {
   private @Nullable List<Component> tooltip;
   private @Nullable MarkerHover hover;
   private final Map<Long, Integer> surfaces = new HashMap<>();
+  private final Map<Long, Integer> levels = new HashMap<>();
+  private final Map<String, List<List<double[]>>> drapes = new HashMap<>();
   private @Nullable Drawing drawing;
   private @Nullable List<Layer> hiddenFrom;
   private @Nullable String hiddenId;
@@ -254,7 +256,9 @@ public final class MapViewImpl implements MapView {
   public void select(final @Nullable Drawing drawing) {
     if (drawing == null || this.drawing == null || drawing.chunks() != this.drawing.chunks()) {
       this.surfaces.clear();
+      this.levels.clear();
     }
+    this.drapes.clear();
     this.drawing = drawing;
   }
 
@@ -881,9 +885,12 @@ public final class MapViewImpl implements MapView {
       final @NotNull List<double[][]> shapes = new ArrayList<>(rings.size());
       int bridged = 0;
       for (final int @NotNull [][] ring : rings) {
-        final double @NotNull [][] points = new double[ring.length][];
-        for (int i = 0; i < ring.length; i++) {
-          points[i] = ground(map, projection, ring[i][0], ring[i][1]);
+        final @Nullable List<List<double[]>> draped =
+            drawing.closed() ? drape(map, projection, ChunkSelection.corners(ring)) : null;
+        final double @NotNull [][] points =
+            draped == null ? new double[ring.length][] : flat(draped);
+        for (int i = 0; draped == null && i < ring.length; i++) {
+          points[i] = level(map, projection, ring[i][0], ring[i][1], drawing.chunks());
         }
         final double @NotNull [][] shape = screen(points);
         shapes.add(shape);
@@ -907,35 +914,46 @@ public final class MapViewImpl implements MapView {
     if (outline != null && outline.length > 1) {
       final double @NotNull [][] path = new double[outline.length][];
       for (int i = 0; i < outline.length; i++) {
-        path[i] = ground(map, projection, outline[i][0], outline[i][1]);
+        path[i] = level(map, projection, outline[i][0], outline[i][1], null);
       }
       Geometry.ring(graphics, screen(path), 1, drawing.erasing() ? ERASE_LINE : SELECTION_LINE);
     }
     this.pathScreen.clear();
-    for (final double @NotNull [] point : drawing.points()) {
-      this.pathScreen.add(toScreen(ground(map, projection, point[0], point[1])));
-    }
-    if (drawing.closed() && this.pathScreen.size() >= 3) {
-      final double @NotNull [][] face = this.pathScreen.toArray(double[][]::new);
+    final @Nullable List<List<double[]>> draped =
+        drawing.closed() ? drape(map, projection, drawing.points()) : null;
+    if (draped != null) {
+      for (final @NotNull List<double[]> side : draped) {
+        this.pathScreen.add(toScreen(side.getFirst()));
+      }
+      final double @NotNull [][] face = screen(flat(draped));
       fill(graphics, face, top, bottom, area);
       Geometry.ring(graphics, face, 2, line);
-    } else if (drawing.smooth() && drawing.points().size() > 2) {
-      final @NotNull List<double[]> curve =
-          Spline.through(
-              drawing.points().stream()
-                  .map(point -> new double[] {point[0], 0, point[1]})
-                  .toList());
-      for (int i = 1; i < curve.size(); i++) {
-        Geometry.line(
-            graphics,
-            toScreen(ground(map, projection, curve.get(i - 1)[0], curve.get(i - 1)[2])),
-            toScreen(ground(map, projection, curve.get(i)[0], curve.get(i)[2])),
-            2,
-            line);
-      }
     } else {
-      for (int i = 1; i < this.pathScreen.size(); i++) {
-        Geometry.line(graphics, this.pathScreen.get(i - 1), this.pathScreen.get(i), 2, line);
+      for (final double @NotNull [] point : drawing.points()) {
+        this.pathScreen.add(toScreen(ground(map, projection, point[0], point[1])));
+      }
+      if (drawing.closed() && this.pathScreen.size() >= 3) {
+        final double @NotNull [][] face = this.pathScreen.toArray(double[][]::new);
+        fill(graphics, face, top, bottom, area);
+        Geometry.ring(graphics, face, 2, line);
+      } else if (drawing.smooth() && drawing.points().size() > 2) {
+        final @NotNull List<double[]> curve =
+            Spline.through(
+                drawing.points().stream()
+                    .map(point -> new double[] {point[0], 0, point[1]})
+                    .toList());
+        for (int i = 1; i < curve.size(); i++) {
+          Geometry.line(
+              graphics,
+              toScreen(ground(map, projection, curve.get(i - 1)[0], curve.get(i - 1)[2])),
+              toScreen(ground(map, projection, curve.get(i)[0], curve.get(i)[2])),
+              2,
+              line);
+        }
+      } else {
+        for (int i = 1; i < this.pathScreen.size(); i++) {
+          Geometry.line(graphics, this.pathScreen.get(i - 1), this.pathScreen.get(i), 2, line);
+        }
       }
     }
     for (final double @NotNull [] at : this.pathScreen) {
@@ -944,6 +962,81 @@ public final class MapViewImpl implements MapView {
       graphics.fill(x - 3, y - 3, x + 3, y + 3, 0xFF000000);
       graphics.fill(x - 2, y - 2, x + 2, y + 2, 0xFFFFFFFF);
     }
+  }
+
+  private @Nullable List<List<double[]>> drape(
+      final @NotNull WebMap map,
+      final @NotNull Projection projection,
+      final @NotNull List<double[]> outline) {
+    if (!this.isometric || this.world == null || outline.size() < 3) {
+      return null;
+    }
+    final @Nullable List<List<double[]>> sides =
+        this.drapes.computeIfAbsent(
+            Arrays.deepToString(outline.toArray()), _ -> map.picks().drape(this.world, outline));
+    return sides == null
+        ? null
+        : sides.stream()
+            .map(
+                side ->
+                    side.stream()
+                        .map(
+                            at ->
+                                projection.toMap(
+                                    at[0], Double.isNaN(at[1]) ? UNKNOWN_GROUND + 1 : at[1], at[2]))
+                        .toList())
+            .toList();
+  }
+
+  private static double @NotNull [][] flat(final @NotNull List<List<double[]>> sides) {
+    return sides.stream().flatMap(List::stream).toArray(double[][]::new);
+  }
+
+  private double[] level(
+      final @NotNull WebMap map,
+      final @NotNull Projection projection,
+      final double x,
+      final double z,
+      final @Nullable ChunkSelection selected) {
+    if (!this.isometric || this.world == null) {
+      return projection.toMap(x, 0, z);
+    }
+    double sum = 0;
+    int count = 0;
+    for (final int chunkX : ChunkSelection.touching(x)) {
+      for (final int chunkZ : ChunkSelection.touching(z)) {
+        if (selected == null || selected.contains(chunkX << 4, chunkZ << 4)) {
+          sum += level(map, chunkX, chunkZ);
+          count++;
+        }
+      }
+    }
+    return projection.toMap(x, sum / count + 1, z);
+  }
+
+  private int level(final @NotNull WebMap map, final int chunkX, final int chunkZ) {
+    final long key = ChunkSelection.key(chunkX, chunkZ);
+    final @Nullable Integer known = this.levels.get(key);
+    if (known != null) {
+      return known;
+    }
+    final int[] heights = new int[16];
+    int count = 0;
+    for (int x = 2; x < 16; x += 4) {
+      for (int z = 2; z < 16; z += 4) {
+        final @Nullable OptionalInt surface =
+            map.picks().surface(this.world, (chunkX << 4) + x, (chunkZ << 4) + z);
+        if (surface == null) {
+          return UNKNOWN_GROUND;
+        }
+        if (surface.isPresent()) {
+          heights[count++] = surface.getAsInt();
+        }
+      }
+    }
+    final int y = count == 0 ? UNKNOWN_GROUND : ChunkSelection.median(heights, count);
+    this.levels.put(key, y);
+    return y;
   }
 
   private double[] ground(

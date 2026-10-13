@@ -21,6 +21,9 @@ public sealed interface PickCache permits PickCacheImpl {
   @Nullable
   List<List<double[]>> ground(String key, String world, Marker marker);
 
+  @Nullable
+  List<List<double[]>> drape(String world, List<double[]> outline);
+
   void refresh(TileKey tile);
 
   void refreshAll();

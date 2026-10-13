@@ -161,7 +161,21 @@ public final class PickCacheImpl implements PickCache {
       return null;
     }
     return this.grounds
-        .computeIfAbsent(key, _ -> new Ground(world, marker, config.tileSize()))
+        .computeIfAbsent(key, _ -> new Ground(world, marker.points(), config.tileSize()))
+        .sample();
+  }
+
+  @Override
+  public @Nullable List<List<double[]>> drape(
+      final @NotNull String world, final @NotNull List<double[]> outline) {
+    final @Nullable MapConfig config = this.config.get();
+    if (config == null) {
+      return null;
+    }
+    return new Ground(
+            world,
+            outline.stream().map(point -> List.of(point[0], point[1])).toList(),
+            config.tileSize())
         .sample();
   }
 
@@ -222,8 +236,8 @@ public final class PickCacheImpl implements PickCache {
     private final Map<String, Pending> pending = new LinkedHashMap<>();
     private @Nullable List<List<double[]>> result;
 
-    private Ground(final @NotNull String world, final @NotNull Marker marker, final int size) {
-      final @Nullable List<List<Double>> outline = marker.points();
+    private Ground(
+        final @NotNull String world, final @NotNull List<List<Double>> outline, final int size) {
       double centerX = 0;
       double centerZ = 0;
       for (final @NotNull List<Double> point : outline) {
