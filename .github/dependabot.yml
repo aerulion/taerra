@@ -13,10 +13,6 @@ updates:
     labels:
       - dependencies
       - github-actions
-    groups:
-      github-actions:
-        patterns:
-          - "*"
     open-pull-requests-limit: 5
 
   - package-ecosystem: gradle
@@ -31,10 +27,6 @@ updates:
     labels:
       - dependencies
       - gradle
-    groups:
-      gradle:
-        patterns:
-          - "*"
     open-pull-requests-limit: 5
 
   - package-ecosystem: pip
@@ -49,10 +41,6 @@ updates:
     labels:
       - dependencies
       - python
-    groups:
-      mcdata:
-        patterns:
-          - "*"
     open-pull-requests-limit: 5
 
   - package-ecosystem: bun
@@ -67,8 +55,4 @@ updates:
     labels:
       - dependencies
       - website
-    groups:
-      site:
-        patterns:
-          - "*"
     open-pull-requests-limit: 5
