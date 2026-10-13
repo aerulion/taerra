@@ -150,4 +150,19 @@ class PersonalWaypointsTest {
         List.of("Home", "Last Death"),
         waypoints.all(ALEX).stream().map(saved -> saved.marker().label()).toList());
   }
+
+  @Test
+  @DisplayName("a hidden death point stays hidden when the next death replaces it")
+  void keepsTheDeathHidden(final @TempDir Path directory) {
+    final @NotNull PersonalWaypoints waypoints =
+        new PersonalWaypoints(
+            TestPlugins.named("TAERRA"), new MarkerRegistryImpl(), directory.toFile());
+    final @NotNull List<String> names = List.of("Last Death", "Letzter Tod");
+    waypoints.replace(ALEX, point("Letzter Tod", 1), names);
+    waypoints.setHidden(ALEX, List.of("Letzter Tod"), true);
+
+    waypoints.replace(ALEX, point("Last Death", 2), names);
+    assertTrue(waypoints.all(ALEX).getFirst().hidden());
+    assertTrue(waypoints.markers(ALEX).isEmpty());
+  }
 }

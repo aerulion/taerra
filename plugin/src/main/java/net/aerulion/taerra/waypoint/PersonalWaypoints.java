@@ -111,11 +111,13 @@ public final class PersonalWaypoints implements Listener {
     final @NotNull Set<String> ids = new HashSet<>();
     previous.forEach(name -> ids.add(markerId(name)));
     final @NotNull List<Saved> saved = new ArrayList<>(all(player));
+    final boolean hidden =
+        saved.stream().anyMatch(known -> ids.contains(known.marker().id()) && known.hidden());
     saved.removeIf(known -> ids.contains(known.marker().id()));
     if (saved.size() >= MAX) {
       return Result.FULL;
     }
-    saved.add(new Saved(marker, false));
+    saved.add(new Saved(marker, hidden));
     return write(player, saved) ? Result.SAVED : Result.FAILED;
   }
 
