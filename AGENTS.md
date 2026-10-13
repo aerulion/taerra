@@ -110,15 +110,20 @@ release with a `modrinth.json`: those are the download mirror.
 `pr-cleanup.yml` matches the `pr<n>-` prefix; both follow the version format in `settings.gradle.kts`. The package API
 calls pick `/users/...` or `/orgs/...` from the repository owner type.
 
-`modrinth.yml` is the only way to Modrinth: run by hand with plugin or mod and a build number, it uploads that GitHub
-release's jar, never a rebuild, as a Paper or Fabric version of the one project, slug `taerra` (`MODRINTH_TOKEN` secret). Its changelog is `release-notes.sh` with `AUDIENCE=players` since the commit in the
-newest Modrinth version number of that loader. Run again for a build already on Modrinth, it skips the upload and
-Maven Central and only mirrors and announces that version, which finishes a run that failed after its upload.
+`modrinth.yml` is the only way to Modrinth, run by hand. By default (`newest`) it takes the newest `plugin-<n>` and the
+newest `mod-<n>` release, which need not share a build number, and releases each that has no `modrinth.json` yet;
+plugin or mod releases that part alone, its newest build or the build given, released or not. It uploads each GitHub
+release's jar, never a rebuild, as a Paper or Fabric version of the one project, slug `taerra` (`MODRINTH_TOKEN`
+secret), one part after the other in one job. Its changelog is `release-notes.sh` with `AUDIENCE=players` since the
+commit in the newest Modrinth version number of that loader. A build already on Modrinth skips the upload and Maven
+Central and is only mirrored and announced, which finishes a run that failed after its upload; one part failing
+leaves the other to finish.
 
-Every version on Modrinth is mirrored on taerra.dev/download/, every build, never only the newest. After the upload,
-`modrinth.yml` calls `downloads.yml` (also run by hand for a build already on Modrinth): it looks the version up with
-the token, checks the GitHub release's jar against Modrinth's SHA-512, attaches what Modrinth shows for it as
-`modrinth.json` to that release, then deploys the site. `site/scripts/downloads.sh` (`bun run downloads`, run by
+Every version on Modrinth is mirrored on taerra.dev/download/, every build, never only the newest. After the uploads,
+`modrinth.yml` calls `downloads.yml` once per part with `skip-site` (run by hand for a build already on Modrinth, it
+deploys too): it looks the version up with the token, checks the GitHub release's jar against Modrinth's SHA-512 and
+attaches what Modrinth shows for it as `modrinth.json` to that release. `modrinth.yml` then deploys the site once,
+and announces each part in its own Discord message. `site/scripts/downloads.sh` (`bun run downloads`, run by
 `build-site`, needs `gh`) fetches every release with a `modrinth.json` and its jar into `site/downloads/`, ignored by
 git, and the page serves the jars from `/download/<file>.jar`. Files only ever come from the GitHub releases, never
 from Modrinth's CDN. The Discord embed links the Modrinth version and the mirror once the project is public there,

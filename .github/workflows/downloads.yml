@@ -20,6 +20,11 @@ on:
       build:
         required: true
         type: number
+      skip-site:
+        description: Leave the website deploy to the caller, which mirrors several builds and deploys once.
+        required: false
+        type: boolean
+        default: false
     secrets:
       MODRINTH_TOKEN:
         required: true
@@ -102,6 +107,7 @@ jobs:
   site:
     name: 🌐 Website
     needs: record
+    if: ${{ !inputs.skip-site }}
     permissions:
       contents: write
       pages: write

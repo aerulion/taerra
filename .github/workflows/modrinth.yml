@@ -1,20 +1,24 @@
 name: 🟢 Publish to Modrinth
 
-# Promotes a development build to a Modrinth release: the jar attached to its GitHub release, so what ships is exactly
-# what was tested. Plugin and mod are one Modrinth project, told apart by loader. A plugin build's API is rebuilt and
-# tested at its tag and published to Maven Central under the same version.
+# Promotes development builds to Modrinth releases: the jars attached to their GitHub releases, so what ships is exactly
+# what was tested. Plugin and mod are one Modrinth project, told apart by loader. By default it releases the newest
+# plugin and the newest mod build that are not on taerra.dev/download/ yet, each of them only if it is new; plugin or
+# mod picks one part, its newest build or the one given. A plugin build's API is rebuilt and tested at its tag and
+# published to Maven Central under the same version. The website is deployed once, after every part is mirrored, and
+# each part is announced on Discord in its own message.
 on:
   workflow_dispatch:
     inputs:
       part:
-        description: What to publish.
+        description: What to publish. newest is every part whose newest build is not released yet.
         required: true
         type: choice
-        options: [ plugin, mod ]
+        options: [ newest, plugin, mod ]
+        default: newest
       build:
-        description: The build number, n in its GitHub release plugin-<n> or mod-<n>.
-        required: true
-        type: number
+        description: The build number, n in its GitHub release plugin-<n> or mod-<n>. Empty is the newest build.
+        required: false
+        type: string
       channel:
         description: The Modrinth release channel.
         type: choice
@@ -35,24 +39,21 @@ concurrency:
 jobs:
   publish:
     name: 🟢 Publish to Modrinth
-    timeout-minutes: 15
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     outputs:
-      title: ${{ steps.publish.outputs.title }}
-      url: ${{ steps.publish.outputs.url }}
-      description: ${{ steps.publish.outputs.description }}
-      icon: ${{ steps.publish.outputs.icon }}
-      uploaded: ${{ steps.publish.outputs.uploaded }}
+      targets: ${{ steps.publish.outputs.targets }}
+      central: ${{ steps.publish.outputs.central }}
+      announcements: ${{ steps.publish.outputs.announcements }}
     steps:
-      - name: 📥 Checkout the build
+      - name: 📥 Checkout the history
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.part }}-${{ inputs.build }}
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
 
-      - name: 🟢 Upload the version
+      - name: 🟢 Upload the versions
         id: publish
         env:
           GH_TOKEN: ${{ github.token }}
@@ -69,26 +70,14 @@ jobs:
             echo "::error::Set the MODRINTH_TOKEN secret."
             exit 1
           fi
-
-          if [[ ! "${BUILD}" =~ ^[0-9]+$ ]]; then
+          if [ -n "${BUILD}" ] && [[ ! "${BUILD}" =~ ^[0-9]+$ ]]; then
             echo "::error::'${BUILD}' is not a build number."
             exit 1
           fi
-          TAG="${PART}-${BUILD}"
-          case "${PART}" in
-            plugin) prefix='plugin-' loader='paper' jar='^taerra-paper-build-[0-9]+-[0-9a-f]+\.jar$' part='Paper' ;;
-            mod) prefix='mod-' loader='fabric' jar='^taerra-fabric-build-[0-9]+-[0-9a-f]+\.jar$' part='Fabric' ;;
-          esac
-
-          gh release download "${TAG}" --repo "${GITHUB_REPOSITORY}" --dir dist --pattern '*.jar'
-          file="$(find dist -maxdepth 1 -name '*.jar' -printf '%f\n' | grep -E "${jar}" | head -n 1 || true)"
-          if [ -z "${file}" ]; then
-            echo "::error::The ${TAG} release has no ${part} jar."
+          if [ "${PART}" = 'newest' ] && [ -n "${BUILD}" ]; then
+            echo "::error::A build number needs plugin or mod, not newest."
             exit 1
           fi
-          version="${file%.jar}"
-          version="${version#*-build-}"
-          minecraft="$(sed -nE 's/^minecraft = "([^"]+)"$/\1/p' gradle/libs.versions.toml)"
 
           modrinth() {
             curl --silent --show-error --fail-with-body --retry 3 --max-time 120 \
@@ -98,90 +87,151 @@ jobs:
           api='https://api.modrinth.com/v2'
           project="$(modrinth "${api}/project/${SLUG}")"
           id="$(jq -r '.id' <<< "${project}")"
+          mkdir results
 
-          versions="$(modrinth --get "${api}/project/${id}/version" --data-urlencode "loaders=[\"${loader}\"]")"
-          name="TAERRA Build ${BUILD} for ${part}"
-          existing="$(jq -c --arg version "${version}" 'map(select(.version_number == $version)) | first // empty' \
-            <<< "${versions}")"
-          if [ -n "${existing}" ]; then
-            uploaded="$(jq -r '.id' <<< "${existing}")"
-            changelog="$(jq -r '.changelog' <<< "${existing}")"
-            new=false
-            echo "${name} (${version}) is already on Modrinth."
-          else
-            # The notes cover everything since this loader's newest version on Modrinth, whose number ends in its commit.
-            previous="$(jq -r 'max_by(.date_published).version_number // empty' <<< "${versions}")"
-            if [ -n "${previous}" ] && git cat-file -e "${previous##*-}^{commit}" 2>/dev/null; then
-              changelog="$(AUDIENCE=players .github/actions/github-release/release-notes.sh \
-                "${prefix}" "${TAG}" "${previous##*-}")"
+          release() {
+            local part="$1" build="$2"
+            local TAG="${part}-${build}"
+            case "${part}" in
+              plugin) prefix='plugin-' loader='paper' jar='^taerra-paper-build-[0-9]+-[0-9a-f]+\.jar$' label='Paper' ;;
+              mod) prefix='mod-' loader='fabric' jar='^taerra-fabric-build-[0-9]+-[0-9a-f]+\.jar$' label='Fabric' ;;
+            esac
+
+            git checkout --quiet --detach "${TAG}"
+            gh release download "${TAG}" --repo "${GITHUB_REPOSITORY}" --dir "dist/${part}" --pattern '*.jar'
+            file="$(find "dist/${part}" -maxdepth 1 -name '*.jar' -printf '%f\n' | grep -E "${jar}" | head -n 1 || true)"
+            if [ -z "${file}" ]; then
+              echo "::error::The ${TAG} release has no ${label} jar."
+              return 1
+            fi
+            version="${file%.jar}"
+            version="${version#*-build-}"
+            minecraft="$(sed -nE 's/^minecraft = "([^"]+)"$/\1/p' gradle/libs.versions.toml)"
+
+            versions="$(modrinth --get "${api}/project/${id}/version" --data-urlencode "loaders=[\"${loader}\"]")"
+            name="TAERRA Build ${build} for ${label}"
+            existing="$(jq -c --arg version "${version}" 'map(select(.version_number == $version)) | first // empty' \
+              <<< "${versions}")"
+            if [ -n "${existing}" ]; then
+              uploaded="$(jq -r '.id' <<< "${existing}")"
+              changelog="$(jq -r '.changelog' <<< "${existing}")"
+              new=false
+              echo "${name} (${version}) is already on Modrinth."
             else
-              changelog='The first release on Modrinth.'
+              # The notes cover everything since this loader's newest version on Modrinth, whose number ends in its commit.
+              previous="$(jq -r 'max_by(.date_published).version_number // empty' <<< "${versions}")"
+              if [ -n "${previous}" ] && git cat-file -e "${previous##*-}^{commit}" 2>/dev/null; then
+                changelog="$(AUDIENCE=players .github/actions/github-release/release-notes.sh \
+                  "${prefix}" "${TAG}" "${previous##*-}")"
+              else
+                changelog='The first release on Modrinth.'
+              fi
+
+              dependencies='[]'
+              if [ "${loader}" = 'fabric' ]; then
+                dependencies="$(jq -nc \
+                  --arg api "$(modrinth "${api}/project/fabric-api" | jq -r '.id')" \
+                  --arg menu "$(modrinth "${api}/project/modmenu" | jq -r '.id')" \
+                  '[{project_id: $api, dependency_type: "required"}, {project_id: $menu, dependency_type: "optional"}]')"
+              fi
+
+              jq -n --arg name "${name}" --arg version "${version}" --arg changelog "${changelog}" \
+                --argjson dependencies "${dependencies}" --arg minecraft "${minecraft}" --arg channel "${CHANNEL}" \
+                --arg loader "${loader}" --arg project "${id}" '{
+                  name: $name,
+                  version_number: $version,
+                  changelog: $changelog,
+                  dependencies: $dependencies,
+                  game_versions: [$minecraft],
+                  version_type: $channel,
+                  loaders: [$loader],
+                  featured: ($channel == "release"),
+                  project_id: $project,
+                  file_parts: ["file"],
+                  primary_file: "file"
+                }' > "dist/${part}.json"
+              uploaded="$(modrinth --form "data=<dist/${part}.json;type=application/json" \
+                --form "file=@dist/${part}/${file}" "${api}/version" | jq -r '.id')"
+              new=true
+              echo "Published ${name} (${version}, ${CHANNEL})."
             fi
+            url="https://modrinth.com/project/${SLUG}/version/${uploaded}"
+            echo "${url}"
 
-            dependencies='[]'
-            if [ "${loader}" = 'fabric' ]; then
-              dependencies="$(jq -nc \
-                --arg api "$(modrinth "${api}/project/fabric-api" | jq -r '.id')" \
-                --arg menu "$(modrinth "${api}/project/modmenu" | jq -r '.id')" \
-                '[{project_id: $api, dependency_type: "required"}, {project_id: $menu, dependency_type: "optional"}]')"
+            mirror="https://taerra.dev/download/#${TAG}"
+            links="📥 [Download on Modrinth](${url}) or [on taerra.dev](${mirror})"
+            case "$(jq -r '.status' <<< "${project}")" in
+              approved | archived | unlisted) ;;
+              *)
+                url="${mirror}"
+                links="📥 [Download on taerra.dev](${mirror})"
+                ;;
+            esac
+
+            title="${name} is out"
+            if [ "${CHANNEL}" != 'release' ]; then
+              title="${name} (${CHANNEL})"
             fi
+            jq -n --arg part "${part}" --argjson build "${build}" --argjson new "${new}" --arg title "${title}" \
+              --arg url "${url}" --arg icon "$(jq -r '.icon_url // empty' <<< "${project}")" \
+              --arg description "$(printf '%s\n\n%s\n' "${changelog}" "${links}")" \
+              '{part: $part, build: $build, new: $new, title: $title, url: $url, icon: $icon, description: $description}' \
+              > "results/${part}.json"
+          }
 
-            jq -n --arg name "${name}" --arg version "${version}" --arg changelog "${changelog}" \
-              --argjson dependencies "${dependencies}" --arg minecraft "${minecraft}" --arg channel "${CHANNEL}" \
-              --arg loader "${loader}" --arg project "${id}" '{
-                name: $name,
-                version_number: $version,
-                changelog: $changelog,
-                dependencies: $dependencies,
-                game_versions: [$minecraft],
-                version_type: $channel,
-                loaders: [$loader],
-                featured: ($channel == "release"),
-                project_id: $project,
-                file_parts: ["file"],
-                primary_file: "file"
-              }' > data.json
-            uploaded="$(modrinth --form 'data=<data.json;type=application/json' --form "file=@dist/${file}" \
-              "${api}/version" | jq -r '.id')"
-            new=true
-            echo "Published ${name} (${version}, ${CHANNEL})."
-          fi
-          url="https://modrinth.com/project/${SLUG}/version/${uploaded}"
-          echo "${url}"
-
-          mirror="https://taerra.dev/download/#${PART}-${BUILD}"
-          links="📥 [Download on Modrinth](${url}) or [on taerra.dev](${mirror})"
-          case "$(jq -r '.status' <<< "${project}")" in
-            approved | archived | unlisted) ;;
-            *)
-              url="${mirror}"
-              links="📥 [Download on taerra.dev](${mirror})"
-              ;;
+          case "${PART}" in
+            newest) parts=(plugin mod) ;;
+            *) parts=("${PART}") ;;
           esac
+          failed=()
+          for part in "${parts[@]}"; do
+            build="${BUILD}"
+            if [ -z "${build}" ]; then
+              build="$(gh release list --repo "${GITHUB_REPOSITORY}" --limit 1000 --json tagName --jq '.[].tagName' \
+                | sed -nE "s/^${part}-([0-9]+)$/\1/p" | sort -n | tail -n 1)"
+            fi
+            if [ -z "${build}" ]; then
+              echo "::error::There is no ${part} release."
+              failed+=("${part}")
+              continue
+            fi
+            # Released means mirrored: a build on Modrinth without its modrinth.json still gets mirrored and announced.
+            if [ "${PART}" = 'newest' ] && [ -n "$(gh release view "${part}-${build}" --repo "${GITHUB_REPOSITORY}" \
+              --json assets --jq '.assets[].name | select(. == "modrinth.json")')" ]; then
+              echo "${part}-${build}, the newest ${part} build, is already released."
+              continue
+            fi
+            set +e
+            (set -e && release "${part}" "${build}")
+            status=$?
+            set -e
+            if [ "${status}" -ne 0 ]; then
+              echo "::error::Publishing ${part}-${build} failed."
+              failed+=("${part}")
+            fi
+          done
 
-          title="${name} is out"
-          if [ "${CHANNEL}" != 'release' ]; then
-            title="${name} (${CHANNEL})"
-          fi
-          delimiter="EOF-$(openssl rand -hex 8)"
+          shopt -s nullglob
           {
-            echo "uploaded=${new}"
-            echo "title=${title}"
-            echo "url=${url}"
-            echo "icon=$(jq -r '.icon_url // empty' <<< "${project}")"
-            echo "description<<${delimiter}"
-            printf '%s\n\n%s\n' "${changelog}" "${links}"
-            echo "${delimiter}"
+            echo "targets=$(jq -sc 'map({part, build})' results/*.json /dev/null)"
+            echo "central=$(jq -r 'select(.part == "plugin" and .new) | .build' results/*.json /dev/null)"
+            echo "announcements=$(jq -sc 'map({key: .part, value: .}) | from_entries' results/*.json /dev/null)"
           } >> "$GITHUB_OUTPUT"
+          if [ -z "$(ls results)" ] && [ "${#failed[@]}" -eq 0 ]; then
+            echo "::notice::Nothing new to release."
+          fi
+          if [ "${#failed[@]}" -gt 0 ]; then
+            exit 1
+          fi
 
   central:
     name: 🏛️ Maven Central
     needs: publish
-    if: inputs.part == 'plugin' && needs.publish.outputs.uploaded == 'true'
+    if: ${{ !cancelled() && needs.publish.outputs.central != '' }}
     uses: ./.github/workflows/build.yml
     with:
-      ref: plugin-${{ inputs.build }}
-      build-number: ${{ format('{0}', inputs.build) }}
+      ref: plugin-${{ needs.publish.outputs.central }}
+      build-number: ${{ needs.publish.outputs.central }}
       central: true
     secrets:
       CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
@@ -192,27 +242,47 @@ jobs:
   downloads:
     name: 📥 Mirror on taerra.dev
     needs: publish
+    if: ${{ !cancelled() && startsWith(needs.publish.outputs.targets, '[{') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.publish.outputs.targets) }}
     permissions:
       contents: write
       pages: write
       id-token: write
     uses: ./.github/workflows/downloads.yml
     with:
-      part: ${{ inputs.part }}
-      build: ${{ fromJSON(inputs.build) }}
+      part: ${{ matrix.part }}
+      build: ${{ matrix.build }}
+      skip-site: true
     secrets:
       MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
 
+  site:
+    name: 🌐 Website
+    needs: [ publish, downloads ]
+    if: ${{ !cancelled() && startsWith(needs.publish.outputs.targets, '[{') }}
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/site.yml
+
   announce:
     name: 💬 Announce on Discord
-    needs: [ publish, downloads ]
-    if: inputs.announce
+    needs: [ publish, site ]
+    if: ${{ !cancelled() && inputs.announce && needs.site.result == 'success' && startsWith(needs.publish.outputs.targets, '[{') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.publish.outputs.targets) }}
     uses: ./.github/workflows/notify-discord.yml
     with:
-      title: ${{ needs.publish.outputs.title }}
-      url: ${{ needs.publish.outputs.url }}
-      description: ${{ needs.publish.outputs.description }}
-      icon: ${{ needs.publish.outputs.icon }}
+      title: ${{ fromJSON(needs.publish.outputs.announcements)[matrix.part].title }}
+      url: ${{ fromJSON(needs.publish.outputs.announcements)[matrix.part].url }}
+      description: ${{ fromJSON(needs.publish.outputs.announcements)[matrix.part].description }}
+      icon: ${{ fromJSON(needs.publish.outputs.announcements)[matrix.part].icon }}
     secrets:
       WEBHOOK_ID: ${{ secrets.DISCORD_WEBHOOK_ID }}
       WEBHOOK_TOKEN: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
