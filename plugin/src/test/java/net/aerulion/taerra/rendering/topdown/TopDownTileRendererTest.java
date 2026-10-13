@@ -2,6 +2,8 @@ package net.aerulion.taerra.rendering.topdown;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.image.BufferedImage;
@@ -15,6 +17,7 @@ import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsBuilder;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
 import net.aerulion.taerra.rendering.style.Lighting;
+import net.aerulion.taerra.rendering.tile.PickBuffer;
 import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -320,28 +323,12 @@ class TopDownTileRendererTest {
                 new TopDownTileRendererImpl(COLORS).render(source, 0, 0, TILE_SIZE).pick())
             .encode();
 
-    assertEquals(1, encoded[15], "one stored value per block");
-    final int originHeight =
-        ((encoded[11] & 0xFF) << 24)
-            | ((encoded[12] & 0xFF) << 16)
-            | ((encoded[13] & 0xFF) << 8)
-            | (encoded[14] & 0xFF);
-    final java.util.zip.@NotNull Inflater inflater = new java.util.zip.Inflater();
-    inflater.setInput(encoded, 16, encoded.length - 16);
-    final byte @NotNull [] planes = new byte[TILE_SIZE * TILE_SIZE * 4];
-    inflater.inflate(planes);
-    inflater.end();
-
-    final java.util.function.@NotNull IntUnaryOperator plane =
-        offset -> ((planes[offset] & 0xFF) << 8) | (planes[offset + 1] & 0xFF);
-    final int pixels = TILE_SIZE * TILE_SIZE;
-    assertEquals(
-        GROUND_Y + 7,
-        originHeight + plane.applyAsInt((pixels + 5 * TILE_SIZE + 3) * 2),
-        "the raised column");
-    assertEquals(GROUND_Y, originHeight + plane.applyAsInt((pixels) * 2), "plain ground");
-    assertEquals(
-        0xFFFF, plane.applyAsInt((9 * TILE_SIZE + 9) * 2), "an empty column has no height");
+    final @Nullable PickBuffer decoded = PickBuffer.decode(encoded);
+    assertNotNull(decoded);
+    assertEquals(1, decoded.scale(), "one stored value per block");
+    assertEquals(GROUND_Y + 7, decoded.cell(3, 5)[1], "the raised column");
+    assertEquals(GROUND_Y, decoded.cell(0, 0)[1], "plain ground");
+    assertNull(decoded.cell(9, 9), "an empty column has no height");
   }
 
   @FunctionalInterface

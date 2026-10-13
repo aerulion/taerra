@@ -209,6 +209,10 @@ final class IsoRenderPass {
         this.pickDepth == null || this.pickHeight == null
             ? null
             : new PickBuffer(
-                this.size, this.pickDepth, this.pickHeight, PickBuffer.ISOMETRIC_SCALE));
+                this.size,
+                this.pickDepth,
+                this.pickHeight,
+                PickBuffer.ISOMETRIC_SCALE,
+                PickBuffer.ISOMETRIC_DEPTH_PER_HEIGHT));
   }
 }

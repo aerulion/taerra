@@ -10,7 +10,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.zip.Inflater;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.rendering.color.BlockColors;
 import net.aerulion.taerra.rendering.color.MapColorResolver;
@@ -237,9 +236,59 @@ class IsoPickBufferTest {
     depth[1] = 0x20000;
     assertNull(new PickBuffer(size, depth, height).encode());
 
-    depth[1] = PickBuffer.NO_VALUE - 1;
+    depth[1] = PickBuffer.MAX_SPAN;
     assertNotNull(
         new PickBuffer(size, depth, height).encode(), "a span that just fits should be kept");
+  }
+
+  @Test
+  @DisplayName("every value survives the round trip, in narrow and wide spans")
+  void roundTripIsExact() throws Exception {
+    final int size = 32;
+    final @NotNull java.util.Random random = new java.util.Random(7);
+    for (final int span : new int[] {40, 300, PickBuffer.MAX_SPAN}) {
+      final int @NotNull [] depth = new int[size * size];
+      final int @NotNull [] height = new int[size * size];
+      for (int index = 0; index < depth.length; index++) {
+        height[index] = -64 + random.nextInt(Math.min(span, 384));
+        depth[index] =
+            random.nextInt(6) == 0
+                ? PickBuffer.UNPAINTED
+                : 1_000_000 + 2 * height[index] + random.nextInt(Math.max(8, span - 768));
+      }
+      final @NotNull PickBuffer original =
+          new PickBuffer(size, depth, height, 2, PickBuffer.ISOMETRIC_DEPTH_PER_HEIGHT);
+      final @Nullable PickBuffer decoded = PickBuffer.decode(assertNotNullBytes(original.encode()));
+      assertNotNull(decoded);
+      for (int y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+          assertTrue(
+              Arrays.equals(original.cell(x, y), decoded.cell(x, y)),
+              "span " + span + " at " + x + "," + y);
+        }
+      }
+    }
+  }
+
+  @Test
+  @DisplayName("a buffer stored in the previous format decodes to the same cells")
+  void legacyBufferDecodes() throws Exception {
+    final @NotNull ByteArrayOutputStream raw = new ByteArrayOutputStream();
+    raw.write(new byte[] {'P', 'M', 'P', 'K', 2, 0, 4, 0, 0, 0, 10, 0, 0, 0, 60, 2});
+    try (final java.util.zip.@NotNull DeflaterOutputStream planes =
+        new java.util.zip.DeflaterOutputStream(raw)) {
+      planes.write(new byte[] {0, 0, 0, 1, (byte) 0xFF, (byte) 0xFF, 0, 3, 0, 5, 0, 6, 0, 0, 0, 8});
+    }
+    final @Nullable PickBuffer decoded = PickBuffer.decode(raw.toByteArray());
+    assertNotNull(decoded);
+    assertTrue(Arrays.equals(new int[] {10, 65}, decoded.cell(0, 1)));
+    assertTrue(Arrays.equals(new int[] {11, 66}, decoded.cell(3, 0)));
+    assertTrue(Arrays.equals(new int[] {13, 68}, decoded.cell(2, 2)));
+    assertNull(decoded.cell(0, 2), "an unpainted cell");
+    final @Nullable PickBuffer upgraded = PickBuffer.decode(assertNotNullBytes(decoded.encode()));
+    assertNotNull(upgraded);
+    assertTrue(Arrays.equals(new int[] {13, 68}, upgraded.cell(2, 2)));
+    assertNull(upgraded.cell(0, 2));
   }
 
   @Test
@@ -255,47 +304,17 @@ class IsoPickBufferTest {
     assertNull(without.pick());
   }
 
-  private record Decoded(int size, int scale, int originDepth, int originHeight, int[] values) {
+  private record Decoded(@NotNull PickBuffer buffer) {
 
-    static @NotNull Decoded of(final byte @NotNull [] encoded) throws Exception {
-      assertEquals('P', encoded[0]);
-      assertEquals('M', encoded[1]);
-      assertEquals('P', encoded[2]);
-      assertEquals('K', encoded[3]);
+    static @NotNull Decoded of(final byte @NotNull [] encoded) {
       assertEquals(PickBuffer.FORMAT_VERSION, encoded[4]);
-      final int size = ((encoded[5] & 0xFF) << 8) | (encoded[6] & 0xFF);
-      final int originDepth = readInt(encoded, 7);
-      final int originHeight = readInt(encoded, 11);
-      final int scale = encoded[15];
-      final int stored = size / scale;
-
-      final @NotNull Inflater inflater = new Inflater();
-      inflater.setInput(encoded, PickBuffer.HEADER_BYTES, encoded.length - PickBuffer.HEADER_BYTES);
-      final @NotNull ByteArrayOutputStream out = new ByteArrayOutputStream();
-      final byte @NotNull [] chunk = new byte[8192];
-      while (!inflater.finished()) {
-        final int read = inflater.inflate(chunk);
-        if (read == 0 && inflater.needsInput()) {
-          break;
-        }
-        out.write(chunk, 0, read);
-      }
-      inflater.end();
-
-      final byte @NotNull [] planes = out.toByteArray();
-      assertEquals(stored * stored * 4, planes.length, "both planes should survive the round trip");
-      final int @NotNull [] values = new int[stored * stored * 2];
-      for (int index = 0; index < values.length; index++) {
-        values[index] = ((planes[index * 2] & 0xFF) << 8) | (planes[index * 2 + 1] & 0xFF);
-      }
-      return new Decoded(size, scale, originDepth, originHeight, values);
+      final @Nullable PickBuffer buffer = PickBuffer.decode(encoded);
+      assertNotNull(buffer, "an encoded buffer should decode");
+      return new Decoded(buffer);
     }
 
-    private static int readInt(final byte @NotNull [] data, final int offset) {
-      return ((data[offset] & 0xFF) << 24)
-          | ((data[offset + 1] & 0xFF) << 16)
-          | ((data[offset + 2] & 0xFF) << 8)
-          | (data[offset + 3] & 0xFF);
+    int scale() {
+      return this.buffer.scale();
     }
 
     int @Nullable [] resolve(
@@ -303,15 +322,14 @@ class IsoPickBufferTest {
         final @NotNull ScreenBounds bounds,
         final int pixelX,
         final int pixelY) {
-      final int stored = this.size / this.scale;
-      final int index = pixelY / this.scale * stored + pixelX / this.scale;
-      if (this.values[index] == PickBuffer.NO_VALUE) {
+      final int @Nullable [] cell = this.buffer.cell(pixelX, pixelY);
+      if (cell == null) {
         return null;
       }
       final @NotNull IsoProjection projection = IsoTileGeometry.projection();
       final int half = projection.halfWidth();
-      final int depth = this.originDepth + this.values[index];
-      final int blockY = this.originHeight + this.values[stored * stored + index];
+      final int depth = cell[0];
+      final int blockY = cell[1];
       final long screenX = bounds.minX() + pixelX;
 
       final int higher = Math.toIntExact(Math.floorDiv(screenX + half, half));

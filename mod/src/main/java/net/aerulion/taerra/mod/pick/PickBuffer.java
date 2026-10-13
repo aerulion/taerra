@@ -6,11 +6,11 @@ import java.util.zip.Inflater;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record PickBuffer(int size, int scale, int originDepth, int originHeight, char[] planes) {
+public record PickBuffer(int size, int scale, int[] depths, int[] heights) {
 
-  private static final int HEADER_BYTES = 16;
-  private static final int FORMAT_VERSION = 2;
-  private static final char NO_VALUE = 0xFFFF;
+  private static final int HEADER_BYTES = 18;
+  private static final int FORMAT_VERSION = 3;
+  private static final int EMPTY = Integer.MIN_VALUE;
 
   public static @Nullable PickBuffer decode(final byte @NotNull [] raw) {
     if (raw.length < HEADER_BYTES
@@ -21,16 +21,21 @@ public record PickBuffer(int size, int scale, int originDepth, int originHeight,
         || raw[4] != FORMAT_VERSION) {
       return null;
     }
-    final int size = ((raw[5] & 0xFF) << 8) | (raw[6] & 0xFF);
+    final int size = readShort(raw, 5);
     final int scale = raw[15] & 0xFF;
-    if (scale == 0 || size % scale != 0) {
+    final int depthPerHeight = raw[16] & 0xFF;
+    final int width = raw[17] & 0xFF;
+    if (scale == 0 || size % scale != 0 || (width != 1 && width != 2)) {
       return null;
     }
     final int stored = size / scale;
-    final byte @NotNull [] planes;
+    final int cells = stored * stored;
+    final int maskBytes = (cells + 7) / 8;
+    final byte @NotNull [] body;
     try (final @NotNull Inflater inflater = new Inflater()) {
       inflater.setInput(raw, HEADER_BYTES, raw.length - HEADER_BYTES);
-      final @NotNull ByteArrayOutputStream out = new ByteArrayOutputStream(stored * stored * 4);
+      final @NotNull ByteArrayOutputStream out =
+          new ByteArrayOutputStream(maskBytes + cells * width * 2);
       final byte @NotNull [] chunk = new byte[8192];
       while (!inflater.finished()) {
         final int read = inflater.inflate(chunk);
@@ -39,18 +44,47 @@ public record PickBuffer(int size, int scale, int originDepth, int originHeight,
         }
         out.write(chunk, 0, read);
       }
-      planes = out.toByteArray();
+      body = out.toByteArray();
     } catch (final DataFormatException e) {
       return null;
     }
-    if (planes.length < stored * stored * 4) {
+    if (body.length < maskBytes + cells * width * 2) {
       return null;
     }
-    final char @NotNull [] values = new char[stored * stored * 2];
-    for (int i = 0; i < values.length; i++) {
-      values[i] = (char) (((planes[i * 2] & 0xFF) << 8) | (planes[i * 2 + 1] & 0xFF));
+    final int originDepth = readInt(raw, 7);
+    final int originHeight = readInt(raw, 11);
+    final int wrap = (1 << 8 * width) - 1;
+    final int @NotNull [] depths = new int[cells];
+    final int @NotNull [] heights = new int[cells];
+    int height = 0;
+    for (int cell = 0; cell < cells; cell++) {
+      final int depth =
+          ((cell >= stored ? depths[cell - stored] : 0)
+                  + readValue(body, maskBytes + cell * width, width))
+              & wrap;
+      height =
+          ((cell % stored > 0 ? height : 0)
+                  + readValue(body, maskBytes + (cells + cell) * width, width))
+              & wrap;
+      depths[cell] = depth;
+      heights[cell] = height;
     }
-    return new PickBuffer(size, scale, readInt(raw, 7), readInt(raw, 11), values);
+    for (int cell = 0; cell < cells; cell++) {
+      heights[cell] += originHeight;
+      depths[cell] =
+          (body[cell >> 3] & 0x80 >>> (cell & 7)) != 0
+              ? EMPTY
+              : originDepth + depths[cell] + depthPerHeight * heights[cell];
+    }
+    return new PickBuffer(size, scale, depths, heights);
+  }
+
+  private static int readValue(final byte @NotNull [] raw, final int offset, final int width) {
+    return width == 1 ? raw[offset] & 0xFF : readShort(raw, offset);
+  }
+
+  private static int readShort(final byte @NotNull [] raw, final int offset) {
+    return ((raw[offset] & 0xFF) << 8) | (raw[offset + 1] & 0xFF);
   }
 
   private static int readInt(final byte @NotNull [] raw, final int offset) {
@@ -82,12 +116,9 @@ public record PickBuffer(int size, int scale, int originDepth, int originHeight,
   public int @Nullable [] cell(final int x, final int y) {
     final int stored = this.size / this.scale;
     final int index = Math.floorDiv(y, this.scale) * stored + Math.floorDiv(x, this.scale);
-    if (x < 0 || y < 0 || x >= this.size || y >= this.size || this.planes[index] == NO_VALUE) {
+    if (x < 0 || y < 0 || x >= this.size || y >= this.size || this.depths[index] == EMPTY) {
       return null;
     }
-    return new int[] {
-      this.originDepth + this.planes[index],
-      this.originHeight + this.planes[stored * stored + index]
-    };
+    return new int[] {this.depths[index], this.heights[index]};
   }
 }

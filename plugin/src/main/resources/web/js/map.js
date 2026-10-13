@@ -71,35 +71,50 @@ class MapManager {
     }
 
     static async decodePick(raw) {
-        if (raw.length < 16 || raw[0] !== 0x50 || raw[1] !== 0x4D || raw[2] !== 0x50 || raw[3] !== 0x4B ||
-            raw[4] !== 2) {
+        if (raw.length < 18 || raw[0] !== 0x50 || raw[1] !== 0x4D || raw[2] !== 0x50 || raw[3] !== 0x4B ||
+            raw[4] !== 3) {
             return null;
         }
-        const header = new DataView(raw.buffer, raw.byteOffset, 16);
+        const header = new DataView(raw.buffer, raw.byteOffset, 18);
         const size = header.getUint16(5);
         const scale = raw[15];
+        const depthPerHeight = raw[16];
+        const width = raw[17];
         const stored = size / scale;
-        const stream = new Blob([raw.subarray(16)]).stream().pipeThrough(new DecompressionStream('deflate'));
-        const planes = new DataView(await new Response(stream).arrayBuffer());
-        if (planes.byteLength < stored * stored * 4) {
+        const cells = stored * stored;
+        const maskBytes = Math.ceil(cells / 8);
+        const stream = new Blob([raw.subarray(18)]).stream().pipeThrough(new DecompressionStream('deflate'));
+        const body = new Uint8Array(await new Response(stream).arrayBuffer());
+        if (body.length < maskBytes + cells * width * 2) {
             return null;
         }
-        return {
-            size, scale, stored, originDepth: header.getInt32(7), originHeight: header.getInt32(11), planes,
-            pixels: stored * stored
-        };
+        const read = offset => width === 1 ? body[offset] : body[offset] << 8 | body[offset + 1];
+        const wrap = width === 1 ? 0xFF : 0xFFFF;
+        const originDepth = header.getInt32(7);
+        const originHeight = header.getInt32(11);
+        const depths = new Int32Array(cells);
+        const heights = new Int32Array(cells);
+        const empty = new Uint8Array(cells);
+        let height = 0;
+        for (let cell = 0; cell < cells; cell++) {
+            depths[cell] = ((cell >= stored ? depths[cell - stored] : 0) + read(maskBytes + cell * width)) & wrap;
+            height = ((cell % stored > 0 ? height : 0) + read(maskBytes + (cells + cell) * width)) & wrap;
+            heights[cell] = height;
+        }
+        for (let cell = 0; cell < cells; cell++) {
+            heights[cell] += originHeight;
+            depths[cell] += originDepth + depthPerHeight * heights[cell];
+            empty[cell] = body[cell >> 3] & (0x80 >>> (cell & 7));
+        }
+        return {size, scale, stored, depths, heights, empty};
     }
 
     static pickCell(buffer, localX, localY) {
         const index = Math.floor(localY / buffer.scale) * buffer.stored + Math.floor(localX / buffer.scale);
-        const depthOffset = buffer.planes.getUint16(index * 2);
-        if (depthOffset === 0xFFFF) {
+        if (buffer.empty[index]) {
             return null;
         }
-        return {
-            depth: buffer.originDepth + depthOffset,
-            height: buffer.originHeight + buffer.planes.getUint16((buffer.pixels + index) * 2)
-        };
+        return {depth: buffer.depths[index], height: buffer.heights[index]};
     }
 
     screenBearing(yaw) {

@@ -12,29 +12,38 @@ import org.junit.jupiter.api.Test;
 
 class PickBufferTest {
 
-  private static byte[] encode(final int @NotNull [] depths, final int @NotNull [] heights)
-      throws Exception {
+  private static byte[] encode() throws Exception {
     final @NotNull ByteArrayOutputStream out = new ByteArrayOutputStream();
-    out.write(new byte[] {'P', 'M', 'P', 'K', 2, 0, 4, 0, 0, 0, 10, 0, 0, 0, 60, 2});
-    final @NotNull ByteArrayOutputStream planes = new ByteArrayOutputStream();
-    for (final int depth : depths) {
-      planes.write(depth >> 8);
-      planes.write(depth);
-    }
-    for (final int height : heights) {
-      planes.write(height >> 8);
-      planes.write(height);
-    }
+    out.write(
+        new byte[] {
+          'P',
+          'M',
+          'P',
+          'K',
+          3,
+          0,
+          4,
+          (byte) 0xFF,
+          (byte) 0xFF,
+          (byte) 0xFF,
+          (byte) 0x85,
+          0,
+          0,
+          0,
+          60,
+          2,
+          2,
+          1
+        });
     try (final @NotNull DeflaterOutputStream compressed = new DeflaterOutputStream(out)) {
-      compressed.write(planes.toByteArray());
+      compressed.write(new byte[] {0x20, 3, 2, 0, (byte) 0xFE, 5, 1, 0, 8});
     }
     return out.toByteArray();
   }
 
   @Test
   void decodesTheOffsetsFromTheOrigin() throws Exception {
-    final @Nullable PickBuffer buffer =
-        PickBuffer.decode(encode(new int[] {0, 1, 0xFFFF, 3}, new int[] {5, 6, 0, 8}));
+    final @Nullable PickBuffer buffer = PickBuffer.decode(encode());
     assertNotNull(buffer);
     assertArrayEquals(new int[] {10, 65}, buffer.cell(0, 1));
     assertArrayEquals(new int[] {11, 66}, buffer.cell(3, 0));

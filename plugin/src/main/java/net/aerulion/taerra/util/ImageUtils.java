@@ -29,7 +29,9 @@ public final class ImageUtils {
     (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'
   };
 
-  private static final int PNG_DEFLATE_LEVEL = 4;
+  private static final int PNG_DEFLATE_LEVEL = 5;
+
+  private static final int CHANNELS = 4;
 
   private static final int LINEAR_MAX = 0xFFFF;
   private static final int @NotNull [] TO_LINEAR = new int[256];
@@ -95,11 +97,14 @@ public final class ImageUtils {
 
   public static byte @NotNull [] encodePNG(final @NotNull BufferedImage image) throws IOException {
     if (image.getType() == BufferedImage.TYPE_INT_ARGB) {
-      final byte @Nullable [] indexed =
-          encodeIndexedPNG(argbPixels(image), image.getWidth(), image.getHeight());
+      final int @NotNull [] argb = argbPixels(image);
+      final int width = image.getWidth();
+      final int height = image.getHeight();
+      final byte @Nullable [] indexed = encodeIndexedPNG(argb, width, height);
       if (indexed != null) {
         return indexed;
       }
+      return encodeTruecolorPNG(argb, width, height);
     }
     final Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("png");
     if (!writers.hasNext()) {
@@ -157,14 +162,6 @@ public final class ImageUtils {
       }
     }
 
-    final @NotNull ByteArrayOutputStream out = new ByteArrayOutputStream(8192);
-    out.writeBytes(PNG_SIGNATURE);
-    final byte @NotNull [] header = new byte[13];
-    putInt(header, 0, width);
-    putInt(header, 4, height);
-    header[8] = 8;
-    header[9] = 3;
-    writeChunk(out, "IHDR", header);
     final byte @NotNull [] rgb = new byte[colors * 3];
     final byte @NotNull [] alpha = new byte[colors];
     for (int i = 0; i < colors; i++) {
@@ -173,8 +170,47 @@ public final class ImageUtils {
       rgb[i * 3 + 2] = (byte) palette[i];
       alpha[i] = (byte) (palette[i] >>> 24);
     }
-    writeChunk(out, "PLTE", rgb);
-    if (translucent) {
+    return png(width, height, 3, scanlines, rgb, translucent ? alpha : null);
+  }
+
+  private static byte @NotNull [] encodeTruecolorPNG(
+      final int @NotNull [] argb, final int width, final int height) {
+    final byte @NotNull [] scanlines = new byte[height * (width * CHANNELS + 1)];
+    int at = 0;
+    for (int y = 0; y < height; y++) {
+      scanlines[at] = 0;
+      at++;
+      for (int x = 0; x < width; x++) {
+        final int pixel = argb[y * width + x];
+        scanlines[at] = (byte) (pixel >> 16);
+        scanlines[at + 1] = (byte) (pixel >> 8);
+        scanlines[at + 2] = (byte) pixel;
+        scanlines[at + 3] = (byte) (pixel >>> 24);
+        at += CHANNELS;
+      }
+    }
+    return png(width, height, 6, scanlines, null, null);
+  }
+
+  private static byte @NotNull [] png(
+      final int width,
+      final int height,
+      final int colorType,
+      final byte @NotNull [] scanlines,
+      final byte @Nullable [] palette,
+      final byte @Nullable [] alpha) {
+    final @NotNull ByteArrayOutputStream out = new ByteArrayOutputStream(8192);
+    out.writeBytes(PNG_SIGNATURE);
+    final byte @NotNull [] header = new byte[13];
+    putInt(header, 0, width);
+    putInt(header, 4, height);
+    header[8] = 8;
+    header[9] = (byte) colorType;
+    writeChunk(out, "IHDR", header);
+    if (palette != null) {
+      writeChunk(out, "PLTE", palette);
+    }
+    if (alpha != null) {
       writeChunk(out, "tRNS", alpha);
     }
     final @NotNull Deflater deflater = new Deflater(PNG_DEFLATE_LEVEL);

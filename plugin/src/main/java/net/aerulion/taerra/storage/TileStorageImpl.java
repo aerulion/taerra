@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.MapView;
 import net.aerulion.taerra.model.TileCoordinate;
+import net.aerulion.taerra.rendering.tile.PickBuffer;
 import net.aerulion.taerra.util.AtomicFiles;
 import net.aerulion.taerra.util.ImageUtils;
 import org.bukkit.plugin.Plugin;
@@ -229,7 +230,17 @@ public final class TileStorageImpl implements TileStorage {
       return Optional.empty();
     }
     try {
-      return Optional.of(Files.readAllBytes(file.toPath()));
+      final byte @NotNull [] data = Files.readAllBytes(file.toPath());
+      if (data.length > 4 && data[4] != PickBuffer.FORMAT_VERSION) {
+        final @Nullable PickBuffer legacy = PickBuffer.decode(data);
+        final byte @Nullable [] upgraded = legacy == null ? null : legacy.encode();
+        if (upgraded == null) {
+          return Optional.empty();
+        }
+        AtomicFiles.write(file, upgraded);
+        return Optional.of(upgraded);
+      }
+      return Optional.of(data);
     } catch (final IOException e) {
       this.plugin
           .getLogger()
