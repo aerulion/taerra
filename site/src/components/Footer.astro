@@ -10,6 +10,7 @@ import Book from '../icons/book.svg';
 import Code from '../icons/code.svg';
 import discord from '../assets/platforms/discord-white.svg';
 import {copy, links} from '../data/taerra';
+import {commitUrl} from '../data/downloads';
 
 const {header, hero, footer} = copy(Astro.currentLocale);
 const home = getRelativeLocaleUrl(Astro.currentLocale ?? 'en');
@@ -56,7 +57,12 @@ const nav = [
             <div class="fine">
                 <p>{footer.disclaimer}</p>
                 <p class="build">
-                    {footer.build} {PUBLIC_COMMIT_HASH.slice(0, 7)}
+                    {footer.build}{' '}
+                    {PUBLIC_COMMIT_HASH === 'dev' ? (
+                        PUBLIC_COMMIT_HASH
+                    ) : (
+                        <a href={commitUrl(PUBLIC_COMMIT_HASH)}>{PUBLIC_COMMIT_HASH.slice(0, 7)}</a>
+                    )}
                 </p>
             </div>
         </div>

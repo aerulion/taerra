@@ -4,8 +4,8 @@ set -euo pipefail
 
 # Usage: release-notes.sh <prefix> <tag> [previous]
 # Writes the notes for HEAD since [previous], a tag or commit, or else since the newest <prefix> tag HEAD descends from.
-# With AUDIENCE=players only features, fixes and performance are listed, without any link into the repository: the
-# notes Modrinth and Discord show, while the repository is private.
+# With AUDIENCE=players only features, fixes and performance are listed, each linking its commit by its short hash:
+# the notes Modrinth, Discord and taerra.dev show.
 
 prefix="${1:?a tag prefix is required}"
 tag="${2:?a tag is required}"
@@ -125,7 +125,9 @@ while IFS=$'\t' read -r sha name subject; do
   fi
   # Unicode, not the commit's shortcode: Modrinth and Discord embeds show shortcodes as text. The heading carries it.
   line="* ${summary}"
-  if [ "${audience}" != 'players' ]; then
+  if [ "${audience}" = 'players' ]; then
+    line="${line} ([${sha:0:7}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${sha}))"
+  else
     line="${line} by ${credit} in ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${sha}"
   fi
   entries="${entries}$(section_of "${type}")	${line}"$'\n'

@@ -17,6 +17,8 @@ import {
     latest,
     mirror,
     modrinthUrl,
+    commit,
+    commitUrl,
     parts,
     size,
     type Build,
@@ -115,6 +117,9 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
                                                 {t.minecraft} {build.minecraft.join(', ')}
                                             </span>
                                             <span>{size(build.size, lang)}</span>
+                                            <a class="commit" href={commitUrl(commit(build))}>
+                                                {commit(build)}
+                                            </a>
                                         </p>
                                     </>
                                 ) : (
@@ -191,6 +196,9 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
                                             <span>
                                                 {t.minecraft} {build.minecraft.join(', ')}
                                             </span>
+                                            <a class="commit" href={commitUrl(commit(build))}>
+                                                {commit(build)}
+                                            </a>
                                         </p>
                                         <details open={newest.has(id)}>
                                             <summary>{t.changes}</summary>
@@ -205,16 +213,28 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
                                                                 <ul>
                                                                     {block.list.map((item) => (
                                                                         <li>
-                                                                            {inline(item).map(({code, text}) =>
-                                                                                code ? <code>{text}</code> : text
+                                                                            {inline(item).map((part) =>
+                                                                                part.kind === 'code' ? (
+                                                                                    <code>{part.text}</code>
+                                                                                ) : part.kind === 'link' ? (
+                                                                                    <a href={part.href}>{part.text}</a>
+                                                                                ) : (
+                                                                                    part.text
+                                                                                )
                                                                             )}
                                                                         </li>
                                                                     ))}
                                                                 </ul>
                                                             ) : (
                                                                 <p>
-                                                                    {inline(phrase(block.text)).map(({code, text}) =>
-                                                                        code ? <code>{text}</code> : text
+                                                                    {inline(phrase(block.text)).map((part) =>
+                                                                        part.kind === 'code' ? (
+                                                                            <code>{part.text}</code>
+                                                                        ) : part.kind === 'link' ? (
+                                                                            <a href={part.href}>{part.text}</a>
+                                                                        ) : (
+                                                                            part.text
+                                                                        )
                                                                     )}
                                                                 </p>
                                                             )
@@ -483,6 +503,10 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
     .more:hover {
         color: var(--white);
         text-decoration-color: var(--accent-hi);
+    }
+
+    .commit {
+        font-family: var(--font-mono);
     }
 
     .facts {

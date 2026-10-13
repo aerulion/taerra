@@ -1,4 +1,5 @@
 import {existsSync, readFileSync} from 'node:fs';
+import {links} from './taerra';
 
 export const parts = ['plugin', 'mod'] as const;
 
@@ -50,6 +51,10 @@ export const anchor = ({part, build}: Build) => `${part}-${build}`;
 
 export const modrinthUrl = ({modrinth}: Build) => `https://modrinth.com/project/taerra/version/${modrinth}`;
 
+export const commitUrl = (hash: string) => `${links.source}/commit/${hash}`;
+
+export const commit = ({version}: Build) => version.slice(version.indexOf('-') + 1);
+
 export function changelog(markdown: string): Section[] {
     const sections: Section[] = [{blocks: []}];
     for (const raw of markdown.split('\n')) {
@@ -69,7 +74,15 @@ export function changelog(markdown: string): Section[] {
     return sections.filter((section) => section.blocks.length);
 }
 
-export const inline = (text: string) => text.split('`').map((part, i) => ({code: i % 2 === 1, text: part}));
+export const inline = (text: string) =>
+    [...text.matchAll(/`([^`]*)`|\[([^\]]+)\]\((https:\/\/[^)\s]+)\)|([^`[]+|\[)/g)].map(
+        ([, code, label, href, plain]) =>
+            code !== undefined
+                ? {kind: 'code' as const, text: code}
+                : href
+                  ? {kind: 'link' as const, text: label, href}
+                  : {kind: 'text' as const, text: plain}
+    );
 
 export function size(bytes: number, lang: string) {
     const mega = bytes >= 1_000_000;
