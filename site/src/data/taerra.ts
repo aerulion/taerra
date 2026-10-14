@@ -5,6 +5,7 @@ export const links = {
     discord: 'https://discord.taerra.dev',
     source: 'https://github.com/aerulion/taerra',
     issues: 'https://github.com/aerulion/taerra/issues',
+    contact: 'mailto:contact@taerra.dev',
     deepDive: 'https://aerulion.net/work/taerra/'
 };
 
@@ -535,6 +536,7 @@ const en = {
             demo: 'Live demo',
             discord: 'Discord',
             source: 'Source code',
+            contact: 'Contact',
             deepDive: 'Technical deep dive'
         },
         build: 'Build',

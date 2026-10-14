@@ -500,6 +500,7 @@ export const de: Copy = {
             demo: 'Live-Demo',
             discord: 'Discord',
             source: 'Quellcode',
+            contact: 'Kontakt',
             deepDive: 'Technischer Deep Dive (Englisch)'
         },
         build: 'Build',

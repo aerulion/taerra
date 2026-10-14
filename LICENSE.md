@@ -143,4 +143,4 @@ version you have obtained remains available to you under the license it was publ
 
 ---
 
-For questions and permission requests, contact the TAERRA project through <https://taerra.dev>.
+For questions and permission requests, write to <contact@taerra.dev>.
