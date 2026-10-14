@@ -127,8 +127,8 @@ Every setting can also be changed in game with `/taerra config`.
 | `taerra.web.markers` | op | Adding, editing, moving, and removing markers while logged in |
 | `taerra.web.markers.private` | op | Creating private marker groups while logged in |
 | `taerra.web.markers.personal` | everyone | Keeping waypoints only you see while logged in |
-| `taerra.web.world.<world>` | — | Seeing a private world, e.g. `taerra.web.world.minecraft.the_end` |
-| `taerra.web.layer.<layer>` | — | Seeing a private layer, e.g. `taerra.web.layer.worldguard` |
+| `taerra.web.world.<world>` | op | Seeing a private world, e.g. `taerra.web.world.minecraft.the_end` |
+| `taerra.web.layer.<layer>` | op | Seeing a private layer, e.g. `taerra.web.layer.worldguard` |
 | `taerra.hide` | nobody | Being hidden from the map |
 
 ![Requirements](https://assets.corpium.net/taerra/section-requirements.png?v=6a05f98a)

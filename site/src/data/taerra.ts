@@ -435,12 +435,12 @@ const en = {
                 },
                 {
                     permission: 'taerra.web.world.<world>',
-                    standard: '—',
+                    standard: 'op',
                     text: 'Seeing a private world, such as `taerra.web.world.minecraft.the_end`'
                 },
                 {
                     permission: 'taerra.web.layer.<layer>',
-                    standard: '—',
+                    standard: 'op',
                     text: 'Seeing a private layer, such as `taerra.web.layer.worldguard`'
                 },
                 {permission: 'taerra.hide', standard: 'nobody', text: 'Being hidden from the map'}

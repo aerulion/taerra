@@ -397,12 +397,12 @@ export const de: Copy = {
                 },
                 {
                     permission: 'taerra.web.world.<welt>',
-                    standard: '—',
+                    standard: 'OP',
                     text: 'Eine private Welt sehen, etwa `taerra.web.world.minecraft.the_end`'
                 },
                 {
                     permission: 'taerra.web.layer.<ebene>',
-                    standard: '—',
+                    standard: 'OP',
                     text: 'Eine private Ebene sehen, etwa `taerra.web.layer.worldguard`'
                 },
                 {permission: 'taerra.hide', standard: 'niemand', text: 'Von der Karte versteckt werden'}

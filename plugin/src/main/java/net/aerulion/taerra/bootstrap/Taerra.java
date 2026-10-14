@@ -171,6 +171,7 @@ public final class Taerra extends JavaPlugin {
       final @NotNull WebSettings webSettings = new WebSettings(this);
 
       TaerraPermission.registerPermissions(this);
+      configuration.registerPermissions(this);
       this.translations = Messages.registerTranslations();
 
       final @NotNull BlockDataStore blockDataStore = new BlockDataStoreImpl(getLogger());

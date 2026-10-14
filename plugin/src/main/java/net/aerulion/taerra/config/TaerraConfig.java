@@ -6,7 +6,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
 import org.jetbrains.annotations.NotNull;
 
 public record TaerraConfig(
@@ -23,6 +26,9 @@ public record TaerraConfig(
     boolean worldBordersShownByDefault,
     boolean loadedChunks,
     boolean loadedChunksShownByDefault) {
+
+  private static final @NotNull String WORLD_PERMISSION = "taerra.web.world.";
+  private static final @NotNull String LAYER_PERMISSION = "taerra.web.layer.";
 
   public static @NotNull TaerraConfig load(final @NotNull Plugin plugin) {
     plugin.saveDefaultConfig();
@@ -53,11 +59,11 @@ public record TaerraConfig(
   }
 
   public static @NotNull String worldPermission(final @NotNull String worldName) {
-    return "taerra.web.world." + worldName.replace(':', '.');
+    return WORLD_PERMISSION + worldName.replace(':', '.');
   }
 
   public static @NotNull String layerPermission(final @NotNull String layerId) {
-    return "taerra.web.layer." + layerId.replace(':', '.');
+    return LAYER_PERMISSION + layerId.replace(':', '.');
   }
 
   private static void setListed(
@@ -93,11 +99,46 @@ public record TaerraConfig(
   public synchronized void setWorldPrivate(
       final @NotNull Plugin plugin, final @NotNull String worldName, final boolean hidden) {
     setListed(plugin, "private-worlds", this.privateWorlds, worldName, hidden);
+    registerPermissions(plugin);
   }
 
   public synchronized void setLayerPrivate(
       final @NotNull Plugin plugin, final @NotNull String layerId, final boolean hidden) {
     setListed(plugin, "markers.private-layers", this.privateLayers, layerId, hidden);
+    registerPermissions(plugin);
+  }
+
+  public synchronized void registerPermissions(final @NotNull Plugin plugin) {
+    final @NotNull PluginManager manager = plugin.getServer().getPluginManager();
+    final @NotNull Set<String> nodes = webPermissions();
+    for (final @NotNull Permission permission : List.copyOf(manager.getPermissions())) {
+      final @NotNull String node = permission.getName();
+      if ((node.startsWith(WORLD_PERMISSION) || node.startsWith(LAYER_PERMISSION))
+          && !nodes.contains(node)) {
+        manager.removePermission(permission);
+      }
+    }
+    for (final @NotNull String world : this.privateWorlds) {
+      register(
+          manager,
+          worldPermission(world),
+          "Lets the user see the private world " + world + " on the web map while logged in.");
+    }
+    for (final @NotNull String layer : this.privateLayers) {
+      register(
+          manager,
+          layerPermission(layer),
+          "Lets the user see the private layer " + layer + " on the web map while logged in.");
+    }
+  }
+
+  private static void register(
+      final @NotNull PluginManager manager,
+      final @NotNull String node,
+      final @NotNull String description) {
+    if (manager.getPermission(node) == null) {
+      manager.addPermission(new Permission(node, description, PermissionDefault.OP));
+    }
   }
 
   public boolean worldEnabled(final @NotNull String worldName) {
