@@ -45,6 +45,8 @@ public final class ConfigSubCommand implements TaerraSubCommand {
     SETTINGS.put("markers.worldguard.shown-by-default", BoolArgumentType.bool());
     SETTINGS.put("markers.worldborder.enabled", BoolArgumentType.bool());
     SETTINGS.put("markers.worldborder.shown-by-default", BoolArgumentType.bool());
+    SETTINGS.put("markers.loaded-chunks.enabled", BoolArgumentType.bool());
+    SETTINGS.put("markers.loaded-chunks.shown-by-default", BoolArgumentType.bool());
   }
 
   private final @NotNull ConfigEditor editor;

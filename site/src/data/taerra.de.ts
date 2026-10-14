@@ -138,7 +138,7 @@ export const de: Copy = {
                     },
                     {
                         title: 'Private Welten und Ebenen',
-                        text: 'Verstecke eine Welt oder Ebene vor allen außer angemeldeten Spieler:innen mit der passenden Berechtigung, und lege fest, wer von der Karte aus teleportieren, Markierungen zeichnen oder rendern darf.'
+                        text: 'Verstecke eine Welt oder Ebene vor allen außer angemeldeten Spieler:innen mit der passenden Berechtigung, und lege fest, wer von der Karte aus teleportieren, Markierungen zeichnen oder rendern darf. Dein Team sieht außerdem die geladenen Chunks, eingefärbt nach Ladestufe.'
                     },
                     {
                         title: 'Rechtsklick auf jede Stelle',

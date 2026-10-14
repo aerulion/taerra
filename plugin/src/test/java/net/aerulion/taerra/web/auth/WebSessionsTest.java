@@ -279,6 +279,8 @@ class WebSessionsTest {
             true,
             false,
             true,
+            true,
+            false,
             true);
     final @NotNull Viewer staff =
         new Viewer(

@@ -189,7 +189,7 @@ const en = {
                     },
                     {
                         title: 'Private worlds and layers',
-                        text: 'Hide a world or a layer from everyone except logged-in players with the right permission, and choose who may teleport, draw markers or render from the map.'
+                        text: 'Hide a world or a layer from everyone except logged-in players with the right permission, and choose who may teleport, draw markers or render from the map. Staff can also see the loaded chunks, colored by load level.'
                     },
                     {
                         title: 'Right-click anywhere',

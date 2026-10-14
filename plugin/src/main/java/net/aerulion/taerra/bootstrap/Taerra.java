@@ -76,6 +76,7 @@ import net.aerulion.taerra.web.socket.MapWebSocketHandler;
 import net.aerulion.taerra.web.socket.MapWebSocketHandlerImpl;
 import net.aerulion.taerra.web.socket.TileUpdateBroadcaster;
 import net.aerulion.taerra.web.socket.TileUpdateBroadcasterImpl;
+import net.aerulion.taerra.world.LoadedChunkMarkers;
 import net.aerulion.taerra.world.Teleports;
 import net.kyori.adventure.translation.GlobalTranslator;
 import net.kyori.adventure.translation.Translator;
@@ -314,6 +315,9 @@ public final class Taerra extends JavaPlugin {
         WorldBorders.start(this, markers, configuration);
       }
       HiddenAreaMarkers.start(this, markers, worldLimits);
+      if (configuration.loadedChunks()) {
+        LoadedChunkMarkers.start(this, markers, configuration, worldLimits);
+      }
 
       registerCommands(
           generatorService,

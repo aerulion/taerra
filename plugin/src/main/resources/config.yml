@@ -54,7 +54,7 @@ private-worlds: [ ]
 markers:
   # Layers only logged-in viewers with taerra.web.layer.<layer> see, like taerra.web.layer.worldguard.
   # Set in game with /taerra config layer <layer> private
-  private-layers: [ ]
+  private-layers: [ chunks ]
   worldguard:
     # Show WorldGuard regions as a layer viewers can switch on (needs WorldGuard installed)
     enabled: true
@@ -63,5 +63,12 @@ markers:
   worldborder:
     # Show the vanilla world border and ChunkyBorder borders (if ChunkyBorder is installed) as a layer
     enabled: true
+    # Whether the layer is on for viewers who have not toggled it themselves
+    shown-by-default: true
+  loaded-chunks:
+    # Show loaded chunks as a layer, outlined by load level: magenta entity ticking, orange ticking,
+    # cyan loaded. It shows where players are, so it is in private-layers: only viewers with
+    # taerra.web.layer.chunks see it
+    enabled: false
     # Whether the layer is on for viewers who have not toggled it themselves
     shown-by-default: true

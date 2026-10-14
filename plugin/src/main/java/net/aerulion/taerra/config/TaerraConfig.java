@@ -20,7 +20,9 @@ public record TaerraConfig(
     boolean worldGuardRegions,
     boolean worldGuardShownByDefault,
     boolean worldBorders,
-    boolean worldBordersShownByDefault) {
+    boolean worldBordersShownByDefault,
+    boolean loadedChunks,
+    boolean loadedChunksShownByDefault) {
 
   public static @NotNull TaerraConfig load(final @NotNull Plugin plugin) {
     plugin.saveDefaultConfig();
@@ -41,7 +43,9 @@ public record TaerraConfig(
         file.getBoolean("markers.worldguard.enabled", true),
         file.getBoolean("markers.worldguard.shown-by-default", false),
         file.getBoolean("markers.worldborder.enabled", true),
-        file.getBoolean("markers.worldborder.shown-by-default", true));
+        file.getBoolean("markers.worldborder.shown-by-default", true),
+        file.getBoolean("markers.loaded-chunks.enabled", false),
+        file.getBoolean("markers.loaded-chunks.shown-by-default", true));
   }
 
   static int defaultRenderThreads(final int cores) {

@@ -56,6 +56,7 @@
   "layer.players": "Players",
   "layer.worldborder": "World border",
   "layer.worldguard": "Regions",
+  "layer.chunks": "Loaded chunks",
   "layer.waypoints": "Waypoints",
   "layer.personal": "My waypoints",
   "map.label": "Map",

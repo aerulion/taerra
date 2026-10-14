@@ -81,7 +81,7 @@ public final class HiddenAreaMarkers {
     return markers;
   }
 
-  static @NotNull List<List<long[]>> rings(final @NotNull Set<Long> chunks) {
+  public static @NotNull List<List<long[]>> rings(final @NotNull Set<Long> chunks) {
     final @NotNull Map<Long, Deque<long[]>> edges = new HashMap<>();
     for (final long chunk : chunks) {
       final int x = ChunkCoordinate.keyX(chunk);

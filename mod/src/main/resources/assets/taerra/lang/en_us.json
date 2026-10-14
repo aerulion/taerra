@@ -19,6 +19,7 @@
   "taerra.layer.personal": "My waypoints",
   "taerra.layer.worldborder": "World Border",
   "taerra.layer.worldguard": "Regions",
+  "taerra.layer.chunks": "Loaded Chunks",
   "taerra.map": "World Map",
   "taerra.map.compass": "Compass: the red tip points north",
   "taerra.map.compass.rotate": "Compass: the red tip points north. Click to turn the view clockwise",
