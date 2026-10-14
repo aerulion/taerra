@@ -4,6 +4,7 @@ import {waypointManager} from './manager.js';
 import {defaultLanguage, hashLanguage, language, LANGUAGES, numbers, setLanguage, t, translatePage} from './i18n.js';
 import {mapManager} from './map.js';
 import {navigationManager} from './navigation.js';
+import {setupOffline} from './offline.js';
 import {element, markerManager, privateIcon} from './markers.js';
 import {playerManager} from './players.js';
 import {searchPalette} from './search.js';
@@ -656,6 +657,7 @@ markerManager.onWaypoint = async (action, waypoint, button) => {
 };
 setupLanguage();
 setupPanel();
+setupOffline();
 setupViewControls();
 setupContextMenu();
 setupShortcuts();

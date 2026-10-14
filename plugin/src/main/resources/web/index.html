@@ -300,6 +300,16 @@
         <span>Z <b id="coord-z">0</b></span>
     </div>
 
+    <div aria-labelledby="offline-title" class="offline" id="offline" inert role="region">
+        <div class="offline__card">
+            <img alt="" class="offline__icon" src="images/icon.svg">
+            <h2 class="offline__title" data-i18n="offline.title" id="offline-title">Map offline</h2>
+            <p class="offline__text" data-i18n="offline.text">The connection to the server was lost. The map comes back
+                by itself once the server can be reached again.</p>
+            <p class="offline__retry" id="offline-retry" role="status"></p>
+            <button class="btn btn--primary" data-i18n="offline.now" id="offline-now" type="button">Try now</button>
+        </div>
+    </div>
 </main>
 
 <dialog aria-label="Search" class="search" data-i18n-label="search.title" id="search">

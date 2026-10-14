@@ -969,6 +969,88 @@ button {
     inset: 0;
 }
 
+.offline {
+    position: absolute;
+    inset: 0;
+    z-index: 1200;
+    display: grid;
+    place-items: center;
+    padding: var(--gap);
+    background: rgb(12 12 13 / .55);
+    backdrop-filter: grayscale(1) blur(6px) brightness(.7);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .6s ease, visibility 0s linear .6s;
+}
+
+.offline.is-shown {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .6s ease, visibility 0s;
+}
+
+.offline__card {
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+    max-width: 360px;
+    padding: 28px 24px 24px;
+    background: var(--stone-700);
+    border: var(--edge);
+    box-shadow: var(--slab-shadow);
+    text-align: center;
+    transform: translateY(12px);
+    transition: transform .6s cubic-bezier(.2, .8, .2, 1);
+}
+
+.offline.is-shown .offline__card {
+    transform: none;
+}
+
+.offline__icon {
+    width: 48px;
+    height: 48px;
+    filter: grayscale(1);
+    animation: offline-pulse 2.4s ease-in-out infinite;
+}
+
+.offline__title {
+    color: var(--white);
+    font: 700 11px/1.2 var(--font-display);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.offline__text {
+    color: var(--stone-100);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.offline__retry {
+    min-height: 1em;
+    color: var(--stone-200);
+    font: 600 12px/1 var(--font-mono);
+}
+
+@keyframes offline-pulse {
+    50% {
+        opacity: .45;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .offline,
+    .offline.is-shown,
+    .offline__card {
+        transition: none;
+    }
+
+    .offline__icon {
+        animation: none;
+    }
+}
+
 .leaflet-container {
     --void: #0b0b0c;
     background: var(--void);

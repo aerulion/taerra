@@ -90,13 +90,14 @@ class WebSocketManager {
                 this.connect();
                 return;
             }
-            this.updateStatus('disconnected', t('status.disconnected'), t('status.retry', {seconds}));
+            this.updateStatus('disconnected', t('status.disconnected'), t('status.retry', {seconds}), seconds);
             this.reconnectTimer = setTimeout(() => countdown(seconds - 1), 1000);
         };
         countdown(Math.max(1, Math.round(delay / 1000)));
     }
 
-    updateStatus(state, text, retry = '') {
+    updateStatus(state, text, retry = '', seconds = 0) {
+        this.emit('status', {state, seconds});
         document.querySelector('.status__dot').dataset.state = state;
         const status = document.getElementById('status-text');
         if (status.textContent !== text) {

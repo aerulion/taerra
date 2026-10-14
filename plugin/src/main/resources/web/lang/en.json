@@ -263,5 +263,9 @@
   "sky.night": "Night",
   "sky.rain": "Rain",
   "sky.thunder": "Thunderstorm",
-  "sky.stopped": "Time stopped"
+  "sky.stopped": "Time stopped",
+  "offline.title": "Map offline",
+  "offline.text": "The connection to the server was lost. The map comes back by itself once the server can be reached again.",
+  "offline.retry": "Trying again in {seconds}s",
+  "offline.now": "Try now"
 }

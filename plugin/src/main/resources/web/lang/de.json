@@ -263,5 +263,9 @@
   "sky.night": "Nacht",
   "sky.rain": "Regen",
   "sky.thunder": "Gewitter",
-  "sky.stopped": "Zeit angehalten"
+  "sky.stopped": "Zeit angehalten",
+  "offline.title": "Karte offline",
+  "offline.text": "Die Verbindung zum Server ist weg. Die Karte kommt von selbst zurück, sobald der Server wieder erreichbar ist.",
+  "offline.retry": "Neuer Versuch in {seconds}s",
+  "offline.now": "Jetzt versuchen"
 }
