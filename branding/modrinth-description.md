@@ -2,7 +2,7 @@
 
 **A live map of your Minecraft worlds, isometric or top-down, in the browser and in game.**
 
-TAERRA renders your server's worlds into a map anyone can open in a browser: every block is drawn as a lit, shaded cube, seen from above or at an angle from all four sides. It keeps itself up to date as the world changes, shows who is online and where, and with the optional Fabric mod, players get the same map as a minimap, and a full world map in game.
+TAERRA renders your server's worlds into a map anyone can open in a browser, drawn block by block, with sunlight and shadows, seen from above or at an angle from all four sides. It keeps itself up to date as the world changes, shows who is online and where, and with the optional Fabric mod, players get the same map as a minimap, and a full world map in game.
 
 Everything is rendered on the server. Visitors and players only download finished images, so the map is as fast on a phone as on a gaming PC.
 

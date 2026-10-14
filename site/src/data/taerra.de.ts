@@ -4,7 +4,7 @@ export const de: Copy = {
     meta: {
         title: 'TAERRA: eine Live-Karte für Minecraft-Server',
         description:
-            'Eine Live-Karte für Minecraft-Server: jeder Block ein beleuchteter Würfel, isometrisch oder von oben, gerendert auf deinem Paper-Server. Dazu eine Fabric-Mod.',
+            'Eine Live-Karte für Minecraft-Server: Block für Block, mit Sonnenlicht und Schatten, isometrisch oder von oben, gerendert auf deinem Paper-Server. Dazu eine Fabric-Mod.',
         ogImageAlt: 'Das TAERRA-Logo über der unscharfen Karte einer Minecraft-Welt'
     },
 
@@ -25,7 +25,7 @@ export const de: Copy = {
         kicker: 'Paper + Fabric',
         title: ['Deine Welt, ', 'live', ' in 3D'] as Marked,
         tagline: 'Eine Karte, gerendert auf deinem Server: im Browser und im Spiel.',
-        lede: 'TAERRA macht aus deinen Minecraft-Welten eine Live-Karte, die alle öffnen können: jeder Block ein beleuchteter, schattierter Würfel, von oben oder schräg von allen vier Seiten. Spieler:innen bekommen dieselbe Karte im Spiel, mit allem, was der Browser kann, und dazu einer Minikarte.',
+        lede: 'TAERRA macht aus deinen Minecraft-Welten eine Live-Karte, die alle öffnen können: Block für Block, mit Sonnenlicht und Schatten, von oben oder schräg von allen vier Seiten. Spieler:innen bekommen dieselbe Karte im Spiel, mit allem, was der Browser kann, und dazu einer Minikarte.',
         download: 'TAERRA holen',
         demo: 'Live ansehen',
         note: 'Kostenlos für jeden Server, auch für kommerzielle.',

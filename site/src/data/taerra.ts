@@ -55,7 +55,7 @@ const en = {
     meta: {
         title: 'TAERRA: a live map for Minecraft servers',
         description:
-            'A live map for Minecraft servers: every block a lit cube, isometric or top-down, rendered on your Paper server. With a Fabric mod for the same map in game.',
+            'A live map for Minecraft servers: block by block, with sunlight and shadows, isometric or top-down, rendered on your Paper server. With a Fabric mod for the same map in game.',
         ogImageAlt: 'The TAERRA logo over a blurred map of a Minecraft world'
     },
 
@@ -76,7 +76,7 @@ const en = {
         kicker: 'Paper + Fabric',
         title: ['Your world, ', 'live', ' in 3D'] as Marked,
         tagline: 'One map, rendered on your server: in the browser, and in game.',
-        lede: 'TAERRA turns your Minecraft worlds into a live map anyone can open: every block a lit, shaded cube, seen from above or at an angle from all four sides. Players get the same map in game, with everything the browser has and a minimap on top.',
+        lede: 'TAERRA turns your Minecraft worlds into a live map anyone can open: block by block, with sunlight and shadows, seen from above or at an angle from all four sides. Players get the same map in game, with everything the browser has and a minimap on top.',
         download: 'Get TAERRA',
         demo: 'See it live',
         note: 'Free for every server, commercial ones included.',
