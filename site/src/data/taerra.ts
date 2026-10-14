@@ -225,7 +225,7 @@ const en = {
                 kicker: 'Plays well with others',
                 title: 'Fits the plugins you already have',
                 features: [
-                    {title: 'WorldGuard', text: 'Regions as a layer viewers can switch on.'},
+                    {title: 'WorldGuard', text: 'Regions as a layer, private to staff unless you share it.'},
                     {title: 'World borders', text: 'The vanilla border and ChunkyBorder borders as a layer.'},
                     {
                         title: 'Chunky',

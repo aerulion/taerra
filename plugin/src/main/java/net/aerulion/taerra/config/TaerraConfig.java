@@ -40,12 +40,12 @@ public record TaerraConfig(
         new CopyOnWriteArrayList<>(file.getStringList("worlds")),
         new CopyOnWriteArrayList<>(file.getStringList("private-worlds")),
         new CopyOnWriteArrayList<>(file.getStringList("markers.private-layers")),
-        file.getBoolean("markers.worldguard.enabled", true),
+        file.getBoolean("markers.worldguard.enabled", false),
         file.getBoolean("markers.worldguard.shown-by-default", false),
         file.getBoolean("markers.worldborder.enabled", true),
         file.getBoolean("markers.worldborder.shown-by-default", true),
         file.getBoolean("markers.loaded-chunks.enabled", false),
-        file.getBoolean("markers.loaded-chunks.shown-by-default", true));
+        file.getBoolean("markers.loaded-chunks.shown-by-default", false));
   }
 
   static int defaultRenderThreads(final int cores) {

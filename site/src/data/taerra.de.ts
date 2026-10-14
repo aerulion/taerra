@@ -174,7 +174,10 @@ export const de: Copy = {
                 kicker: 'Verträgt sich mit anderen',
                 title: 'Passt zu den Plugins, die du schon hast',
                 features: [
-                    {title: 'WorldGuard', text: 'Regionen als Ebene, die Besucher:innen einschalten können.'},
+                    {
+                        title: 'WorldGuard',
+                        text: 'Regionen als Ebene, nur für dein Team, solange du sie nicht freigibst.'
+                    },
                     {title: 'Weltgrenzen', text: 'Die Vanilla-Grenze und ChunkyBorder-Grenzen als Ebene.'},
                     {
                         title: 'Chunky',

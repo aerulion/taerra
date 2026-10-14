@@ -56,7 +56,7 @@ If something breaks or looks wrong, please report it on [GitHub](https://github.
 
 ### Plays well with others
 
-- **WorldGuard:** regions as a layer viewers can switch on.
+- **WorldGuard:** regions as a layer, private to staff unless you share it.
 - **World borders:** the vanilla border and ChunkyBorder borders as a layer.
 - **Chunky:** while Chunky pre-generates a world, TAERRA stays out of its way, then tells you when a full render is worth starting.
 - **dynmap:** bring your existing markers over as waypoints with `/taerra import dynmap`, each marker set becoming a waypoint group.
