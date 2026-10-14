@@ -1032,6 +1032,7 @@ button {
 }
 
 .leaflet-bar a + a {
+    height: 42px;
     border-top: var(--edge);
 }
 
@@ -1122,6 +1123,167 @@ kbd {
 .compass__needle {
     shape-rendering: crispEdges;
     filter: drop-shadow(1px 1px 0 rgb(0 0 0 / .5));
+}
+
+.sky {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 5px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background: var(--stone-800);
+    border: var(--edge);
+    box-shadow: inset 2px 2px rgb(0 0 0 / .4), 0 4px 12px rgb(0 0 0 / .4);
+    cursor: pointer;
+}
+
+.sky[hidden] {
+    display: none;
+}
+
+.sky:hover {
+    background: var(--stone-700);
+}
+
+.sky-glyph {
+    flex: none;
+    filter: drop-shadow(1px 1px 0 rgb(0 0 0 / .5));
+}
+
+.sky__bar {
+    width: 24px;
+    height: 4px;
+    background: linear-gradient(var(--phase), var(--phase)) 0 0 / calc(var(--progress) * 100%) 100% no-repeat var(--stone-900);
+    --phase: var(--gold);
+}
+
+.sky__bar[data-phase="sunset"],
+.sky__bar[data-phase="sunrise"] {
+    --phase: var(--accent-hi);
+}
+
+.sky__bar[data-phase="night"] {
+    --phase: #8fa6d9;
+}
+
+.sky__bar[data-phase="stopped"] {
+    --phase: var(--stone-500);
+}
+
+.sky-menu {
+    inset: var(--sky-top) var(--sky-right) auto auto;
+    width: min(300px, calc(100vw - var(--sky-right) - var(--gap)));
+    max-height: calc(100dvh - var(--sky-top) - var(--gap));
+    margin: 0;
+    padding: 6px;
+    overflow-y: auto;
+    background: var(--stone-700);
+    border: var(--edge);
+    box-shadow: var(--slab-shadow);
+    color: var(--white);
+}
+
+.sky-menu__title {
+    padding: 8px 8px 8px;
+    color: var(--stone-200);
+    font: 700 7.5px/1 var(--font-display);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.sky-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 8px;
+    background: none;
+    border: 0;
+    color: var(--stone-100);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sky-menu__item + .sky-menu__item {
+    margin-top: 2px;
+}
+
+.sky-menu__item:hover,
+.sky-menu__item:focus-visible {
+    background: var(--stone-600);
+    color: var(--white);
+    outline: none;
+}
+
+.sky-menu__item[aria-current="true"] {
+    background: var(--stone-800);
+    box-shadow: inset 4px 0 var(--accent-hi);
+    color: var(--white);
+}
+
+.sky-menu__glyph {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    background: var(--stone-900);
+    box-shadow: inset 2px 2px rgb(0 0 0 / .4);
+}
+
+.sky-menu__text {
+    display: grid;
+    flex: 1;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 6px 8px;
+    min-width: 0;
+}
+
+.sky-menu__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sky-menu__name {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.sky-menu__time {
+    color: var(--white);
+    font: 600 15px/1 var(--font-mono);
+}
+
+.sky-menu__detail {
+    grid-column: 1 / -1;
+    color: var(--stone-200);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.sky-menu__bar {
+    grid-column: 1 / -1;
+    width: auto;
+}
+
+@media (max-height: 480px) {
+    .sky-menu__item {
+        padding: 5px 8px;
+    }
+
+    .sky-menu__glyph {
+        width: 44px;
+        height: 44px;
+    }
+
+    .sky-menu__text {
+        gap: 4px 8px;
+    }
 }
 
 .leaflet-popup-content-wrapper,

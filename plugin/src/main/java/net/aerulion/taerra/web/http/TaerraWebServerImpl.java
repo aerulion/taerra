@@ -53,6 +53,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private final @NotNull TileGeneratorService generatorService;
   private final @NotNull MarkerRegistryInternal markers;
   private final @NotNull WorldList worldList;
+  private final @NotNull SkyList skyList;
   private final @NotNull List<Routes> routes;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private @Nullable Javalin app;
@@ -86,6 +87,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     final @NotNull Requests requests = new Requests(sessions, taerraConfig);
     final @NotNull PlayerAvatars avatars = new PlayerAvatars();
     this.worldList = new WorldList(plugin, taerraConfig, generatorService, wsHandler);
+    this.skyList = new SkyList(plugin, taerraConfig, wsHandler);
     this.routes =
         List.of(
             new MapRoutes(
@@ -97,7 +99,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 markers,
                 players,
                 avatars,
-                this.worldList),
+                this.worldList,
+                this.skyList),
             new AccountRoutes(plugin, requests, sessions, web, avatars),
             new WaypointRoutes(
                 plugin, requests, taerraConfig, waypoints, personalWaypoints, waypointEditor),
@@ -160,7 +163,15 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                   20L,
                   20L);
       this.worldsTask =
-          Bukkit.getScheduler().runTaskTimer(this.plugin, this.worldList::publish, 0L, 20L);
+          Bukkit.getScheduler()
+              .runTaskTimer(
+                  this.plugin,
+                  () -> {
+                    this.worldList.publish();
+                    this.skyList.publish();
+                  },
+                  0L,
+                  20L);
 
       this.plugin.getLogger().info("Web server listening on " + host + ":" + port);
       this.plugin.getLogger().info("Open the map at http://localhost:" + port);

@@ -272,5 +272,11 @@
   "taerra.minimap.facing.4": "South",
   "taerra.minimap.facing.5": "South-West",
   "taerra.minimap.facing.6": "West",
-  "taerra.minimap.facing.7": "North-West"
+  "taerra.minimap.facing.7": "North-West",
+  "taerra.sky": "Time and weather",
+  "taerra.sky.day": "Daytime",
+  "taerra.sky.sunset": "Dusk",
+  "taerra.sky.night": "Night",
+  "taerra.sky.sunrise": "Dawn",
+  "taerra.sky.stopped": "Time stopped"
 }

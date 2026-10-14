@@ -16,6 +16,7 @@ import net.aerulion.taerra.mod.web.model.NavigationTarget;
 import net.aerulion.taerra.mod.web.model.PersonalWaypoint;
 import net.aerulion.taerra.mod.web.model.Player;
 import net.aerulion.taerra.mod.web.model.Progress;
+import net.aerulion.taerra.mod.web.model.Sky;
 import net.aerulion.taerra.mod.web.model.Waypoint;
 import net.aerulion.taerra.mod.web.model.WaypointGroup;
 import net.aerulion.taerra.mod.web.model.World;
@@ -38,6 +39,9 @@ public sealed interface WebMap permits WebMapImpl {
   World world(@Nullable String name);
 
   List<Player> players();
+
+  @Nullable
+  Sky sky(String world);
 
   @Nullable
   Player player(@Nullable String uuid);

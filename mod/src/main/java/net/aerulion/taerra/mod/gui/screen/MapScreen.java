@@ -15,6 +15,7 @@ import net.aerulion.taerra.mod.gui.widget.PanelList;
 import net.aerulion.taerra.mod.gui.widget.PlaceMenu;
 import net.aerulion.taerra.mod.gui.widget.PlayerList;
 import net.aerulion.taerra.mod.gui.widget.RenderProgressOverlay;
+import net.aerulion.taerra.mod.gui.widget.SkyButton;
 import net.aerulion.taerra.mod.gui.widget.WorldPicker;
 import net.aerulion.taerra.mod.input.TaerraKeys;
 import net.aerulion.taerra.mod.map.ChunkSelection;
@@ -104,6 +105,7 @@ public final class MapScreen extends Screen {
   private @Nullable Button playersButton;
   private @Nullable CycleButton<Boolean> scope;
   private @Nullable CompassButton compass;
+  private @Nullable SkyButton sky;
   private @Nullable IconButton zoomIn;
   private @Nullable IconButton zoomOut;
   private boolean playersOpen;
@@ -152,7 +154,7 @@ public final class MapScreen extends Screen {
     this.settings = settings;
     this.players = new PlayerList(map, settings, view::world, this::worldName, this::follow);
     this.layers = new LayerList(map);
-    this.worldPicker = new WorldPicker(map::worlds, view::world, this::pickWorld);
+    this.worldPicker = new WorldPicker(map::worlds, view::world, map::sky, this::pickWorld);
     final @Nullable MapConfig config = map.config();
     final @NotNull String current = Dimensions.current();
     final @NotNull Minecraft minecraft = Minecraft.getInstance();
@@ -504,6 +506,14 @@ public final class MapScreen extends Screen {
                       : this.view.projection(config).bearing(180) + this.view.spin();
                 },
                 () -> rotate(-1)));
+    this.sky =
+        addWidget(
+            new SkyButton(
+                () -> {
+                  final @Nullable String shown = this.view.world();
+                  return shown == null ? null : this.map.sky(shown);
+                },
+                () -> openWorlds(!this.worldPicker.isOpen())));
     this.zoomIn = addWidget(zoomButton(IconButton.PLUS, "taerra.map.zoom_in", 1));
     this.zoomOut = addWidget(zoomButton(IconButton.MINUS, "taerra.map.zoom_out", -1));
     this.layout.visitWidgets(this::addRenderableWidget);
@@ -568,6 +578,10 @@ public final class MapScreen extends Screen {
     if (this.compass != null) {
       this.compass.setPosition(
           controlsX, mapTop() + COMPASS_MARGIN + 2 * CompassButton.SIZE + COMPASS_MARGIN);
+    }
+    if (this.sky != null) {
+      this.sky.setPosition(
+          controlsX, mapTop() + COMPASS_MARGIN + 3 * CompassButton.SIZE + 2 * COMPASS_MARGIN);
     }
   }
 
@@ -1008,7 +1022,10 @@ public final class MapScreen extends Screen {
   }
 
   private boolean overCompass(final double x, final double y) {
-    return over(this.compass, x, y) || over(this.zoomIn, x, y) || over(this.zoomOut, x, y);
+    return over(this.compass, x, y)
+        || over(this.zoomIn, x, y)
+        || over(this.zoomOut, x, y)
+        || over(this.sky, x, y);
   }
 
   private static boolean over(
@@ -1120,8 +1137,12 @@ public final class MapScreen extends Screen {
       }
     }
     final boolean covered = this.menu != null && this.menu.isMouseOver(mouseX, mouseY);
+    if (this.sky != null) {
+      this.sky.sync();
+      this.sky.visible &= this.compass != null && this.compass.visible;
+    }
     for (final @Nullable AbstractWidget control :
-        new AbstractWidget[] {this.zoomIn, this.zoomOut, this.compass}) {
+        new AbstractWidget[] {this.zoomIn, this.zoomOut, this.compass, this.sky}) {
       if (control != null && control.visible) {
         control.extractRenderState(
             graphics, covered ? -1 : mouseX, covered ? -1 : mouseY, partialTick);

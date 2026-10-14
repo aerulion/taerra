@@ -2,7 +2,9 @@ package net.aerulion.taerra.mod.gui.widget;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import net.aerulion.taerra.mod.web.model.Sky;
 import net.aerulion.taerra.mod.web.model.World;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -34,8 +36,9 @@ public final class WorldPicker {
   public WorldPicker(
       final Supplier<List<World>> worlds,
       final Supplier<@Nullable String> current,
+      final Function<String, @Nullable Sky> skies,
       final Consumer<World> onPick) {
-    this.list = new WorldList(onPick);
+    this.list = new WorldList(skies, onPick);
     this.list.visible = false;
     this.worlds = worlds;
     this.current = current;

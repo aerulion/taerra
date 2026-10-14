@@ -254,5 +254,14 @@
   "manager.hidden": "Auf der Karte verborgen, klicken zum Zeigen",
   "manager.type.area": "Fläche",
   "manager.type.line": "Linie",
-  "manager.importedNone": "Nichts importiert."
+  "manager.importedNone": "Nichts importiert.",
+  "sky.title": "Zeit und Wetter",
+  "sky.count": "Tag {day}",
+  "sky.day": "Tagsüber",
+  "sky.sunrise": "Morgen",
+  "sky.sunset": "Abend",
+  "sky.night": "Nacht",
+  "sky.rain": "Regen",
+  "sky.thunder": "Gewitter",
+  "sky.stopped": "Zeit angehalten"
 }

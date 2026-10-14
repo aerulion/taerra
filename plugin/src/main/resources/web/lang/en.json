@@ -254,5 +254,14 @@
   "manager.hidden": "Hidden from the map, click to show",
   "manager.type.area": "Area",
   "manager.type.line": "Line",
-  "manager.importedNone": "Nothing imported."
+  "manager.importedNone": "Nothing imported.",
+  "sky.title": "Time and weather",
+  "sky.count": "Day {day}",
+  "sky.day": "Daytime",
+  "sky.sunrise": "Dawn",
+  "sky.sunset": "Dusk",
+  "sky.night": "Night",
+  "sky.rain": "Rain",
+  "sky.thunder": "Thunderstorm",
+  "sky.stopped": "Time stopped"
 }

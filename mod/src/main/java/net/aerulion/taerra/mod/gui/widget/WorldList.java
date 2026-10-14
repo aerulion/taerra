@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import net.aerulion.taerra.mod.web.model.Sky;
 import net.aerulion.taerra.mod.web.model.World;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -20,11 +22,14 @@ import org.jetbrains.annotations.Nullable;
 public final class WorldList extends PanelList<WorldList.Row> {
 
   private static final int ROW = 14;
+  private static final int SKY_WIDTH = 42;
 
+  private final Function<String, @Nullable Sky> skies;
   private final Consumer<World> onPick;
 
-  public WorldList(final Consumer<World> onPick) {
+  public WorldList(final Function<String, @Nullable Sky> skies, final Consumer<World> onPick) {
     super(0, ROW);
+    this.skies = skies;
     this.onPick = onPick;
   }
 
@@ -75,7 +80,17 @@ public final class WorldList extends PanelList<WorldList.Row> {
   }
 
   public int preferredWidth(final @NotNull Font font) {
-    return children().stream().mapToInt(row -> font.width(row.label())).max().orElse(0) + 28;
+    return children().stream()
+            .mapToInt(
+                row ->
+                    font.width(row.label())
+                        + (row instanceof final @NotNull Item item
+                                && this.skies.apply(item.world.name()) != null
+                            ? SKY_WIDTH
+                            : 0))
+            .max()
+            .orElse(0)
+        + 28;
   }
 
   public int preferredHeight() {
@@ -164,6 +179,26 @@ public final class WorldList extends PanelList<WorldList.Row> {
           getContentYMiddle() - 4,
           hovered ? 0xFFFFFF55 : 0xFFFFFFFF,
           true);
+      final @Nullable Sky sky = WorldList.this.skies.apply(this.world.name());
+      if (sky != null) {
+        final @NotNull Font font = Minecraft.getInstance().font;
+        final int right = getContentRight() - 4;
+        graphics.text(
+            font,
+            sky.clock(),
+            right - font.width(sky.clock()),
+            getContentYMiddle() - 4,
+            0xFFA0A0A0,
+            true);
+        SkyButton.drawGlyph(
+            graphics,
+            right - font.width(sky.clock()) - SkyButton.GLYPH - 4,
+            getContentYMiddle() - 5,
+            sky);
+        if (hovered) {
+          graphics.setTooltipForNextFrame(font, sky.describe(), mouseX, mouseY);
+        }
+      }
       if (hovered && this.world.restricted()) {
         graphics.setTooltipForNextFrame(
             Minecraft.getInstance().font, Component.translatable("taerra.private"), mouseX, mouseY);

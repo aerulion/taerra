@@ -29,6 +29,7 @@ import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.waypoint.PersonalWaypoints;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.http.Requests;
+import net.aerulion.taerra.web.http.SkyList;
 import net.aerulion.taerra.web.http.WorldList;
 import net.aerulion.taerra.web.marker.MarkerPayloadSerializer;
 import net.aerulion.taerra.web.player.PlayerAvatars;
@@ -49,6 +50,7 @@ public final class MapRoutes implements Routes {
   private final @NotNull PlayerPositionBroadcaster players;
   private final @NotNull PlayerAvatars avatars;
   private final @NotNull WorldList worldList;
+  private final @NotNull SkyList skyList;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private @NotNull String indexHtml = "";
   private @NotNull ObjectNode manifest = JsonNodeFactory.instance.objectNode();
@@ -62,7 +64,8 @@ public final class MapRoutes implements Routes {
       final @NotNull MarkerRegistryInternal markers,
       final @NotNull PlayerPositionBroadcaster players,
       final @NotNull PlayerAvatars avatars,
-      final @NotNull WorldList worldList) {
+      final @NotNull WorldList worldList,
+      final @NotNull SkyList skyList) {
     super();
     this.plugin = plugin;
     this.requests = requests;
@@ -73,6 +76,7 @@ public final class MapRoutes implements Routes {
     this.players = players;
     this.avatars = avatars;
     this.worldList = worldList;
+    this.skyList = skyList;
   }
 
   @Override
@@ -82,6 +86,7 @@ public final class MapRoutes implements Routes {
     routes.get("/api/config", this::handleConfigRequest);
     routes.get("/api/manifest.json", this::handleManifestRequest);
     routes.get("/api/worlds", this::handleWorldsRequest);
+    routes.get("/api/sky", this::handleSkyRequest);
     routes.get("/api/tiles/{world}/{zoom}/{x}/{z}.png", this::handleTileRequest);
     routes.get("/api/iso/{world}/{rotation}/{zoom}/{x}/{y}.png", this::handleIsoTileRequest);
     routes.get("/api/iso/{world}/{rotation}/{x}/{y}.pick", this::handleIsoPickRequest);
@@ -217,6 +222,12 @@ public final class MapRoutes implements Routes {
   private void handleWorldsRequest(final @NotNull Context ctx) {
     ctx.header("Cache-Control", "no-store")
         .json(this.worldList.visibleTo(this.requests.viewer(ctx)));
+  }
+
+  private void handleSkyRequest(final @NotNull Context ctx) {
+    ctx.header("Cache-Control", "no-store")
+        .contentType("application/json")
+        .result(this.skyList.visibleTo(this.requests.viewer(ctx)));
   }
 
   private void handleTileRequest(final @NotNull Context ctx) {

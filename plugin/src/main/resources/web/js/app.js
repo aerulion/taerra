@@ -7,6 +7,7 @@ import {navigationManager} from './navigation.js';
 import {element, markerManager, privateIcon} from './markers.js';
 import {playerManager} from './players.js';
 import {searchPalette} from './search.js';
+import {skyManager} from './sky.js';
 import {chunkSelection} from './selection.js';
 import {waypointEditor} from './waypoints.js';
 import {wsManager} from './websocket.js';
@@ -122,6 +123,7 @@ async function selectWorld(name) {
     chunkSelection.stop();
     mapManager.setWorld(world);
     playerManager.setWorld(world.name);
+    skyManager.setWorld(world.name);
     navigationManager.setWorld(world.name);
     wsManager.subscribe(world.name);
     void markerManager.load(world.name);
@@ -132,6 +134,14 @@ async function loadPlayers() {
         playerManager.updatePlayers(await fetchJson('/api/players'));
     } catch (error) {
         console.error('Failed to load players:', error);
+    }
+}
+
+async function loadSky() {
+    try {
+        skyManager.update(await fetchJson('/api/sky'));
+    } catch (error) {
+        console.error('Failed to load the sky:', error);
     }
 }
 
@@ -170,7 +180,7 @@ async function refreshWorlds() {
     if (!currentWorld) {
         await selectWorld(worlds[0].name);
     }
-    await loadPlayers();
+    await Promise.all([loadPlayers(), loadSky()]);
 }
 
 function placeParams(block) {
@@ -545,6 +555,8 @@ wsManager.on('disconnect', () => $('render-section').hidden = true);
 
 wsManager.on('players', (message) => playerManager.updatePlayers(message.data ?? []));
 
+wsManager.on('sky', (message) => skyManager.update(message.data));
+
 wsManager.on('tile_updated', (message) => {
     if (message.world && message.world !== currentWorld?.name) {
         return;
@@ -580,6 +592,11 @@ translatePage();
 const accountReady = accountManager.initialize().catch(error => console.error('Failed to log in:', error));
 await mapManager.initialize();
 markerManager.initialize();
+skyManager.initialize({
+    worlds: () => worlds,
+    worldName,
+    selectWorld: (name) => void selectWorld(name)
+});
 navigationManager.initialize();
 navigationManager.onShow = (target) => {
     void selectWorld(target.world);
@@ -647,7 +664,7 @@ setupLayers();
 await accountReady;
 wsManager.connect();
 await loadWorlds();
-await loadPlayers();
+await Promise.all([loadPlayers(), loadSky()]);
 let hashTimer = 0;
 mapManager.getMap().on('moveend', () => {
     clearTimeout(hashTimer);

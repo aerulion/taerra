@@ -38,6 +38,7 @@ import net.aerulion.taerra.mod.web.model.NavigationTarget;
 import net.aerulion.taerra.mod.web.model.PersonalWaypoint;
 import net.aerulion.taerra.mod.web.model.Player;
 import net.aerulion.taerra.mod.web.model.Progress;
+import net.aerulion.taerra.mod.web.model.Sky;
 import net.aerulion.taerra.mod.web.model.Waypoint;
 import net.aerulion.taerra.mod.web.model.WaypointGroup;
 import net.aerulion.taerra.mod.web.model.World;
@@ -53,6 +54,7 @@ public final class WebMapImpl implements WebMap {
   private static final Gson GSON = new Gson();
   private static final Type WORLDS = new TypeToken<List<World>>() {}.getType();
   private static final Type PLAYERS = new TypeToken<List<Player>>() {}.getType();
+  private static final Type SKIES = new TypeToken<Map<String, Sky>>() {}.getType();
   private static final Type LAYERS = new TypeToken<List<Layer>>() {}.getType();
   private static final Type GROUPS = new TypeToken<List<WaypointGroup>>() {}.getType();
   private static final Type DEVICES = new TypeToken<List<Device>>() {}.getType();
@@ -74,6 +76,7 @@ public final class WebMapImpl implements WebMap {
   private @Nullable MapConfig config;
   private @NotNull List<World> worlds = List.of();
   private @NotNull List<Player> players = List.of();
+  private @NotNull Map<String, Sky> skies = Map.of();
   private @Nullable Account account;
   private @Nullable NavigationTarget navigation;
   private long navigationVersion;
@@ -128,6 +131,11 @@ public final class WebMapImpl implements WebMap {
   @Override
   public @NotNull List<Player> players() {
     return this.players;
+  }
+
+  @Override
+  public @Nullable Sky sky(final @NotNull String world) {
+    return this.skies.get(world);
   }
 
   @Override
@@ -532,10 +540,15 @@ public final class WebMapImpl implements WebMap {
           this.worlds = worlds == null ? List.of() : List.copyOf(worlds);
           List.copyOf(this.listeners).forEach(WebMapListener::worldsChanged);
         });
+    this.client.json("/api/sky", SKIES, this::setSkies);
   }
 
   private void refreshPlayers() {
     this.client.json("/api/players", PLAYERS, this::setPlayers);
+  }
+
+  private void setSkies(final @Nullable Map<String, Sky> skies) {
+    this.skies = skies == null ? Map.of() : Map.copyOf(skies);
   }
 
   private void setPlayers(final @Nullable List<Player> players) {
@@ -610,6 +623,7 @@ public final class WebMapImpl implements WebMap {
         }
       }
       case "players" -> setPlayers(GSON.fromJson(message.get("data"), PLAYERS));
+      case "sky" -> setSkies(GSON.fromJson(message.get("data"), SKIES));
       case "navigation" ->
           setNavigation(GSON.fromJson(message.get("target"), NavigationTarget.class));
       case "markers" -> {
