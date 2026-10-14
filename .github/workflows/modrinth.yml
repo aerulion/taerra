@@ -90,6 +90,14 @@ jobs:
           id="$(jq -r '.id' <<< "${project}")"
           mkdir results
 
+          fetch() {
+            for attempt in 1 2 3; do
+              gh release download "$@" --repo "${GITHUB_REPOSITORY}" --clobber && return
+              sleep $((attempt * 10))
+            done
+            gh release download "$@" --repo "${GITHUB_REPOSITORY}" --clobber
+          }
+
           release() {
             local part="$1" build="$2"
             local TAG="${part}-${build}"
@@ -99,7 +107,7 @@ jobs:
             esac
 
             git checkout --quiet --detach "${TAG}"
-            gh release download "${TAG}" --repo "${GITHUB_REPOSITORY}" --dir "dist/${part}" --pattern '*.jar'
+            fetch "${TAG}" --dir "dist/${part}" --pattern "taerra-${loader}-build-*.jar"
             file="$(find "dist/${part}" -maxdepth 1 -name '*.jar' -printf '%f\n' | grep -E "${jar}" | head -n 1 || true)"
             if [ -z "${file}" ]; then
               echo "::error::The ${TAG} release has no ${label} jar."
