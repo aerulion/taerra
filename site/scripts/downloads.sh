@@ -8,14 +8,22 @@ repo="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner --jq .nameWithOwn
 rm -rf downloads
 mkdir -p downloads/records
 
+fetch() {
+  for attempt in 1 2 3; do
+    gh release download "$@" --repo "${repo}" --clobber && return
+    sleep $((attempt * 10))
+  done
+  gh release download "$@" --repo "${repo}" --clobber
+}
+
 tags="$(gh api --paginate "repos/${repo}/releases?per_page=100" \
   --jq '.[] | select(any(.assets[]; .name == "modrinth.json")) | .tag_name')"
 
 for tag in ${tags}; do
   record="downloads/records/${tag}.json"
-  gh release download "${tag}" --repo "${repo}" --pattern modrinth.json --output "${record}"
+  fetch "${tag}" --pattern modrinth.json --output "${record}"
   file="$(jq -r .file "${record}")"
-  gh release download "${tag}" --repo "${repo}" --pattern "${file}" --dir downloads
+  fetch "${tag}" --pattern "${file}" --dir downloads
   actual="$(shasum -a 512 "downloads/${file}" | cut -d ' ' -f 1)"
   if [ "${actual}" != "$(jq -r .sha512 "${record}")" ]; then
     echo "::error::${file} in ${tag} does not match the hash Modrinth has for it."
