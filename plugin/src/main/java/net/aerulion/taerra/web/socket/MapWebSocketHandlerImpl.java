@@ -16,8 +16,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.logging.Level;
 import net.aerulion.taerra.config.TaerraConfig;
+import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.auth.WebSessions;
+import net.aerulion.taerra.web.http.Requests;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +31,7 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig config;
   private final @NotNull WebSessions sessions;
+  private final @NotNull WebSettings web;
   private final @NotNull Map<WsContext, Connection> connections;
   private final @NotNull Map<WsContext, String> subscribedWorlds;
   private final @NotNull Map<WsContext, String> settingsClients = new ConcurrentHashMap<>();
@@ -39,11 +42,13 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
   public MapWebSocketHandlerImpl(
       final @NotNull Plugin plugin,
       final @NotNull TaerraConfig config,
-      final @NotNull WebSessions sessions) {
+      final @NotNull WebSessions sessions,
+      final @NotNull WebSettings web) {
     super();
     this.plugin = plugin;
     this.config = config;
     this.sessions = sessions;
+    this.web = web;
     this.connections = new ConcurrentHashMap<>();
     this.subscribedWorlds = new ConcurrentHashMap<>();
     this.mapper = new ObjectMapper();
@@ -220,7 +225,10 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
   }
 
   private void onConnect(final @NotNull WsContext ctx) {
-    final @Nullable String token = ctx.cookie(WebSessions.COOKIE);
+    final @Nullable String token =
+        Requests.sameOrigin(ctx::header, this.web.publicUrl())
+            ? ctx.cookie(WebSessions.COOKIE)
+            : null;
     final @NotNull Viewer viewer = this.sessions.viewer(token);
     this.connections.put(ctx, new Connection(viewer.uuid() == null ? null : token, viewer));
     final @Nullable Progress current = this.progress;

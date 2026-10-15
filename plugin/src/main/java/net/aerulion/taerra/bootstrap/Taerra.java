@@ -205,7 +205,7 @@ public final class Taerra extends JavaPlugin {
           new WebSessions(new File(getDataFolder(), "sessions.yml"), getLogger());
       webSessions.load();
       final @NotNull MapWebSocketHandler webSocketHandler =
-          new MapWebSocketHandlerImpl(this, configuration, webSessions);
+          new MapWebSocketHandlerImpl(this, configuration, webSessions, webSettings);
       webSessions.onChange(webSocketHandler::revalidate);
       WebGrants.start(this, configuration, webSessions);
       final @NotNull ModHandshake modHandshake =
