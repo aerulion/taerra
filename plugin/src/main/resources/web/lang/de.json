@@ -319,7 +319,7 @@
   "settings.markers.worldborder.shown-by-default": "Weltgrenze standardmäßig an",
   "settings.markers.worldborder.shown-by-default.hint": "An für alle, die sie nicht selbst umgeschaltet haben.",
   "settings.markers.worldguard.enabled": "WorldGuard-Regionen",
-  "settings.markers.worldguard.enabled.hint": "Braucht ein installiertes WorldGuard.",
+  "settings.markers.worldguard.enabled.hint": "Braucht ein installiertes WorldGuard. Zeigt, wem welches Land gehört und wer dort baut, also halte sie privat.",
   "settings.markers.worldguard.shown-by-default": "Regionen standardmäßig an",
   "settings.markers.worldguard.shown-by-default.hint": "An für alle, die sie nicht selbst umgeschaltet haben.",
   "settings.markers.loaded-chunks.enabled": "Geladene Chunks",

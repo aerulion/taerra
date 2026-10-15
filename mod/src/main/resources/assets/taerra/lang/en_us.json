@@ -333,7 +333,7 @@
   "taerra.settings.markers.worldborder.shown-by-default": "World border shown by default",
   "taerra.settings.markers.worldborder.shown-by-default.hint": "On for viewers who haven't switched it themselves.",
   "taerra.settings.markers.worldguard.enabled": "WorldGuard regions",
-  "taerra.settings.markers.worldguard.enabled.hint": "Needs WorldGuard installed.",
+  "taerra.settings.markers.worldguard.enabled.hint": "Needs WorldGuard installed. It shows who owns and builds on which land, so keep it private.",
   "taerra.settings.markers.worldguard.shown-by-default": "Regions shown by default",
   "taerra.settings.markers.worldguard.shown-by-default.hint": "On for viewers who haven't switched it themselves.",
   "taerra.settings.markers.loaded-chunks.enabled": "Loaded chunks",

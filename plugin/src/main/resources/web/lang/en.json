@@ -319,7 +319,7 @@
   "settings.markers.worldborder.shown-by-default": "World border shown by default",
   "settings.markers.worldborder.shown-by-default.hint": "On for viewers who haven't switched it themselves.",
   "settings.markers.worldguard.enabled": "WorldGuard regions",
-  "settings.markers.worldguard.enabled.hint": "Needs WorldGuard installed.",
+  "settings.markers.worldguard.enabled.hint": "Needs WorldGuard installed. It shows who owns and builds on which land, so keep it private.",
   "settings.markers.worldguard.shown-by-default": "Regions shown by default",
   "settings.markers.worldguard.shown-by-default.hint": "On for viewers who haven't switched it themselves.",
   "settings.markers.loaded-chunks.enabled": "Loaded chunks",

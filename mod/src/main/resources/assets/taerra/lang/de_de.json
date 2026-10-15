@@ -333,7 +333,7 @@
   "taerra.settings.markers.worldborder.shown-by-default": "Weltgrenze standardmäßig an",
   "taerra.settings.markers.worldborder.shown-by-default.hint": "An für alle, die sie nicht selbst umgeschaltet haben.",
   "taerra.settings.markers.worldguard.enabled": "WorldGuard-Regionen",
-  "taerra.settings.markers.worldguard.enabled.hint": "Braucht ein installiertes WorldGuard.",
+  "taerra.settings.markers.worldguard.enabled.hint": "Braucht ein installiertes WorldGuard. Zeigt, wem welches Land gehört und wer dort baut, also halte sie privat.",
   "taerra.settings.markers.worldguard.shown-by-default": "Regionen standardmäßig an",
   "taerra.settings.markers.worldguard.shown-by-default.hint": "An für alle, die sie nicht selbst umgeschaltet haben.",
   "taerra.settings.markers.loaded-chunks.enabled": "Geladene Chunks",
