@@ -110,6 +110,13 @@ public final class SettingsRoutes implements Routes {
                         }
                         case ConfigEditor.Invalid(final String field) ->
                             ctx.status(400).json(Map.of("invalid", field));
+                        case ConfigEditor.Busy(
+                                final String field,
+                                final ConfigEditor.View view) -> {
+                          final @NotNull Map<String, Object> json = payload(view);
+                          json.put("busy", field);
+                          ctx.status(409).json(json);
+                        }
                       }
                     }));
   }

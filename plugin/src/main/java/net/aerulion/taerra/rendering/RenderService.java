@@ -75,10 +75,8 @@ public final class RenderService {
     return start(
         TileGeneratorService.LIMIT_RENDER,
         world,
-        listener -> {
-          this.limits.set(WorldKeys.id(world), limit);
-          return scanFull(world, listener);
-        });
+        () -> this.limits.set(WorldKeys.id(world), limit),
+        listener -> scanFull(world, listener));
   }
 
   public @NotNull Start radius(
@@ -200,6 +198,14 @@ public final class RenderService {
       final @NotNull String mode,
       final @NotNull World world,
       final @NotNull Function<RegionScanListener, RegionScanResult> scan) {
+    return start(mode, world, () -> {}, scan);
+  }
+
+  private @NotNull Start start(
+      final @NotNull String mode,
+      final @NotNull World world,
+      final @NotNull Runnable began,
+      final @NotNull Function<RegionScanListener, RegionScanResult> scan) {
     final @NotNull String worldName = WorldKeys.id(world);
     if (!this.config.worldEnabled(worldName)) {
       return new Refused(Refusal.WORLD_DISABLED);
@@ -209,6 +215,7 @@ public final class RenderService {
     if (session == null) {
       return new Refused(Refusal.BUSY);
     }
+    began.run();
 
     final @NotNull CompletableFuture<Scan> scanned = new CompletableFuture<>();
     Thread.ofPlatform()

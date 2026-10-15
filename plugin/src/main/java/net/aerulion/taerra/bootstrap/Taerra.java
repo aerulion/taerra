@@ -280,6 +280,8 @@ public final class Taerra extends JavaPlugin {
               configuration,
               markers,
               waypoints,
+              worldLimits,
+              renders,
               liveSettings::apply,
               () -> onWebServer(TaerraWebServer::refreshMarkers),
               revision ->
@@ -402,7 +404,7 @@ public final class Taerra extends JavaPlugin {
         List.of(
             new StatusSubCommand(generatorService, tileCache, isoTileService, chunkColumnsCache),
             new RenderSubCommand(renders, renderFeedback, exports),
-            new LimitSubCommand(renders, renderFeedback, worldLimits),
+            new LimitSubCommand(configEditor, renderFeedback, worldLimits),
             new WaypointSubCommand(waypoints),
             new ConfigSubCommand(configEditor, configuration, markers),
             new ImportSubCommand(new DynmapImport(this, waypoints)),

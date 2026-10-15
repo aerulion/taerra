@@ -197,7 +197,7 @@ const en = {
                     },
                     {
                         title: 'One jar, set up live',
-                        text: 'No external database, no CDN, no web server to set up. Staff change worlds, their order and names, private layers, the server name and the renderer on a settings page in the browser or in game, together and without a restart, or with /taerra config.'
+                        text: 'No external database, no CDN, no web server to set up. Staff change worlds, their order, names and limits, private layers, the server name and the renderer on a settings page in the browser or in game, together and without a restart, or with /taerra config.'
                     },
                     {
                         title: 'Search everything',

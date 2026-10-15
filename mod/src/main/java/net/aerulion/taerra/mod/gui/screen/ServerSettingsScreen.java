@@ -58,6 +58,9 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   private static final Gson GSON = new Gson();
   private static final Pattern NOT_NAME = Pattern.compile("[^\\p{L}\\p{N} _.,:'&()#!?+-]");
   private static final Pattern NOT_DIGIT = Pattern.compile("\\D");
+  private static final Pattern NOT_COORDINATE = Pattern.compile("[^0-9-]");
+  private static final List<String> SHAPES = List.of("none", "circle", "square", "rectangle");
+  private static final int MAX_COORDINATE = 30_000_000;
   private static final String ORDER = "order";
   private static final int ROW_WIDTH = 380;
   private static final int CONTROL_WIDTH = 120;
@@ -76,6 +79,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   private static final List<Section> SECTIONS =
       List.of(
           new Section("worlds", List.of()),
+          new Section("limits", List.of()),
           new Section("map", List.of("web.name", "web.public-url", "join-hint.interval-days")),
           new Section(
               "layers",
@@ -234,6 +238,115 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     return number != Math.rint(number)
         || setting.min() != null && number < setting.min()
         || setting.max() != null && number > setting.max();
+  }
+
+  private static boolean isLimit(final @NotNull String field) {
+    return field.startsWith("world:") && field.endsWith(":limit");
+  }
+
+  private static @NotNull String shapeOf(final @Nullable JsonElement value) {
+    return value != null
+            && value.isJsonObject()
+            && value.getAsJsonObject().get("shape") instanceof final JsonPrimitive shape
+            && SHAPES.contains(shape.getAsString())
+        ? shape.getAsString()
+        : "none";
+  }
+
+  private static @Nullable Integer bound(
+      final @Nullable JsonElement value, final @NotNull String key) {
+    if (value == null || !value.isJsonObject()) {
+      return null;
+    }
+    final @Nullable JsonElement bound = value.getAsJsonObject().get(key);
+    return bound != null
+            && bound.isJsonPrimitive()
+            && bound.getAsJsonPrimitive().isNumber()
+            && bound.getAsDouble() == Math.rint(bound.getAsDouble())
+        ? bound.getAsInt()
+        : null;
+  }
+
+  private static @NotNull JsonObject limit(
+      final @NotNull String shape,
+      final @Nullable Integer minX,
+      final @Nullable Integer minZ,
+      final @Nullable Integer maxX,
+      final @Nullable Integer maxZ) {
+    final @NotNull JsonObject value = new JsonObject();
+    value.addProperty("shape", shape);
+    if (!shape.equals("none")) {
+      final @NotNull String[] keys = {"minX", "minZ", "maxX", "maxZ"};
+      final @Nullable Integer[] bounds = {minX, minZ, maxX, maxZ};
+      for (int i = 0; i < keys.length; i++) {
+        value.add(keys[i], bounds[i] == null ? JsonNull.INSTANCE : new JsonPrimitive(bounds[i]));
+      }
+    }
+    return value;
+  }
+
+  private static boolean badLimit(final @Nullable JsonElement value) {
+    final @NotNull String shape = shapeOf(value);
+    if (shape.equals("none")) {
+      return false;
+    }
+    final @Nullable Integer minX = bound(value, "minX");
+    final @Nullable Integer minZ = bound(value, "minZ");
+    final @Nullable Integer maxX = bound(value, "maxX");
+    final @Nullable Integer maxZ = bound(value, "maxZ");
+    if (minX == null || minZ == null || maxX == null || maxZ == null) {
+      return true;
+    }
+    if (Math.max(Math.max(Math.abs(minX), Math.abs(minZ)), Math.max(Math.abs(maxX), Math.abs(maxZ)))
+        > MAX_COORDINATE) {
+      return true;
+    }
+    final int width = maxX - minX;
+    return width < 0 || maxZ - minZ < 0 || (!shape.equals("rectangle") && width < 2);
+  }
+
+  private static @NotNull JsonObject reshape(
+      final @Nullable JsonElement value, final @NotNull String shape) {
+    final boolean known = !shapeOf(value).equals("none") && !badLimit(value);
+    final int minX = known ? Objects.requireNonNull(bound(value, "minX")) : -1000;
+    final int minZ = known ? Objects.requireNonNull(bound(value, "minZ")) : -1000;
+    final int maxX = known ? Objects.requireNonNull(bound(value, "maxX")) : 1000;
+    final int maxZ = known ? Objects.requireNonNull(bound(value, "maxZ")) : 1000;
+    if (!shape.equals("circle") && !shape.equals("square")) {
+      return limit(shape, minX, minZ, maxX, maxZ);
+    }
+    final int radius = Math.max(1, Math.round(Math.max(maxX - minX, maxZ - minZ) / 2f));
+    final int x = Math.floorDiv(minX + maxX, 2);
+    final int z = Math.floorDiv(minZ + maxZ, 2);
+    return limit(shape, x - radius, z - radius, x + radius, z + radius);
+  }
+
+  private static @Nullable Integer coordinate(final @NotNull String text) {
+    try {
+      return Integer.parseInt(text);
+    } catch (final NumberFormatException e) {
+      return null;
+    }
+  }
+
+  private static @NotNull Component describeLimit(final @Nullable JsonElement value) {
+    final @NotNull String shape = shapeOf(value);
+    if (shape.equals("none") || badLimit(value)) {
+      return Component.translatable(
+          shape.equals("none") ? "taerra.settings.limit.unset" : "taerra.settings.limit." + shape);
+    }
+    final int minX = Objects.requireNonNull(bound(value, "minX"));
+    final int minZ = Objects.requireNonNull(bound(value, "minZ"));
+    final int maxX = Objects.requireNonNull(bound(value, "maxX"));
+    final int maxZ = Objects.requireNonNull(bound(value, "maxZ"));
+    return shape.equals("rectangle")
+        ? Component.translatable("taerra.settings.limit.box", minX, minZ, maxX, maxZ)
+        : Component.translatable(
+            "taerra.settings.limit.round",
+            Component.translatable("taerra.settings.limit." + shape),
+            (maxX - minX) / 2,
+            Math.floorDiv(minX + maxX, 2),
+            Math.floorDiv(minZ + maxZ, 2));
   }
 
   private static @NotNull Component since(final long at) {
@@ -659,6 +772,9 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       return Component.literal(
           String.join(" → ", ids(value).stream().map(this::worldName).toList()));
     }
+    if (isLimit(field)) {
+      return describeLimit(value);
+    }
     if (value == null || value.isJsonNull() || string(value).isEmpty()) {
       return Component.translatable("taerra.settings.default");
     }
@@ -702,15 +818,28 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     return changes;
   }
 
-  private @Nullable String invalid(final @NotNull JsonObject changes) {
-    return changes.keySet().stream()
-        .filter(
-            field ->
-                field.startsWith("setting:")
-                    && outOfRange(
-                        setting(field.substring("setting:".length())), changes.get(field)))
-        .findFirst()
-        .orElse(null);
+  private @Nullable Component problem(final @NotNull JsonObject changes) {
+    for (final @NotNull String field : changes.keySet()) {
+      final ServerSettings.@Nullable SettingInfo setting =
+          field.startsWith("setting:") ? setting(field.substring("setting:".length())) : null;
+      if (setting != null && outOfRange(setting, changes.get(field))) {
+        return Component.translatable(
+            "taerra.settings.range",
+            label(field),
+            String.valueOf(setting.min()),
+            String.valueOf(setting.max()));
+      }
+    }
+    final @NotNull List<String> limits =
+        changes.keySet().stream().filter(ServerSettingsScreen::isLimit).toList();
+    for (final @NotNull String field : limits) {
+      if (badLimit(changes.get(field))) {
+        return Component.translatable(
+            "taerra.settings.limit_invalid",
+            worldName(field.substring("world:".length(), field.lastIndexOf(':'))));
+      }
+    }
+    return limits.size() > 1 ? Component.translatable("taerra.settings.limit_one") : null;
   }
 
   private void updateStatus() {
@@ -718,9 +847,9 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     final int count =
         pending.size()
             - (pending.has(ORDER) && sameOrder(pending.get(ORDER), this.base.get(ORDER)) ? 1 : 0);
-    final @Nullable String invalid = invalid(pending);
+    final @Nullable Component problem = problem(pending);
     if (this.save != null) {
-      this.save.active = count > 0 && this.conflicts.isEmpty() && invalid == null && !this.saving;
+      this.save.active = count > 0 && this.conflicts.isEmpty() && problem == null && !this.saving;
     }
     if (!this.conflicts.isEmpty()) {
       setStatus(
@@ -730,16 +859,8 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                   : "taerra.settings.conflicts.other",
               this.conflicts.size()),
           GOLD);
-    } else if (invalid != null) {
-      final ServerSettings.@Nullable SettingInfo setting =
-          setting(invalid.substring("setting:".length()));
-      setStatus(
-          Component.translatable(
-              "taerra.settings.range",
-              label(invalid),
-              setting == null ? "" : String.valueOf(setting.min()),
-              setting == null ? "" : String.valueOf(setting.max())),
-          GOLD);
+    } else if (problem != null) {
+      setStatus(problem, GOLD);
     } else if (count > 0) {
       setStatus(
           Component.translatable(
@@ -767,7 +888,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     if (changes.isEmpty()
         || this.saving
         || !this.conflicts.isEmpty()
-        || invalid(changes) != null
+        || problem(changes) != null
         || this.view == null) {
       return;
     }
@@ -791,12 +912,20 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           if (status == 200 && next != null) {
             changes.entrySet().forEach(entry -> this.base.put(entry.getKey(), entry.getValue()));
             rebase(next);
-            timedStatus(Component.translatable("taerra.settings.saved"), GREEN);
+            timedStatus(
+                Component.translatable(
+                    changes.keySet().stream().anyMatch(ServerSettingsScreen::isLimit)
+                        ? "taerra.settings.saved_limit"
+                        : "taerra.settings.saved"),
+                GREEN);
             updateStatus();
             return;
           }
           if (status == 409 && next != null) {
             rebase(next);
+            if (JsonParser.parseString(response).getAsJsonObject().has("busy")) {
+              setStatus(Component.translatable("taerra.settings.limit_busy"), RED);
+            }
             return;
           }
           if (status == 400) {
@@ -904,6 +1033,15 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           add(new WorldRow(world, index, display.size(), on ? ++rank : 0));
           for (final @NotNull String part : List.of("enabled", "private", "name")) {
             conflict(worldField(world.id(), part));
+          }
+        }
+      }
+      if (section.id().equals("limits")) {
+        for (final @NotNull String id : ServerSettingsScreen.this.display) {
+          final ServerSettings.@Nullable WorldInfo world = world(id);
+          if (world != null && on(ServerSettingsScreen.this.draft.get(worldField(id, "enabled")))) {
+            add(new LimitRow(world));
+            conflict(worldField(id, "limit"));
           }
         }
       }
@@ -1490,6 +1628,159 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
         widget.setPosition(right, getY() + getHeight() / 2 - widget.getHeight() / 2);
         widget.extractRenderState(graphics, mouseX, mouseY, partialTick);
         right -= widget == this.up ? 6 : 2;
+      }
+    }
+  }
+
+  private final class LimitRow extends Row {
+
+    private final ServerSettings.@NotNull WorldInfo world;
+    private final @NotNull String field;
+    private final @NotNull CycleButton<String> shape;
+    private final @NotNull List<EditBox> inputs = new ArrayList<>();
+    private final @NotNull List<String> labels = new ArrayList<>();
+
+    private LimitRow(final ServerSettings.@NotNull WorldInfo world) {
+      this.world = world;
+      this.field = worldField(world.id(), "limit");
+      final @Nullable JsonElement value = ServerSettingsScreen.this.draft.get(this.field);
+      final @NotNull String current = shapeOf(value);
+      final @NotNull Font font = Minecraft.getInstance().font;
+      this.shape =
+          CycleButton.builder(
+                  (String shape) -> Component.translatable("taerra.settings.limit." + shape),
+                  current)
+              .withValues(SHAPES)
+              .displayOnlyValue()
+              .create(
+                  0,
+                  0,
+                  100,
+                  20,
+                  Component.translatable("taerra.settings.limit"),
+                  (_, shape) -> {
+                    set(
+                        this.field,
+                        reshape(ServerSettingsScreen.this.draft.get(this.field), shape));
+                    refill();
+                  });
+      if (current.equals("none")) {
+        return;
+      }
+      final boolean round = !current.equals("rectangle");
+      final @Nullable Integer minX = bound(value, "minX");
+      final @Nullable Integer minZ = bound(value, "minZ");
+      final @Nullable Integer maxX = bound(value, "maxX");
+      final @Nullable Integer maxZ = bound(value, "maxZ");
+      final @NotNull List<String> keys =
+          round ? List.of("x", "z", "radius") : List.of("from_x", "from_z", "to_x", "to_z");
+      final @Nullable Integer[] numbers =
+          round
+              ? new Integer[] {
+                minX == null || maxX == null ? null : Math.floorDiv(minX + maxX, 2),
+                minZ == null || maxZ == null ? null : Math.floorDiv(minZ + maxZ, 2),
+                minX == null || maxX == null ? null : (maxX - minX) / 2
+              }
+              : new Integer[] {minX, minZ, maxX, maxZ};
+      for (int i = 0; i < keys.size(); i++) {
+        final @NotNull Component name =
+            Component.translatable("taerra.settings.limit." + keys.get(i));
+        final @NotNull EditBox box = new EditBox(font, 64, 18, name);
+        box.setMaxLength(9);
+        box.setValue(numbers[i] == null ? "" : String.valueOf(numbers[i]));
+        box.setTooltip(Tooltip.create(name));
+        ServerSettingsScreen.this.boxes.put(this.field + ":" + keys.get(i), box);
+        this.inputs.add(box);
+        this.labels.add(
+            round ? List.of("X", "Z", "R").get(i) : List.of("X", "Z", "→ X", "Z").get(i));
+      }
+      this.inputs.forEach(box -> clean(box, NOT_COORDINATE, _ -> update(current, round)));
+      paint();
+    }
+
+    private void update(final @NotNull String current, final boolean round) {
+      final @Nullable Integer[] n =
+          this.inputs.stream().map(box -> coordinate(box.getValue())).toArray(Integer[]::new);
+      set(
+          this.field,
+          round
+              ? limit(
+                  current,
+                  n[0] == null || n[2] == null ? null : n[0] - n[2],
+                  n[1] == null || n[2] == null ? null : n[1] - n[2],
+                  n[0] == null || n[2] == null ? null : n[0] + n[2],
+                  n[1] == null || n[2] == null ? null : n[1] + n[2])
+              : limit(
+                  current,
+                  n[0] == null || n[2] == null ? null : Math.min(n[0], n[2]),
+                  n[1] == null || n[3] == null ? null : Math.min(n[1], n[3]),
+                  n[0] == null || n[2] == null ? null : Math.max(n[0], n[2]),
+                  n[1] == null || n[3] == null ? null : Math.max(n[1], n[3])));
+      paint();
+    }
+
+    private boolean changed() {
+      return !same(
+          ServerSettingsScreen.this.draft.get(this.field),
+          ServerSettingsScreen.this.base.get(this.field));
+    }
+
+    private void paint() {
+      final boolean bad = changed() && badLimit(ServerSettingsScreen.this.draft.get(this.field));
+      this.inputs.forEach(box -> box.setTextColor(bad ? RED : TEXT));
+    }
+
+    private @NotNull List<AbstractWidget> widgets() {
+      final @NotNull List<AbstractWidget> widgets = new ArrayList<>();
+      widgets.add(this.shape);
+      widgets.addAll(this.inputs);
+      return widgets;
+    }
+
+    @Override
+    int height() {
+      return this.inputs.isEmpty() ? 30 : 54;
+    }
+
+    @Override
+    @NotNull
+    List<String> fields() {
+      return List.of(this.field);
+    }
+
+    @Override
+    public @NotNull List<? extends GuiEventListener> children() {
+      return widgets();
+    }
+
+    @Override
+    public @NotNull List<? extends NarratableEntry> narratables() {
+      return widgets();
+    }
+
+    @Override
+    public void extractContent(
+        final @NotNull GuiGraphicsExtractor graphics,
+        final int mouseX,
+        final int mouseY,
+        final boolean hovered,
+        final float partialTick) {
+      slab(graphics, 0, hovered, mouseX, mouseY);
+      final @NotNull Font font = Minecraft.getInstance().font;
+      final int left = getContentX() + 4;
+      graphics.text(font, worldName(this.world.id()), left, getY() + 6, 0xFFFFFFFF, true);
+      graphics.text(font, this.world.id(), left, getY() + 17, MUTED, false);
+      this.shape.setPosition(getContentRight() - 6 - this.shape.getWidth(), getY() + 5);
+      this.shape.extractRenderState(graphics, mouseX, mouseY, partialTick);
+      int x = left;
+      for (int i = 0; i < this.inputs.size(); i++) {
+        final @NotNull String label = this.labels.get(i);
+        graphics.text(font, label, x, getY() + 36, MUTED, false);
+        x += font.width(label) + 4;
+        final @NotNull EditBox box = this.inputs.get(i);
+        box.setPosition(x, getY() + 31);
+        box.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        x += box.getWidth() + 10;
       }
     }
   }

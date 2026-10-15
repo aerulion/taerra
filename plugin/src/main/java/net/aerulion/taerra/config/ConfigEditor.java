@@ -19,7 +19,10 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
+import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.WorldKeys;
+import net.aerulion.taerra.model.WorldLimit;
+import net.aerulion.taerra.rendering.RenderService;
 import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.waypoint.Waypoints;
 import org.bukkit.Bukkit;
@@ -54,13 +57,17 @@ public final class ConfigEditor {
   public static final @NotNull String WORLD = "world:";
   public static final @NotNull String LAYER = "layer:";
   public static final @NotNull String ORDER = "order";
+  public static final @NotNull String LIMIT = "limit";
   private static final long TRACK_INTERVAL_TICKS = 20L;
+  private static final int MAX_COORDINATE = 30_000_000;
   private static final @NotNull Pattern CONTROL = Pattern.compile("\\p{Cntrl}");
 
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig config;
   private final @NotNull MarkerRegistry markers;
   private final @NotNull Waypoints waypoints;
+  private final @NotNull WorldLimits limits;
+  private final @NotNull RenderService renders;
   private final @NotNull Consumer<Set<String>> applied;
   private final @NotNull Runnable layersChanged;
   private final @NotNull LongConsumer published;
@@ -71,6 +78,8 @@ public final class ConfigEditor {
       final @NotNull TaerraConfig config,
       final @NotNull MarkerRegistry markers,
       final @NotNull Waypoints waypoints,
+      final @NotNull WorldLimits limits,
+      final @NotNull RenderService renders,
       final @NotNull Consumer<Set<String>> applied,
       final @NotNull Runnable layersChanged,
       final @NotNull LongConsumer published) {
@@ -79,6 +88,8 @@ public final class ConfigEditor {
     this.config = config;
     this.markers = markers;
     this.waypoints = waypoints;
+    this.limits = limits;
+    this.renders = renders;
     this.applied = applied;
     this.layersChanged = layersChanged;
     this.published = published;
@@ -104,6 +115,74 @@ public final class ConfigEditor {
     wanted.stream().filter(on::contains).forEach(order::add);
     order.addAll(enabled);
     return List.copyOf(order);
+  }
+
+  private static @NotNull String worldOf(final @NotNull String field) {
+    return field.substring(WORLD.length(), field.lastIndexOf(':'));
+  }
+
+  static @NotNull Map<String, Object> limitValue(final @Nullable WorldLimit limit) {
+    final @NotNull Map<String, Object> value = new LinkedHashMap<>();
+    value.put("shape", limit == null ? "none" : limit.shape().name().toLowerCase(Locale.ROOT));
+    if (limit != null) {
+      value.put("minX", limit.minX());
+      value.put("minZ", limit.minZ());
+      value.put("maxX", limit.maxX());
+      value.put("maxZ", limit.maxZ());
+    }
+    return value;
+  }
+
+  static @Nullable Map<String, Object> normalizeLimit(final @Nullable Object given) {
+    if (!(given instanceof final @NotNull Map<?, ?> map)
+        || !(map.get("shape") instanceof final @NotNull String shape)) {
+      return null;
+    }
+    if (shape.equals("none")) {
+      return limitValue(null);
+    }
+    final @Nullable WorldLimit limit = limit(shape, map);
+    return limit == null ? null : limitValue(limit);
+  }
+
+  private static @Nullable WorldLimit limit(
+      final @NotNull String shape, final @NotNull Map<?, ?> map) {
+    final int[] bounds = new int[4];
+    final @NotNull String[] keys = {"minX", "minZ", "maxX", "maxZ"};
+    for (int i = 0; i < keys.length; i++) {
+      if (!(map.get(keys[i]) instanceof final @NotNull Number number)
+          || number.doubleValue() != number.intValue()
+          || Math.abs(number.intValue()) > MAX_COORDINATE) {
+        return null;
+      }
+      bounds[i] = number.intValue();
+    }
+    final int width = bounds[2] - bounds[0];
+    final int depth = bounds[3] - bounds[1];
+    if (width < 0 || depth < 0) {
+      return null;
+    }
+    return switch (shape) {
+      case "rectangle" ->
+          new WorldLimit(WorldLimit.Shape.RECTANGLE, bounds[0], bounds[1], bounds[2], bounds[3]);
+      case "circle", "square" ->
+          width == depth && width >= 2 && width % 2 == 0
+              ? new WorldLimit(
+                  WorldLimit.Shape.valueOf(shape.toUpperCase(Locale.ROOT)),
+                  bounds[0],
+                  bounds[1],
+                  bounds[2],
+                  bounds[3])
+              : null;
+      default -> null;
+    };
+  }
+
+  private static @Nullable WorldLimit limit(final @NotNull Object normalized) {
+    return normalized instanceof final @NotNull Map<?, ?> map
+            && map.get("shape") instanceof final @NotNull String shape
+        ? limit(shape, map)
+        : null;
   }
 
   private static boolean same(final @Nullable Object a, final @Nullable Object b) {
@@ -179,6 +258,15 @@ public final class ConfigEditor {
     this.layersChanged.run();
     track(who);
     return true;
+  }
+
+  public RenderService.@NotNull Start setLimit(
+      final @NotNull World world, final @Nullable WorldLimit limit, final @NotNull String who) {
+    final RenderService.@NotNull Start start = this.renders.limit(world, limit);
+    if (start instanceof RenderService.Started) {
+      track(who);
+    }
+    return start;
   }
 
   public @NotNull CompletableFuture<View> view() {
@@ -277,6 +365,24 @@ public final class ConfigEditor {
     if (next.isEmpty()) {
       return new Applied(viewNow());
     }
+    final @NotNull List<String> limitFields =
+        next.keySet().stream()
+            .filter(field -> field.startsWith(WORLD) && field.endsWith(":" + LIMIT))
+            .toList();
+    if (limitFields.size() > 1) {
+      return new Invalid(limitFields.get(1));
+    }
+    for (final @NotNull String field : limitFields) {
+      final @NotNull String world = worldOf(field);
+      if (!(next.get(worldField(world, "enabled")) instanceof final Boolean on
+          ? on
+          : this.config.worldEnabled(world))) {
+        return new Invalid(field);
+      }
+      if (this.renders.rendering() != null) {
+        return new Busy(field, viewNow());
+      }
+    }
 
     final @NotNull Set<String> written = new LinkedHashSet<>();
     next.forEach(
@@ -297,11 +403,11 @@ public final class ConfigEditor {
     boolean worlds = false;
     for (final Map.@NotNull Entry<String, Object> change : next.entrySet()) {
       final @NotNull String field = change.getKey();
-      if (!field.startsWith(WORLD)) {
+      if (!field.startsWith(WORLD) || limitFields.contains(field)) {
         continue;
       }
       worlds = true;
-      final @NotNull String world = field.substring(WORLD.length(), field.lastIndexOf(':'));
+      final @NotNull String world = worldOf(field);
       switch (field.substring(field.lastIndexOf(':') + 1)) {
         case "enabled" -> {
           enabled.remove(world);
@@ -331,6 +437,12 @@ public final class ConfigEditor {
     }
     if (worlds) {
       this.config.setWorlds(this.plugin, order, hidden, names);
+    }
+    for (final @NotNull String field : limitFields) {
+      final @Nullable World world = WorldKeys.resolve(worldOf(field));
+      if (world != null) {
+        this.renders.limit(world, limit(next.get(field)));
+      }
     }
 
     boolean layers = false;
@@ -380,7 +492,10 @@ public final class ConfigEditor {
       return List.copyOf(order);
     }
     if (field.startsWith(WORLD)) {
-      final @NotNull String world = field.substring(WORLD.length(), field.lastIndexOf(':'));
+      final @NotNull String world = worldOf(field);
+      if (field.endsWith(":" + LIMIT)) {
+        return WorldKeys.resolve(world) == null ? null : normalizeLimit(value);
+      }
       return field.endsWith(":name")
           ? value instanceof final @NotNull String name ? worldName(world, name) : null
           : value instanceof Boolean ? value : null;
@@ -404,6 +519,7 @@ public final class ConfigEditor {
       values.put(worldField(world, "enabled"), this.config.worldEnabled(world));
       values.put(worldField(world, "private"), this.config.worldPrivate(world));
       values.put(worldField(world, "name"), this.config.worldNames().getOrDefault(world, ""));
+      values.put(worldField(world, LIMIT), limitValue(this.limits.get(world)));
     }
     values.put(ORDER, List.copyOf(this.config.enabledWorlds()));
     for (final @NotNull LayerInfo layer : layers()) {
@@ -486,7 +602,7 @@ public final class ConfigEditor {
     TEXT
   }
 
-  public sealed interface Outcome permits Applied, Conflicted, Invalid {}
+  public sealed interface Outcome permits Applied, Conflicted, Invalid, Busy {}
 
   public record Setting(
       @NotNull String key, @NotNull Kind kind, int min, int max, boolean editable) {
@@ -537,4 +653,6 @@ public final class ConfigEditor {
       implements Outcome {}
 
   public record Invalid(@NotNull String field) implements Outcome {}
+
+  public record Busy(@NotNull String field, @NotNull View view) implements Outcome {}
 }

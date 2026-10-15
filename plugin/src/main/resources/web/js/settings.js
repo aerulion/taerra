@@ -11,6 +11,7 @@ const FLASH_MILLIS = 1800;
 const ORDER = 'order';
 const SECTIONS = [
     ['worlds', []],
+    ['limits', []],
     ['map', ['web.name', 'web.public-url', 'join-hint.interval-days']],
     ['layers', ['markers.worldborder.enabled', 'markers.worldborder.shown-by-default', 'markers.worldguard.enabled',
         'markers.worldguard.shown-by-default', 'markers.loaded-chunks.enabled',
@@ -28,6 +29,35 @@ const relative = (order, other) => (order ?? []).filter(id => (other ?? []).incl
 const sameOrder = (a, b) => same(relative(a, b), relative(b, a));
 const outOfRange = (setting, value) => setting?.kind === 'number'
     && !(Number.isInteger(value) && value >= setting.min && value <= setting.max);
+const SHAPES = ['none', 'circle', 'square', 'rectangle'];
+const MAX_COORDINATE = 30_000_000;
+const isLimit = (field) => field.startsWith('world:') && field.endsWith(':limit');
+const limit = (shape, minX, minZ, maxX, maxZ) => shape === 'none' ? {shape} : {shape, minX, minZ, maxX, maxZ};
+const coordinate = (text) => /^-?\d+$/.test(text.trim()) ? Number(text) : null;
+
+function badLimit(value) {
+    if (!value || value.shape === 'none') {
+        return false;
+    }
+    const bounds = [value.minX, value.minZ, value.maxX, value.maxZ];
+    if (!bounds.every(bound => Number.isInteger(bound) && Math.abs(bound) <= MAX_COORDINATE)) {
+        return true;
+    }
+    const width = value.maxX - value.minX;
+    return width < 0 || value.maxZ - value.minZ < 0 || (value.shape !== 'rectangle' && width < 2);
+}
+
+function reshape(value, shape) {
+    const known = value && value.shape !== 'none' && !badLimit(value);
+    const {minX, minZ, maxX, maxZ} = known ? value : {minX: -1000, minZ: -1000, maxX: 1000, maxZ: 1000};
+    if (shape !== 'circle' && shape !== 'square') {
+        return limit(shape, minX, minZ, maxX, maxZ);
+    }
+    const radius = Math.max(1, Math.round(Math.max(maxX - minX, maxZ - minZ) / 2));
+    const x = Math.floor((minX + maxX) / 2);
+    const z = Math.floor((minZ + maxZ) / 2);
+    return limit(shape, x - radius, z - radius, x + radius, z + radius);
+}
 
 function translated(key, fallback) {
     const text = t(key);
@@ -347,6 +377,9 @@ class SettingsDialog {
             return (value ?? []).map(id => this.draft[worldField(id, 'name')] || this.world(id)?.defaultName || id)
                 .join(' → ');
         }
+        if (isLimit(field)) {
+            return this.describeLimit(value);
+        }
         if (typeof value === 'boolean') {
             return t(value ? 'settings.on' : 'settings.off');
         }
@@ -354,6 +387,23 @@ class SettingsDialog {
             return t('settings.default');
         }
         return typeof value === 'number' ? numbers.format(value) : `“${value}”`;
+    }
+
+    describeLimit(value) {
+        if (!value || value.shape === 'none') {
+            return t('settings.limit.none');
+        }
+        if (value.shape === 'rectangle') {
+            return t('settings.limit.box', {
+                fromX: numbers.format(value.minX), fromZ: numbers.format(value.minZ),
+                toX: numbers.format(value.maxX), toZ: numbers.format(value.maxZ)
+            });
+        }
+        return t('settings.limit.round', {
+            shape: t(`settings.limit.${value.shape}`), radius: numbers.format((value.maxX - value.minX) / 2),
+            x: numbers.format(Math.floor((value.minX + value.maxX) / 2)),
+            z: numbers.format(Math.floor((value.minZ + value.maxZ) / 2))
+        });
     }
 
     changedBy(field) {
@@ -369,6 +419,10 @@ class SettingsDialog {
         const selection = focused && typeof active.selectionStart === 'number'
             ? [active.selectionStart, active.selectionEnd] : null;
         const sections = SECTIONS.map(([name, keys]) => {
+            if (name === 'limits') {
+                return this.section(name, this.display.filter(id => this.draft[worldField(id, 'enabled')] === true)
+                    .map(id => this.world(id)).filter(Boolean).flatMap(world => this.limitRow(world)));
+            }
             if (name === 'worlds') {
                 return this.section(name, [this.conflict(ORDER), this.worldList()].filter(Boolean));
             }
@@ -666,6 +720,73 @@ class SettingsDialog {
         return list;
     }
 
+    limitRow(world) {
+        const field = worldField(world.id, 'limit');
+        const value = this.draft[field] ?? {shape: 'none'};
+        const changed = () => !same(this.draft[field], this.base[field]);
+        const row = element('div', 'settings__row settings__limit');
+        row.dataset.fields = field;
+        row.title = this.changedBy(field);
+        row.classList.toggle('is-conflict', this.conflicts.has(field));
+        row.classList.toggle('is-changed', changed());
+        row.classList.toggle('is-invalid', changed() && badLimit(value));
+        const id = `limit-${world.id.replace(/\W/g, '-')}`;
+        const text = element('span', 'settings__text');
+        const title = element('label', 'settings__label', this.draft[worldField(world.id, 'name')] || world.defaultName);
+        title.htmlFor = id;
+        text.append(title, element('code', 'settings__hint', world.id));
+        const shape = document.createElement('select');
+        shape.id = id;
+        shape.className = 'editor__input settings__shape';
+        shape.dataset.field = `${field}:shape`;
+        for (const option of SHAPES) {
+            const item = element('option', '', t(`settings.limit.${option}`));
+            item.value = option;
+            item.selected = value.shape === option;
+            shape.append(item);
+        }
+        shape.addEventListener('change', () => {
+            this.set(field, reshape(this.draft[field] ?? value, shape.value));
+            this.render();
+        });
+        row.append(text, shape);
+        if (value.shape !== 'none') {
+            const round = value.shape !== 'rectangle';
+            const parts = round
+                ? [['x', Math.floor((value.minX + value.maxX) / 2)], ['z', Math.floor((value.minZ + value.maxZ) / 2)],
+                    ['radius', (value.maxX - value.minX) / 2]]
+                : [['fromX', value.minX], ['fromZ', value.minZ], ['toX', value.maxX], ['toZ', value.maxZ]];
+            const line = element('div', 'settings__limit-line');
+            const inputs = parts.map(([part, number]) => {
+                const label = element('label', 'settings__coordinate');
+                const input = document.createElement('input');
+                input.className = 'editor__input';
+                input.inputMode = 'numeric';
+                input.autocomplete = 'off';
+                input.dataset.field = `${field}:${part}`;
+                input.value = Number.isFinite(number) ? String(number) : '';
+                label.append(element('span', '', t(`settings.limit.${part}`)), input);
+                line.append(label);
+                return input;
+            });
+            const pick = (a, b, op) => a === null || b === null ? null : op(a, b);
+            inputs.forEach(input => input.addEventListener('input', () => {
+                const [a, b, c, d] = inputs.map(box => coordinate(box.value));
+                const next = round
+                    ? limit(value.shape, pick(a, c, (x, r) => x - r), pick(b, c, (z, r) => z - r),
+                        pick(a, c, (x, r) => x + r), pick(b, c, (z, r) => z + r))
+                    : limit(value.shape, pick(a, c, Math.min), pick(b, d, Math.min), pick(a, c, Math.max),
+                        pick(b, d, Math.max));
+                this.set(field, next);
+                row.classList.toggle('is-changed', changed());
+                row.classList.toggle('is-invalid', changed() && badLimit(next));
+            }));
+            row.append(line);
+        }
+        const conflict = this.conflict(field);
+        return conflict ? [row, conflict] : [row];
+    }
+
     move(id, by, direction) {
         const index = this.display.indexOf(id);
         const target = index + by;
@@ -728,9 +849,23 @@ class SettingsDialog {
         return changes;
     }
 
-    invalid(changes) {
-        return Object.keys(changes).find(field =>
+    problem(changes) {
+        const fields = Object.keys(changes);
+        const number = fields.find(field =>
             field.startsWith('setting:') && outOfRange(this.setting(field.slice('setting:'.length)), changes[field]));
+        if (number) {
+            const setting = this.setting(number.slice('setting:'.length));
+            return t('settings.range', {
+                name: this.label(number), min: numbers.format(setting.min), max: numbers.format(setting.max)
+            });
+        }
+        const limits = fields.filter(isLimit);
+        const bad = limits.find(field => badLimit(changes[field]));
+        if (bad) {
+            const id = bad.slice('world:'.length, bad.lastIndexOf(':'));
+            return t('settings.limitInvalid', {world: this.draft[worldField(id, 'name')] || this.world(id)?.defaultName || id});
+        }
+        return limits.length > 1 ? t('settings.limitOne') : null;
     }
 
     updateStatus() {
@@ -741,17 +876,14 @@ class SettingsDialog {
         const count = Object.keys(changes).length
             - (ORDER in changes && sameOrder(changes[ORDER], this.base[ORDER]) ? 1 : 0);
         const conflicts = this.conflicts.size;
-        const invalid = this.invalid(changes);
-        $('settings-save').disabled = count === 0 || conflicts > 0 || Boolean(invalid);
+        const problem = this.problem(changes);
+        $('settings-save').disabled = count === 0 || conflicts > 0 || Boolean(problem);
         const status = $('settings-status');
         if (conflicts) {
             this.showStatus(t(`settings.conflicts.${plurals.select(conflicts)}`, {count: numbers.format(conflicts)}),
                 'is-conflict');
-        } else if (invalid) {
-            const setting = this.setting(invalid.slice('setting:'.length));
-            this.showStatus(t('settings.range', {
-                name: this.label(invalid), min: numbers.format(setting.min), max: numbers.format(setting.max)
-            }), 'is-conflict');
+        } else if (problem) {
+            this.showStatus(problem, 'is-conflict');
         } else if (count) {
             this.showStatus(t(`settings.unsaved.${plurals.select(count)}`, {count: numbers.format(count)}),
                 'is-dirty');
@@ -765,7 +897,7 @@ class SettingsDialog {
             return;
         }
         const changes = this.changes();
-        if (!Object.keys(changes).length || this.invalid(changes)) {
+        if (!Object.keys(changes).length || this.problem(changes)) {
             return;
         }
         this.disarm();
@@ -787,12 +919,16 @@ class SettingsDialog {
         if (response?.status === 200 && body) {
             this.base = {...this.base, ...structuredClone(changes)};
             this.rebase(body);
-            this.showStatus(t('settings.saved'), 'is-done');
+            this.showStatus(t(Object.keys(changes).some(isLimit) ? 'settings.savedLimit' : 'settings.saved'), 'is-done');
             return;
         }
         if (response?.status === 409 && body) {
             this.rebase(body);
-            this.updateStatus();
+            if (body.busy) {
+                this.showStatus(t('settings.limitBusy'), 'is-failed');
+            } else {
+                this.updateStatus();
+            }
             return;
         }
         if (response?.status === 400) {

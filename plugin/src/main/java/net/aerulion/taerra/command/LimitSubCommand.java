@@ -12,11 +12,11 @@ import io.papermc.paper.command.brigadier.argument.resolvers.ColumnBlockPosition
 import java.util.Locale;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.chat.RenderFeedback;
+import net.aerulion.taerra.config.ConfigEditor;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.model.WorldLimit;
 import net.aerulion.taerra.permission.TaerraPermission;
-import net.aerulion.taerra.rendering.RenderService;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import org.bukkit.World;
@@ -25,16 +25,16 @@ import org.jetbrains.annotations.Nullable;
 
 public final class LimitSubCommand implements TaerraSubCommand {
 
-  private final @NotNull RenderService renders;
+  private final @NotNull ConfigEditor editor;
   private final @NotNull RenderFeedback feedback;
   private final @NotNull WorldLimits limits;
 
   public LimitSubCommand(
-      final @NotNull RenderService renders,
+      final @NotNull ConfigEditor editor,
       final @NotNull RenderFeedback feedback,
       final @NotNull WorldLimits limits) {
     super();
-    this.renders = renders;
+    this.editor = editor;
     this.feedback = feedback;
     this.limits = limits;
   }
@@ -162,7 +162,7 @@ public final class LimitSubCommand implements TaerraSubCommand {
         limit == null
             ? Messages.tr("render.what.unlimited")
             : Messages.tr("render.what.limited", describe(limit)),
-        this.renders.limit(world, limit));
+        this.editor.setLimit(world, limit, context.getSource().getSender().getName()));
     return SUCCESS;
   }
 }

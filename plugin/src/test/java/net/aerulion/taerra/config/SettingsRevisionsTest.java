@@ -2,11 +2,13 @@ package net.aerulion.taerra.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.aerulion.taerra.model.WorldLimit;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -66,5 +68,35 @@ class SettingsRevisionsTest {
     assertEquals(
         List.of("b", "a", "c"),
         ConfigEditor.order(List.of("b", "a", "gone"), List.of("a", "b", "c")));
+  }
+
+  @Test
+  @DisplayName("limits are checked and written the way the settings page reads them")
+  void limitsNormalize() {
+    assertEquals(
+        ConfigEditor.limitValue(WorldLimit.circle(0, 50, 100)),
+        ConfigEditor.normalizeLimit(
+            Map.of("shape", "circle", "minX", -100, "minZ", -50, "maxX", 100, "maxZ", 150)));
+    assertEquals(
+        ConfigEditor.limitValue(WorldLimit.rectangle(10, 20, -5, 7)),
+        ConfigEditor.normalizeLimit(
+            Map.of("shape", "rectangle", "minX", -5, "minZ", 7, "maxX", 10, "maxZ", 20)));
+    assertEquals(Map.of("shape", "none"), ConfigEditor.normalizeLimit(Map.of("shape", "none")));
+    assertNull(
+        ConfigEditor.normalizeLimit(
+            Map.of("shape", "square", "minX", 0, "minZ", 0, "maxX", 10, "maxZ", 12)));
+    assertNull(
+        ConfigEditor.normalizeLimit(
+            Map.of("shape", "circle", "minX", 0, "minZ", 0, "maxX", 0, "maxZ", 0)));
+    assertNull(
+        ConfigEditor.normalizeLimit(
+            Map.of("shape", "rectangle", "minX", 5, "minZ", 0, "maxX", 4, "maxZ", 1)));
+    assertNull(
+        ConfigEditor.normalizeLimit(
+            Map.of("shape", "rectangle", "minX", 0.5, "minZ", 0, "maxX", 4, "maxZ", 1)));
+    assertNull(
+        ConfigEditor.normalizeLimit(
+            Map.of("shape", "rectangle", "minX", 0, "minZ", 0, "maxX", 40_000_000, "maxZ", 1)));
+    assertNull(ConfigEditor.normalizeLimit(Map.of("shape", "hexagon")));
   }
 }
