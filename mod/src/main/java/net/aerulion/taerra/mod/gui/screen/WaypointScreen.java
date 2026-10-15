@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import net.aerulion.taerra.mod.gui.widget.ColorPicker;
 import net.aerulion.taerra.mod.gui.widget.DyeSwatches;
+import net.aerulion.taerra.mod.gui.widget.FooterRows;
 import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.map.Place;
 import net.aerulion.taerra.mod.util.Colors;
@@ -39,6 +40,7 @@ public final class WaypointScreen extends Screen {
   private static final String NEW_GROUP = "\u0000new";
 
   private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
+  private int footerWidth;
   private final Screen parent;
   private final @NotNull WebMap map;
   private final @NotNull Waypoint target;
@@ -237,32 +239,32 @@ public final class WaypointScreen extends Screen {
     }
     contents.addChild(new StringWidget(WIDTH, 9, this.error, this.font));
 
-    final @NotNull LinearLayout footer =
-        this.layout.addToFooter(LinearLayout.horizontal().spacing(8));
     final boolean editing = this.target.previous() != null;
     final int width = editing ? 98 : 150;
+    final @NotNull List<Button> buttons = new ArrayList<>();
     if (editing) {
-      footer.addChild(
-                  Button.builder(
-                          Component.translatable(
-                                  this.armed
-                                      ? "taerra.waypoint.confirm_delete"
-                                      : "taerra.waypoint.delete")
-                              .withStyle(ChatFormatting.RED),
-                          _ -> delete())
-                      .width(width)
-                      .build())
-              .active =
-          !this.saving;
+      final @NotNull Button delete =
+          Button.builder(
+                  Component.translatable(
+                          this.armed ? "taerra.waypoint.confirm_delete" : "taerra.waypoint.delete")
+                      .withStyle(ChatFormatting.RED),
+                  _ -> delete())
+              .width(width)
+              .build();
+      delete.active = !this.saving;
+      buttons.add(delete);
     }
-    footer.addChild(
+    buttons.add(
         Button.builder(Component.translatable("gui.cancel"), _ -> onClose()).width(width).build());
-    footer.addChild(
-                Button.builder(Component.translatable("taerra.waypoint.save"), _ -> save())
-                    .width(width)
-                    .build())
-            .active =
-        !this.saving;
+    final @NotNull Button save =
+        Button.builder(Component.translatable("taerra.waypoint.save"), _ -> save())
+            .width(width)
+            .build();
+    save.active = !this.saving;
+    buttons.add(save);
+    this.footerWidth = this.width;
+    FooterRows.add(
+        this.layout, this.width, HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT, buttons);
     this.layout.visitWidgets(this::addRenderableWidget);
     repositionElements();
     setInitialFocus(name);
@@ -270,6 +272,10 @@ public final class WaypointScreen extends Screen {
 
   @Override
   protected void repositionElements() {
+    if (this.footerWidth != this.width) {
+      rebuildWidgets();
+      return;
+    }
     this.layout.arrangeElements();
   }
 

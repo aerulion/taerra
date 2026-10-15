@@ -125,6 +125,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   private int statusColor = MUTED;
   private long statusUntil;
   private int selected;
+  private int rowsWidth;
 
   public ServerSettingsScreen(final @NotNull Screen parent, final @NotNull WebMap map) {
     super(Component.translatable("taerra.settings"));
@@ -407,6 +408,13 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     this.layout.arrangeElements();
     this.tabManager.setTabArea(
         new ScreenRectangle(0, top, this.width, this.height - this.layout.getFooterHeight() - top));
+    if (this.loaded && this.rowsWidth != this.width) {
+      refill();
+    }
+  }
+
+  private int rowWidth() {
+    return Math.min(ROW_WIDTH, this.width - 24);
   }
 
   @Override
@@ -673,6 +681,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   }
 
   private void refill() {
+    this.rowsWidth = this.width;
     final @Nullable GuiEventListener focus = focusedLeaf();
     @Nullable String field = null;
     int cursor = 0;
@@ -1071,7 +1080,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
 
     @Override
     public int getRowWidth() {
-      return Math.min(ROW_WIDTH, this.width - 24);
+      return rowWidth();
     }
   }
 
@@ -1140,7 +1149,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     private final @NotNull List<FormattedCharSequence> lines;
 
     private IntroRow(final @NotNull Component text) {
-      this.lines = Minecraft.getInstance().font.split(text, ROW_WIDTH - 8);
+      this.lines = Minecraft.getInstance().font.split(text, rowWidth() - 8);
     }
 
     @Override
@@ -1222,7 +1231,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                       who,
                       label(field),
                       format(field, conflict.theirs())),
-                  ROW_WIDTH - 140);
+                  rowWidth() - 140);
       this.theirs =
           Button.builder(
                   Component.translatable("taerra.settings.use_theirs"),
@@ -1330,7 +1339,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           hintText == null
               ? List.of()
               : font.split(
-                  hintText, ROW_WIDTH - controlWidth - 24 - (this.parent == null ? 0 : INDENT));
+                  hintText, rowWidth() - controlWidth - 24 - (this.parent == null ? 0 : INDENT));
     }
 
     private @Nullable AbstractWidget control(final @NotNull Font font) {
@@ -1496,7 +1505,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       this.name =
           new EditBox(
               font,
-              130,
+              Math.clamp(rowWidth() - 214, 60, 130),
               18,
               Component.translatable("taerra.settings.world_name", world.defaultName()));
       this.name.setMaxLength(32);
@@ -1612,15 +1621,23 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       final int left = getX() + 24;
       this.name.setPosition(left, getY() + 5);
       this.name.extractRenderState(graphics, mouseX, mouseY, partialTick);
+      final @NotNull Component environment =
+          this.world.environment() == null
+              ? Component.translatable("taerra.settings.not_loaded")
+              : Component.translatable("taerra.env." + this.world.environment());
       final @NotNull Component about =
           Component.empty()
-              .append(
-                  this.world.environment() == null
-                      ? Component.translatable("taerra.settings.not_loaded")
-                      : Component.translatable("taerra.env." + this.world.environment()))
+              .append(environment)
               .append(
                   Component.literal("  " + this.world.id()).withStyle(ChatFormatting.DARK_GRAY));
-      graphics.text(font, about, left + 1, getY() + 28, color, false);
+      final int room = getX() + getWidth() - 6 - 176 - left - 4;
+      graphics.text(
+          font,
+          font.width(about) <= room ? about : environment,
+          left + 1,
+          getY() + 28,
+          color,
+          false);
       int right = getX() + getWidth() - 6;
       for (final @NotNull AbstractWidget widget :
           List.<AbstractWidget>of(this.down, this.up, this.restricted, this.enabled)) {
@@ -1682,17 +1699,21 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                 minX == null || maxX == null ? null : (maxX - minX) / 2
               }
               : new Integer[] {minX, minZ, maxX, maxZ};
+      final @NotNull List<String> marks =
+          round ? List.of("X", "Z", "R") : List.of("X", "Z", "→ X", "Z");
+      final int labels = marks.stream().mapToInt(mark -> font.width(mark) + 4).sum();
+      final int width =
+          Math.clamp((rowWidth() - 8 - labels - 10 * (keys.size() - 1)) / keys.size(), 36, 64);
       for (int i = 0; i < keys.size(); i++) {
         final @NotNull Component name =
             Component.translatable("taerra.settings.limit." + keys.get(i));
-        final @NotNull EditBox box = new EditBox(font, 64, 18, name);
+        final @NotNull EditBox box = new EditBox(font, width, 18, name);
         box.setMaxLength(9);
         box.setValue(numbers[i] == null ? "" : String.valueOf(numbers[i]));
         box.setTooltip(Tooltip.create(name));
         ServerSettingsScreen.this.boxes.put(this.field + ":" + keys.get(i), box);
         this.inputs.add(box);
-        this.labels.add(
-            round ? List.of("X", "Z", "R").get(i) : List.of("X", "Z", "→ X", "Z").get(i));
+        this.labels.add(marks.get(i));
       }
       this.inputs.forEach(box -> clean(box, NOT_COORDINATE, _ -> update(current, round)));
       paint();
@@ -1768,7 +1789,17 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       slab(graphics, 0, hovered, mouseX, mouseY);
       final @NotNull Font font = Minecraft.getInstance().font;
       final int left = getContentX() + 4;
-      graphics.text(font, worldName(this.world.id()), left, getY() + 6, 0xFFFFFFFF, true);
+      final int room = getContentRight() - 6 - this.shape.getWidth() - 8 - left;
+      final @NotNull String name = worldName(this.world.id());
+      graphics.text(
+          font,
+          font.width(name) <= room
+              ? name
+              : font.plainSubstrByWidth(name, room - font.width("…")) + "…",
+          left,
+          getY() + 6,
+          0xFFFFFFFF,
+          true);
       graphics.text(font, this.world.id(), left, getY() + 17, MUTED, false);
       this.shape.setPosition(getContentRight() - 6 - this.shape.getWidth(), getY() + 5);
       this.shape.extractRenderState(graphics, mouseX, mouseY, partialTick);
@@ -1804,7 +1835,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                           "taerra.settings.layer_permission",
                           "taerra.web.layer." + layer.id().replace(':', '.'))
                       : Component.translatable("taerra.settings.layer_gone"),
-                  ROW_WIDTH - 90);
+                  rowWidth() - 90);
       this.toggle =
           CycleButton.booleanBuilder(
                   Component.translatable("taerra.settings.private").withStyle(ChatFormatting.GOLD),

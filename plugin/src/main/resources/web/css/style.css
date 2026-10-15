@@ -2916,6 +2916,7 @@ h2 .badge {
 }
 
 .manager__title {
+    flex: none;
     font: 700 10px/1.2 var(--font-display);
     letter-spacing: .04em;
     text-transform: uppercase;
@@ -2923,6 +2924,7 @@ h2 .badge {
 
 .manager__close {
     display: grid;
+    flex: none;
     place-items: center;
     width: 28px;
     height: 28px;
@@ -3743,7 +3745,9 @@ label.settings__row:hover {
     display: flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
     margin-left: auto;
+    overflow: hidden;
 }
 
 .settings__editors:not([hidden]) + .manager__close {
@@ -3752,6 +3756,7 @@ label.settings__row:hover {
 
 .settings__editor {
     display: flex;
+    flex: none;
     align-items: center;
     gap: 6px;
     height: 28px;
@@ -3947,6 +3952,7 @@ label.settings__row:hover {
     }
 
     .settings__flags {
+        flex-wrap: wrap;
         grid-column: 2 / -1;
         grid-row: 2;
     }
@@ -3954,5 +3960,27 @@ label.settings__row:hover {
     .settings__moves {
         grid-column: 3;
         grid-row: 1;
+    }
+
+    .settings__limit-line {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .settings__coordinate {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr);
+    }
+
+    .settings__coordinate .editor__input {
+        width: 100%;
+    }
+
+    .settings__editor {
+        padding: 0 4px;
+    }
+
+    .settings__editor-name {
+        display: none;
     }
 }

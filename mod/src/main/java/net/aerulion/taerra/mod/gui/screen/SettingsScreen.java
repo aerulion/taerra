@@ -1,15 +1,18 @@
 package net.aerulion.taerra.mod.gui.screen;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import net.aerulion.taerra.mod.config.MinimapInfo;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.gui.hud.Minimap;
+import net.aerulion.taerra.mod.gui.widget.FooterRows;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
 import net.minecraft.locale.Language;
@@ -22,6 +25,7 @@ public final class SettingsScreen extends OptionsSubScreen {
 
   private final Settings settings;
   private final @Nullable WebMap map;
+  private int footerWidth;
 
   public SettingsScreen(
       final @NotNull Screen lastScreen, final Settings settings, final @Nullable WebMap map) {
@@ -31,27 +35,44 @@ public final class SettingsScreen extends OptionsSubScreen {
   }
 
   @Override
+  protected void init() {
+    this.layout.removeChildren();
+    this.footerWidth = this.width;
+    super.init();
+  }
+
+  @Override
+  protected void repositionElements() {
+    if (this.footerWidth != this.width) {
+      rebuildWidgets();
+      return;
+    }
+    super.repositionElements();
+  }
+
+  @Override
   protected void addFooter() {
     final @Nullable WebMap map = this.map;
     if (map == null || map.account() == null) {
       super.addFooter();
       return;
     }
-    final @NotNull LinearLayout footer =
-        this.layout.addToFooter(LinearLayout.horizontal().spacing(8));
-    footer.addChild(
+    final @NotNull List<Button> buttons = new ArrayList<>();
+    buttons.add(
         Button.builder(
                 Component.translatable("taerra.devices.open"),
                 _ -> this.minecraft.setScreenAndShow(new DevicesScreen(this, map)))
             .build());
     if (map.account() != null && map.account().config()) {
-      footer.addChild(
+      buttons.add(
           Button.builder(
                   Component.translatable("taerra.settings.open"),
                   _ -> this.minecraft.setScreenAndShow(new ServerSettingsScreen(this, map)))
               .build());
     }
-    footer.addChild(Button.builder(CommonComponents.GUI_DONE, _ -> onClose()).build());
+    buttons.add(Button.builder(CommonComponents.GUI_DONE, _ -> onClose()).build());
+    FooterRows.add(
+        this.layout, this.width, HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT, buttons);
   }
 
   @Override
