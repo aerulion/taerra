@@ -97,7 +97,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
   }
 
   private @NotNull Map<String, Object> anonymize(
-      final @NotNull Map<String, Object> data, final @NotNull UUID uuid) {
+      final @NotNull Map<String, Object> data, final @NotNull Player player) {
     final @NotNull Map<String, Object> anonymous = new HashMap<>(data);
     anonymous.remove("name");
     anonymous.remove("mod");
@@ -105,7 +105,9 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
     anonymous.put("color", ANONYMOUS_COLOR);
     anonymous.put(
         "uuid",
-        UUID.nameUUIDFromBytes((this.anonymousSalt + uuid).getBytes(StandardCharsets.UTF_8))
+        UUID.nameUUIDFromBytes(
+                (this.anonymousSalt + player.getUniqueId() + player.getLastLogin())
+                    .getBytes(StandardCharsets.UTF_8))
             .toString());
     return anonymous;
   }
@@ -148,7 +150,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
           playerData.add(data);
           shown.put(player.getUniqueId(), player);
         } else {
-          playerData.add(anonymize(data, player.getUniqueId()));
+          playerData.add(anonymize(data, player));
         }
       }
 
