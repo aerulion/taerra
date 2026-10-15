@@ -21,4 +21,6 @@ public sealed interface ChunkColumnsCache permits ChunkColumnsCacheImpl {
   void forgetWorld(@NotNull String worldName);
 
   long size();
+
+  void resize(int maximumChunks);
 }

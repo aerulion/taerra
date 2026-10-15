@@ -42,6 +42,7 @@ function show(account) {
     $('account-out').hidden = Boolean(account);
     $('account-name').textContent = account?.name ?? '';
     $('manager-open').hidden = account?.personal !== true;
+    $('settings-open').hidden = account?.config !== true;
     const label = account ? `${t('account.as')} ${account.name}` : t('account.login');
     $('account-button').setAttribute('aria-label', label);
     $('account-button').title = label;
@@ -397,7 +398,11 @@ function canHide() {
     return current?.hide === true;
 }
 
+function canConfigure() {
+    return current?.config === true;
+}
+
 export const accountManager = {
     initialize, loggedIn, usesMod, ownUuid, canTeleport, canEditMarkers, canKeepPersonal, canCreatePrivateGroups, canRender,
-    canHide
+    canHide, canConfigure
 };

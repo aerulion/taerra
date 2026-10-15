@@ -47,4 +47,6 @@ public sealed interface TileGeneratorService permits TileGeneratorServiceImpl {
   int pyramidDepth(@NotNull TileCoordinate layer);
 
   int @Nullable [] renderedArea(@NotNull String worldName);
+
+  void setThreads(int configuredThreads);
 }

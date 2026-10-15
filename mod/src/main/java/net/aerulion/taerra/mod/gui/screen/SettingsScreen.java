@@ -44,6 +44,13 @@ public final class SettingsScreen extends OptionsSubScreen {
                 Component.translatable("taerra.devices.open"),
                 _ -> this.minecraft.setScreenAndShow(new DevicesScreen(this, map)))
             .build());
+    if (map.account() != null && map.account().config()) {
+      footer.addChild(
+          Button.builder(
+                  Component.translatable("taerra.settings.open"),
+                  _ -> this.minecraft.setScreenAndShow(new ServerSettingsScreen(this, map)))
+              .build());
+    }
     footer.addChild(Button.builder(CommonComponents.GUI_DONE, _ -> onClose()).build());
   }
 

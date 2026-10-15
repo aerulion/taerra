@@ -6,11 +6,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import net.aerulion.taerra.model.TileCoordinate;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class ChangeBufferImpl implements ChangeBuffer {
 
@@ -18,7 +20,8 @@ public final class ChangeBufferImpl implements ChangeBuffer {
   private final @NotNull RenderQueue renderQueue;
   private final @NotNull Set<TileCoordinate> pending;
   private final @NotNull ScheduledExecutorService scheduler;
-  private final long intervalSeconds;
+  private volatile long intervalSeconds;
+  private @Nullable ScheduledFuture<?> flushing;
 
   public ChangeBufferImpl(
       final @NotNull Plugin plugin,
@@ -58,25 +61,26 @@ public final class ChangeBufferImpl implements ChangeBuffer {
   }
 
   @Override
-  public void start() {
+  public synchronized void start() {
     if (!isBuffering()) {
       this.plugin.getLogger().info("Rendering world changes as they happen");
       return;
     }
 
-    this.scheduler.scheduleWithFixedDelay(
-        () -> {
-          try {
-            flush();
-          } catch (final Throwable e) {
-            this.plugin
-                .getLogger()
-                .log(Level.WARNING, "Failed to queue world changes: " + e.getMessage(), e);
-          }
-        },
-        this.intervalSeconds,
-        this.intervalSeconds,
-        TimeUnit.SECONDS);
+    this.flushing =
+        this.scheduler.scheduleWithFixedDelay(
+            () -> {
+              try {
+                flush();
+              } catch (final Throwable e) {
+                this.plugin
+                    .getLogger()
+                    .log(Level.WARNING, "Failed to queue world changes: " + e.getMessage(), e);
+              }
+            },
+            this.intervalSeconds,
+            this.intervalSeconds,
+            TimeUnit.SECONDS);
 
     this.plugin.getLogger().info("Rendering world changes every " + this.intervalSeconds + "s");
   }
@@ -95,5 +99,16 @@ public final class ChangeBufferImpl implements ChangeBuffer {
     final @NotNull List<TileCoordinate> batch = List.copyOf(this.pending);
     this.pending.removeAll(batch);
     this.renderQueue.enqueueAll(batch, RenderPriority.LIVE_ZOOM_0);
+  }
+
+  @Override
+  public synchronized void setInterval(final long intervalSeconds) {
+    if (this.flushing != null) {
+      this.flushing.cancel(false);
+      this.flushing = null;
+    }
+    this.intervalSeconds = intervalSeconds;
+    flush();
+    start();
   }
 }

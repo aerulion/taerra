@@ -65,7 +65,8 @@ public final class AccountRoutes implements Routes {
         "privateGroups", viewer.canCreatePrivateGroups(),
         "personal", viewer.canKeepPersonalMarkers(),
         "render", viewer.canRender(),
-        "hide", viewer.canHide());
+        "hide", viewer.canHide(),
+        "config", viewer.canConfigure());
   }
 
   private void handleAccountRequest(final @NotNull Context ctx) {

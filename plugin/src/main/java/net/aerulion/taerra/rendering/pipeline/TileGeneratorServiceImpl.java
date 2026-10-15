@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,8 +68,8 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   private final @NotNull TileStorage storage;
   private final @NotNull RenderQueue renderQueue;
   private final @NotNull TileUpdateBroadcaster tileUpdateBroadcaster;
-  private final @NotNull ExecutorService baseExecutorService;
-  private final @NotNull ExecutorService zoomExecutorService;
+  private final @NotNull ThreadPoolExecutor baseExecutorService;
+  private final @NotNull ThreadPoolExecutor zoomExecutorService;
   private final @NotNull ScheduledExecutorService scheduler;
   private final @NotNull AtomicBoolean running = new AtomicBoolean(false);
   private final @NotNull AtomicBoolean stopping = new AtomicBoolean(false);
@@ -82,8 +83,8 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   private final @NotNull Map<TileCoordinate, Integer> failures = new ConcurrentHashMap<>();
   private final @NotNull ManualRenderCoordinator manualRenders;
   private final @NotNull PyramidDepths depths;
-  private final int baseThreads;
-  private final int zoomThreads;
+  private volatile int baseThreads;
+  private volatile int zoomThreads;
 
   private volatile long startTimeMillis;
 
@@ -115,11 +116,15 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     this.zoomThreads = workerAllocation.zoomThreads();
 
     this.baseExecutorService =
-        Executors.newFixedThreadPool(
-            this.baseThreads, Thread.ofPlatform().name("Taerra-Base-Renderer").daemon().factory());
+        (ThreadPoolExecutor)
+            Executors.newFixedThreadPool(
+                this.baseThreads,
+                Thread.ofPlatform().name("Taerra-Base-Renderer").daemon().factory());
     this.zoomExecutorService =
-        Executors.newFixedThreadPool(
-            this.zoomThreads, Thread.ofPlatform().name("Taerra-Zoom-Renderer").daemon().factory());
+        (ThreadPoolExecutor)
+            Executors.newFixedThreadPool(
+                this.zoomThreads,
+                Thread.ofPlatform().name("Taerra-Zoom-Renderer").daemon().factory());
     this.scheduler =
         Executors.newSingleThreadScheduledExecutor(
             Thread.ofPlatform().name("Taerra-Scheduler").daemon().factory());
@@ -712,6 +717,35 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       final @NotNull TileCoordinate coord, final @NotNull RenderPriority priority) {
     if (coord.zoom() < depth(coord)) {
       this.renderQueue.enqueue(TileHierarchy.parentOf(coord), priority);
+    }
+  }
+
+  @Override
+  public synchronized void setThreads(final int configuredThreads) {
+    final @NotNull RenderWorkerAllocation allocation =
+        RenderWorkerAllocation.fromConfiguredThreads(configuredThreads);
+    resize(this.baseExecutorService, allocation.baseThreads());
+    resize(this.zoomExecutorService, allocation.zoomThreads());
+    this.baseThreads = allocation.baseThreads();
+    this.zoomThreads = allocation.zoomThreads();
+    this.plugin
+        .getLogger()
+        .info(
+            "Rendering with "
+                + this.baseThreads
+                + " base and "
+                + this.zoomThreads
+                + " zoom workers");
+    dispatchSoon();
+  }
+
+  private static void resize(final @NotNull ThreadPoolExecutor executor, final int threads) {
+    if (threads > executor.getMaximumPoolSize()) {
+      executor.setMaximumPoolSize(threads);
+      executor.setCorePoolSize(threads);
+    } else {
+      executor.setCorePoolSize(threads);
+      executor.setMaximumPoolSize(threads);
     }
   }
 }

@@ -18,4 +18,6 @@ public sealed interface TileCache permits TileCacheImpl {
 
   @NotNull
   TileCacheStats stats();
+
+  void resize(int maxSize);
 }

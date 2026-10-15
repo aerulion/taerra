@@ -34,4 +34,6 @@ public sealed interface TileStorage permits TileStorageImpl {
 
   @NotNull
   Optional<byte[]> readPick(@NotNull TileCoordinate coord);
+
+  void resize(int maxEncodedTiles);
 }

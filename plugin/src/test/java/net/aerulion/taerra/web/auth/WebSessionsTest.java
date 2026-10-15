@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -276,12 +277,7 @@ class WebSessionsTest {
             new CopyOnWriteArrayList<>(List.of("minecraft:overworld", "minecraft:the_end")),
             new CopyOnWriteArrayList<>(List.of("minecraft:the_end")),
             new CopyOnWriteArrayList<>(List.of("worldguard")),
-            true,
-            false,
-            true,
-            true,
-            false,
-            true);
+            new ConcurrentHashMap<>());
     final @NotNull Viewer staff =
         new Viewer(
             PLAYER, Set.of("taerra.web.world.minecraft.the_end", "taerra.web.layer.worldguard"));

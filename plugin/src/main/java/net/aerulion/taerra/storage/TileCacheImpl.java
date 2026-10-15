@@ -53,4 +53,9 @@ public final class TileCacheImpl implements TileCache {
     return new TileCacheStats(
         this.cache.estimatedSize(), stats.hitCount(), stats.missCount(), stats.evictionCount());
   }
+
+  @Override
+  public void resize(final int maxSize) {
+    this.cache.policy().eviction().ifPresent(eviction -> eviction.setMaximum(maxSize));
+  }
 }

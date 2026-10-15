@@ -28,6 +28,10 @@ public final class Requests {
         || "https".equalsIgnoreCase(ctx.header("X-Forwarded-Proto"));
   }
 
+  public WebSessions.@Nullable Session session(final @NotNull Context ctx) {
+    return this.sessions.session(ctx.cookie(WebSessions.COOKIE));
+  }
+
   public @NotNull Viewer viewer(final @NotNull Context ctx) {
     return this.sessions.viewer(ctx.cookie(WebSessions.COOKIE));
   }

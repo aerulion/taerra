@@ -86,7 +86,11 @@ public final class WorldList {
             world -> {
               final @NotNull Map<String, Object> worldData = new HashMap<>();
               worldData.put("name", WorldKeys.id(world));
-              worldData.put("displayName", WorldKeys.displayName(world.getKey()));
+              worldData.put(
+                  "displayName",
+                  this.taerraConfig
+                      .worldNames()
+                      .getOrDefault(WorldKeys.id(world), WorldKeys.displayName(world.getKey())));
               worldData.put("environment", world.getEnvironment().name());
               worldData.put("private", this.taerraConfig.worldPrivate(WorldKeys.id(world)));
               worldData.put(

@@ -45,6 +45,10 @@ public record Viewer(@Nullable UUID uuid, @NotNull Set<String> grants) {
     return this.grants.contains(TaerraPermission.WEB_HIDE.node());
   }
 
+  public boolean canConfigure() {
+    return this.uuid != null && this.grants.contains(TaerraPermission.WEB_CONFIG.node());
+  }
+
   public boolean canSeeHidden() {
     return this.grants.contains(TaerraPermission.WEB_SEE_HIDDEN.node());
   }

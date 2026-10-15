@@ -145,8 +145,8 @@ export const de: Copy = {
                         text: 'Kopiere Koordinaten oder einen Link, der die Karte genau dort öffnet. Angemeldete Spieler:innen mit Berechtigung teleportieren sich mit einem Klick dorthin.'
                     },
                     {
-                        title: 'Eine Jar',
-                        text: 'Keine externe Datenbank, kein CDN, kein Webserver und kein Adminpanel einzurichten. Alles wird im Spiel mit /taerra config eingestellt.'
+                        title: 'Eine Jar, live eingerichtet',
+                        text: 'Keine externe Datenbank, kein CDN, kein Webserver einzurichten. Dein Team ändert Welten, ihre Reihenfolge und Namen, private Ebenen, den Servernamen und den Renderer auf einer Einstellungsseite im Browser oder im Spiel, gemeinsam und ohne Neustart, oder mit /taerra config.'
                     },
                     {
                         title: 'Alles durchsuchen',
@@ -223,7 +223,7 @@ export const de: Copy = {
             },
             layers: {
                 title: 'Ebenen und Werkzeuge fürs Team',
-                text: 'WorldGuard-Regionen und Weltgrenzen sind Ebenen, die du einschaltest. Mit Berechtigung wählst du Chunks aus, um sie neu zu rendern oder zu verstecken, während ihr dort baut, und siehst den Fortschritt eines Renders direkt auf der Karte.',
+                text: 'WorldGuard-Regionen und Weltgrenzen sind Ebenen, die du einschaltest. Mit Berechtigung wählst du Chunks aus, um sie neu zu rendern oder zu verstecken, während ihr dort baut, und siehst den Fortschritt eines Renders direkt auf der Karte. Dein Team ändert die Einstellungen des Servers auf einem eigenen Bildschirm.',
                 alt: 'Eine nahe isometrische Ansicht einer Küste mit grün umrandeten WorldGuard-Regionen, einem Bereich mit Warnstreifen und 112 Chunks, die zum Neurendern ausgewählt sind'
             }
         },
@@ -302,7 +302,7 @@ export const de: Copy = {
             }
         },
         more: [
-            'Jede Einstellung lässt sich im Spiel mit /taerra config ändern. Alle Builds und was sich in ihnen geändert hat, findest du auf der ',
+            'Jede Einstellung lässt sich im Spiel mit /taerra config ändern, oder auf der Einstellungsseite der Karte. Alle Builds und was sich in ihnen geändert hat, findest du auf der ',
             'Download-Seite',
             '.'
         ] as Marked
@@ -334,7 +334,7 @@ export const de: Copy = {
                 },
                 {
                     command: '/taerra config …',
-                    text: 'Einstellungen ändern, Welten aktivieren, Welten und Ebenen privat machen'
+                    text: 'Einstellungen ändern, Welten aktivieren, benennen, ordnen und verstecken, Ebenen privat machen'
                 },
                 {command: '/taerra waypoint add|remove …', text: 'Wegpunkte hinzufügen oder entfernen'},
                 {command: '/taerra import dynmap <datei>', text: 'Markierungen aus dynmap importieren'},
@@ -394,6 +394,11 @@ export const de: Copy = {
                     permission: 'taerra.web.markers.personal',
                     standard: 'alle',
                     text: 'Wegpunkte anlegen, die nur du siehst, wenn angemeldet'
+                },
+                {
+                    permission: 'taerra.web.config',
+                    standard: 'OP',
+                    text: 'Die Einstellungen auf der Karte und in der Mod ändern, wenn angemeldet'
                 },
                 {
                     permission: 'taerra.web.world.<welt>',

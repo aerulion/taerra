@@ -260,4 +260,12 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
     recordHeights(WorldKeys.id(world), chunkX, chunkZ, columns.heights());
     this.cache.put(new ChunkKey(WorldKeys.id(world), chunkX, chunkZ), columns);
   }
+
+  @Override
+  public void resize(final int maximumChunks) {
+    this.cache
+        .policy()
+        .eviction()
+        .ifPresent(eviction -> eviction.setMaximum(Math.max(256, maximumChunks)));
+  }
 }

@@ -34,7 +34,8 @@ public final class WebGrants {
                 TaerraPermission.WEB_HIDE.node(),
                 TaerraPermission.WEB_MARKERS.node(),
                 TaerraPermission.WEB_MARKERS_PRIVATE.node(),
-                TaerraPermission.WEB_MARKERS_PERSONAL.node()))
+                TaerraPermission.WEB_MARKERS_PERSONAL.node(),
+                TaerraPermission.WEB_CONFIG.node()))
         .filter(node -> node.equals(MOD) || player.hasPermission(node))
         .collect(Collectors.toUnmodifiableSet());
   }

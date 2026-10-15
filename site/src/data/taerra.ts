@@ -196,8 +196,8 @@ const en = {
                         text: 'Copy coordinates, or a link that opens the map right there. Logged-in players with permission teleport to the spot in one click.'
                     },
                     {
-                        title: 'One jar',
-                        text: 'No external database, no CDN, no web server or admin panel to set up. Everything is configured in game with /taerra config.'
+                        title: 'One jar, set up live',
+                        text: 'No external database, no CDN, no web server to set up. Staff change worlds, their order and names, private layers, the server name and the renderer on a settings page in the browser or in game, together and without a restart, or with /taerra config.'
                     },
                     {
                         title: 'Search everything',
@@ -271,7 +271,7 @@ const en = {
             },
             layers: {
                 title: 'Layers and staff tools',
-                text: 'WorldGuard regions and world borders are layers you switch on. With permission, select chunks to render them again or hide them while you build, and watch a render’s progress right on the map.',
+                text: 'WorldGuard regions and world borders are layers you switch on. With permission, select chunks to render them again or hide them while you build, and watch a render’s progress right on the map. Staff change the server’s settings on a screen of their own.',
                 alt: 'A close isometric view of a coast with WorldGuard regions outlined in green, a hidden area in caution stripes and 112 chunks selected for rendering again'
             }
         },
@@ -350,7 +350,7 @@ const en = {
             }
         },
         more: [
-            'Every setting can be changed in game with /taerra config. Every build and what changed in it is on the ',
+            'Every setting can be changed in game with /taerra config, or on the settings page of the map. Every build and what changed in it is on the ',
             'download page',
             '.'
         ] as Marked
@@ -377,7 +377,10 @@ const en = {
                     command: '/taerra limit <world> circle|square|rectangle …',
                     text: 'Set how much of a world the map shows'
                 },
-                {command: '/taerra config …', text: 'Change settings, enable worlds, make worlds and layers private'},
+                {
+                    command: '/taerra config …',
+                    text: 'Change settings, enable, name, order and hide worlds, make layers private'
+                },
                 {command: '/taerra waypoint add|remove …', text: 'Add or remove waypoints'},
                 {command: '/taerra import dynmap <file>', text: 'Import markers from dynmap'},
                 {command: '/taerra login [code]', text: 'Log in to the web map'},
@@ -432,6 +435,11 @@ const en = {
                     permission: 'taerra.web.markers.personal',
                     standard: 'everyone',
                     text: 'Keeping waypoints only you see while logged in'
+                },
+                {
+                    permission: 'taerra.web.config',
+                    standard: 'op',
+                    text: 'Changing the settings on the map and in the mod while logged in'
                 },
                 {
                     permission: 'taerra.web.world.<world>',

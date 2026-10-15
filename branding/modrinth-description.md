@@ -45,7 +45,8 @@ If something breaks or looks wrong, please report it on [GitHub](https://github.
 - **Waypoints, areas, and lines** in named groups and colors, private ones too, each with an optional description. Players with permission draw, move, and recolor them right on the map, in the browser or in game, with areas traced from selected chunks or clicked point by point, and lines straight or smooth. The mod shows waypoints as labels in the world itself.
 - **Waypoints of your own.** Every logged-in player can keep up to 100 waypoints, areas, and lines only they see, in the browser and in game. They are drawn as gems and dashed lines, so they never pass for the server's. A list of them, on the web map and in the mod, sorts by name or distance, filters by world, hides single ones from the map, and exports any of them to a JSON file to share or back up, which imports again by adding to yours or replacing them. When you die, a Last Death waypoint marks the spot, replacing the one before. Other plugins can show players their own markers the same way, like their homes.
 - **Privacy built in.** Players in spectator mode, invisible or vanished, don't appear, and neither does anyone with `taerra.hide`. Staff with `taerra.web.see-hidden` still see them, marked as hidden. Players who turned off server listings in their client show as an anonymous gray dot. Player heads are served by your server, so viewing the map never reveals a visitor's address to Mojang.
-- **One jar.** No external database, no CDN, and no web admin panel: everything is configured in game.
+- **One jar.** No external database, no CDN, and no separate admin panel: everything is configured in game, or on the settings page of the web map and the mod.
+- **A settings page** for staff with `taerra.web.config`, in the browser and in the mod: which worlds are on the map, their order and names, private worlds and layers, the built-in layers, the server name, the join hint, and how the renderer and its caches run. Every change applies right away, without a restart. Several staff can edit at once: the page shows who else has it open, and where, updates live as others save, and when two people changed the same setting, asks which to keep. Each setting shows who changed it last. The web server's port and address stay in game only, so the page can never cut itself off.
 - **Right-click any place** to copy its coordinates, or a link straight to it.
 - **Search everything.** Press `/` to find players, markers, worlds, or coordinates across every world, and jump there. The mod has the same search on a key of its own.
 - **Limit the map** to a circle, square, or rectangle, so it ends where your playable area does.
@@ -75,6 +76,7 @@ The optional Fabric mod brings the server's map into the game. Join a server run
 - a **minimap** you can size, zoom, place on either side, and turn with the player, with the lines you pick below it: coordinates, Nether coordinates, chunk, facing, biome, weather, time, day, light level, real time, and FPS
 - **waypoints in the world** as labels where they are, with the distance, hidden and shown with B, a list of your own on J to filter, sort, hide, export and import them, and a key to set one where you stand, H by default
 - **navigation** to a waypoint, a player, or any spot on the map, started in game or from the web map while you play: a beacon beam where it is, and an arrow with the distance at the top of the screen, through the Nether too
+- the **server's settings page** for staff with `taerra.web.config`, the same as on the web map, from the mod's settings
 
 It only works on servers running the TAERRA plugin, and it renders nothing itself: it draws the images the server already made. It needs Fabric API. Mod Menu is optional, for the settings screen.
 
@@ -87,7 +89,7 @@ It only works on servers running the TAERRA plugin, and it renders nothing itsel
 5. **Make it public.** Put the map behind a reverse proxy with HTTPS and set its address with `/taerra config web.public-url https://map.example.com`. Login links and link previews in chat apps use it.
 6. **Name it.** `/taerra config web.name "My Server"` shows your server's name in the map's header, page title, and link previews.
 
-Every setting can also be changed in game with `/taerra config`.
+Every setting can also be changed in game with `/taerra config`, or on the settings page of the web map and the mod.
 
 ![Commands](https://assets.corpium.net/taerra/section-commands.png?v=82d4a213)
 
@@ -100,7 +102,7 @@ Every setting can also be changed in game with `/taerra config`.
 | `/taerra render cancel` | Stop a running render |
 | `/taerra render flush` | Drop every queued tile, unrendered changes included |
 | `/taerra limit <world> circle\|square\|rectangle …` | Set how much of a world the map shows |
-| `/taerra config …` | Change settings, enable worlds, make worlds and layers private |
+| `/taerra config …` | Change settings, enable, name, order and hide worlds, make layers private |
 | `/taerra waypoint add\|remove …` | Add or remove waypoints |
 | `/taerra import dynmap <file>` | Import markers from dynmap |
 | `/taerra login [code]` | Log in to the web map |
@@ -127,6 +129,7 @@ Every setting can also be changed in game with `/taerra config`.
 | `taerra.web.markers` | op | Adding, editing, moving, and removing markers while logged in |
 | `taerra.web.markers.private` | op | Creating private marker groups while logged in |
 | `taerra.web.markers.personal` | everyone | Keeping waypoints only you see while logged in |
+| `taerra.web.config` | op | Changing the settings on the web map and in the mod while logged in |
 | `taerra.web.world.<world>` | op | Seeing a private world, e.g. `taerra.web.world.minecraft.the_end` |
 | `taerra.web.layer.<layer>` | op | Seeing a private layer, e.g. `taerra.web.layer.worldguard` |
 | `taerra.hide` | nobody | Being hidden from the map |

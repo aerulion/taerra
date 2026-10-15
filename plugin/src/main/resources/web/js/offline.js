@@ -2,16 +2,34 @@ import {t} from './i18n.js';
 import {wsManager} from './websocket.js';
 
 const OFFLINE_DELAY_MILLIS = 4000;
+const FADE_MILLIS = 600;
 
 export function setupOffline() {
     const overlay = document.getElementById('offline');
     const button = document.getElementById('offline-now');
     let timer = 0;
+    let hiding = 0;
     const show = (shown) => {
+        clearTimeout(hiding);
         if (shown) {
-            document.querySelectorAll(':popover-open').forEach(popover => popover.hidePopover());
+            document.querySelectorAll(':popover-open').forEach(popover => {
+                if (popover !== overlay) {
+                    popover.hidePopover();
+                }
+            });
+            if (overlay.matches(':popover-open')) {
+                overlay.hidePopover();
+            }
+            overlay.showPopover();
+            requestAnimationFrame(() => overlay.classList.add('is-shown'));
+        } else {
+            overlay.classList.remove('is-shown');
+            hiding = setTimeout(() => {
+                if (overlay.matches(':popover-open')) {
+                    overlay.hidePopover();
+                }
+            }, FADE_MILLIS);
         }
-        overlay.classList.toggle('is-shown', shown);
         overlay.inert = !shown;
     };
     wsManager.on('status', ({state, seconds}) => {

@@ -38,6 +38,7 @@ import net.aerulion.taerra.mod.web.model.NavigationTarget;
 import net.aerulion.taerra.mod.web.model.PersonalWaypoint;
 import net.aerulion.taerra.mod.web.model.Player;
 import net.aerulion.taerra.mod.web.model.Progress;
+import net.aerulion.taerra.mod.web.model.ServerSettings;
 import net.aerulion.taerra.mod.web.model.Sky;
 import net.aerulion.taerra.mod.web.model.Waypoint;
 import net.aerulion.taerra.mod.web.model.WaypointGroup;
@@ -56,6 +57,7 @@ public final class WebMapImpl implements WebMap {
   private static final Type PLAYERS = new TypeToken<List<Player>>() {}.getType();
   private static final Type SKIES = new TypeToken<Map<String, Sky>>() {}.getType();
   private static final Type LAYERS = new TypeToken<List<Layer>>() {}.getType();
+  private static final Type EDITORS = new TypeToken<List<ServerSettings.Editor>>() {}.getType();
   private static final Type GROUPS = new TypeToken<List<WaypointGroup>>() {}.getType();
   private static final Type DEVICES = new TypeToken<List<Device>>() {}.getType();
   private static final Type PERSONAL = new TypeToken<List<PersonalWaypoint>>() {}.getType();
@@ -82,6 +84,7 @@ public final class WebMapImpl implements WebMap {
   private long navigationVersion;
   private @Nullable Progress progress;
   private @Nullable WebSocket socket;
+  private boolean settingsOpen;
   private @Nullable String subscribed;
   private @Nullable String focused;
   private boolean connecting;
@@ -336,6 +339,37 @@ public final class WebMapImpl implements WebMap {
   }
 
   @Override
+  public void settings(final @NotNull Consumer<@Nullable ServerSettings> then) {
+    this.client.request(
+        "GET",
+        "/api/settings",
+        null,
+        (status, body) -> {
+          @Nullable ServerSettings settings = null;
+          if (status == 200 && body != null) {
+            try {
+              settings = GSON.fromJson(body, ServerSettings.class);
+            } catch (final RuntimeException e) {
+              LOGGER.warn("TAERRA: unreadable settings: {}", e.toString());
+            }
+          }
+          then.accept(settings);
+        });
+  }
+
+  @Override
+  public void saveSettings(
+      final @NotNull JsonObject edit, final @NotNull BiConsumer<Integer, @Nullable String> then) {
+    this.client.request("PUT", "/api/settings", edit, then);
+  }
+
+  @Override
+  public void setSettingsOpen(final boolean open) {
+    this.settingsOpen = open;
+    send(Map.of("type", "settings", "open", open, "client", "mod"));
+  }
+
+  @Override
   public void logOutDevice(final @NotNull String id, final @NotNull IntConsumer then) {
     this.client.send("DELETE", "/api/account/sessions/" + Urls.segment(id), null, then);
   }
@@ -557,7 +591,7 @@ public final class WebMapImpl implements WebMap {
     List.copyOf(this.listeners).forEach(WebMapListener::playersChanged);
   }
 
-  private void send(final Map<String, String> message) {
+  private void send(final Map<String, ?> message) {
     if (this.socket != null) {
       this.socket.sendText(GSON.toJson(message), true);
     }
@@ -584,6 +618,11 @@ public final class WebMapImpl implements WebMap {
                             this.picks.refreshAll();
                             refreshWorlds();
                             this.staleMarkers.addAll(this.markers.keySet());
+                            if (this.settingsOpen) {
+                              send(Map.of("type", "settings", "open", true, "client", "mod"));
+                              List.copyOf(this.listeners)
+                                  .forEach(listener -> listener.settingsChanged(Long.MAX_VALUE));
+                            }
                           } else {
                             this.nextConnect = System.currentTimeMillis() + RECONNECT_MILLIS;
                           }
@@ -642,6 +681,19 @@ public final class WebMapImpl implements WebMap {
         this.staleMarkers.addAll(this.markers.keySet());
       }
       case "progress" -> this.progress = GSON.fromJson(message, Progress.class);
+      case "config" -> {
+        if (!this.loadingConfig) {
+          loadConfig();
+        }
+      }
+      case "settings" -> {
+        final long revision = message.get("revision").getAsLong();
+        List.copyOf(this.listeners).forEach(listener -> listener.settingsChanged(revision));
+      }
+      case "settings_editors" -> {
+        final List<ServerSettings.Editor> editors = GSON.fromJson(message.get("editors"), EDITORS);
+        List.copyOf(this.listeners).forEach(listener -> listener.settingsEditors(editors));
+      }
       default -> {}
     }
   }

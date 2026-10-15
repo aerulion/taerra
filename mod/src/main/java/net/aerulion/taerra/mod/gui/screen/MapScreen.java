@@ -349,7 +349,8 @@ public final class MapScreen extends Screen {
     final int titleRoom =
         this.width - 2 * (8 + PANEL_BUTTON_WIDTH + 4 + SPAWN_BUTTON_WIDTH + TITLE_GAP);
     if (titleRoom >= MIN_TITLE) {
-      this.layout.addToHeader(new StringWidget(this.title, this.font).setMaxWidth(titleRoom));
+      this.layout.addToHeader(
+          new StringWidget(title(this.map.config()), this.font).setMaxWidth(titleRoom));
     }
     this.playersButton =
         this.layout.addToHeader(

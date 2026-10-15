@@ -2,6 +2,7 @@ package net.aerulion.taerra.bootstrap;
 
 import java.io.File;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import net.aerulion.taerra.api.TaerraApi;
@@ -19,11 +20,10 @@ import net.aerulion.taerra.command.StatusSubCommand;
 import net.aerulion.taerra.command.TaerraCommands;
 import net.aerulion.taerra.command.WaypointSubCommand;
 import net.aerulion.taerra.config.ConfigEditor;
+import net.aerulion.taerra.config.LiveSettings;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.integration.ChunkyGeneration;
-import net.aerulion.taerra.integration.WorldBorders;
-import net.aerulion.taerra.integration.WorldGuardRegions;
 import net.aerulion.taerra.limit.HiddenAreaMarkers;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.listener.JoinHint;
@@ -76,7 +76,6 @@ import net.aerulion.taerra.web.socket.MapWebSocketHandler;
 import net.aerulion.taerra.web.socket.MapWebSocketHandlerImpl;
 import net.aerulion.taerra.web.socket.TileUpdateBroadcaster;
 import net.aerulion.taerra.web.socket.TileUpdateBroadcasterImpl;
-import net.aerulion.taerra.world.LoadedChunkMarkers;
 import net.aerulion.taerra.world.Teleports;
 import net.kyori.adventure.translation.GlobalTranslator;
 import net.kyori.adventure.translation.Translator;
@@ -89,6 +88,7 @@ import org.jetbrains.annotations.Nullable;
 public final class Taerra extends JavaPlugin {
 
   private static final long QUEUE_SAVE_INTERVAL_TICKS = 20L * 60L * 5L;
+  private static final long WEB_RESTART_DELAY = 20L;
 
   private @Nullable TileCache tileCache;
   private @Nullable RenderQueue renderQueue;
@@ -256,6 +256,36 @@ public final class Taerra extends JavaPlugin {
       final @NotNull PersonalWaypoints personalWaypoints =
           new PersonalWaypoints(this, markers, new File(getDataFolder(), "personal-waypoints"));
       getServer().getPluginManager().registerEvents(personalWaypoints, this);
+      final @NotNull LiveSettings liveSettings =
+          new LiveSettings(
+              this,
+              markers,
+              configuration,
+              worldLimits,
+              generatorService,
+              tileCache,
+              tileStorage,
+              chunkColumnsCache,
+              changeBuffer,
+              () ->
+                  getServer()
+                      .getScheduler()
+                      .runTaskLaterAsynchronously(
+                          this, () -> onWebServer(TaerraWebServer::restart), WEB_RESTART_DELAY),
+              () -> onWebServer(TaerraWebServer::refreshMarkers),
+              () -> webSocketHandler.broadcast("{\"type\":\"config\"}"));
+      final @NotNull ConfigEditor configEditor =
+          new ConfigEditor(
+              this,
+              configuration,
+              markers,
+              waypoints,
+              liveSettings::apply,
+              () -> onWebServer(TaerraWebServer::refreshMarkers),
+              revision ->
+                  webSocketHandler.broadcastToConfigurers(
+                      "{\"type\":\"settings\",\"revision\":" + revision + "}"));
+      configEditor.start();
       final @NotNull TaerraWebServer webServer =
           new TaerraWebServerImpl(
               this,
@@ -273,7 +303,8 @@ public final class Taerra extends JavaPlugin {
               renders,
               renderFeedback,
               new Teleports(this),
-              new WaypointEditor(this, configuration, waypoints, personalWaypoints));
+              new WaypointEditor(this, configuration, waypoints, personalWaypoints),
+              configEditor);
       this.webServer = webServer;
       webServer.start();
       tileUpdateBroadcaster.start();
@@ -307,18 +338,8 @@ public final class Taerra extends JavaPlugin {
       getServer()
           .getServicesManager()
           .register(TaerraApi.class, new TaerraApiImpl(markers), this, ServicePriority.Normal);
-      if (configuration.worldGuardRegions()
-          && getServer().getPluginManager().isPluginEnabled("WorldGuard")) {
-        WorldGuardRegions.start(this, markers, configuration);
-        getLogger().info("Hooked into WorldGuard, regions show up on the map");
-      }
-      if (configuration.worldBorders()) {
-        WorldBorders.start(this, markers, configuration);
-      }
+      liveSettings.startLayers();
       HiddenAreaMarkers.start(this, markers, worldLimits);
-      if (configuration.loadedChunks()) {
-        LoadedChunkMarkers.start(this, markers, configuration, worldLimits);
-      }
 
       registerCommands(
           generatorService,
@@ -332,7 +353,7 @@ public final class Taerra extends JavaPlugin {
           worldLimits,
           configuration,
           webSettings,
-          webServer,
+          configEditor,
           webSessions,
           modHandshake,
           markers);
@@ -342,6 +363,13 @@ public final class Taerra extends JavaPlugin {
     } catch (final Exception e) {
       getLogger().log(Level.SEVERE, "Failed to enable: " + Throwables.describe(e), e);
       getServer().getPluginManager().disablePlugin(this);
+    }
+  }
+
+  private void onWebServer(final @NotNull Consumer<TaerraWebServer> action) {
+    final @Nullable TaerraWebServer webServer = this.webServer;
+    if (webServer != null) {
+      action.accept(webServer);
     }
   }
 
@@ -365,7 +393,7 @@ public final class Taerra extends JavaPlugin {
       final @NotNull WorldLimits worldLimits,
       final @NotNull TaerraConfig configuration,
       final @NotNull WebSettings webSettings,
-      final @NotNull TaerraWebServer webServer,
+      final @NotNull ConfigEditor configEditor,
       final @NotNull WebSessions webSessions,
       final @NotNull ModHandshake modHandshake,
       final @NotNull MarkerRegistryInternal markers) {
@@ -376,16 +404,7 @@ public final class Taerra extends JavaPlugin {
             new RenderSubCommand(renders, renderFeedback, exports),
             new LimitSubCommand(renders, renderFeedback, worldLimits),
             new WaypointSubCommand(waypoints),
-            new ConfigSubCommand(
-                new ConfigEditor(
-                    this,
-                    configuration,
-                    markers,
-                    () ->
-                        getServer().getScheduler().runTaskAsynchronously(this, webServer::restart),
-                    webServer::refreshMarkers),
-                configuration,
-                markers),
+            new ConfigSubCommand(configEditor, configuration, markers),
             new ImportSubCommand(new DynmapImport(this, waypoints)),
             new LoginSubCommand(webSettings, configuration, webSessions),
             new LogoutSubCommand(webSessions),

@@ -10,9 +10,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.chat.Messages;
@@ -29,24 +27,16 @@ import org.jetbrains.annotations.NotNull;
 
 public final class ConfigSubCommand implements TaerraSubCommand {
 
-  private static final @NotNull Map<String, ArgumentType<?>> SETTINGS = new LinkedHashMap<>();
+  private static @NotNull String who(final @NotNull CommandContext<CommandSourceStack> context) {
+    return context.getSource().getSender().getName();
+  }
 
-  static {
-    SETTINGS.put("web.port", IntegerArgumentType.integer(1, 65535));
-    SETTINGS.put("web.host", StringArgumentType.word());
-    SETTINGS.put("web.public-url", StringArgumentType.greedyString());
-    SETTINGS.put("web.name", StringArgumentType.greedyString());
-    SETTINGS.put("join-hint.interval-days", IntegerArgumentType.integer(0));
-    SETTINGS.put("rendering.render-threads", IntegerArgumentType.integer(0));
-    SETTINGS.put("rendering.update-interval", IntegerArgumentType.integer(0));
-    SETTINGS.put("cache.max-tiles", IntegerArgumentType.integer(1));
-    SETTINGS.put("cache.max-chunks", IntegerArgumentType.integer(256));
-    SETTINGS.put("markers.worldguard.enabled", BoolArgumentType.bool());
-    SETTINGS.put("markers.worldguard.shown-by-default", BoolArgumentType.bool());
-    SETTINGS.put("markers.worldborder.enabled", BoolArgumentType.bool());
-    SETTINGS.put("markers.worldborder.shown-by-default", BoolArgumentType.bool());
-    SETTINGS.put("markers.loaded-chunks.enabled", BoolArgumentType.bool());
-    SETTINGS.put("markers.loaded-chunks.shown-by-default", BoolArgumentType.bool());
+  private static @NotNull ArgumentType<?> type(final ConfigEditor.@NotNull Setting setting) {
+    return switch (setting.kind()) {
+      case NUMBER -> IntegerArgumentType.integer(setting.min(), setting.max());
+      case TOGGLE -> BoolArgumentType.bool();
+      case TEXT -> StringArgumentType.greedyString();
+    };
   }
 
   private final @NotNull ConfigEditor editor;
@@ -104,7 +94,18 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                                     .executes(context -> setWorldPrivate(context, true)))
                             .then(
                                 Commands.literal("public")
-                                    .executes(context -> setWorldPrivate(context, false)))))
+                                    .executes(context -> setWorldPrivate(context, false)))
+                            .then(
+                                Commands.literal("name")
+                                    .then(
+                                        Commands.argument("name", StringArgumentType.greedyString())
+                                            .executes(this::setWorldName)))
+                            .then(
+                                Commands.literal("position")
+                                    .then(
+                                        Commands.argument(
+                                                "position", IntegerArgumentType.integer(1))
+                                            .executes(this::moveWorld)))))
             .then(
                 Commands.literal("layer")
                     .then(
@@ -123,18 +124,18 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                             .then(
                                 Commands.literal("public")
                                     .executes(context -> setLayerPrivate(context, false)))));
-    SETTINGS.forEach(
-        (key, type) ->
+    ConfigEditor.SETTINGS.forEach(
+        setting ->
             builder.then(
-                Commands.literal(key)
-                    .executes(context -> show(context, key))
+                Commands.literal(setting.key())
+                    .executes(context -> show(context, setting.key()))
                     .then(
-                        Commands.argument("value", type)
+                        Commands.argument("value", type(setting))
                             .executes(
                                 context ->
                                     set(
                                         context,
-                                        key,
+                                        setting.key(),
                                         context.getArgument("value", Object.class))))));
     return builder;
   }
@@ -152,8 +153,8 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                     this.config.enabledWorlds().stream().map(Messages::world).toList())));
     lines.add(listRow("config.private_worlds", this.config.privateWorlds()));
     lines.add(listRow("config.private_layers", this.config.privateLayers()));
-    SETTINGS
-        .keySet()
+    ConfigEditor.SETTINGS.stream()
+        .map(ConfigEditor.Setting::key)
         .forEach(
             key ->
                 lines.add(
@@ -186,7 +187,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
       final @NotNull CommandContext<CommandSourceStack> context,
       final @NotNull String key,
       final @NotNull Object given) {
-    final ConfigEditor.@NotNull Change change = this.editor.set(key, given);
+    final ConfigEditor.@NotNull Change change = this.editor.set(key, given, who(context));
     feedback(
         context,
         switch (change.effect()) {
@@ -196,9 +197,6 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                   "config.set_web", Messages.value(key), Messages.value(change.value()));
           case APPLIED ->
               Messages.success("config.set", Messages.value(key), Messages.value(change.value()));
-          case NEEDS_RESTART ->
-              Messages.success(
-                  "config.set_restart", Messages.value(key), Messages.value(change.value()));
         });
     return SUCCESS;
   }
@@ -206,7 +204,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
   private int setWorldPrivate(
       final @NotNull CommandContext<CommandSourceStack> context, final boolean hidden) {
     final @NotNull String worldName = WorldKeys.id(context.getArgument("world", World.class));
-    this.editor.setWorldPrivate(worldName, hidden);
+    this.editor.setWorldPrivate(worldName, hidden, who(context));
     feedback(
         context,
         hidden
@@ -218,10 +216,43 @@ public final class ConfigSubCommand implements TaerraSubCommand {
     return SUCCESS;
   }
 
+  private int setWorldName(final @NotNull CommandContext<CommandSourceStack> context) {
+    final @NotNull String worldName = WorldKeys.id(context.getArgument("world", World.class));
+    final @NotNull String given = StringArgumentType.getString(context, "name");
+    final @NotNull String name = "\"\"".equals(given) ? "" : given;
+    if (!this.editor.setWorldName(worldName, name, who(context))) {
+      feedback(context, Messages.error("config.bad_world_name"));
+      return SUCCESS;
+    }
+    feedback(
+        context,
+        name.isBlank()
+            ? Messages.success("config.world_name_reset", Messages.world(worldName))
+            : Messages.success(
+                "config.world_named", Messages.world(worldName), Messages.value(name.strip())));
+    return SUCCESS;
+  }
+
+  private int moveWorld(final @NotNull CommandContext<CommandSourceStack> context) {
+    final @NotNull String worldName = WorldKeys.id(context.getArgument("world", World.class));
+    final int position = IntegerArgumentType.getInteger(context, "position");
+    if (!this.editor.moveWorld(worldName, position, who(context))) {
+      feedback(context, Messages.error("config.world_not_enabled", Messages.world(worldName)));
+      return SUCCESS;
+    }
+    feedback(
+        context,
+        Messages.success(
+            "config.world_moved",
+            Messages.world(worldName),
+            Messages.value(this.config.enabledWorlds().indexOf(worldName) + 1)));
+    return SUCCESS;
+  }
+
   private int setLayerPrivate(
       final @NotNull CommandContext<CommandSourceStack> context, final boolean hidden) {
     final @NotNull String layerId = StringArgumentType.getString(context, "layer");
-    if (!this.editor.setLayerPrivate(layerId, hidden)) {
+    if (!this.editor.setLayerPrivate(layerId, hidden, who(context))) {
       feedback(context, Messages.error("config.unknown_layer", Messages.value(layerId)));
       return SUCCESS;
     }
@@ -239,7 +270,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
   private int setWorld(
       final @NotNull CommandContext<CommandSourceStack> context, final boolean enabled) {
     final @NotNull String worldName = WorldKeys.id(context.getArgument("world", World.class));
-    this.editor.setWorldEnabled(worldName, enabled);
+    this.editor.setWorldEnabled(worldName, enabled, who(context));
     feedback(
         context,
         enabled

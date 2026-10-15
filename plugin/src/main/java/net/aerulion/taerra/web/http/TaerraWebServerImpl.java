@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import net.aerulion.taerra.chat.RenderFeedback;
+import net.aerulion.taerra.config.ConfigEditor;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.marker.MarkerRegistryInternal;
@@ -28,6 +29,7 @@ import net.aerulion.taerra.web.http.route.ActionRoutes;
 import net.aerulion.taerra.web.http.route.MapRoutes;
 import net.aerulion.taerra.web.http.route.NavigationRoutes;
 import net.aerulion.taerra.web.http.route.Routes;
+import net.aerulion.taerra.web.http.route.SettingsRoutes;
 import net.aerulion.taerra.web.http.route.WaypointRoutes;
 import net.aerulion.taerra.web.player.PlayerAvatars;
 import net.aerulion.taerra.web.player.PlayerPositionBroadcaster;
@@ -76,7 +78,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       final @NotNull RenderService renders,
       final @NotNull RenderFeedback renderFeedback,
       final @NotNull Teleports teleports,
-      final @NotNull WaypointEditor waypointEditor) {
+      final @NotNull WaypointEditor waypointEditor,
+      final @NotNull ConfigEditor configEditor) {
     super();
     this.plugin = plugin;
     this.taerraConfig = taerraConfig;
@@ -106,7 +109,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 plugin, requests, taerraConfig, waypoints, personalWaypoints, waypointEditor),
             new NavigationRoutes(requests, taerraConfig, wsHandler),
             new ActionRoutes(
-                plugin, requests, taerraConfig, modHandshake, teleports, renders, renderFeedback));
+                plugin, requests, taerraConfig, modHandshake, teleports, renders, renderFeedback),
+            new SettingsRoutes(requests, configEditor, wsHandler));
   }
 
   @Override

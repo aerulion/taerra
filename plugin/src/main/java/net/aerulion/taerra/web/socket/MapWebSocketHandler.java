@@ -1,6 +1,7 @@
 package net.aerulion.taerra.web.socket;
 
 import io.javalin.websocket.WsConfig;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 import net.aerulion.taerra.web.auth.Viewer;
@@ -27,4 +28,11 @@ public sealed interface MapWebSocketHandler permits MapWebSocketHandlerImpl {
   int clientCount(@NotNull String worldName);
 
   void revalidate();
+
+  void broadcastToConfigurers(@NotNull String message);
+
+  @NotNull
+  List<Editor> settingsEditors();
+
+  record Editor(@NotNull UUID uuid, @NotNull String name, @NotNull String client) {}
 }

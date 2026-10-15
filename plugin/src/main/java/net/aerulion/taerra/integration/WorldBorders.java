@@ -16,6 +16,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -39,13 +40,14 @@ public final class WorldBorders {
     super();
   }
 
-  public static void start(
+  public static @NotNull BukkitTask start(
       final @NotNull Plugin plugin,
       final @NotNull MarkerRegistry registry,
-      final @NotNull TaerraConfig config) {
+      final @NotNull TaerraConfig config,
+      final boolean shownByDefault) {
     final @NotNull MarkerLayer layer =
-        registry.layer(plugin, "worldborder", "World border", config.worldBordersShownByDefault());
-    Bukkit.getScheduler()
+        registry.layer(plugin, "worldborder", "World border", shownByDefault);
+    return Bukkit.getScheduler()
         .runTaskTimer(
             plugin, () -> layer.setAll(borders(config).values()), 20L, SYNC_INTERVAL_TICKS);
   }

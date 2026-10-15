@@ -13,4 +13,6 @@ public sealed interface ChangeBuffer permits ChangeBufferImpl {
   void start();
 
   void stop();
+
+  void setInterval(long intervalSeconds);
 }

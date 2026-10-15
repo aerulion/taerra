@@ -6,6 +6,9 @@ import io.javalin.websocket.WsContext;
 import io.javalin.websocket.WsErrorContext;
 import io.javalin.websocket.WsMessageContext;
 import java.io.IOException;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +31,7 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
   private final @NotNull WebSessions sessions;
   private final @NotNull Map<WsContext, Connection> connections;
   private final @NotNull Map<WsContext, String> subscribedWorlds;
+  private final @NotNull Map<WsContext, String> settingsClients = new ConcurrentHashMap<>();
   private final @NotNull ObjectMapper mapper;
 
   private volatile @Nullable Progress progress;
@@ -84,7 +88,46 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
 
   @Override
   public void broadcast(final @NotNull Function<Viewer, String> message) {
-    this.connections.forEach((ctx, connection) -> send(ctx, message.apply(connection.viewer())));
+    this.connections.forEach(
+        (ctx, connection) -> {
+          final @Nullable String text = message.apply(connection.viewer());
+          if (text != null) {
+            send(ctx, text);
+          }
+        });
+  }
+
+  @Override
+  public void broadcastToConfigurers(final @NotNull String message) {
+    broadcast(viewer -> viewer.canConfigure() ? message : null);
+  }
+
+  @Override
+  public @NotNull List<Editor> settingsEditors() {
+    final @NotNull Map<String, Editor> editors = new LinkedHashMap<>();
+    this.settingsClients.forEach(
+        (ctx, client) -> {
+          final @Nullable Connection connection = this.connections.get(ctx);
+          final WebSessions.@Nullable Session session =
+              connection == null ? null : this.sessions.session(connection.token());
+          if (session != null && connection.viewer().uuid() != null) {
+            editors.putIfAbsent(
+                session.uuid() + "/" + client, new Editor(session.uuid(), session.name(), client));
+          }
+        });
+    return editors.values().stream()
+        .sorted(Comparator.comparing(Editor::name, String.CASE_INSENSITIVE_ORDER))
+        .toList();
+  }
+
+  private void publishEditors() {
+    try {
+      broadcastToConfigurers(
+          this.mapper.writeValueAsString(
+              Map.of("type", "settings_editors", "editors", settingsEditors())));
+    } catch (final Exception e) {
+      this.plugin.getLogger().log(Level.FINE, "Failed to send the settings editors", e);
+    }
   }
 
   @Override
@@ -149,6 +192,9 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
           if (!viewer.equals(connection.viewer())) {
             this.connections.put(ctx, new Connection(connection.token(), viewer));
             send(ctx, ACCOUNT_CHANGED);
+            if (!viewer.canConfigure() && this.settingsClients.remove(ctx) != null) {
+              publishEditors();
+            }
           }
           final @Nullable String world = this.subscribedWorlds.get(ctx);
           if (world != null && !viewer.canSee(this.config, world)) {
@@ -170,6 +216,9 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
   private void onClose(final @NotNull WsContext ctx) {
     this.connections.remove(ctx);
     this.subscribedWorlds.remove(ctx);
+    if (this.settingsClients.remove(ctx) != null) {
+      publishEditors();
+    }
   }
 
   private void onMessage(final @NotNull WsMessageContext ctx) {
@@ -188,6 +237,20 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
           this.subscribedWorlds.put(ctx, world);
         } else {
           this.subscribedWorlds.remove(ctx);
+        }
+      } else if ("settings".equals(type)) {
+        final @Nullable Connection connection = this.connections.get(ctx);
+        final boolean open =
+            Boolean.TRUE.equals(data.get("open"))
+                && connection != null
+                && connection.viewer().canConfigure();
+        final @NotNull String client = "mod".equals(data.get("client")) ? "mod" : "web";
+        final boolean changed =
+            open
+                ? !client.equals(this.settingsClients.put(ctx, client))
+                : this.settingsClients.remove(ctx) != null;
+        if (changed) {
+          publishEditors();
         }
       } else if ("ping".equals(type)) {
         send(ctx, "{\"type\":\"pong\"}");

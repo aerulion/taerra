@@ -1,5 +1,6 @@
 # TAERRA Configuration
-# Every setting can be changed in game with /taerra config <setting> <value>.
+# Every setting can be changed in game with /taerra config <setting> <value>, or on the settings page
+# of the web map and the mod by players with taerra.web.config. Changes apply right away.
 
 # Web server settings
 web:
@@ -44,6 +45,12 @@ cache:
 # Worlds to render, by dimension key. None by default: enable them in game with
 # /taerra config world <world> enable
 worlds: [ ]
+
+# Names shown on the map instead of the dimension's own, by dimension key, like
+#   minecraft:overworld: Survival
+# Set in game with /taerra config world <world> name <name>; the order of the worlds above is the
+# order on the map, set with /taerra config world <world> position <number>
+world-names: { }
 
 # Worlds only logged-in viewers with taerra.web.world.<world> see, the colon swapped for a dot:
 # minecraft:the_end needs taerra.web.world.minecraft.the_end. Players log in with /taerra login.

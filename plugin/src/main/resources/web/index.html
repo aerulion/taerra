@@ -97,6 +97,9 @@
                 <button aria-keyshortcuts="W" class="account-action" data-i18n="manager.title" data-icon="pin" hidden
                         id="manager-open" type="button">My waypoints
                 </button>
+                <button class="account-action" data-i18n="settings.title" data-icon="gear" hidden id="settings-open"
+                        type="button">Settings
+                </button>
                 <button class="account-action" data-i18n="account.device" data-icon="phone" id="device-button"
                         type="button">Log in on another device
                 </button>
@@ -300,7 +303,7 @@
         <span>Z <b id="coord-z">0</b></span>
     </div>
 
-    <div aria-labelledby="offline-title" class="offline" id="offline" inert role="region">
+    <div aria-labelledby="offline-title" class="offline" id="offline" inert popover="manual" role="region">
         <div class="offline__card">
             <img alt="" class="offline__icon" src="images/icon.svg">
             <h2 class="offline__title" data-i18n="offline.title" id="offline-title">Map offline</h2>
@@ -394,6 +397,28 @@
             </button>
             <button class="btn" data-i18n="waypoint.cancel" id="waypoint-cancel" type="button">Cancel</button>
             <button class="btn btn--primary" data-i18n="waypoint.save" type="submit">Save</button>
+        </footer>
+    </form>
+</dialog>
+
+<dialog aria-labelledby="settings-title" class="manager settings" id="settings">
+    <header class="manager__header">
+        <h2 class="manager__title" data-i18n="settings.title" id="settings-title">Settings</h2>
+        <div class="settings__editors" hidden id="settings-editors"></div>
+        <button aria-label="Close" class="manager__close" data-i18n-label="manager.close" id="settings-close"
+                type="button"></button>
+    </header>
+    <form class="settings__form" id="settings-form" novalidate>
+        <div class="settings__layout">
+            <nav aria-label="Sections" class="settings__nav" data-i18n-label="settings.sections"
+                 id="settings-nav"></nav>
+            <div class="settings__body" id="settings-body"></div>
+        </div>
+        <footer class="settings__footer">
+            <p class="settings__status" id="settings-status" role="status"></p>
+            <button class="btn" data-i18n="waypoint.cancel" id="settings-cancel" type="button">Cancel</button>
+            <button class="btn btn--primary" data-i18n="waypoint.save" disabled id="settings-save" type="submit">Save
+            </button>
         </footer>
     </form>
 </dialog>

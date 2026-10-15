@@ -8,12 +8,13 @@ import {setupOffline} from './offline.js';
 import {element, markerManager, privateIcon} from './markers.js';
 import {playerManager} from './players.js';
 import {searchPalette} from './search.js';
+import {settingsDialog} from './settings.js';
 import {skyManager} from './sky.js';
 import {chunkSelection} from './selection.js';
 import {waypointEditor} from './waypoints.js';
 import {wsManager} from './websocket.js';
 
-const SERVER_NAME = document.getElementById('server-name').textContent || 'TAERRA';
+let serverName = document.getElementById('server-name').textContent;
 
 const $ = (id) => document.getElementById(id);
 
@@ -119,7 +120,7 @@ async function selectWorld(name) {
     }
     currentWorld = world;
     renderWorlds();
-    document.title = `${worldLabel(world)} – ${SERVER_NAME}`;
+    updateTitle();
 
     chunkSelection.stop();
     mapManager.setWorld(world);
@@ -163,6 +164,27 @@ async function loadWorlds() {
     }
 }
 
+function updateTitle() {
+    if (currentWorld) {
+        document.title = `${worldLabel(currentWorld)} – ${serverName || 'TAERRA'}`;
+    }
+}
+
+async function refreshServerName() {
+    try {
+        const name = (await fetchJson('/api/config')).name ?? '';
+        if (name === serverName) {
+            return;
+        }
+        serverName = name;
+        $('server-name').textContent = name;
+        $('server-name').hidden = !name;
+        updateTitle();
+    } catch (error) {
+        console.error('Failed to load the server name:', error);
+    }
+}
+
 async function refreshWorlds() {
     try {
         worlds = await fetchJson('/api/worlds');
@@ -178,6 +200,7 @@ async function refreshWorlds() {
         return;
     }
     renderWorlds();
+    updateTitle();
     if (!currentWorld) {
         await selectWorld(worlds[0].name);
     }
@@ -348,7 +371,7 @@ function setupPanel() {
 function setupShortcuts() {
     document.addEventListener('keydown', (event) => {
         if (event.ctrlKey || event.metaKey || event.altKey || event.repeat || event.key.length !== 1 ||
-            event.target.closest('input, select, textarea')) {
+            event.target.closest('input, select, textarea') || document.querySelector('dialog[open]')) {
             return;
         }
         const combo = `${event.shiftKey ? 'Shift+' : ''}${event.key.toUpperCase()}`;
@@ -578,8 +601,10 @@ wsManager.on('markers', (message) => {
 wsManager.on('worlds', () => void refreshWorlds());
 
 let connectedBefore = false;
+wsManager.on('config', () => void refreshServerName());
 wsManager.on('connect', () => {
     if (connectedBefore) {
+        void refreshServerName();
         void refreshWorlds();
         mapManager.refreshAllTiles();
         if (currentWorld) {
@@ -609,6 +634,7 @@ navigationManager.onShow = (target) => {
     }
 };
 waypointEditor.initialize();
+settingsDialog.initialize();
 chunkSelection.initialize();
 searchPalette.initialize({
     worlds: () => worlds,

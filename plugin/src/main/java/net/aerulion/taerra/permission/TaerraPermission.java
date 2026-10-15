@@ -74,6 +74,10 @@ public enum TaerraPermission {
       "web.markers.personal",
       "Lets the user add, edit, move and remove their own markers only they see, while logged in.",
       PermissionDefault.TRUE),
+  WEB_CONFIG(
+      "web.config",
+      "Lets the user change TAERRA's settings on the web map and in the mod while logged in.",
+      PermissionDefault.OP),
   HIDE("hide", "Hides the player from the web map.", PermissionDefault.FALSE),
   ;
 

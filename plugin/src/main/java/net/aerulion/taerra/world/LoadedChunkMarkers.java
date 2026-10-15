@@ -28,6 +28,7 @@ import org.bukkit.Color;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,14 +42,15 @@ public final class LoadedChunkMarkers {
     super();
   }
 
-  public static void start(
+  public static @NotNull BukkitTask start(
       final @NotNull Plugin plugin,
       final @NotNull MarkerRegistry registry,
       final @NotNull TaerraConfig config,
-      final @NotNull WorldLimits limits) {
+      final @NotNull WorldLimits limits,
+      final boolean shownByDefault) {
     final @NotNull MarkerLayer layer =
-        registry.layer(plugin, "chunks", "Loaded chunks", config.loadedChunksShownByDefault());
-    Bukkit.getScheduler()
+        registry.layer(plugin, "chunks", "Loaded chunks", shownByDefault);
+    return Bukkit.getScheduler()
         .runTaskTimer(
             plugin,
             () -> {

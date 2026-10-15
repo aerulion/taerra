@@ -248,4 +248,12 @@ public final class TileStorageImpl implements TileStorage {
       return Optional.empty();
     }
   }
+
+  @Override
+  public void resize(final int maxEncodedTiles) {
+    this.encodedTiles
+        .policy()
+        .eviction()
+        .ifPresent(eviction -> eviction.setMaximum(Math.max(64, maxEncodedTiles)));
+  }
 }

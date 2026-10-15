@@ -22,6 +22,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,13 +38,14 @@ public final class WorldGuardRegions {
     super();
   }
 
-  public static void start(
+  public static @NotNull BukkitTask start(
       final @NotNull Plugin plugin,
       final @NotNull MarkerRegistry registry,
-      final @NotNull TaerraConfig config) {
+      final @NotNull TaerraConfig config,
+      final boolean shownByDefault) {
     final @NotNull MarkerLayer layer =
-        registry.layer(plugin, "worldguard", "Regions", config.worldGuardShownByDefault());
-    Bukkit.getScheduler()
+        registry.layer(plugin, "worldguard", "Regions", shownByDefault);
+    return Bukkit.getScheduler()
         .runTaskTimerAsynchronously(
             plugin, () -> layer.setAll(regions(config)), 20L, SYNC_INTERVAL_TICKS);
   }
