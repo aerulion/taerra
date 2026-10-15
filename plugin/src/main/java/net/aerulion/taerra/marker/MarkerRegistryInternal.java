@@ -1,6 +1,7 @@
 package net.aerulion.taerra.marker;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
@@ -12,7 +13,7 @@ public sealed interface MarkerRegistryInternal extends MarkerRegistry, Listener
     permits MarkerRegistryImpl {
 
   @NotNull
-  Set<NamespacedKey> drainChangedWorlds();
+  Map<NamespacedKey, Set<String>> drainChangedLayers();
 
   @NotNull
   Set<UUID> drainChangedPlayers();

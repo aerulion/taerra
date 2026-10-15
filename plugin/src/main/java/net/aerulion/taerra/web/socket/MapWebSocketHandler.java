@@ -14,6 +14,8 @@ public sealed interface MapWebSocketHandler permits MapWebSocketHandlerImpl {
 
   void broadcastToWorld(@NotNull String worldName, @NotNull String message);
 
+  void broadcastToWorld(@NotNull String worldName, @NotNull Function<Viewer, String> message);
+
   void broadcast(@NotNull String message);
 
   void broadcast(@NotNull Function<Viewer, String> message);

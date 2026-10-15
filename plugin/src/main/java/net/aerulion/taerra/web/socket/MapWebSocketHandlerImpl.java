@@ -82,6 +82,22 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
   }
 
   @Override
+  public void broadcastToWorld(
+      final @NotNull String worldName, final @NotNull Function<Viewer, String> message) {
+    this.subscribedWorlds.forEach(
+        (ctx, world) -> {
+          final @Nullable Connection connection = this.connections.get(ctx);
+          final @Nullable String text =
+              connection == null || !worldName.equals(world)
+                  ? null
+                  : message.apply(connection.viewer());
+          if (text != null) {
+            send(ctx, text);
+          }
+        });
+  }
+
+  @Override
   public void broadcast(final @NotNull String message) {
     this.connections.keySet().forEach(ctx -> send(ctx, message));
   }

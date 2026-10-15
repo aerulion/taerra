@@ -38,7 +38,6 @@ import net.aerulion.taerra.web.socket.MapWebSocketHandlerImpl;
 import net.aerulion.taerra.web.stats.RenderStatsPayloadSerializer;
 import net.aerulion.taerra.world.Teleports;
 import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
@@ -236,10 +235,20 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   }
 
   private void publishMarkerChanges() {
-    for (final @NotNull NamespacedKey world : this.markers.drainChangedWorlds()) {
-      this.wsHandler.broadcastToWorld(
-          world.asString(), MapWebSocketHandlerImpl.markersMessage(world.asString()));
-    }
+    this.markers
+        .drainChangedLayers()
+        .forEach(
+            (world, layers) -> {
+              final @NotNull String message =
+                  MapWebSocketHandlerImpl.markersMessage(world.asString());
+              this.wsHandler.broadcastToWorld(
+                  world.asString(),
+                  viewer ->
+                      layers.stream()
+                              .anyMatch(layer -> viewer.canSeeLayer(this.taerraConfig, layer))
+                          ? message
+                          : null);
+            });
     this.markers.drainChangedPlayers().forEach(this.wsHandler::refreshMarkers);
   }
 }

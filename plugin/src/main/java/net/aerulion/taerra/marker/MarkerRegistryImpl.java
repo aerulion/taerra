@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import org.bukkit.NamespacedKey;
@@ -21,7 +22,8 @@ public final class MarkerRegistryImpl implements MarkerRegistryInternal {
 
   private final @NotNull Map<String, MarkerLayer> layers = new LinkedHashMap<>();
   private final @NotNull Map<String, PlayerMarkerLayerImpl> playerLayers = new LinkedHashMap<>();
-  private final @NotNull Set<NamespacedKey> changedWorlds = ConcurrentHashMap.newKeySet();
+  private final @NotNull Set<Map.Entry<NamespacedKey, String>> changedLayers =
+      ConcurrentHashMap.newKeySet();
   private final @NotNull Set<UUID> changedPlayers = ConcurrentHashMap.newKeySet();
 
   public MarkerRegistryImpl() {
@@ -40,7 +42,13 @@ public final class MarkerRegistryImpl implements MarkerRegistryInternal {
     final @NotNull MarkerLayer layer =
         this.layers.computeIfAbsent(
             id,
-            key -> new MarkerLayerImpl(owner, key, label, shownByDefault, this.changedWorlds::add));
+            key ->
+                new MarkerLayerImpl(
+                    owner,
+                    key,
+                    label,
+                    shownByDefault,
+                    world -> this.changedLayers.add(Map.entry(world, key))));
     if (!layer.owner().equals(owner)) {
       throw new IllegalArgumentException(
           "The layer " + id + " belongs to " + layer.owner().getName());
@@ -117,10 +125,13 @@ public final class MarkerRegistryImpl implements MarkerRegistryInternal {
   }
 
   @Override
-  public @NotNull Set<NamespacedKey> drainChangedWorlds() {
-    final @NotNull Set<NamespacedKey> drained = Set.copyOf(this.changedWorlds);
-    this.changedWorlds.removeAll(drained);
-    return drained;
+  public @NotNull Map<NamespacedKey, Set<String>> drainChangedLayers() {
+    final @NotNull Set<Map.Entry<NamespacedKey, String>> drained = Set.copyOf(this.changedLayers);
+    this.changedLayers.removeAll(drained);
+    return drained.stream()
+        .collect(
+            Collectors.groupingBy(
+                Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toSet())));
   }
 
   @Override

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import net.aerulion.taerra.api.marker.AreaMarker;
 import net.aerulion.taerra.api.marker.LineMarker;
@@ -43,23 +44,28 @@ class MarkerRegistryTest {
   }
 
   @Test
-  @DisplayName("only markers that differ announce their world, so a wholesale resync is cheap")
+  @DisplayName(
+      "only markers that differ announce their world and layer, so a wholesale resync is cheap")
   void setAllAnnouncesOnlyChanges() {
     final @NotNull MarkerRegistryImpl registry = new MarkerRegistryImpl();
     final @NotNull MarkerLayer layer = registry.layer(TAERRA, "regions", "Regions");
 
     layer.setAll(List.of(square("spawn", OVERWORLD, 16), square("fortress", NETHER, 32)));
-    assertEquals(Set.of(OVERWORLD, NETHER), registry.drainChangedWorlds());
+    assertEquals(
+        Map.of(OVERWORLD, Set.of("regions"), NETHER, Set.of("regions")),
+        registry.drainChangedLayers());
 
     layer.setAll(List.of(square("spawn", OVERWORLD, 16), square("fortress", NETHER, 32)));
-    assertTrue(registry.drainChangedWorlds().isEmpty());
+    assertTrue(registry.drainChangedLayers().isEmpty());
 
     layer.setAll(List.of(square("spawn", OVERWORLD, 20)));
-    assertEquals(Set.of(OVERWORLD, NETHER), registry.drainChangedWorlds());
+    assertEquals(
+        Map.of(OVERWORLD, Set.of("regions"), NETHER, Set.of("regions")),
+        registry.drainChangedLayers());
     assertEquals(1, layer.markers().size());
 
     layer.set(square("spawn", OVERWORLD, 20).withColor(Color.RED));
-    assertEquals(Set.of(OVERWORLD), registry.drainChangedWorlds());
+    assertEquals(Map.of(OVERWORLD, Set.of("regions")), registry.drainChangedLayers());
   }
 
   @Test
@@ -84,10 +90,10 @@ class MarkerRegistryTest {
   void removeLayerClears() {
     final @NotNull MarkerRegistryImpl registry = new MarkerRegistryImpl();
     registry.layer(TAERRA, "regions", "Regions").set(square("spawn", OVERWORLD, 16));
-    registry.drainChangedWorlds();
+    registry.drainChangedLayers();
 
     registry.removeLayer("regions");
-    assertEquals(Set.of(OVERWORLD), registry.drainChangedWorlds());
+    assertEquals(Map.of(OVERWORLD, Set.of("regions")), registry.drainChangedLayers());
     assertTrue(registry.layers().isEmpty());
   }
 
