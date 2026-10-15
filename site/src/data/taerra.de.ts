@@ -112,7 +112,7 @@ export const de: Copy = {
                     },
                     {
                         title: 'Zusehen beim Rendern',
-                        text: 'Ein Render zeigt seinen Fortschritt direkt auf der Karte, mit der verbleibenden Zeit, im Browser und im Spiel.'
+                        text: 'Ein Render zeigt seinen Fortschritt direkt auf der Karte, mit der verbleibenden Zeit, im Browser und im Spiel. Dein Team startet einen Komplett-Render oder bricht ihn ab, mit einem Rechtsklick.'
                     }
                 ]
             },
@@ -373,7 +373,7 @@ export const de: Copy = {
                 {
                     permission: 'taerra.web.render',
                     standard: 'OP',
-                    text: 'Ausgewählte Chunks neu rendern, wenn angemeldet'
+                    text: 'Eine ganze Welt oder ausgewählte Chunks neu rendern und Renders abbrechen, wenn angemeldet'
                 },
                 {
                     permission: 'taerra.web.hide',

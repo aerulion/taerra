@@ -59,6 +59,7 @@ public final class ActionRoutes implements Routes {
   public void register(final @NotNull RoutesConfig routes) {
     routes.post("/api/teleport", this::handleTeleportRequest);
     routes.post("/api/area", this::handleAreaRequest);
+    routes.post("/api/render", this::handleRenderRequest);
   }
 
   private void handleTeleportRequest(final @NotNull Context ctx) {
@@ -161,6 +162,68 @@ public final class ActionRoutes implements Routes {
             });
     ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
   }
+
+  private void handleRenderRequest(final @NotNull Context ctx) {
+    if (!Requests.sameOrigin(ctx)) {
+      ctx.status(403).result("Cross-site request");
+      return;
+    }
+    final @NotNull Viewer viewer = this.requests.viewer(ctx);
+    final @NotNull RenderRequest request;
+    try {
+      request = ctx.bodyAsClass(RenderRequest.class);
+    } catch (final Exception e) {
+      ctx.status(400).result("Invalid render");
+      return;
+    }
+    final boolean cancel = "cancel".equals(request.action());
+    if ((!cancel && !"full".equals(request.action()))
+        || request.world() == null
+        || !viewer.canSee(this.taerraConfig, request.world())) {
+      ctx.status(400).result("Invalid render");
+      return;
+    }
+    if (viewer.uuid() == null || !viewer.canRender()) {
+      ctx.status(403).result("Not allowed");
+      return;
+    }
+    final WebSessions.@Nullable Session session = this.requests.session(ctx);
+    final @NotNull String who = session != null ? session.name() : viewer.uuid().toString();
+    final @NotNull CompletableFuture<Integer> result = new CompletableFuture<>();
+    Bukkit.getScheduler()
+        .runTask(
+            this.plugin,
+            () -> {
+              final @Nullable World world = WorldKeys.resolve(request.world());
+              if (world == null) {
+                result.complete(400);
+                return;
+              }
+              final @Nullable Player player = Bukkit.getPlayer(viewer.uuid());
+              final @NotNull Audience audience = player == null ? Audience.empty() : player;
+              if (!cancel) {
+                result.complete(
+                    this.renderFeedback.report(
+                            audience,
+                            WorldKeys.id(world),
+                            RenderFeedback.full(),
+                            this.renders.full(world))
+                        ? 202
+                        : 409);
+                return;
+              }
+              if (!WorldKeys.id(world).equals(this.renders.rendering())) {
+                result.complete(409);
+                return;
+              }
+              final RenderService.@NotNull Stop stop = this.renders.cancel("Canceled by " + who);
+              audience.sendMessage(RenderFeedback.canceled(stop));
+              result.complete(stop.idle() ? 409 : 204);
+            });
+    ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
+  }
+
+  private record RenderRequest(@Nullable String action, @Nullable String world) {}
 
   private record AreaRequest(
       @Nullable String action, @Nullable String world, @Nullable List<int[]> chunks) {}

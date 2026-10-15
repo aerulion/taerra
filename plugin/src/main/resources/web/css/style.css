@@ -2097,6 +2097,14 @@ h2 .badge {
     --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M0 0h3v1H0zM0 1h1v2H0zM5 0h3v1H5zM7 1h1v2H7zM0 5h1v2H0zM0 7h3v1H0zM7 5h1v2H7zM5 7h3v1H5zM3 3h2v2H3z'/></svg>");
 }
 
+[data-action="render-world"] {
+    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M2 0h4v1H2zM1 1h1v1H1zM6 1h2v1H6zM0 2h1v1H0zM5 2h3v1H5zM0 3h1v1H0zM7 4h1v1H7zM0 5h3v1H0zM7 5h1v1H7zM0 6h2v1H0zM6 6h1v1H6zM2 7h4v1H2z'/></svg>");
+}
+
+[data-action="cancel-render"] {
+    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M0 0h2v1H0zM6 0h2v1H6zM1 1h2v1H1zM5 1h2v1H5zM2 2h4v1H2zM3 3h2v2H3zM2 5h4v1H2zM1 6h2v1H1zM5 6h2v1H5zM0 7h2v1H0zM6 7h2v1H6z'/></svg>");
+}
+
 [data-action="link"] {
     --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M1 1h3v1H1zM0 2h1v3H0zM4 2h3v1H4zM3 3h2v2H3zM7 3h1v3H7zM1 5h3v1H1zM4 6h3v1H4z'/></svg>");
 }

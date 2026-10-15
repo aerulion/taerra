@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.aerulion.taerra.mod.TaerraClient;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.gui.widget.CompassButton;
@@ -33,6 +34,7 @@ import net.aerulion.taerra.mod.web.model.Account;
 import net.aerulion.taerra.mod.web.model.MapConfig;
 import net.aerulion.taerra.mod.web.model.Marker;
 import net.aerulion.taerra.mod.web.model.Player;
+import net.aerulion.taerra.mod.web.model.Progress;
 import net.aerulion.taerra.mod.web.model.Waypoint;
 import net.aerulion.taerra.mod.web.model.World;
 import net.minecraft.ChatFormatting;
@@ -1310,6 +1312,25 @@ public final class MapScreen extends Screen {
             startDrawing(Kind.CHUNKS, null, null);
           });
     }
+    if (account != null && account.render()) {
+      final @Nullable Progress progress = this.map.progress();
+      final boolean cancel =
+          progress != null && progress.render() != null && world.equals(progress.render().world());
+      final @NotNull AtomicBoolean armed = new AtomicBoolean();
+      menu.add(
+          Component.translatable(cancel ? "taerra.menu.cancel_render" : "taerra.menu.render_world"),
+          item -> {
+            if (!armed.getAndSet(true)) {
+              item.show(
+                  Component.translatable(
+                      cancel ? "taerra.menu.cancel_confirm" : "taerra.menu.render_confirm",
+                      worldName(world)),
+                  false);
+              return;
+            }
+            renderWorld(menu, item, world, cancel);
+          });
+    }
     menu.add(
         Component.translatable("taerra.menu.link"),
         item ->
@@ -1850,6 +1871,29 @@ public final class MapScreen extends Screen {
           if (status != 204) {
             notice(Component.translatable("taerra.waypoint.failed", waypoint.name()));
           }
+        });
+  }
+
+  private void renderWorld(
+      final @NotNull PlaceMenu menu,
+      final PlaceMenu.@NotNull Item item,
+      final @NotNull String world,
+      final boolean cancel) {
+    item.show(item.getMessage(), true);
+    this.map.render(
+        cancel ? "cancel" : "full",
+        world,
+        status -> {
+          final boolean done = status == 202 || status == 204;
+          item.show(
+              Component.translatable(
+                  done
+                      ? cancel ? "taerra.menu.render_canceled" : "taerra.menu.render_started"
+                      : status == 409
+                          ? cancel ? "taerra.menu.render_idle" : "taerra.menu.render_busy"
+                          : "taerra.selection.failed"),
+              false);
+          menu.closeIn(done ? 1200 : 2500);
         });
   }
 

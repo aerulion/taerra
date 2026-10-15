@@ -144,10 +144,7 @@ public final class RenderSubCommand implements TaerraSubCommand {
   private int full(final @NotNull CommandContext<? extends CommandSourceStack> context) {
     final @NotNull World world = world(context);
     this.feedback.report(
-        sender(context),
-        WorldKeys.id(world),
-        Messages.tr("render.what.full"),
-        this.renders.full(world));
+        sender(context), WorldKeys.id(world), RenderFeedback.full(), this.renders.full(world));
     return SUCCESS;
   }
 

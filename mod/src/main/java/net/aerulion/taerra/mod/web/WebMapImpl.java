@@ -392,6 +392,11 @@ public final class WebMapImpl implements WebMap {
   }
 
   @Override
+  public void render(final String action, final String world, final IntConsumer then) {
+    this.client.send("POST", "/api/render", Map.of("action", action, "world", world), then);
+  }
+
+  @Override
   public void area(
       final String action,
       final String world,

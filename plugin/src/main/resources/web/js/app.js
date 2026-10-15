@@ -395,6 +395,7 @@ function worldName(name) {
 }
 
 function renderProgress({render, queued = 0, inFlight = 0}) {
+    renderingWorld = render?.world ?? null;
     const pending = queued + inFlight;
     $('render-section').hidden = !render && pending === 0;
     const bar = $('render-bar').parentElement;
@@ -435,6 +436,30 @@ function renderProgress({render, queued = 0, inFlight = 0}) {
         $('render-bar').style.width = '';
         $('render-detail').textContent = t('render.changes', {count: numbers.format(pending)});
     }
+}
+
+let renderingWorld = null;
+
+async function renderButton(button, action) {
+    button.disabled = true;
+    let response;
+    try {
+        response = await fetch('/api/render', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action, world: currentWorld.name})
+        });
+    } catch {
+        response = null;
+    }
+    button.disabled = false;
+    button.classList.remove('is-armed');
+    const done = response?.ok === true;
+    const full = action === 'full';
+    button.textContent = t(done ? (full ? 'menu.renderStarted' : 'menu.renderCanceled')
+        : response?.status === 409 ? (full ? 'menu.renderBusy' : 'menu.renderIdle') : 'selection.failed');
+    button.classList.add(done ? 'is-done' : 'is-failed');
+    return done;
 }
 
 async function teleportButton(button, {world, x, y, z}) {
@@ -483,7 +508,7 @@ function setupContextMenu() {
         const exact = Number.isFinite(block.y);
         $('context-menu-title').textContent = exact ? `${block.x}, ${block.y}, ${block.z}` : `${block.x}, ${block.z}`;
         for (const button of menu.querySelectorAll('button')) {
-            button.classList.remove('is-done', 'is-failed');
+            button.classList.remove('is-done', 'is-failed', 'is-armed');
             button.textContent = t(button.dataset.i18n);
         }
         menu.querySelector('[data-action="navigate"]').hidden = !accountManager.usesMod();
@@ -491,6 +516,9 @@ function setupContextMenu() {
         const placing = accountManager.canEditMarkers() || accountManager.canKeepPersonal();
         menu.querySelector('[data-action="waypoint"]').hidden = !placing;
         menu.querySelector('[data-action="select"]').hidden = !accountManager.canRender() && !accountManager.canHide();
+        const rendering = renderingWorld === currentWorld.name;
+        menu.querySelector('[data-action="render-world"]').hidden = !accountManager.canRender() || rendering;
+        menu.querySelector('[data-action="cancel-render"]').hidden = !accountManager.canRender() || !rendering;
         menu.querySelector('[data-action="area"]').hidden = !placing;
         menu.querySelector('[data-action="line"]').hidden = !placing;
         menu.hidden = false;
@@ -515,6 +543,17 @@ function setupContextMenu() {
         }
         if (action === 'teleport') {
             await teleport(button, block);
+            return;
+        }
+        if (action === 'render-world' || action === 'cancel-render') {
+            if (!button.classList.contains('is-armed')) {
+                button.classList.add('is-armed');
+                button.textContent = t(action === 'render-world' ? 'menu.renderConfirm' : 'menu.cancelConfirm',
+                    {world: worldLabel(currentWorld)});
+                return;
+            }
+            const done = await renderButton(button, action === 'render-world' ? 'full' : 'cancel');
+            closeTimer = setTimeout(close, done ? 1200 : 2500);
             return;
         }
         if (action === 'navigate') {

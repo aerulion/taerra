@@ -96,6 +96,8 @@ public sealed interface WebMap permits WebMapImpl {
 
   void area(String action, String world, Collection<Long> chunks, IntConsumer then);
 
+  void render(String action, String world, IntConsumer then);
+
   String link(
       String world, int x, @Nullable Integer y, int z, long zoom, boolean isometric, int rotation);
 

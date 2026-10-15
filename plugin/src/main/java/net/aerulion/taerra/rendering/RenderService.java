@@ -156,6 +156,12 @@ public final class RenderService {
         });
   }
 
+  public @Nullable String rendering() {
+    final @NotNull ManualRenderSessionSnapshot session =
+        this.generator.statusSnapshot().manualRenderSession();
+    return session.active() ? session.worldName() : null;
+  }
+
   public @NotNull Stop cancel(final @NotNull String reason) {
     final @NotNull ManualRenderSessionSnapshot session =
         this.generator.statusSnapshot().manualRenderSession();

@@ -34,7 +34,7 @@ If something breaks or looks wrong, please report it on [GitHub](https://github.
 - **Players move live**, updated every second, with a player list, and a follow mode that keeps someone in view, even across worlds.
 - **Colors from the locator bar.** Every player wears the color of their dot on the locator bar, so you know who is who at a glance, on the map and in game.
 - **The map updates itself.** Every change is recorded, built by players or grown by nature, and redrawn at an interval you choose, 15 minutes by default. A spot changed a hundred times is drawn once.
-- **Watch it render.** A render shows its progress right on the map, with the time it has left, in the browser and in game.
+- **Watch it render.** A render shows its progress right on the map, with the time it has left, in the browser and in game. Staff start a full render of a world, or cancel one, from the map's right-click menu.
 - **Installable as an app** on phones and desktops, when the map is served over HTTPS.
 
 ### Made for servers
@@ -124,7 +124,7 @@ Every setting can also be changed in game with `/taerra config`, or on the setti
 | `taerra.command.mod` | op | `/taerra mod` |
 | `taerra.web.teleport` | op | Teleporting from the map while logged in |
 | `taerra.web.see-hidden` | op | Seeing hidden players on the map while logged in |
-| `taerra.web.render` | op | Rendering selected chunks again while logged in |
+| `taerra.web.render` | op | Rendering a whole world or selected chunks again, and canceling renders, while logged in |
 | `taerra.web.hide` | op | Hiding and revealing selected chunks while logged in |
 | `taerra.web.markers` | op | Adding, editing, moving, and removing markers while logged in |
 | `taerra.web.markers.private` | op | Creating private marker groups while logged in |

@@ -23,6 +23,10 @@ public final class RenderFeedback {
     this.plugin = plugin;
   }
 
+  public static @NotNull Component full() {
+    return Messages.tr("render.what.full");
+  }
+
   public static @NotNull Component area(final int chunks, final @Nullable Boolean hide) {
     final @NotNull Component amount = Messages.tr("unit.chunks", Messages.value(chunks));
     return hide == null

@@ -163,7 +163,7 @@ const en = {
                     },
                     {
                         title: 'Watch it render',
-                        text: 'A render shows its progress right on the map, with the time it has left, in the browser and in game.'
+                        text: 'A render shows its progress right on the map, with the time it has left, in the browser and in game. Staff start a full render, or cancel one, with a right-click.'
                     }
                 ]
             },
@@ -414,7 +414,7 @@ const en = {
                 {
                     permission: 'taerra.web.render',
                     standard: 'op',
-                    text: 'Rendering selected chunks again while logged in'
+                    text: 'Rendering a whole world or selected chunks again, and canceling renders, while logged in'
                 },
                 {
                     permission: 'taerra.web.hide',

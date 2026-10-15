@@ -56,7 +56,8 @@ public enum TaerraPermission {
       PermissionDefault.OP),
   WEB_RENDER(
       "web.render",
-      "Lets the user render chunks selected on the map again while logged in.",
+      "Lets the user render a whole world or chunks selected on the map again, and cancel a"
+          + " render, while logged in.",
       PermissionDefault.OP),
   WEB_HIDE(
       "web.hide",
