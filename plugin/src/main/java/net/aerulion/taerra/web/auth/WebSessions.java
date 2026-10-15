@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -35,7 +36,7 @@ public final class WebSessions {
   private static final int TOKEN_BYTES = 32;
   private static final @NotNull String PAIR_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   private static final int PAIR_LENGTH = 6;
-  private static final int MAX_PAIRINGS = 10_000;
+  static final int MAX_PAIRINGS = 10_000;
   private static final int MAX_SESSIONS = 10;
   private static final int MAX_FAILED_APPROVALS = 5;
   private static final @NotNull Duration APPROVAL_WINDOW = Duration.ofMinutes(1);
@@ -47,7 +48,7 @@ public final class WebSessions {
   private final @NotNull Logger logger;
   private final @NotNull SecureRandom random = new SecureRandom();
   private final @NotNull Map<String, Code> codes = new HashMap<>();
-  private final @NotNull Map<String, Pairing> pairings = new HashMap<>();
+  private final @NotNull Map<String, Pairing> pairings = new LinkedHashMap<>();
   private final @NotNull Map<UUID, Failures> failures = new HashMap<>();
   private final @NotNull Map<String, Session> sessions = new HashMap<>();
   private final @NotNull Map<UUID, Set<String>> grants = new HashMap<>();
@@ -189,11 +190,11 @@ public final class WebSessions {
     return new Login(token, session);
   }
 
-  public synchronized @Nullable Pair pair() {
+  public synchronized @NotNull Pair pair() {
     final long now = System.currentTimeMillis();
     this.pairings.values().removeIf(pairing -> pairing.expires() < now);
     if (this.pairings.size() >= MAX_PAIRINGS) {
-      return null;
+      this.pairings.remove(this.pairings.keySet().iterator().next());
     }
     @NotNull String code;
     do {

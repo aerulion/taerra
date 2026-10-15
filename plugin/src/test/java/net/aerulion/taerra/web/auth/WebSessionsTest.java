@@ -60,6 +60,18 @@ class WebSessionsTest {
   }
 
   @Test
+  @DisplayName("a flood of pairing codes pushes out the oldest instead of refusing new ones")
+  void pairingFloodDropsOldest() {
+    final @NotNull WebSessions sessions = sessions();
+    final WebSessions.@NotNull Pair first = sessions.pair();
+    for (int i = 0; i < WebSessions.MAX_PAIRINGS; i++) {
+      sessions.pair();
+    }
+    assertNull(sessions.claim(first.claim(), PHONE));
+    assertNotNull(sessions.claim(sessions.pair().claim(), PHONE));
+  }
+
+  @Test
   @DisplayName("a pairing code waits until a player approves it, then logs in its browser once")
   void pairingLogsInOnce() {
     final @NotNull WebSessions sessions = sessions();

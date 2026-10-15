@@ -160,11 +160,7 @@ public final class AccountRoutes implements Routes {
       ctx.status(403).result("Cross-site request");
       return;
     }
-    final WebSessions.@Nullable Pair pair = this.sessions.pair();
-    if (pair == null) {
-      ctx.status(503).result("Too many logins waiting");
-      return;
-    }
+    final WebSessions.@NotNull Pair pair = this.sessions.pair();
     ctx.header("Cache-Control", "no-store")
         .json(
             Map.of(
