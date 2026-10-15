@@ -852,10 +852,10 @@ button {
 
 .device__logout::before {
     content: "";
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
     background: var(--stone-200);
-    mask: var(--icon) center / 12px 12px no-repeat;
+    mask: var(--icon) center / 16px 16px no-repeat;
 }
 
 .account-menu .device__logout:is(:hover, :focus-visible) {
@@ -2937,10 +2937,10 @@ h2 .badge {
 
 .manager__close::before {
     content: "";
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
     background: var(--stone-200);
-    mask: var(--icon) center / 12px 12px no-repeat;
+    mask: var(--icon) center / 16px 16px no-repeat;
 }
 
 .manager__close:is(:hover, :focus-visible) {
