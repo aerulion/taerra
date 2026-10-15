@@ -177,10 +177,10 @@ public final class WaypointEditor {
         && this.waypoints.groups().stream().noneMatch(known -> known.id().equals(groupId))) {
       this.config.setLayerPrivate(this.plugin, groupId, true);
     }
+    this.waypoints.add(marker, draft.group());
     if (renamed && draft.previous() != null) {
       this.waypoints.remove(draft.previous());
     }
-    this.waypoints.add(marker, draft.group());
     return Result.SAVED;
   }
 

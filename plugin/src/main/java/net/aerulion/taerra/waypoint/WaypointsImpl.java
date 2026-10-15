@@ -19,6 +19,7 @@ import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.api.marker.PointMarker;
+import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.util.AtomicFiles;
 import net.aerulion.taerra.util.HexColors;
@@ -46,14 +47,19 @@ public final class WaypointsImpl implements Waypoints, Listener {
 
   private final @NotNull Plugin plugin;
   private final @NotNull MarkerRegistry registry;
+  private final @NotNull TaerraConfig config;
   private final @NotNull MarkerLayer layer;
   private final @NotNull File file;
   private final @NotNull Set<String> hiddenGroups = new HashSet<>();
 
-  public WaypointsImpl(final @NotNull Plugin plugin, final @NotNull MarkerRegistry registry) {
+  public WaypointsImpl(
+      final @NotNull Plugin plugin,
+      final @NotNull MarkerRegistry registry,
+      final @NotNull TaerraConfig config) {
     super();
     this.plugin = plugin;
     this.registry = registry;
+    this.config = config;
     this.layer = registry.layer(plugin, LAYER, "Waypoints");
     this.file = new File(plugin.getDataFolder(), "waypoints.yml");
   }
@@ -189,6 +195,9 @@ public final class WaypointsImpl implements Waypoints, Listener {
       layer(entry.get("group") instanceof final @NotNull String group ? group : null).set(marker);
     }
     Bukkit.getWorlds().forEach(this::placeSpawn);
+    List.copyOf(this.config.privateLayers()).stream()
+        .filter(id -> id.startsWith(GROUP_LAYER) && this.registry.existingLayer(id) == null)
+        .forEach(id -> this.config.setLayerPrivate(this.plugin, id, false));
   }
 
   @Override
@@ -323,6 +332,9 @@ public final class WaypointsImpl implements Waypoints, Listener {
   private void dropIfEmpty(final @NotNull MarkerLayer waypointLayer) {
     if (waypointLayer != this.layer && waypointLayer.markers().isEmpty()) {
       this.registry.removeLayer(waypointLayer.id());
+      if (this.config.layerPrivate(waypointLayer.id())) {
+        this.config.setLayerPrivate(this.plugin, waypointLayer.id(), false);
+      }
     }
   }
 

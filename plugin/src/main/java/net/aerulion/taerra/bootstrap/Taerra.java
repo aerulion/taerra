@@ -237,7 +237,7 @@ public final class Taerra extends JavaPlugin {
       final @NotNull PlayerPositionBroadcaster playerBroadcaster =
           new PlayerPositionBroadcasterImpl(this, configuration, webSocketHandler, worldLimits);
       this.playerBroadcaster = playerBroadcaster;
-      final @NotNull WaypointsImpl waypoints = new WaypointsImpl(this, markers);
+      final @NotNull WaypointsImpl waypoints = new WaypointsImpl(this, markers, configuration);
       waypoints.load();
       getServer().getPluginManager().registerEvents(waypoints, this);
       final @NotNull ChangeBuffer changeBuffer =
