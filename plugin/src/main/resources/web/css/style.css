@@ -689,8 +689,8 @@ button {
 
 .account-profile__head {
     flex: none;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border: var(--edge);
     image-rendering: pixelated;
 }
@@ -3768,8 +3768,8 @@ label.settings__row:hover {
 }
 
 .settings__editor-head {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     image-rendering: pixelated;
     box-shadow: 0 0 0 2px var(--green);
 }
