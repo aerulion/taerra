@@ -1179,7 +1179,7 @@ public final class MapViewImpl implements MapView {
           icon(
               graphics,
               pin,
-              0,
+              projection.bearing(player.yaw()) + this.spin,
               () -> graphics.blitSprite(RenderPipelines.GUI_TEXTURED, offMap, 0, 0, 8, 8, color));
         }
         continue;
