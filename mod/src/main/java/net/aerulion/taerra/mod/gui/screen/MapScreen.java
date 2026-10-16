@@ -75,6 +75,7 @@ public final class MapScreen extends Screen {
   private static final int NEAR_ZOOM = 2;
   private static final int TOP_DOWN = -1;
   private static final long STATUS_MILLIS = 4000;
+  private static final long CURSOR_HOLD_MILLIS = 500;
   private static final int MIN_SELECTION_BUTTON = 40;
 
   private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
@@ -139,6 +140,8 @@ public final class MapScreen extends Screen {
   private boolean erasing;
   private @Nullable Place anchor;
   private @Nullable Place reach;
+  private @Nullable Place cursor;
+  private long cursorAt;
   private @Nullable Component selectionStatus;
   private boolean selectionFailed;
   private long selectionStatusUntil;
@@ -953,6 +956,17 @@ public final class MapScreen extends Screen {
         mapBottom());
   }
 
+  private @Nullable Place cursorPlace(final int mouseX, final int mouseY) {
+    final @Nullable Place place = this.view.placeAt(this.map, mouseX, mouseY);
+    final long now = System.currentTimeMillis();
+    if (place != null && place.y() != null) {
+      this.cursor = place;
+      this.cursorAt = now;
+      return place;
+    }
+    return this.cursor != null && now - this.cursorAt < CURSOR_HOLD_MILLIS ? this.cursor : place;
+  }
+
   private boolean overWorlds(final double x, final double y) {
     if (!this.worldPicker.isOpen()) {
       return false;
@@ -1131,7 +1145,7 @@ public final class MapScreen extends Screen {
       RenderProgressOverlay.draw(
           graphics, this.font, this.map.progress(), this::worldName, middle, top);
       if (hovering) {
-        final @Nullable Place place = this.view.placeAt(this.map, mouseX, mouseY);
+        final @Nullable Place place = cursorPlace(mouseX, mouseY);
         if (place != null) {
           graphics.text(
               this.font,
