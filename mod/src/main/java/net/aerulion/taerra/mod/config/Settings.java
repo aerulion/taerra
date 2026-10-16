@@ -43,6 +43,10 @@ public sealed interface Settings permits SettingsImpl {
 
   void setWaypointLabels(boolean labels);
 
+  boolean smallInfo();
+
+  void setSmallInfo(boolean small);
+
   boolean minimapInfo(MinimapInfo info);
 
   void setMinimapInfo(MinimapInfo info, boolean shown);

@@ -29,6 +29,7 @@ public final class SettingsImpl implements Settings {
   private boolean grayMap;
   private boolean allWorldPlayers;
   private boolean waypointLabels = true;
+  private boolean smallInfo;
   private Set<String> minimapInfo = new LinkedHashSet<>(List.of(MinimapInfo.COORDINATES.id()));
 
   private SettingsImpl() {}
@@ -134,6 +135,16 @@ public final class SettingsImpl implements Settings {
   @Override
   public void setAllWorldPlayers(final boolean all) {
     this.allWorldPlayers = all;
+  }
+
+  @Override
+  public boolean smallInfo() {
+    return this.smallInfo;
+  }
+
+  @Override
+  public void setSmallInfo(final boolean small) {
+    this.smallInfo = small;
   }
 
   @Override

@@ -101,7 +101,12 @@ public final class Minimap implements HudElement {
 
   private int infoHeight() {
     final int lines = lines().size();
-    return lines == 0 ? 0 : GAP + lines * LINE - 1;
+    return lines == 0 ? 0 : GAP + (int) Math.ceil((lines * LINE - 1) * infoScale());
+  }
+
+  private float infoScale() {
+    final int gui = (int) Minecraft.getInstance().getWindow().getGuiScale();
+    return this.settings.smallInfo() && gui > 1 ? (gui - 1) / (float) gui : 1;
   }
 
   private @NotNull List<Component> lines() {
@@ -189,21 +194,28 @@ public final class Minimap implements HudElement {
       return;
     }
     final @NotNull Font font = minecraft.font;
+    final float scale = infoScale();
+    final int screen = (int) (graphics.guiWidth() / scale);
     final int width = lines.stream().mapToInt(font::width).max().orElse(0);
     final int half = (width + 1) / 2;
-    final int x = Math.max(PADDING + half, Math.min(graphics.guiWidth() - PADDING - half, center));
+    final int x =
+        Math.max(PADDING + half, Math.min(screen - PADDING - half, Math.round(center / scale)));
+    graphics.pose().pushMatrix();
+    graphics.pose().translate(0, top);
+    graphics.pose().scale(scale, scale);
     final int backdrop = minecraft.options.getBackgroundColor(0f);
     if (backdrop != 0) {
       graphics.fill(
           x - half - PADDING,
-          top - PADDING,
+          -PADDING,
           x + half + PADDING,
-          top + lines.size() * LINE - 1 + PADDING,
+          lines.size() * LINE - 1 + PADDING,
           backdrop);
     }
     for (int i = 0; i < lines.size(); i++) {
-      graphics.centeredText(font, lines.get(i), x, top + i * LINE, 0xFFFFFFFF);
+      graphics.centeredText(font, lines.get(i), x, i * LINE, 0xFFFFFFFF);
     }
+    graphics.pose().popMatrix();
   }
 
   private static @Nullable Component text(

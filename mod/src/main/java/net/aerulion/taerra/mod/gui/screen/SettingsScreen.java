@@ -3,6 +3,7 @@ package net.aerulion.taerra.mod.gui.screen;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 import net.aerulion.taerra.mod.config.MinimapInfo;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.gui.hud.Minimap;
@@ -136,18 +137,32 @@ public final class SettingsScreen extends OptionsSubScreen {
             settings::setWaypointLabels));
     this.list.addHeader(Component.translatable("taerra.options.info"));
     this.list.addSmall(
-        Arrays.stream(MinimapInfo.values())
-            .map(
-                info ->
+        Stream.concat(
+                Stream.of(
                     OptionInstance.createBoolean(
-                        "taerra.options.info." + info.id(),
-                        Language.getInstance().has("taerra.options.info." + info.id() + ".tooltip")
-                            ? OptionInstance.cachedConstantTooltip(
-                                Component.translatable(
-                                    "taerra.options.info." + info.id() + ".tooltip"))
-                            : OptionInstance.noTooltip(),
-                        settings.minimapInfo(info),
-                        shown -> settings.setMinimapInfo(info, shown)))
+                        "taerra.options.info.size",
+                        OptionInstance.cachedConstantTooltip(
+                            Component.translatable("taerra.options.info.size.tooltip")),
+                        (_, small) ->
+                            Component.translatable(
+                                small
+                                    ? "taerra.options.info.size.small"
+                                    : "taerra.options.info.size.normal"),
+                        settings.smallInfo(),
+                        settings::setSmallInfo)),
+                Arrays.stream(MinimapInfo.values())
+                    .map(
+                        info ->
+                            OptionInstance.createBoolean(
+                                "taerra.options.info." + info.id(),
+                                Language.getInstance()
+                                        .has("taerra.options.info." + info.id() + ".tooltip")
+                                    ? OptionInstance.cachedConstantTooltip(
+                                        Component.translatable(
+                                            "taerra.options.info." + info.id() + ".tooltip"))
+                                    : OptionInstance.noTooltip(),
+                                settings.minimapInfo(info),
+                                shown -> settings.setMinimapInfo(info, shown))))
             .toArray(OptionInstance<?>[]::new));
   }
 
