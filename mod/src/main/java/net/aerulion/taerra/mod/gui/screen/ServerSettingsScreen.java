@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -32,6 +33,7 @@ import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.PlayerFaceExtractor;
+import net.minecraft.client.gui.components.TabButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -63,6 +65,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   private static final int MAX_COORDINATE = 30_000_000;
   private static final String ORDER = "order";
   private static final int ROW_WIDTH = 380;
+  private static final int TAB_PADDING = 20;
   private static final int CONTROL_WIDTH = 120;
   private static final int UNIT_WIDTH = 44;
   private static final int INDENT = 14;
@@ -402,6 +405,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       return;
     }
     this.bar.arrangeElements(this.width);
+    fitTabs();
     final int top = this.bar.getRectangle().bottom();
     this.layout.setHeaderHeight(top);
     this.layout.setFooterHeight(52);
@@ -410,6 +414,28 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
         new ScreenRectangle(0, top, this.width, this.height - this.layout.getFooterHeight() - top));
     if (this.loaded && this.rowsWidth != this.width) {
       refill();
+    }
+  }
+
+  private void fitTabs() {
+    final @NotNull List<TabButton> buttons =
+        this.bar.children().stream().map(TabButton.class::cast).toList();
+    final int[] widths =
+        buttons.stream()
+            .mapToInt(button -> this.font.width(button.getMessage()) + TAB_PADDING)
+            .toArray();
+    final int natural = Arrays.stream(widths).sum();
+    final int total = Math.min(this.width - 28, Math.max(Math.min(400, this.width) - 28, natural));
+    if (natural > total) {
+      return;
+    }
+    final int extra = (total - natural) / buttons.size();
+    int x = (this.width - total) / 2;
+    for (int i = 0; i < buttons.size(); i++) {
+      final @NotNull TabButton button = buttons.get(i);
+      button.setWidth(widths[i] + extra);
+      button.setX(x);
+      x += button.getWidth();
     }
   }
 
