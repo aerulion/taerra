@@ -24,10 +24,13 @@ import org.joml.Matrix3x2fStack;
 
 public final class NavigationHud {
 
-  private static final int TOP = 4;
-  private static final int HEIGHT = 14;
+  private static final int TOP = 6;
+  private static final int HEIGHT = 17;
   private static final int ARROW = 8;
   private static final int GAP = 3;
+  private static final int PAD_X = 4;
+  private static final int PAD_Y = 3;
+  private static final float OPACITY = .4f;
 
   private final MapSession session;
   private final Navigation navigation;
@@ -83,6 +86,7 @@ public final class NavigationHud {
       final double turn =
           Math.toRadians(Math.toDegrees(Math.atan2(-dx, dz)) - self.getViewYRot(partialTick));
       final int left = (graphics.guiWidth() - ARROW - GAP - font.width(text)) / 2;
+      backdrop(graphics, left, ARROW + GAP + font.width(text));
       final @NotNull Matrix3x2fStack pose = graphics.pose();
       pose.pushMatrix();
       pose.translate(left + ARROW / 2f, TOP + ARROW / 2f);
@@ -100,7 +104,21 @@ public final class NavigationHud {
       graphics.text(font, text, left + ARROW + GAP, TOP, 0xFFFFFFFF, true);
       return true;
     }
-    graphics.text(font, text, (graphics.guiWidth() - font.width(text)) / 2, TOP, 0xFFFFFFFF, true);
+    final int left = (graphics.guiWidth() - font.width(text)) / 2;
+    backdrop(graphics, left, font.width(text));
+    graphics.text(font, text, left, TOP, 0xFFFFFFFF, true);
     return true;
+  }
+
+  private static void backdrop(
+      final @NotNull GuiGraphicsExtractor graphics, final int left, final int width) {
+    final int color = Minecraft.getInstance().options.getBackgroundColor(OPACITY);
+    final int x0 = left - PAD_X;
+    final int x1 = left + width + PAD_X;
+    final int y0 = TOP - PAD_Y;
+    final int y1 = TOP + 8 + PAD_Y;
+    graphics.fill(x0 + 1, y0, x1 - 1, y0 + 1, color);
+    graphics.fill(x0, y0 + 1, x1, y1 - 1, color);
+    graphics.fill(x0 + 1, y1 - 1, x1 - 1, y1, color);
   }
 }
