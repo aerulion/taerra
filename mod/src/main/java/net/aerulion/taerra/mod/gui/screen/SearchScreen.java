@@ -378,7 +378,7 @@ public final class SearchScreen extends Screen {
           final boolean hovered,
           final float partialTick) {
         final @NotNull Font font = Minecraft.getInstance().font;
-        final int x = getContentX();
+        final int x = getContentX() + 2;
         final int y = getContentYMiddle() - 8;
         final @Nullable Player player = this.result.player();
         if (player != null) {
@@ -393,11 +393,11 @@ public final class SearchScreen extends Screen {
           graphics.fill(x, y, x + 16, y + 16, 0xFF1E1E1F);
           graphics.fill(x + 2, y + 2, x + 14, y + 14, this.result.color());
         }
-        int room = getContentWidth() - 20;
+        int room = getContentWidth() - 22;
         final @Nullable Component tag = this.result.tag();
         if (tag != null) {
           final int tagWidth = font.width(tag) + 6;
-          final int tagX = x + getContentWidth() - tagWidth;
+          final int tagX = getContentRight() - 2 - tagWidth;
           graphics.fill(tagX, y + 2, tagX + tagWidth, y + 14, 0xFF1E1E1F);
           graphics.text(font, tag, tagX + 3, y + 4, 0xFFA0A0A0, false);
           room -= tagWidth + 6;

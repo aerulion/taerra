@@ -93,7 +93,7 @@ public final class PlayerList extends PanelList<PlayerList.Entry> {
         final boolean hovered,
         final float partialTick) {
       final @NotNull Font font = Minecraft.getInstance().font;
-      final int x = getContentX();
+      final int x = getContentX() + 2;
       final int y = getContentYMiddle() - 8;
       final @Nullable PlayerInfo info =
           this.player.anonymous() ? null : PlayerInfos.find(this.player.uuid());
