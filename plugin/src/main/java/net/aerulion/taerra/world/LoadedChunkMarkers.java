@@ -129,7 +129,7 @@ public final class LoadedChunkMarkers {
         for (int i = 0; i < rings.size(); i++) {
           markers.add(
               Marker.polygon(
-                      worldName + "/" + level.name().toLowerCase(Locale.ROOT) + "/" + id + "/" + i,
+                      worldName + "/" + level.key() + "/" + id + "/" + i,
                       world.getKey(),
                       rings.get(i).stream()
                           .map(corner -> new Vector(corner[0] << 4, 0, corner[1] << 4))
@@ -183,40 +183,34 @@ public final class LoadedChunkMarkers {
     }
 
     final @NotNull Map<String, String> details = new LinkedHashMap<>();
-    details.put("Load level", level.description);
-    final @NotNull List<String> split = new ArrayList<>();
+    details.put("level", level.key());
+    details.put("chunks", String.valueOf(area.size()));
     for (final @NotNull Level shown : Level.values()) {
       if (shown.compareTo(level) <= 0 && counts.containsKey(shown)) {
-        split.add(counts.get(shown) + " " + shown.name);
+        details.put(shown.key(), String.valueOf(counts.get(shown)));
       }
     }
-    details.put(
-        "Chunks",
-        split.size() > 1 ? area.size() + " (" + String.join(", ", split) + ")" : "" + area.size());
-    details.put("Size", (maxX - minX + 1) + " × " + (maxZ - minZ + 1) + " chunks");
-    details.put(
-        "Blocks",
-        "X "
-            + (minX << 4)
-            + " to "
-            + ((maxX << 4) + 15)
-            + ", Z "
-            + (minZ << 4)
-            + " to "
-            + ((maxZ << 4) + 15));
-    names.sort(String.CASE_INSENSITIVE_ORDER);
-    if (unlisted > 0) {
-      names.add(unlisted + " anonymous");
+    details.put("width", String.valueOf(maxX - minX + 1));
+    details.put("depth", String.valueOf(maxZ - minZ + 1));
+    details.put("minX", String.valueOf(minX << 4));
+    details.put("maxX", String.valueOf((maxX << 4) + 15));
+    details.put("minZ", String.valueOf(minZ << 4));
+    details.put("maxZ", String.valueOf((maxZ << 4) + 15));
+    if (!names.isEmpty()) {
+      names.sort(String.CASE_INSENSITIVE_ORDER);
+      details.put("players", String.join(", ", names));
     }
-    details.put("Players", names.isEmpty() ? "None" : String.join(", ", names));
+    if (unlisted > 0) {
+      details.put("anonymous", String.valueOf(unlisted));
+    }
     if (forcedCount > 0) {
-      details.put("Force loaded", count(forcedCount, "chunk"));
+      details.put("forced", String.valueOf(forcedCount));
     }
     if (!owners.isEmpty()) {
-      details.put("Plugin tickets", String.join(", ", owners));
+      details.put("tickets", String.join(", ", owners));
     }
-    details.put("View distance", count(world.getViewDistance(), "chunk"));
-    details.put("Simulation distance", count(world.getSimulationDistance(), "chunk"));
+    details.put("view", String.valueOf(world.getViewDistance()));
+    details.put("simulation", String.valueOf(world.getSimulationDistance()));
     return details;
   }
 
@@ -251,36 +245,20 @@ public final class LoadedChunkMarkers {
   }
 
   private enum Level {
-    ENTITY_TICKING(
-        "Entity ticking",
-        "entity ticking",
-        "Everything ticks: blocks, redstone and entities",
-        Color.fromRGB(0xFF4FD8)),
-    TICKING(
-        "Ticking",
-        "ticking",
-        "Blocks and redstone tick, entities only in entity ticking chunks",
-        Color.fromRGB(0xFF8A1F)),
-    BORDER(
-        "Loaded",
-        "border",
-        "In memory, nothing ticks outside ticking chunks",
-        Color.fromRGB(0x2EE6E6));
+    ENTITY_TICKING("Entity ticking", Color.fromRGB(0xFF4FD8)),
+    TICKING("Ticking", Color.fromRGB(0xFF8A1F)),
+    BORDER("Loaded", Color.fromRGB(0x2EE6E6));
 
     private final @NotNull String label;
-    private final @NotNull String name;
-    private final @NotNull String description;
     private final @NotNull Color color;
 
-    Level(
-        final @NotNull String label,
-        final @NotNull String name,
-        final @NotNull String description,
-        final @NotNull Color color) {
+    Level(final @NotNull String label, final @NotNull Color color) {
       this.label = label;
-      this.name = name;
-      this.description = description;
       this.color = color;
+    }
+
+    private @NotNull String key() {
+      return name().toLowerCase(Locale.ROOT);
     }
 
     private static @Nullable Level of(final @NotNull Chunk.LoadLevel level) {

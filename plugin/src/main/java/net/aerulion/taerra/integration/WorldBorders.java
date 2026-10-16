@@ -164,7 +164,7 @@ public final class WorldBorders {
               "World border")
           .hollowed()
           .withColor(COLOR)
-          .withDetails(Map.of("Shape", shape.name()));
+          .withDetails(Map.of("shape", shape.name()));
     }
   }
 }

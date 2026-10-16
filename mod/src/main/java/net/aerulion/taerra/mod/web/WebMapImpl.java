@@ -34,6 +34,7 @@ import net.aerulion.taerra.mod.web.model.Account;
 import net.aerulion.taerra.mod.web.model.Device;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.MapConfig;
+import net.aerulion.taerra.mod.web.model.MarkerTexts;
 import net.aerulion.taerra.mod.web.model.NavigationTarget;
 import net.aerulion.taerra.mod.web.model.PersonalWaypoint;
 import net.aerulion.taerra.mod.web.model.Player;
@@ -559,7 +560,9 @@ public final class WebMapImpl implements WebMap {
           "/api/markers/" + Urls.segment(world),
           LAYERS,
           layers -> {
-            this.markers.put(world, layers == null ? List.of() : List.copyOf(layers));
+            this.markers.put(
+                world,
+                layers == null ? List.of() : layers.stream().map(MarkerTexts::localize).toList());
             List.copyOf(this.listeners).forEach(listener -> listener.markersChanged(world));
           });
     }

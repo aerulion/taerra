@@ -100,10 +100,10 @@ public final class WorldGuardRegions {
   private static @NotNull Map<String, String> details(
       final @NotNull ProtectedRegion region, final @NotNull ProfileCache profiles) {
     final @NotNull Map<String, String> details = new LinkedHashMap<>();
-    put(details, "Owners", region.getOwners(), profiles);
-    put(details, "Members", region.getMembers(), profiles);
+    put(details, "owners", region.getOwners(), profiles);
+    put(details, "members", region.getMembers(), profiles);
     if (region.getPriority() != 0) {
-      details.put("Priority", Integer.toString(region.getPriority()));
+      details.put("priority", Integer.toString(region.getPriority()));
     }
     return details;
   }

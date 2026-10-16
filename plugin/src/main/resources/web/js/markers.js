@@ -168,6 +168,67 @@ function isWaypointLayer(layer) {
     return layer.personal || layer.id === 'waypoints' || layer.id.startsWith('waypoints.');
 }
 
+const CHUNK_LEVELS = ['entity_ticking', 'ticking', 'border'];
+
+function chunkCount(count) {
+    return t(`chunks.count.${plurals.select(Number(count))}`, {count: numbers.format(count)});
+}
+
+function translatedOr(key, fallback) {
+    const text = t(key);
+    return text === key ? fallback : text;
+}
+
+function localize(layer) {
+    switch (layer.id) {
+        case 'hidden':
+            return {...layer, markers: layer.markers.map(marker => ({...marker, label: t('marker.hidden')}))};
+        case 'chunks':
+            return {...layer, markers: layer.markers.map(chunkMarker)};
+        case 'worldborder':
+            return {...layer, markers: layer.markers.map(marker => ({
+                ...marker, label: t('marker.worldborder'), details: localizedDetails(marker)
+            }))};
+        case 'worldguard':
+            return {...layer, markers: layer.markers.map(marker => ({...marker, details: localizedDetails(marker)}))};
+        default:
+            return layer;
+    }
+}
+
+function localizedDetails(marker) {
+    return marker.details?.map(([key, value]) => [translatedOr(`marker.detail.${key}`, key),
+        key === 'shape' ? translatedOr(`marker.shape.${value}`, value) : value]);
+}
+
+function chunkMarker(marker) {
+    const facts = Object.fromEntries(marker.details ?? []);
+    if (!CHUNK_LEVELS.includes(facts.level)) {
+        return marker;
+    }
+    const split = CHUNK_LEVELS.filter(level => level in facts)
+        .map(level => t(`chunks.split.${level}`, {count: numbers.format(facts[level])}));
+    const players = [facts.players, facts.anonymous && t('chunks.anonymous', {count: numbers.format(facts.anonymous)})]
+        .filter(Boolean).join(', ');
+    const rows = [
+        ['level', t(`chunks.description.${facts.level}`)],
+        ['chunks', numbers.format(facts.chunks) + (split.length > 1 ? ` (${split.join(', ')})` : '')],
+        ['size', t('chunks.size', {width: numbers.format(facts.width), depth: numbers.format(facts.depth)})],
+        ['blocks', t('chunks.blocks', Object.fromEntries(['minX', 'maxX', 'minZ', 'maxZ']
+            .map(name => [name, numbers.format(facts[name])])))],
+        ['players', players || t('chunks.nobody')],
+        facts.forced && ['forced', chunkCount(facts.forced)],
+        facts.tickets && ['tickets', facts.tickets],
+        ['view', chunkCount(facts.view)],
+        ['simulation', chunkCount(facts.simulation)]
+    ].filter(Boolean);
+    return {
+        ...marker,
+        label: `${t(`chunks.level.${facts.level}`)} · ${chunkCount(facts.chunks)}`,
+        details: rows.map(([key, value]) => [t(`chunks.detail.${key}`), value])
+    };
+}
+
 export function markerIcon(layer) {
     return layer.personal ? GEM_SVG : PIN_SVG;
 }
@@ -264,7 +325,7 @@ class MarkerManager {
             }
             const layers = await response.json();
             if (this.world === world) {
-                this.setLayers(layers);
+                this.setLayers(layers.map(localize));
             }
         } catch (error) {
             console.error('Failed to load markers:', error);
@@ -671,9 +732,7 @@ class MarkerManager {
     }
 
     layerLabel(layer) {
-        const key = `layer.${layer.id}`;
-        const translated = t(key);
-        return translated === key ? layer.label : translated;
+        return translatedOr(`layer.${layer.id}`, layer.label);
     }
 
     renderControls() {
