@@ -51,12 +51,12 @@ public final class SearchScreen extends Screen {
       new WebMapListener() {
         @Override
         public void markersChanged(final @NotNull String world) {
-          refresh();
+          refresh(false);
         }
 
         @Override
         public void playersChanged() {
-          refresh();
+          refresh(false);
         }
       };
   private @Nullable EditBox query;
@@ -102,12 +102,12 @@ public final class SearchScreen extends Screen {
     query.setHint(Component.translatable("taerra.search.hint"));
     query.setMaxLength(64);
     query.setValue(this.query == null ? "" : this.query.getValue());
-    query.setResponder(_ -> refresh());
+    query.setResponder(_ -> refresh(true));
     this.query = addRenderableWidget(query);
     this.results =
         addRenderableWidget(new Results(x, TOP + 24, Math.max(0, this.height - TOP - 24 - 16)));
     setInitialFocus(query);
-    refresh();
+    refresh(true);
   }
 
   @Override
@@ -237,7 +237,7 @@ public final class SearchScreen extends Screen {
         new Target(world.name(), x, y, z, null));
   }
 
-  private void refresh() {
+  private void refresh(final boolean reset) {
     final @Nullable Results results = this.results;
     final @Nullable EditBox query = this.query;
     if (results == null || query == null) {
@@ -282,7 +282,7 @@ public final class SearchScreen extends Screen {
       ranked.sort(Comparator.comparingInt(Ranked::rank).thenComparingInt(Ranked::order));
       ranked.stream().limit(LIMIT).forEach(entry -> found.add(entry.result()));
     }
-    results.show(found);
+    results.show(found, reset);
   }
 
   @Override
@@ -325,10 +325,23 @@ public final class SearchScreen extends Screen {
       setX(x);
     }
 
-    private void show(final @NotNull List<Result> found) {
+    private void show(final @NotNull List<Result> found, final boolean reset) {
+      final @Nullable Row selected = getSelected();
+      final double scroll = scrollAmount();
       replaceEntries(found.stream().map(Row::new).toList());
-      select(0);
-      setScrollAmount(0);
+      if (reset || selected == null) {
+        select(0);
+        setScrollAmount(0);
+        return;
+      }
+      setScrollAmount(scroll);
+      final @NotNull Object key = key(selected.result);
+      setSelected(
+          children().stream().filter(row -> key(row.result).equals(key)).findFirst().orElse(null));
+    }
+
+    private static @NotNull Object key(final @NotNull Result result) {
+      return result.player() != null ? result.player().uuid() : result.target();
     }
 
     private void select(final int index) {
