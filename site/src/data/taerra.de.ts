@@ -25,7 +25,7 @@ export const de: Copy = {
         kicker: 'Paper + Fabric',
         title: ['Deine Welt, ', 'live', ' in 3D'] as Marked,
         tagline: 'Eine Karte, gerendert auf deinem Server: im Browser und im Spiel.',
-        lede: 'TAERRA macht aus deinen Minecraft-Welten eine Live-Karte, die alle öffnen können: Block für Block, mit Sonnenlicht und Schatten, von oben oder schräg von allen vier Seiten. Spieler:innen bekommen dieselbe Karte im Spiel, mit allem, was der Browser kann, und dazu einer Minikarte.',
+        lede: 'TAERRA macht aus deinen Minecraft-Welten eine Live-Karte, die alle öffnen können: Block für Block, mit Sonnenlicht und Schatten, von oben oder schräg von allen vier Seiten. Im Spiel gibt es dieselbe Karte, mit allem, was der Browser kann, und dazu eine Minikarte.',
         download: 'TAERRA holen',
         demo: 'Live ansehen',
         note: 'Kostenlos für jeden Server, auch für kommerzielle.',
@@ -46,7 +46,7 @@ export const de: Copy = {
     speed: {
         kicker: 'Tempo',
         title: 'Eine ganze Welt in Minuten',
-        lede: 'Alles wird auf deinem Server gerendert, in eigenen Threads. Besucher:innen laden nur fertige Bilder, deshalb ist die Karte auf dem Handy so schnell wie auf einem Gaming-PC.',
+        lede: 'Alles wird auf deinem Server gerendert, in eigenen Threads. Geladen werden nur fertige Bilder, deshalb ist die Karte auf dem Handy so schnell wie auf einem Gaming-PC.',
         stats: [
             {
                 value: '2:21',
@@ -56,7 +56,7 @@ export const de: Copy = {
             {
                 value: '~2',
                 unit: 'ms',
-                label: 'pro Tick auf dem Hauptthread für Live-Updates. Vollständige Renders nehmen ihm nichts weg.'
+                label: 'pro Tick auf dem Hauptthread für Live-Updates. Vollständiges Rendern nimmt ihm nichts weg.'
             },
             {
                 value: '50',
@@ -79,7 +79,7 @@ export const de: Copy = {
             },
             topDown: {
                 title: 'Die klassische flache Karte, einen Klick entfernt',
-                text: 'Lieber flach? Die Draufsicht ist gleich da. Schalte die Karte auf Grau, wenn die Markierungen darauf wichtiger sind als das Gelände.',
+                text: 'Lieber flach? Die Draufsicht ist gleich da. Schalte die Karte auf Grau, wenn die Marker darauf wichtiger sind als das Gelände.',
                 alt: 'Dieselbe Welt senkrecht von oben, als flache Karte'
             },
             dimensions: {
@@ -99,50 +99,50 @@ export const de: Copy = {
                 title: 'Immer die Welt, wie sie gerade ist',
                 features: [
                     {
-                        title: 'Spieler:innen bewegen sich live',
-                        text: 'Positionen aktualisieren sich jede Sekunde, mit einer Liste aller Spieler:innen und einem Folgemodus, der jemanden im Blick behält, auch über Welten hinweg.'
+                        title: 'Wer wo ist, live',
+                        text: 'Positionen aktualisieren sich jede Sekunde, mit einer Spielerliste und einem Folgemodus, der jemanden im Blick behält, auch über Welten hinweg.'
                     },
                     {
                         title: 'Farben aus der Ortungsleiste',
-                        text: 'Alle Spieler:innen tragen die Farbe ihres Punkts in der Ortungsleiste, so siehst du auf einen Blick, wer wer ist, auf der Karte und im Spiel.'
+                        text: 'Alle tragen die Farbe ihres Punkts in der Ortungsleiste, so siehst du auf einen Blick, wer wer ist, auf der Karte und im Spiel.'
                     },
                     {
                         title: 'Die Karte bleibt aktuell',
-                        text: 'Jede Änderung wird erfasst, ob von Spieler:innen gebaut oder von der Natur gewachsen, und in einem Intervall deiner Wahl neu gezeichnet. Eine Stelle, die sich hundertmal ändert, wird einmal gezeichnet.'
+                        text: 'Jede Änderung wird erfasst, ob gebaut oder von der Natur gewachsen, und in einem Intervall deiner Wahl neu gezeichnet. Eine Stelle, die sich hundertmal ändert, wird einmal gezeichnet.'
                     },
                     {
                         title: 'Zusehen beim Rendern',
-                        text: 'Ein Render zeigt seinen Fortschritt direkt auf der Karte, mit der verbleibenden Zeit, im Browser und im Spiel. Dein Team startet einen Komplett-Render oder bricht ihn ab, mit einem Rechtsklick.'
+                        text: 'Beim Rendern siehst du den Fortschritt direkt auf der Karte, mit der verbleibenden Zeit, im Browser und im Spiel. Dein Team rendert eine ganze Welt oder bricht das Rendern ab, mit einem Rechtsklick.'
                     }
                 ]
             },
             {
                 kicker: 'Für Server',
-                title: 'Gemacht für deinen',
+                title: 'Gemacht für deinen Server',
                 features: [
                     {
                         title: 'Anmelden ohne Passwort',
-                        text: 'Gib den kurzen Code, den die Karte zeigt, nach /taerra login ein, und der Browser meldet sich von selbst für 30 Tage an und reicht die Anmeldung per QR-Code an dein Handy weiter. Codes gelten einmal, und Spieler:innen sehen jede Anmeldung im Spiel.'
+                        text: 'Gib den kurzen Code, den die Karte zeigt, nach /taerra login ein, und der Browser meldet sich von selbst für 30 Tage an und reicht die Anmeldung per QR-Code an dein Handy weiter. Codes gelten einmal, und jede Anmeldung wird im Spiel gemeldet.'
                     },
                     {
                         title: 'Wegpunkte, Flächen und Linien',
-                        text: 'In benannten Gruppen und Farben, auch privaten, jeweils mit optionaler Beschreibung. Spieler:innen mit Berechtigung zeichnen, verschieben und färben sie auf der Karte: Flächen Chunk für Chunk oder Punkt für Punkt, Linien gerade oder weich.'
+                        text: 'In benannten Gruppen und Farben, auch privaten, jeweils mit optionaler Beschreibung. Wer die Berechtigung hat, zeichnet, verschiebt und färbt sie auf der Karte: Flächen Chunk für Chunk oder Punkt für Punkt, Linien gerade oder geglättet.'
                     },
                     {
                         title: 'Eigene Wegpunkte',
-                        text: 'Alle angemeldeten Spieler:innen haben bis zu 100 Wegpunkte, Flächen und Linien, die nur sie sehen, im Browser und im Spiel, und ein Wegpunkt „Letzter Tod“ markiert, wo sie gestorben sind. Andere Plugins zeigen Spieler:innen so auch eigene Markierungen, etwa ihre Homes.'
+                        text: 'Angemeldet hast du bis zu 100 Wegpunkte, Flächen und Linien, die nur du siehst, im Browser und im Spiel, und ein Wegpunkt „Letzter Tod“ markiert, wo du gestorben bist. Andere Plugins können dir so auch eigene Marker zeigen, etwa deine Homes.'
                     },
                     {
                         title: 'Datenschutz eingebaut',
-                        text: 'Spieler:innen im Zuschauermodus, unsichtbar oder per Vanish versteckt, bleiben von der Karte fern, und wer sich in Serverlisten verbirgt, erscheint als anonymer Punkt. Die Köpfe kommen von deinem Server, deshalb verrät die Karte niemanden an Mojang.'
+                        text: 'Wer im Zuschauermodus, unsichtbar oder per Vanish versteckt ist, bleibt von der Karte fern, und wer sich in Serverlisten verbirgt, erscheint als anonymer Punkt. Die Köpfe kommen von deinem Server, deshalb verrät die Karte niemanden an Mojang.'
                     },
                     {
                         title: 'Private Welten und Ebenen',
-                        text: 'Verstecke eine Welt oder Ebene vor allen außer angemeldeten Spieler:innen mit der passenden Berechtigung, und lege fest, wer von der Karte aus teleportieren, Markierungen zeichnen oder rendern darf. Dein Team sieht außerdem die geladenen Chunks, eingefärbt nach Ladestufe.'
+                        text: 'Zeige eine Welt oder Ebene nur denen, die angemeldet sind und die passende Berechtigung haben, und lege fest, wer von der Karte aus teleportieren, Marker zeichnen oder rendern darf. Dein Team sieht außerdem die geladenen Chunks, eingefärbt nach Ladestufe.'
                     },
                     {
                         title: 'Rechtsklick auf jede Stelle',
-                        text: 'Kopiere Koordinaten oder einen Link, der die Karte genau dort öffnet. Angemeldete Spieler:innen mit Berechtigung teleportieren sich mit einem Klick dorthin.'
+                        text: 'Kopiere Koordinaten oder einen Link, der die Karte genau dort öffnet. Bist du angemeldet und hast die Berechtigung, teleportierst du dich mit einem Klick dorthin.'
                     },
                     {
                         title: 'Eine Jar, live eingerichtet',
@@ -162,7 +162,7 @@ export const de: Copy = {
                     },
                     {
                         title: 'Deutsch und Englisch',
-                        text: 'Die Web-Karte, die Mod und jede Nachricht im Spiel sprechen beides.'
+                        text: 'Die Webkarte, die Mod und jede Nachricht im Spiel sprechen beides.'
                     },
                     {
                         title: 'Als Bilder exportieren',
@@ -178,12 +178,15 @@ export const de: Copy = {
                         title: 'WorldGuard',
                         text: 'Regionen als Ebene, nur für dein Team, solange du sie nicht freigibst.'
                     },
-                    {title: 'Weltgrenzen', text: 'Die Vanilla-Grenze und ChunkyBorder-Grenzen als Ebene.'},
+                    {
+                        title: 'Weltbarrieren',
+                        text: 'Die Weltbarriere aus Vanilla und die Grenzen von ChunkyBorder als Ebene.'
+                    },
                     {
                         title: 'Chunky',
-                        text: 'Hält sich zurück, während Chunky generiert, und sagt dann, wann sich ein vollständiger Render lohnt.'
+                        text: 'Hält sich zurück, während Chunky generiert, und sagt dann, wann sich das Rendern der ganzen Welt lohnt.'
                     },
-                    {title: 'dynmap', text: 'Übernimm deine Markierungen mit einem Befehl als Wegpunkte.'}
+                    {title: 'dynmap', text: 'Übernimm deine Marker mit einem Befehl als Wegpunkte.'}
                 ]
             }
         ]
@@ -192,39 +195,39 @@ export const de: Copy = {
     mod: {
         kicker: 'Fabric-Mod',
         title: 'Dieselbe Karte im Spiel',
-        lede: 'Die optionale Fabric-Mod bringt die Karte deines Servers zu deinen Spieler:innen. Betritt einen Server mit TAERRA, und sie verbindet sich von selbst, schon angemeldet, ganz ohne /taerra login.',
+        lede: 'Die optionale Fabric-Mod bringt die Karte deines Servers ins Spiel. Tritt einem Server mit TAERRA bei, und sie verbindet sich von selbst, schon angemeldet, ganz ohne /taerra login.',
         note: 'Braucht Fabric API und einen Server mit dem Plugin. Mod Menu ist optional.',
         download: 'Mod holen',
         rows: {
             map: {
                 title: 'Die ganze Karte auf M',
-                text: 'Drück [M] für die Weltkarte, mit allem, was die Web-Karte kann: beide Ansichten und alle vier Drehungen, farbig oder grau, Ebenen, die Spielerliste und der Folgemodus. [K] durchsucht Spieler:innen, Markierungen, Welten und Koordinaten. Ein Rechtsklick auf jede Stelle startet die Navigation dorthin, setzt einen Wegpunkt oder kopiert ihre Koordinaten oder einen Link.',
+                text: 'Drück [M] für die Weltkarte, mit allem, was die Webkarte kann: beide Ansichten und alle vier Drehungen, farbig oder grau, Ebenen, die Spielerliste und der Folgemodus. [K] durchsucht Spieler:innen, Marker, Welten und Koordinaten. Ein Rechtsklick auf jede Stelle startet die Navigation dorthin, setzt einen Wegpunkt oder kopiert ihre Koordinaten oder einen Link.',
                 alt: 'Die Weltkarte der Mod in der isometrischen Ansicht, die ganze Welt als ein schräger Block vor dem Spiel, mit Wegpunkten am Spawn und an einem Dorf'
             },
             minimap: {
                 title: 'Eine Minikarte nach deinem Geschmack',
-                text: 'Stell ihre Größe ein, zoome mit [=] und [-], setz sie auf eine Seite deiner Wahl und lass sie sich mit dir drehen. Darunter wählst du die Zeilen, die du brauchst: Koordinaten und ihre Nether-Gegenstücke, Chunk, Blickrichtung, Biom, Wetter, Uhrzeit und Tag, Lichtlevel, echte Uhrzeit und FPS. Markierungen jenseits ihres Rands bleiben im Blick, damit nichts in der Nähe verloren geht.',
+                text: 'Stell ihre Größe ein, zoome mit [=] und [-], setz sie auf eine Seite deiner Wahl und lass sie sich mit dir drehen. Darunter wählst du die Zeilen, die du brauchst: Koordinaten und ihre Nether-Gegenstücke, Chunk, Blickrichtung, Biom, Wetter, Uhrzeit und Tag, Blocklicht, Echtzeit und FPS. Marker jenseits ihres Rands bleiben im Blick, damit nichts in der Nähe verloren geht.',
                 alt: 'Ein Kirschhain im Spiel, oben rechts die Minikarte, darunter Koordinaten und Biom'
             },
             labels: {
                 title: 'Wegpunkte, wo sie sind',
                 text: 'Wegpunkte schweben als Beschriftung über den Orten, die sie markieren, mit der Entfernung zu jedem, damit du ohne Karte hinfindest. [B] blendet sie aus, wenn du freie Sicht willst.',
-                alt: 'Ebenen von einem Hügel aus, mit den Beschriftungen Village und Lumber Camp samt Entfernung über den Orten, die sie markieren, und der Minikarte in der Ecke'
+                alt: 'Eine Ebene von einem Hügel aus, mit den Beschriftungen Village und Lumber Camp samt Entfernung über den Orten, die sie markieren, und der Minikarte in der Ecke'
             },
             navigation: {
                 title: 'Finde den Weg dorthin',
-                text: 'Navigiere zu einem Wegpunkt, zu Spieler:innen oder zu jeder Stelle, gestartet auf der Karte im Spiel oder auf der Web-Karte, während du spielst. Ein Leuchtfeuerstrahl steigt am Ziel auf, und ein Pfeil oben am Bildschirm zeigt Richtung und Entfernung, durch ein Portal, wenn das Ziel in einer anderen Dimension liegt.',
+                text: 'Navigiere zu einem Wegpunkt, zu jemandem aus der Spielerliste oder zu jeder Stelle, gestartet auf der Karte im Spiel oder auf der Webkarte, während du spielst. Ein Leuchtfeuerstrahl steigt am Ziel auf, und ein Pfeil oben am Bildschirm zeigt Richtung und Entfernung, durch ein Portal, wenn das Ziel in einer anderen Dimension liegt.',
                 alt: 'Navigation im Spiel: Am Ziel steigt ein Leuchtfeuerstrahl auf, oben am Bildschirm zeigt der Pfeil seine Koordinaten und die Entfernung'
             },
             list: {
                 title: 'Deine Wegpunkte, eine Taste entfernt',
-                text: '[H] setzt einen dort, wo du stehst, und auf der Karte zeichnest du auch Gebiete und Linien. [J] öffnet deine Liste: filtere sie, sortiere nach Name oder Entfernung, blende einzelne aus und exportiere sie als Datei zum Teilen oder Sichern, oder importiere eine. Wenn du stirbst, markiert ein Wegpunkt „Letzter Tod“ die Stelle.',
+                text: '[H] setzt einen dort, wo du stehst, und auf der Karte zeichnest du auch Flächen und Linien. [J] öffnet deine Liste: filtere sie, sortiere nach Namen oder Entfernung, blende einzelne aus und exportiere sie als Datei zum Teilen oder Sichern, oder importiere eine. Wenn du stirbst, markiert ein Wegpunkt „Letzter Tod“ die Stelle.',
                 alt: 'Die Liste „Meine Wegpunkte“ mit drei Wegpunkten, jeder mit Welt, Koordinaten und Entfernung und Knöpfen zum Anzeigen, Verschieben, Hinnavigieren, Zentrieren, Bearbeiten und Löschen'
             },
             layers: {
                 title: 'Ebenen und Werkzeuge fürs Team',
-                text: 'WorldGuard-Regionen und Weltgrenzen sind Ebenen, die du einschaltest. Mit Berechtigung wählst du Chunks aus, um sie neu zu rendern oder zu verstecken, während ihr dort baut, und siehst den Fortschritt eines Renders direkt auf der Karte. Dein Team ändert die Einstellungen des Servers auf einem eigenen Bildschirm.',
-                alt: 'Eine nahe isometrische Ansicht einer Küste mit grün umrandeten WorldGuard-Regionen, einem Bereich mit Warnstreifen und 112 Chunks, die zum Neurendern ausgewählt sind'
+                text: 'WorldGuard-Regionen und Weltbarrieren sind Ebenen, die du einschaltest. Mit Berechtigung wählst du Chunks aus, um sie neu zu rendern oder zu verbergen, während ihr dort baut, und siehst den Fortschritt beim Rendern direkt auf der Karte. Dein Team ändert die Einstellungen des Servers auf einem eigenen Bildschirm.',
+                alt: 'Eine nahe isometrische Ansicht einer Küste mit grün umrandeten WorldGuard-Regionen, einem verborgenen Bereich mit Warnstreifen und 112 Chunks, die zum Neurendern ausgewählt sind'
             }
         },
         more: {
@@ -284,12 +287,12 @@ export const de: Copy = {
             },
             {
                 title: 'Öffentlich machen',
-                text: 'Stell die Karte hinter einen Reverse Proxy mit HTTPS und sag TAERRA ihre Adresse. Login-Links und Link-Vorschauen nutzen sie.',
+                text: 'Stell die Karte hinter einen Reverse Proxy mit HTTPS und sag TAERRA ihre Adresse. Anmeldelinks und Linkvorschauen nutzen sie.',
                 command: '/taerra config web.public-url https://map.example.com'
             },
             {
                 title: 'Benennen',
-                text: 'Der Name deines Servers in der Kopfzeile der Karte, im Seitentitel und in Link-Vorschauen.',
+                text: 'Der Name deines Servers in der Kopfzeile der Karte, im Seitentitel und in Linkvorschauen.',
                 command: '/taerra config web.name "Mein Server"'
             }
         ],
@@ -298,7 +301,7 @@ export const de: Copy = {
             mod: {part: 'Mod', needs: 'Fabric Loader, Fabric API und Minecraft 26.3, auf einem Server mit dem Plugin'},
             updates: {
                 part: 'Updates',
-                needs: 'Aktualisiere zuerst das Plugin. Ist die Mod neuer als das Plugin, bittet sie die Spieler:innen, den Server aktualisieren zu lassen. Plugin und Mod teilen sich einen Build-Zähler, ihre Nummern springen also und müssen nicht übereinstimmen.'
+                needs: 'Aktualisiere zuerst das Plugin. Ist die Mod neuer als das Plugin, bittet sie darum, den Server aktualisieren zu lassen. Plugin und Mod teilen sich einen Build-Zähler, ihre Nummern springen also und müssen nicht übereinstimmen.'
             }
         },
         more: [
@@ -323,7 +326,7 @@ export const de: Copy = {
                     text: 'Einen Bereich um dich, um den Spawn oder um einen Punkt rendern'
                 },
                 {command: '/taerra render image <welt> [zoom]', text: 'Die Karte als Bilder exportieren'},
-                {command: '/taerra render cancel', text: 'Einen laufenden Render abbrechen'},
+                {command: '/taerra render cancel', text: 'Laufendes Rendern abbrechen'},
                 {
                     command: '/taerra render flush',
                     text: 'Alle wartenden Kacheln verwerfen, auch noch nicht gerenderte Änderungen'
@@ -334,14 +337,14 @@ export const de: Copy = {
                 },
                 {
                     command: '/taerra config …',
-                    text: 'Einstellungen ändern, Welten aktivieren, benennen, ordnen und verstecken, Ebenen privat machen'
+                    text: 'Einstellungen ändern, Welten aktivieren, benennen, ordnen und verbergen, Ebenen privat machen'
                 },
                 {command: '/taerra waypoint add|remove …', text: 'Wegpunkte hinzufügen oder entfernen'},
-                {command: '/taerra import dynmap <datei>', text: 'Markierungen aus dynmap importieren'},
-                {command: '/taerra login [code]', text: 'Bei der Web-Karte anmelden'},
-                {command: '/taerra logout [name]', text: 'In jedem Browser von der Web-Karte abmelden'},
-                {command: '/taerra devices', text: 'Deine Geräte auf der Web-Karte sehen und abmelden'},
-                {command: '/taerra mod', text: 'Sehen, wer mit der TAERRA-Mod spielt, und mit welchem Build'}
+                {command: '/taerra import dynmap <datei>', text: 'Marker aus dynmap importieren'},
+                {command: '/taerra login [code]', text: 'Bei der Webkarte anmelden'},
+                {command: '/taerra logout [name]', text: 'In jedem Browser von der Webkarte abmelden'},
+                {command: '/taerra devices', text: 'Deine Geräte auf der Webkarte anzeigen und abmelden'},
+                {command: '/taerra mod', text: 'Anzeigen, wer mit der TAERRA-Mod spielt, und mit welchem Build'}
             ]
         },
         permissions: {
@@ -358,7 +361,7 @@ export const de: Copy = {
                 {permission: 'taerra.command.limit', standard: 'OP', text: '`/taerra limit`'},
                 {permission: 'taerra.command.waypoint', standard: 'OP', text: '`/taerra waypoint`'},
                 {permission: 'taerra.command.config', standard: 'OP', text: '`/taerra config` und `/taerra import`'},
-                {permission: 'taerra.command.logout.others', standard: 'OP', text: 'Andere Spieler:innen abmelden'},
+                {permission: 'taerra.command.logout.others', standard: 'OP', text: 'Andere abmelden'},
                 {permission: 'taerra.command.mod', standard: 'OP', text: '`/taerra mod`'},
                 {
                     permission: 'taerra.web.teleport',
@@ -368,17 +371,17 @@ export const de: Copy = {
                 {
                     permission: 'taerra.web.see-hidden',
                     standard: 'OP',
-                    text: 'Versteckte Spieler:innen auf der Karte sehen, wenn angemeldet'
+                    text: 'Versteckte Personen auf der Karte sehen, wenn angemeldet'
                 },
                 {
                     permission: 'taerra.web.render',
                     standard: 'OP',
-                    text: 'Eine ganze Welt oder ausgewählte Chunks neu rendern und Renders abbrechen, wenn angemeldet'
+                    text: 'Eine ganze Welt oder ausgewählte Chunks neu rendern und das Rendern abbrechen, wenn angemeldet'
                 },
                 {
                     permission: 'taerra.web.hide',
                     standard: 'OP',
-                    text: 'Ausgewählte Chunks verstecken und wieder zeigen, wenn angemeldet'
+                    text: 'Ausgewählte Chunks verbergen und wieder einblenden, wenn angemeldet'
                 },
                 {
                     permission: 'taerra.web.markers',
@@ -388,7 +391,7 @@ export const de: Copy = {
                 {
                     permission: 'taerra.web.markers.private',
                     standard: 'OP',
-                    text: 'Private Marker-Gruppen anlegen, wenn angemeldet'
+                    text: 'Private Markergruppen anlegen, wenn angemeldet'
                 },
                 {
                     permission: 'taerra.web.markers.personal',
@@ -410,7 +413,7 @@ export const de: Copy = {
                     standard: 'OP',
                     text: 'Eine private Ebene sehen, etwa `taerra.web.layer.worldguard`'
                 },
-                {permission: 'taerra.hide', standard: 'niemand', text: 'Von der Karte versteckt werden'}
+                {permission: 'taerra.hide', standard: 'niemand', text: 'Nicht auf der Karte erscheinen'}
             ]
         }
     },
@@ -441,7 +444,7 @@ export const de: Copy = {
                 'Lade das TAERRA-Plugin für Paper und die Fabric-Mod herunter: den neuesten Build und jeden davor, jeweils mit allem, was sich geändert hat.',
             image: {
                 src: '/og-download.png',
-                alt: 'Das TAERRA-Logo mit Download-Buttons für das Paper-Plugin und die Fabric-Mod neben einer isometrischen Minecraft-Welt'
+                alt: 'Das TAERRA-Logo mit Download-Schaltflächen für das Paper-Plugin und die Fabric-Mod neben einer isometrischen Minecraft-Welt'
             }
         },
         kicker: 'Downloads',
@@ -451,7 +454,7 @@ export const de: Copy = {
             plugin: {
                 label: 'Plugin',
                 loader: 'Paper',
-                audience: 'Für Server-Betreiber:innen',
+                audience: 'Für den Server',
                 title: 'Paper-Plugin',
                 text: 'Rendert die Karte auf deinem Server und liefert sie an jeden Browser aus. Leg die Jar in plugins/.',
                 download: 'Plugin herunterladen'
@@ -459,7 +462,7 @@ export const de: Copy = {
             mod: {
                 label: 'Mod',
                 loader: 'Fabric',
-                audience: 'Für Spieler:innen',
+                audience: 'Fürs Spiel',
                 title: 'Fabric-Mod',
                 text: 'Die Karte des Servers in deinem Spiel, mit Minikarte und Wegpunkten in der Welt. Leg die Jar in mods/.',
                 download: 'Mod herunterladen'

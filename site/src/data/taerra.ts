@@ -83,7 +83,7 @@ const en = {
         alt: 'A whole Minecraft world rendered by TAERRA as one isometric block of terrain',
         rotate: 'Turn it',
         top: 'Top-down',
-        facing: ['Looking north-west', 'Looking north-east', 'Looking south-east', 'Looking south-west']
+        facing: ['Looking northwest', 'Looking northeast', 'Looking southeast', 'Looking southwest']
     },
 
     showreel: {
@@ -154,8 +154,8 @@ const en = {
                         text: 'Positions update every second, with a player list and a follow mode that keeps someone in view, even across worlds.'
                     },
                     {
-                        title: 'Colors from the locator bar',
-                        text: 'Every player wears the color of their dot on the locator bar, so you know who is who at a glance, on the map and in game.'
+                        title: 'Colors from the Locator Bar',
+                        text: 'Every player wears the color of their dot on the Locator Bar, so you know who is who at a glance, on the map and in game.'
                     },
                     {
                         title: 'The map keeps up',
@@ -226,7 +226,7 @@ const en = {
                 title: 'Fits the plugins you already have',
                 features: [
                     {title: 'WorldGuard', text: 'Regions as a layer, private to staff unless you share it.'},
-                    {title: 'World borders', text: 'The vanilla border and ChunkyBorder borders as a layer.'},
+                    {title: 'World borders', text: "The vanilla world border and ChunkyBorder's borders as a layer."},
                     {
                         title: 'Chunky',
                         text: 'Stays out of the way while Chunky generates, then says when a full render is worth it.'
