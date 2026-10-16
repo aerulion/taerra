@@ -134,6 +134,9 @@ public final class WorldPicker {
       final float partialTick) {
     TooltipRenderUtil.extractTooltipBackground(
         graphics, this.x, this.y, this.width, this.height, null);
+    if (this.search != null) {
+      this.search.extractRenderState(graphics, mouseX, mouseY, partialTick);
+    }
     this.list.extractRenderState(graphics, mouseX, mouseY, partialTick);
   }
 }

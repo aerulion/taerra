@@ -253,6 +253,12 @@ public final class MapScreen extends Screen {
         32,
         2);
     drawOverlay(graphics, mouseX, mouseY, partialTick, hovering);
+    final boolean covered =
+        (this.menu != null && this.menu.isMouseOver(mouseX, mouseY)) || overWorlds(mouseX, mouseY);
+    super.extractRenderState(graphics, covered ? -1 : mouseX, covered ? -1 : mouseY, partialTick);
+    if (this.menu != null || this.worldPicker.isOpen()) {
+      graphics.nextStratum();
+    }
     if (this.menu != null) {
       this.menu.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
@@ -260,7 +266,6 @@ public final class MapScreen extends Screen {
       layoutWorlds();
       this.worldPicker.render(graphics, mouseX, mouseY, partialTick);
     }
-    super.extractRenderState(graphics, mouseX, mouseY, partialTick);
   }
 
   @Override
@@ -476,7 +481,7 @@ public final class MapScreen extends Screen {
     }
     final @Nullable EditBox search = this.worldPicker.createSearch(this.font, worlds.size());
     if (search != null) {
-      addRenderableWidget(search);
+      addWidget(search);
     }
     addWidget(this.worldPicker.list());
     addWidget(this.players);
