@@ -20,6 +20,7 @@ import net.aerulion.taerra.mod.web.model.World;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.PlayerFaceExtractor;
@@ -428,6 +429,7 @@ public final class SearchScreen extends Screen {
 
       @Override
       public boolean mouseClicked(final MouseButtonEvent event, final boolean doubleClick) {
+        AbstractWidget.playButtonClickSound(Minecraft.getInstance().getSoundManager());
         pick(this.result);
         return true;
       }
