@@ -1,11 +1,13 @@
 package net.aerulion.taerra.limit;
 
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.longs.LongSets;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -25,8 +27,8 @@ public final class WorldLimits {
   private final @NotNull Plugin plugin;
   private final @NotNull File file;
   private final @NotNull Map<String, WorldLimit> limits = new ConcurrentHashMap<>();
-  private final @NotNull Map<String, Set<Long>> hidden = new ConcurrentHashMap<>();
-  private final @NotNull Map<String, Set<Long>> teased = new ConcurrentHashMap<>();
+  private final @NotNull Map<String, LongSet> hidden = new ConcurrentHashMap<>();
+  private final @NotNull Map<String, LongSet> teased = new ConcurrentHashMap<>();
 
   public WorldLimits(final @NotNull Plugin plugin) {
     super();
@@ -52,9 +54,9 @@ public final class WorldLimits {
     load(plugin, yaml, "teased", this.teased);
     this.teased.replaceAll(
         (world, chunks) -> {
-          final @NotNull Set<Long> kept = new HashSet<>(chunks);
-          kept.retainAll(this.hidden.getOrDefault(world, Set.of()));
-          return Set.copyOf(kept);
+          final @NotNull LongSet kept = new LongOpenHashSet(chunks);
+          kept.retainAll(this.hidden.getOrDefault(world, LongSets.EMPTY_SET));
+          return kept;
         });
   }
 
@@ -62,17 +64,17 @@ public final class WorldLimits {
       final @NotNull Plugin plugin,
       final @NotNull YamlConfiguration yaml,
       final @NotNull String key,
-      final @NotNull Map<String, Set<Long>> into) {
+      final @NotNull Map<String, LongSet> into) {
     for (final @NotNull Map<?, ?> entry : yaml.getMapList(key)) {
       try {
-        final @NotNull Set<Long> chunks = new HashSet<>();
+        final @NotNull LongSet chunks = new LongOpenHashSet();
         for (final @NotNull Object chunk : (List<?>) entry.get("chunks")) {
           final @NotNull String[] xz = String.valueOf(chunk).split(",");
           chunks.add(
               ChunkCoordinate.key(
                   Integer.parseInt(xz[0].strip()), Integer.parseInt(xz[1].strip())));
         }
-        into.put((String) entry.get("world"), Set.copyOf(chunks));
+        into.put((String) entry.get("world"), chunks);
       } catch (final RuntimeException e) {
         plugin.getLogger().warning("Skipping malformed " + key + " chunks in limits.yml: " + entry);
       }
@@ -84,7 +86,7 @@ public final class WorldLimits {
   }
 
   public @NotNull Map<String, Set<Long>> hidden() {
-    return Map.copyOf(this.hidden);
+    return Map.<String, Set<Long>>copyOf(this.hidden);
   }
 
   public boolean hidden(final @NotNull String worldName, final int chunkX, final int chunkZ) {
@@ -96,11 +98,11 @@ public final class WorldLimits {
   }
 
   private static boolean contains(
-      final @NotNull Map<String, Set<Long>> chunksByWorld,
+      final @NotNull Map<String, LongSet> chunksByWorld,
       final @NotNull String worldName,
       final int chunkX,
       final int chunkZ) {
-    final @Nullable Set<Long> chunks = chunksByWorld.get(worldName);
+    final @Nullable LongSet chunks = chunksByWorld.get(worldName);
     return chunks != null && chunks.contains(ChunkCoordinate.key(chunkX, chunkZ));
   }
 
@@ -124,12 +126,12 @@ public final class WorldLimits {
   }
 
   private static void update(
-      final @NotNull Map<String, Set<Long>> chunksByWorld,
+      final @NotNull Map<String, LongSet> chunksByWorld,
       final @NotNull String worldName,
       final @NotNull Collection<Long> chunks,
       final boolean add) {
-    final @NotNull Set<Long> updated =
-        new HashSet<>(chunksByWorld.getOrDefault(worldName, Set.of()));
+    final @NotNull LongSet updated =
+        new LongOpenHashSet(chunksByWorld.getOrDefault(worldName, LongSets.EMPTY_SET));
     if (add) {
       updated.addAll(chunks);
     } else {
@@ -138,12 +140,12 @@ public final class WorldLimits {
     if (updated.isEmpty()) {
       chunksByWorld.remove(worldName);
     } else {
-      chunksByWorld.put(worldName, Set.copyOf(updated));
+      chunksByWorld.put(worldName, updated);
     }
   }
 
   private static @NotNull List<Map<String, Object>> entries(
-      final @NotNull Map<String, Set<Long>> chunksByWorld) {
+      final @NotNull Map<String, LongSet> chunksByWorld) {
     final @NotNull List<Map<String, Object>> entries = new ArrayList<>();
     chunksByWorld.forEach(
         (world, chunks) ->
@@ -152,9 +154,10 @@ public final class WorldLimits {
                     "world",
                     world,
                     "chunks",
-                    chunks.stream()
+                    chunks
+                        .longStream()
                         .sorted()
-                        .map(
+                        .mapToObj(
                             chunk ->
                                 ChunkCoordinate.keyX(chunk) + "," + ChunkCoordinate.keyZ(chunk))
                         .toList())));

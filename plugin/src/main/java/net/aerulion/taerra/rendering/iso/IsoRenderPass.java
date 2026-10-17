@@ -39,6 +39,7 @@ final class IsoRenderPass {
   private final int @NotNull [] veilMist;
   private final int @NotNull [] veilY;
   private final int @NotNull [] cloud;
+  private final Fog.@NotNull Cell fogCell = new Fog.Cell();
   private int mist = Fog.NO_MIST;
   private int lastSunX = Integer.MIN_VALUE;
   private int lastSunY;
@@ -239,7 +240,8 @@ final class IsoRenderPass {
                     + this.rotation.worldDeltaX(0, 1) * rotatedZ,
                 this.rotation.worldDeltaZ(1, 0) * rotatedX
                     + this.rotation.worldDeltaZ(0, 1) * rotatedZ,
-                this.veilY[index]),
+                this.veilY[index],
+                this.fogCell),
             this.veilMist[index]);
   }
 

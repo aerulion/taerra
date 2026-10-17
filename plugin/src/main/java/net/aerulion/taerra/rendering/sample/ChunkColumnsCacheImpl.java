@@ -195,10 +195,13 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
   }
 
   @Override
-  public void forget(final @NotNull String worldName, final @NotNull Collection<Long> chunks) {
+  public void forget(
+      final @NotNull String worldName,
+      final @NotNull Collection<Long> chunks,
+      final boolean terrain) {
     this.epoch.incrementAndGet();
     final @Nullable Long2IntOpenHashMap grounds = this.grounds.get(worldName);
-    if (grounds != null) {
+    if (terrain && grounds != null) {
       synchronized (grounds) {
         chunks.forEach(chunk -> grounds.remove((long) chunk));
       }
@@ -250,6 +253,13 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
     if (!misted) {
       return ColumnRunSampler.sampleChunk(
           source, ceilingY, this.shapes, chunkX, chunkZ, this.limits.get(worldName));
+    }
+    if (!opaque(world, chunkX, chunkZ)) {
+      remember(
+          worldName,
+          chunkX,
+          chunkZ,
+          Fog.ground(ColumnRunSampler.columnTops(source, ceilingY, this.shapes)));
     }
     final int @NotNull [] groundAround = new int[9];
     for (int offsetX = -1; offsetX <= 1; offsetX++) {
@@ -322,10 +332,17 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       return ColumnSource.EMPTY_COLUMN;
     }
     final int ground = Fog.ground(ColumnRunSampler.columnTops(source, ceilingY, this.shapes));
-    synchronized (known) {
-      known.put(key, ground);
-    }
+    remember(WorldKeys.id(world), chunkX, chunkZ, ground);
     return ground;
+  }
+
+  private void remember(
+      final @NotNull String worldName, final int chunkX, final int chunkZ, final int ground) {
+    final @NotNull Long2IntOpenHashMap known =
+        this.grounds.computeIfAbsent(worldName, ignored -> new Long2IntOpenHashMap());
+    synchronized (known) {
+      known.put(ChunkCoordinate.key(chunkX, chunkZ), ground);
+    }
   }
 
   private void recordHeights(

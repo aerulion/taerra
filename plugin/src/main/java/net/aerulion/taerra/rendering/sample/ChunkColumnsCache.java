@@ -16,7 +16,7 @@ public sealed interface ChunkColumnsCache permits ChunkColumnsCacheImpl {
 
   void markChanged(@NotNull String worldName, int chunkX, int chunkZ);
 
-  void forget(@NotNull String worldName, @NotNull Collection<Long> chunks);
+  void forget(@NotNull String worldName, @NotNull Collection<Long> chunks, boolean terrain);
 
   void forgetWorld(@NotNull String worldName);
 

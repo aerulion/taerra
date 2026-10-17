@@ -124,12 +124,13 @@ public final class Fog {
       final byte @NotNull [] hiddenAround,
       final boolean teased) {
     final int @NotNull [] mist = new int[CHUNK_SIZE * CHUNK_SIZE];
+    final int @NotNull [] @NotNull [] masks = masks(hiddenAround);
     final @NotNull Map<Long, Boolean> skies = new HashMap<>();
     for (int localX = 0; localX < CHUNK_SIZE; localX++) {
       for (int localZ = 0; localZ < CHUNK_SIZE; localZ++) {
         mist[ChunkColumns.columnIndex(localX, localZ)] =
             encode(groundAt(groundAround, localX, localZ), FULL, teased)
-                | skyBits(chunkX, chunkZ, localX, localZ, hiddenAround, skies);
+                | skyBits(chunkX, chunkZ, localX, localZ, masks, skies);
       }
     }
     return mist;
@@ -142,23 +143,22 @@ public final class Fog {
       final int @NotNull [] groundAround,
       final byte @NotNull [] hiddenAround) {
     final int @NotNull [] mist = new int[CHUNK_SIZE * CHUNK_SIZE];
+    final int @NotNull [] @NotNull [] masks = masks(hiddenAround);
     final @NotNull Map<Long, Boolean> skies = new HashMap<>();
     for (int localX = 0; localX < CHUNK_SIZE; localX++) {
       for (int localZ = 0; localZ < CHUNK_SIZE; localZ++) {
         if (columns.topY(ChunkColumns.columnIndex(localX, localZ)) == ChunkColumns.EMPTY_COLUMN) {
           continue;
         }
-        final boolean teased =
-            nearest(chunkX, chunkZ, localX, localZ, hiddenAround, TEASED)
-                < nearest(chunkX, chunkZ, localX, localZ, hiddenAround, HIDDEN);
         final int density =
             (int)
                 Math.round(
-                    FULL
-                        * Math.clamp(
-                            thickness(chunkX, chunkZ, localX, localZ, hiddenAround), 0.0, 1.0));
-        final int sky = skyBits(chunkX, chunkZ, localX, localZ, hiddenAround, skies);
+                    FULL * Math.clamp(thickness(chunkX, chunkZ, localX, localZ, masks), 0.0, 1.0));
+        final int sky = skyBits(chunkX, chunkZ, localX, localZ, masks, skies);
         if (density > 0 || sky != 0) {
+          final boolean teased =
+              nearest(chunkX, chunkZ, localX, localZ, masks, TEASED)
+                  < nearest(chunkX, chunkZ, localX, localZ, masks, HIDDEN);
           mist[ChunkColumns.columnIndex(localX, localZ)] =
               encode(groundAt(groundAround, localX, localZ), density, teased) | sky;
         }
@@ -177,47 +177,71 @@ public final class Fog {
 
   public static int veil(
       final int argb, final int mist, final float x, final float z, final int blockY) {
+    return mist == NO_MIST ? argb : veil(argb, mist, x, z, blockY, new Cell());
+  }
+
+  public static int veil(
+      final int argb,
+      final int mist,
+      final float x,
+      final float z,
+      final int blockY,
+      final @NotNull Cell cell) {
     if (mist == NO_MIST) {
       return argb;
     }
-    return fog(argb, mist, x, z, blockY);
-  }
-
-  public static int skyShadow(final int argb, final int mist) {
-    return (mist & SHADE) != 0 ? MapStyle.blend(argb, SHADOW_COLOR, SKY_SHADOW) : argb;
-  }
-
-  private static int fog(
-      final int argb, final int mist, final float x, final float z, final int blockY) {
     final float cover = Math.clamp((float) (layerY(mist) - blockY) / COVER_FADE, 0.0f, 1.0f);
-    if (cover <= 0.0f) {
+    if (cover <= 0.0f || (mist & FULL) == 0) {
       return argb;
     }
-    final float density = (float) (mist & FULL) / FULL;
-    if (density <= 0.0f) {
-      return argb;
-    }
-    final float cellX = (float) Math.floor(x) + 0.5f;
-    final float cellZ = (float) Math.floor(z) + 0.5f;
-    final float cloud = cloud(cellX, cellZ);
-    final float reach =
-        teased(mist) ? lerp(TEASER_THIN, TEASER_THICK, smoothstep(THIN, THICK, cloud)) : 1.0f;
-    final float shadowX = cellX - SHADOW_REACH;
-    final float shadowZ = cellZ - SHADOW_REACH;
-    final float body = body(cloud, cellX, cellZ, density) * cover;
-    final float shadow =
-        Math.max(0.0f, body(cloud(shadowX, shadowZ), shadowX, shadowZ, density) * cover - body)
-            * reach
-            * SHADOW;
-    final float opacity = step(body * reach, OPACITY_STEPS);
+    cell.at((float) Math.floor(x) + 0.5f, (float) Math.floor(z) + 0.5f, mist & (FULL | TEASER));
+    final float body = cell.body * cover;
+    final float shadow = Math.max(0.0f, cell.shadow * cover - body) * cell.reach * SHADOW;
+    final float opacity = step(body * cell.reach, OPACITY_STEPS);
     final int ground =
         teased(mist)
             ? MapStyle.blend(argb, grey(argb), step(TEASER_GREY * body, OPACITY_STEPS))
             : argb;
     return MapStyle.blend(
         MapStyle.blend(ground, SHADOW_COLOR, step(shadow, OPACITY_STEPS)),
-        step(body, OPACITY_STEPS) < 1.0f ? CLOUD_LIGHT : tone(cloud, cellX, cellZ),
+        step(body, OPACITY_STEPS) < 1.0f ? CLOUD_LIGHT : cell.tone,
         opacity);
+  }
+
+  public static int skyShadow(final int argb, final int mist) {
+    return (mist & SHADE) != 0 ? MapStyle.blend(argb, SHADOW_COLOR, SKY_SHADOW) : argb;
+  }
+
+  public static final class Cell {
+
+    private float x = Float.NaN;
+    private float z;
+    private int kind;
+    private float reach;
+    private float body;
+    private float shadow;
+    private int tone;
+
+    private void at(final float cellX, final float cellZ, final int kind) {
+      if (cellX == this.x && cellZ == this.z && kind == this.kind) {
+        return;
+      }
+      this.x = cellX;
+      this.z = cellZ;
+      this.kind = kind;
+      final float density = (float) (kind & FULL) / FULL;
+      final float cloud = cloud(cellX, cellZ);
+      this.reach =
+          (kind & TEASER) != 0
+              ? lerp(TEASER_THIN, TEASER_THICK, smoothstep(THIN, THICK, cloud))
+              : 1.0f;
+      this.body = Fog.body(cloud, cellX, cellZ, density);
+      final float shadowX = cellX - SHADOW_REACH;
+      final float shadowZ = cellZ - SHADOW_REACH;
+      this.shadow = Fog.body(cloud(shadowX, shadowZ), shadowX, shadowZ, density);
+      this.tone =
+          step(this.body, OPACITY_STEPS) < 1.0f ? CLOUD_LIGHT : Fog.tone(cloud, cellX, cellZ);
+    }
   }
 
   public static boolean sky(final int mist) {
@@ -263,11 +287,11 @@ public final class Fog {
       final int chunkZ,
       final int localX,
       final int localZ,
-      final byte @NotNull [] hiddenAround) {
+      final int @NotNull [] @NotNull [] masks) {
     final int blockX = (chunkX << 4) + localX;
     final int blockZ = (chunkZ << 4) + localZ;
-    final double nearest = distance(localX, localZ, hiddenAround, OPEN);
-    final double distance = nearest(chunkX, chunkZ, localX, localZ, hiddenAround, OPEN);
+    final double nearest = distance(localX, localZ, masks, OPEN);
+    final double distance = nearest(chunkX, chunkZ, localX, localZ, masks, OPEN);
     final float spill =
         MIN_SPILL
             + smoothstep(
@@ -288,16 +312,16 @@ public final class Fog {
       final int chunkZ,
       final int localX,
       final int localZ,
-      final byte @NotNull [] hiddenAround,
+      final int @NotNull [] @NotNull [] masks,
       final byte kind) {
     final int blockX = (chunkX << 4) + localX;
     final int blockZ = (chunkZ << 4) + localZ;
     return Math.min(
-        distance(localX, localZ, hiddenAround, kind),
+        distance(localX, localZ, masks, kind),
         distance(
             localX + warp(blockX, blockZ, WARP_SEED),
             localZ + warp(blockX, blockZ, WARP_SEED + 1),
-            hiddenAround,
+            masks,
             kind));
   }
 
@@ -306,14 +330,12 @@ public final class Fog {
       final int chunkZ,
       final int localX,
       final int localZ,
-      final byte @NotNull [] hiddenAround,
+      final int @NotNull [] @NotNull [] masks,
       final @NotNull Map<Long, Boolean> skies) {
     final int blockX = (chunkX << 4) + localX;
     final int blockZ = (chunkZ << 4) + localZ;
-    return (skyAt(chunkX, chunkZ, blockX, blockZ, hiddenAround, skies) ? SKY : 0)
-        | (skyAt(chunkX, chunkZ, blockX + SHADE_X, blockZ + SHADE_Z, hiddenAround, skies)
-            ? SHADE
-            : 0);
+    return (skyAt(chunkX, chunkZ, blockX, blockZ, masks, skies) ? SKY : 0)
+        | (skyAt(chunkX, chunkZ, blockX + SHADE_X, blockZ + SHADE_Z, masks, skies) ? SHADE : 0);
   }
 
   private static boolean skyAt(
@@ -321,7 +343,7 @@ public final class Fog {
       final int chunkZ,
       final int blockX,
       final int blockZ,
-      final byte @NotNull [] hiddenAround,
+      final int @NotNull [] @NotNull [] masks,
       final @NotNull Map<Long, Boolean> skies) {
     final int cellX = Math.floorDiv(blockX, SKY_CELL);
     final int cellZ = Math.floorDiv(blockZ, SKY_CELL);
@@ -333,8 +355,7 @@ public final class Fog {
           return sky(
               centerX,
               centerZ,
-              thickness(
-                  chunkX, chunkZ, centerX - (chunkX << 4), centerZ - (chunkZ << 4), hiddenAround));
+              thickness(chunkX, chunkZ, centerX - (chunkX << 4), centerZ - (chunkZ << 4), masks));
         });
   }
 
@@ -350,18 +371,44 @@ public final class Fog {
         > SKY_COVER + (1.0 - Math.min(1.0, thickness)) * SKY_SCATTER;
   }
 
-  private static double distance(
-      final int localX, final int localZ, final byte @NotNull [] hiddenAround, final byte kind) {
-    int squared = Integer.MAX_VALUE;
+  private static int @NotNull [] @NotNull [] masks(final byte @NotNull [] hiddenAround) {
+    final int @NotNull [] @NotNull [] masks = new int[TEASED + 1][AROUND];
     for (int offsetX = -REACH_CHUNKS; offsetX <= REACH_CHUNKS; offsetX++) {
-      final int gapX = gap(localX, offsetX);
       for (int offsetZ = -REACH_CHUNKS; offsetZ <= REACH_CHUNKS; offsetZ++) {
         final byte hidden = hiddenAround[around(offsetX, offsetZ)];
-        if (hidden != OPEN && (kind == OPEN || hidden == kind)) {
-          final int gapZ = gap(localZ, offsetZ);
-          squared = Math.min(squared, gapX * gapX + gapZ * gapZ);
+        if (hidden != OPEN) {
+          masks[OPEN][offsetX + REACH_CHUNKS] |= 1 << (offsetZ + REACH_CHUNKS);
+          masks[hidden][offsetX + REACH_CHUNKS] |= 1 << (offsetZ + REACH_CHUNKS);
         }
       }
+    }
+    return masks;
+  }
+
+  private static double distance(
+      final int localX,
+      final int localZ,
+      final int @NotNull [] @NotNull [] masks,
+      final byte kind) {
+    final int middle = Math.clamp(Math.floorDiv(localZ, CHUNK_SIZE) + REACH_CHUNKS, -1, AROUND);
+    int squared = Integer.MAX_VALUE;
+    for (int offsetX = -REACH_CHUNKS; offsetX <= REACH_CHUNKS; offsetX++) {
+      final int column = masks[kind][offsetX + REACH_CHUNKS];
+      final int gapX = gap(localX, offsetX);
+      if (column == 0 || gapX * gapX >= squared) {
+        continue;
+      }
+      final int after = middle <= 0 ? column : column & (-1 << middle);
+      final int before = middle < 0 ? 0 : column & ((1 << (middle + 1)) - 1);
+      int gapZ = Integer.MAX_VALUE;
+      if (after != 0) {
+        gapZ = gap(localZ, Integer.numberOfTrailingZeros(after) - REACH_CHUNKS);
+      }
+      if (before != 0) {
+        gapZ =
+            Math.min(gapZ, gap(localZ, 31 - Integer.numberOfLeadingZeros(before) - REACH_CHUNKS));
+      }
+      squared = Math.min(squared, gapX * gapX + gapZ * gapZ);
     }
     return squared == Integer.MAX_VALUE ? Double.MAX_VALUE : Math.sqrt(squared);
   }

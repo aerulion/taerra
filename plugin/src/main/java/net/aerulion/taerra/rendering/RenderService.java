@@ -158,7 +158,7 @@ public final class RenderService {
           if (hide != null) {
             this.limits.setHidden(worldName, chunks, hide, tease);
           }
-          this.columns.forget(worldName, affected);
+          this.columns.forget(worldName, affected, hide == null);
           this.renderQueue.enqueueAll(isometric, RenderPriority.FULL_RENDER_ZOOM_0);
           return RegionFileScanner.scanWorld(
               world,
