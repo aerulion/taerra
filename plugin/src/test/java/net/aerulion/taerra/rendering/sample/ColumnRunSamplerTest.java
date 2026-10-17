@@ -86,6 +86,7 @@ class ColumnRunSamplerTest {
                   throw new AssertionError("read a hidden block");
                 }),
             new int[] {63, 63, 63, 63, 63, 63, 63, 63, 63},
+            new byte[Fog.AROUND * Fog.AROUND],
             -1,
             0);
 

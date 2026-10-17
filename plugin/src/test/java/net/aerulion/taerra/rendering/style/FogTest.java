@@ -17,6 +17,11 @@ class FogTest {
 
   private static final int GROUND = 0xFF336633;
   private static final int[] FLAT = {63, 63, 63, 63, 63, 63, 63, 63, 63};
+  private static final byte[] ALONE = new byte[Fog.AROUND * Fog.AROUND];
+
+  static {
+    ALONE[Fog.around(0, 0)] = Fog.HIDDEN;
+  }
 
   private static ChunkColumns flat(final int chunkX, final int chunkZ) {
     final ChunkColumnsBuilder builder = ChunkColumns.builder(chunkX, chunkZ);
@@ -60,7 +65,7 @@ class FogTest {
   @Test
   @DisplayName("the veil hides low ground and leaves what rises through it clear")
   void veilCoversBelowLayer() {
-    final int fog = Fog.hidden(0, 0, FLAT, false)[0];
+    final int fog = Fog.hidden(0, 0, FLAT, ALONE, false)[0];
     final int low = Fog.veil(GROUND, fog, 3.5f, 9.5f, 63);
 
     assertNotEquals(GROUND, low);
@@ -71,7 +76,7 @@ class FogTest {
   @Test
   @DisplayName("the veil billows instead of lying flat")
   void veilBillows() {
-    final int fog = Fog.hidden(0, 0, FLAT, false)[0];
+    final int fog = Fog.hidden(0, 0, FLAT, ALONE, false)[0];
     final Set<Integer> colors = new HashSet<>();
     for (int x = 0; x < 96; x++) {
       for (int z = 0; z < 96; z++) {
@@ -84,7 +89,7 @@ class FogTest {
   @Test
   @DisplayName("opaque fog looks the same whatever lies beneath it")
   void fogHidesEverything() {
-    final int fog = Fog.hidden(0, 0, FLAT, false)[0];
+    final int fog = Fog.hidden(0, 0, FLAT, ALONE, false)[0];
     for (int x = 0; x < 64; x++) {
       for (int z = 0; z < 64; z++) {
         assertEquals(
@@ -97,7 +102,7 @@ class FogTest {
   @Test
   @DisplayName("a teaser lets the ground beneath show through")
   void teaserShowsThrough() {
-    final int teaser = Fog.hidden(0, 0, FLAT, true)[0];
+    final int teaser = Fog.hidden(0, 0, FLAT, ALONE, true)[0];
     assertTrue(Fog.teased(teaser));
     assertNotEquals(
         Fog.veil(GROUND, teaser, 3.5f, 9.5f, 63), Fog.veil(0xFFC03020, teaser, 3.5f, 9.5f, 63));

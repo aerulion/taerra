@@ -1,6 +1,8 @@
 package net.aerulion.taerra.rendering.style;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.source.ColumnSource;
 import org.bukkit.block.BlockType;
@@ -47,7 +49,12 @@ public final class Fog {
   private static final int FULL = (1 << DENSITY_BITS) - 1;
   private static final int TEASER = 1 << DENSITY_BITS;
   private static final int SKY = TEASER << 1;
-  private static final int LAYER_SHIFT = DENSITY_BITS + 2;
+  private static final int SHADE = SKY << 1;
+  private static final int LAYER_SHIFT = DENSITY_BITS + 3;
+  private static final int SKY_SHADOW_REACH = 16;
+  private static final int SHADE_X = MapStyle.SUN_STEP_X * SKY_SHADOW_REACH >> 10;
+  private static final int SHADE_Z = MapStyle.SUN_STEP_Z * SKY_SHADOW_REACH >> 10;
+  private static final float SKY_SHADOW = 0.25f;
   private static final int SKY_CELL = 16;
   private static final float SKY_SCALE = 2.5f;
   private static final float SKY_COVER = 0.5f;
@@ -114,13 +121,15 @@ public final class Fog {
       final int chunkX,
       final int chunkZ,
       final int @NotNull [] groundAround,
+      final byte @NotNull [] hiddenAround,
       final boolean teased) {
     final int @NotNull [] mist = new int[CHUNK_SIZE * CHUNK_SIZE];
+    final @NotNull Map<Long, Boolean> skies = new HashMap<>();
     for (int localX = 0; localX < CHUNK_SIZE; localX++) {
       for (int localZ = 0; localZ < CHUNK_SIZE; localZ++) {
         mist[ChunkColumns.columnIndex(localX, localZ)] =
             encode(groundAt(groundAround, localX, localZ), FULL, teased)
-                | (sky((chunkX << 4) + localX, (chunkZ << 4) + localZ, 1.0) ? SKY : 0);
+                | skyBits(chunkX, chunkZ, localX, localZ, hiddenAround, skies);
       }
     }
     return mist;
@@ -133,19 +142,7 @@ public final class Fog {
       final int @NotNull [] groundAround,
       final byte @NotNull [] hiddenAround) {
     final int @NotNull [] mist = new int[CHUNK_SIZE * CHUNK_SIZE];
-    final int cells = CHUNK_SIZE / SKY_CELL;
-    final boolean @NotNull [] skies = new boolean[cells * cells];
-    for (int cellX = 0; cellX < cells; cellX++) {
-      for (int cellZ = 0; cellZ < cells; cellZ++) {
-        final int localX = cellX * SKY_CELL + SKY_CELL / 2;
-        final int localZ = cellZ * SKY_CELL + SKY_CELL / 2;
-        skies[cellX * cells + cellZ] =
-            sky(
-                (chunkX << 4) + localX,
-                (chunkZ << 4) + localZ,
-                thickness(chunkX, chunkZ, localX, localZ, hiddenAround));
-      }
-    }
+    final @NotNull Map<Long, Boolean> skies = new HashMap<>();
     for (int localX = 0; localX < CHUNK_SIZE; localX++) {
       for (int localZ = 0; localZ < CHUNK_SIZE; localZ++) {
         if (columns.topY(ChunkColumns.columnIndex(localX, localZ)) == ChunkColumns.EMPTY_COLUMN) {
@@ -160,10 +157,10 @@ public final class Fog {
                     FULL
                         * Math.clamp(
                             thickness(chunkX, chunkZ, localX, localZ, hiddenAround), 0.0, 1.0));
-        final boolean sky = skies[localX / SKY_CELL * cells + localZ / SKY_CELL];
-        if (density > 0 || sky) {
+        final int sky = skyBits(chunkX, chunkZ, localX, localZ, hiddenAround, skies);
+        if (density > 0 || sky != 0) {
           mist[ChunkColumns.columnIndex(localX, localZ)] =
-              encode(groundAt(groundAround, localX, localZ), density, teased) | (sky ? SKY : 0);
+              encode(groundAt(groundAround, localX, localZ), density, teased) | sky;
         }
       }
     }
@@ -183,6 +180,15 @@ public final class Fog {
     if (mist == NO_MIST) {
       return argb;
     }
+    return fog(argb, mist, x, z, blockY);
+  }
+
+  public static int skyShadow(final int argb, final int mist) {
+    return (mist & SHADE) != 0 ? MapStyle.blend(argb, SHADOW_COLOR, SKY_SHADOW) : argb;
+  }
+
+  private static int fog(
+      final int argb, final int mist, final float x, final float z, final int blockY) {
     final float cover = Math.clamp((float) (layerY(mist) - blockY) / COVER_FADE, 0.0f, 1.0f);
     if (cover <= 0.0f) {
       return argb;
@@ -293,6 +299,43 @@ public final class Fog {
             localZ + warp(blockX, blockZ, WARP_SEED + 1),
             hiddenAround,
             kind));
+  }
+
+  private static int skyBits(
+      final int chunkX,
+      final int chunkZ,
+      final int localX,
+      final int localZ,
+      final byte @NotNull [] hiddenAround,
+      final @NotNull Map<Long, Boolean> skies) {
+    final int blockX = (chunkX << 4) + localX;
+    final int blockZ = (chunkZ << 4) + localZ;
+    return (skyAt(chunkX, chunkZ, blockX, blockZ, hiddenAround, skies) ? SKY : 0)
+        | (skyAt(chunkX, chunkZ, blockX + SHADE_X, blockZ + SHADE_Z, hiddenAround, skies)
+            ? SHADE
+            : 0);
+  }
+
+  private static boolean skyAt(
+      final int chunkX,
+      final int chunkZ,
+      final int blockX,
+      final int blockZ,
+      final byte @NotNull [] hiddenAround,
+      final @NotNull Map<Long, Boolean> skies) {
+    final int cellX = Math.floorDiv(blockX, SKY_CELL);
+    final int cellZ = Math.floorDiv(blockZ, SKY_CELL);
+    return skies.computeIfAbsent(
+        (long) cellX << 32 | (cellZ & 0xFFFFFFFFL),
+        ignored -> {
+          final int centerX = cellX * SKY_CELL + SKY_CELL / 2;
+          final int centerZ = cellZ * SKY_CELL + SKY_CELL / 2;
+          return sky(
+              centerX,
+              centerZ,
+              thickness(
+                  chunkX, chunkZ, centerX - (chunkX << 4), centerZ - (chunkZ << 4), hiddenAround));
+        });
   }
 
   private static boolean sky(final int blockX, final int blockZ, final double thickness) {

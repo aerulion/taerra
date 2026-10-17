@@ -66,6 +66,7 @@ public final class ColumnRunSampler {
   public static @NotNull ChunkColumns blockedChunk(
       final @NotNull ColumnSource source,
       final int @NotNull [] groundAround,
+      final byte @NotNull [] hiddenAround,
       final int chunkX,
       final int chunkZ) {
     final @NotNull ChunkColumnsBuilder builder = ChunkColumns.builder(chunkX, chunkZ);
@@ -79,7 +80,7 @@ public final class ColumnRunSampler {
         builder.addRun(y, source.minHeight(), FOG_GROUND).completeColumn(null, BlockTypes.NONE);
       }
     }
-    return builder.build().withMist(Fog.hidden(chunkX, chunkZ, groundAround, false));
+    return builder.build().withMist(Fog.hidden(chunkX, chunkZ, groundAround, hiddenAround, false));
   }
 
   public static int @NotNull [] columnTops(

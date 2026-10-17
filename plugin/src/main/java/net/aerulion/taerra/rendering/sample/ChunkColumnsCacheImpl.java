@@ -260,14 +260,14 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       }
     }
     if (hiddenAround[Fog.around(0, 0)] == Fog.HIDDEN) {
-      return ColumnRunSampler.blockedChunk(source, groundAround, chunkX, chunkZ);
+      return ColumnRunSampler.blockedChunk(source, groundAround, hiddenAround, chunkX, chunkZ);
     }
     final @NotNull ChunkColumns columns =
         ColumnRunSampler.sampleChunk(
             source, ceilingY, this.shapes, chunkX, chunkZ, this.limits.get(worldName));
     return columns.withMist(
         hiddenAround[Fog.around(0, 0)] == Fog.TEASED
-            ? Fog.hidden(chunkX, chunkZ, groundAround, true)
+            ? Fog.hidden(chunkX, chunkZ, groundAround, hiddenAround, true)
             : Fog.mist(chunkX, chunkZ, columns, groundAround, hiddenAround));
   }
 

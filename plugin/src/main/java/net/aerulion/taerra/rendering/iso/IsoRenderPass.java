@@ -231,12 +231,16 @@ final class IsoRenderPass {
     final float rotatedX = (along + across) / 2.0f;
     final float rotatedZ = (along - across) / 2.0f;
     this.pixels[index] =
-        Fog.veil(
-            this.pixels[index],
-            this.veilMist[index],
-            this.rotation.worldDeltaX(1, 0) * rotatedX + this.rotation.worldDeltaX(0, 1) * rotatedZ,
-            this.rotation.worldDeltaZ(1, 0) * rotatedX + this.rotation.worldDeltaZ(0, 1) * rotatedZ,
-            this.veilY[index]);
+        Fog.skyShadow(
+            Fog.veil(
+                this.pixels[index],
+                this.veilMist[index],
+                this.rotation.worldDeltaX(1, 0) * rotatedX
+                    + this.rotation.worldDeltaX(0, 1) * rotatedZ,
+                this.rotation.worldDeltaZ(1, 0) * rotatedX
+                    + this.rotation.worldDeltaZ(0, 1) * rotatedZ,
+                this.veilY[index]),
+            this.veilMist[index]);
   }
 
   @NotNull
