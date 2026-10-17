@@ -154,7 +154,7 @@ export const de: Copy = {
                     },
                     {
                         title: 'Nur zeigen, was fertig ist',
-                        text: 'Begrenze die Karte auf einen Kreis, ein Quadrat oder ein Rechteck, damit sie endet, wo dein Spielbereich endet, und decke Chunks mit Warnstreifen ab, solange das Team dort baut.'
+                        text: 'Begrenze die Karte auf einen Kreis, ein Quadrat oder ein Rechteck, damit sie endet, wo dein Spielbereich endet, und decke Chunks mit Nebel ab, solange das Team dort baut, oder mit einem dünnen Schleier, der nur erahnen lässt, was darunter liegt.'
                     },
                     {
                         title: 'Installierbar wie eine App',

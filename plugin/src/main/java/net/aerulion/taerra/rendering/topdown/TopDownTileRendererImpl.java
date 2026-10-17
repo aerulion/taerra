@@ -12,6 +12,7 @@ import net.aerulion.taerra.rendering.color.MapColorResolver;
 import net.aerulion.taerra.rendering.color.TintColors;
 import net.aerulion.taerra.rendering.sample.BiomeBlend;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
+import net.aerulion.taerra.rendering.style.Fog;
 import net.aerulion.taerra.rendering.style.Lighting;
 import net.aerulion.taerra.rendering.style.MapStyle;
 import net.aerulion.taerra.rendering.style.SunShadow;
@@ -98,7 +99,13 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
           final int depth = surface.surfaceY(index) - surface.floorY(index);
           shaded = MapStyle.shallow(MapStyle.depthTinted(shaded, depth), depth);
         }
-        pixels[z * tileSize + x] = shaded;
+        pixels[z * tileSize + x] =
+            Fog.veil(
+                shaded,
+                surface.mist(index),
+                startBlockX + x + 0.5f,
+                startBlockZ + z + 0.5f,
+                surface.surfaceY(index));
         pickDepth[z * tileSize + x] = 0;
         pickHeight[z * tileSize + x] = surface.surfaceY(index);
       }

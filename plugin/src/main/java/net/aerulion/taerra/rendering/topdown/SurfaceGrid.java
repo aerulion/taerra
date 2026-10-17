@@ -23,6 +23,7 @@ final class SurfaceGrid implements HeightField {
   private final int @NotNull [] floorY;
   private final int @NotNull [] blockId;
   private final int @NotNull [] capBlockId;
+  private final int @NotNull [] mist;
   private int @NotNull [] ceilings = new int[0];
   private int ceilingsPerRow;
 
@@ -37,6 +38,7 @@ final class SurfaceGrid implements HeightField {
     this.floorY = new int[stride * stride];
     this.blockId = new int[stride * stride];
     this.capBlockId = new int[stride * stride];
+    this.mist = new int[stride * stride];
     Arrays.fill(this.blockId, BlockTypes.NONE);
   }
 
@@ -117,6 +119,10 @@ final class SurfaceGrid implements HeightField {
     return this.capBlockId[index];
   }
 
+  int mist(final int index) {
+    return this.mist[index];
+  }
+
   int surfaceY(final int index) {
     return this.surfaceY[index];
   }
@@ -181,6 +187,7 @@ final class SurfaceGrid implements HeightField {
         this.blockId[gridIndex] = columns.runBlockId(firstRun);
         this.capBlockId[gridIndex] = columns.capBlockId(columnIndex);
         this.floorY[gridIndex] = columns.bedY(columnIndex);
+        this.mist[gridIndex] = columns.mist(columnIndex);
       }
     }
   }

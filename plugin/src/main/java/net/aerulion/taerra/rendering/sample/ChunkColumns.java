@@ -2,6 +2,7 @@ package net.aerulion.taerra.rendering.sample;
 
 import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.rendering.block.Fluids;
+import net.aerulion.taerra.rendering.style.Fog;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
@@ -24,6 +25,7 @@ public final class ChunkColumns {
   private final Biome @NotNull [] columnBiome;
   private final int minTopY;
   private final int maxTopY;
+  private final int @Nullable [] mist;
 
   ChunkColumns(
       final int chunkX,
@@ -35,7 +37,8 @@ public final class ChunkColumns {
       final int @NotNull [] capBlockId,
       final Biome @NotNull [] columnBiome,
       final int minTopY,
-      final int maxTopY) {
+      final int maxTopY,
+      final int @Nullable [] mist) {
     super();
     this.chunkX = chunkX;
     this.chunkZ = chunkZ;
@@ -47,6 +50,7 @@ public final class ChunkColumns {
     this.columnBiome = columnBiome;
     this.minTopY = minTopY;
     this.maxTopY = maxTopY;
+    this.mist = mist;
   }
 
   public static int columnIndex(final int localX, final int localZ) {
@@ -152,6 +156,31 @@ public final class ChunkColumns {
 
   public int maxTopY() {
     return this.maxTopY;
+  }
+
+  public int mist(final int columnIndex) {
+    return this.mist == null ? Fog.NO_MIST : this.mist[columnIndex];
+  }
+
+  public @NotNull ChunkColumns withMist(final int @NotNull [] mist) {
+    int ceilingY = this.maxTopY;
+    for (final int column : mist) {
+      if (column != Fog.NO_MIST) {
+        ceilingY = Math.max(ceilingY, Fog.ceilingY(column));
+      }
+    }
+    return new ChunkColumns(
+        this.chunkX,
+        this.chunkZ,
+        this.runOffsets,
+        this.runTopY,
+        this.runBottomY,
+        this.runBlockId,
+        this.capBlockId,
+        this.columnBiome,
+        this.minTopY,
+        ceilingY,
+        mist);
   }
 
   public long heights() {

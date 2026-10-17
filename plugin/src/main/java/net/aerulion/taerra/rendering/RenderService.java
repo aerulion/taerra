@@ -25,6 +25,7 @@ import net.aerulion.taerra.rendering.region.RegionScanResult;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsCache;
 import net.aerulion.taerra.rendering.session.ManualRenderSession;
 import net.aerulion.taerra.rendering.session.ManualRenderSessionSnapshot;
+import net.aerulion.taerra.rendering.style.Fog;
 import net.aerulion.taerra.util.Throwables;
 import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
@@ -106,13 +107,28 @@ public final class RenderService {
   }
 
   public @NotNull Start area(
-      final @NotNull World world, final @NotNull Set<Long> chunks, final @Nullable Boolean hide) {
+      final @NotNull World world,
+      final @NotNull Set<Long> chunks,
+      final @Nullable Boolean hide,
+      final boolean tease) {
     final @NotNull String worldName = WorldKeys.id(world);
     final @Nullable WorldLimit limit = this.limits.get(worldName);
     final @NotNull Set<Long> regions = new HashSet<>();
     final @NotNull Set<Long> tiles = new HashSet<>();
     final @NotNull Set<TileCoordinate> isometric = new LinkedHashSet<>();
-    for (final long chunk : chunks) {
+    final @NotNull Set<Long> affected = new HashSet<>(chunks);
+    if (hide != null) {
+      for (final long chunk : chunks) {
+        for (int offsetX = -Fog.REACH_CHUNKS; offsetX <= Fog.REACH_CHUNKS; offsetX++) {
+          for (int offsetZ = -Fog.REACH_CHUNKS; offsetZ <= Fog.REACH_CHUNKS; offsetZ++) {
+            affected.add(
+                ChunkCoordinate.key(
+                    ChunkCoordinate.keyX(chunk) + offsetX, ChunkCoordinate.keyZ(chunk) + offsetZ));
+          }
+        }
+      }
+    }
+    for (final long chunk : affected) {
       final int blockX = ChunkCoordinate.keyX(chunk) << 4;
       final int blockZ = ChunkCoordinate.keyZ(chunk) << 4;
       regions.add(
@@ -140,9 +156,9 @@ public final class RenderService {
         world,
         listener -> {
           if (hide != null) {
-            this.limits.setHidden(worldName, chunks, hide);
+            this.limits.setHidden(worldName, chunks, hide, tease);
           }
-          this.columns.forget(worldName, chunks);
+          this.columns.forget(worldName, affected);
           this.renderQueue.enqueueAll(isometric, RenderPriority.FULL_RENDER_ZOOM_0);
           return RegionFileScanner.scanWorld(
               world,

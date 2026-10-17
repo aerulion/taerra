@@ -4,6 +4,7 @@ import java.util.Arrays;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.rendering.sample.BiomeBlend;
 import net.aerulion.taerra.rendering.sample.ColumnHeightField;
+import net.aerulion.taerra.rendering.style.Fog;
 import net.aerulion.taerra.rendering.style.MapStyle;
 import net.aerulion.taerra.rendering.tile.PickBuffer;
 import net.aerulion.taerra.rendering.tile.RenderedImage;
@@ -14,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
 final class IsoRenderPass {
 
   private static final int NO_WATER = Integer.MIN_VALUE;
+  private static final float HALF_WIDTH = IsoTileGeometry.projection().halfWidth();
+  private static final float QUARTER_WIDTH = IsoTileGeometry.projection().quarterWidth();
   private static final int @NotNull [] @NotNull [] SKY_DIRECTIONS = {
     {0, 0}, {1, 0}, {1, 1}, {1, -1}, {0, 1}, {0, -1}, {2, 1}, {2, -1}
   };
@@ -33,6 +36,10 @@ final class IsoRenderPass {
   private final int @NotNull [] skyRaysZ;
   private final int sunStepX;
   private final int sunStepZ;
+  private final int @NotNull [] veilMist;
+  private final int @NotNull [] veilY;
+  private final int @NotNull [] cloud;
+  private int mist = Fog.NO_MIST;
   private int lastSunX = Integer.MIN_VALUE;
   private int lastSunY;
   private int lastSunZ;
@@ -57,6 +64,9 @@ final class IsoRenderPass {
     this.waterSurface = new int[size * size];
     Arrays.fill(this.waterSurface, NO_WATER);
     this.waterColor = new int[size * size];
+    this.veilMist = new int[size * size];
+    this.veilY = new int[size * size];
+    this.cloud = new int[size * size];
     this.pickDepth = withPick ? new int[size * size] : null;
     this.pickHeight = withPick ? new int[size * size] : null;
     if (this.pickDepth != null) {
@@ -165,10 +175,22 @@ final class IsoRenderPass {
     this.paintedFrom[x] = row;
   }
 
+  void mist(final int mist) {
+    this.mist = mist;
+  }
+
+  void cloud(final int index, final int argb) {
+    if (this.pixels[index] == 0 && this.waterSurface[index] == NO_WATER && this.cloud[index] == 0) {
+      this.cloud[index] = argb;
+    }
+  }
+
   void wet(final int index, final int color, final int surfaceY) {
     if (this.pixels[index] == 0 && this.waterSurface[index] == NO_WATER) {
       this.waterSurface[index] = surfaceY;
       this.waterColor[index] = color;
+      this.veilMist[index] = this.mist;
+      this.veilY[index] = surfaceY;
     }
   }
 
@@ -191,10 +213,30 @@ final class IsoRenderPass {
                     surfaceY - blockY)
                 : MapStyle.underwater(
                     color, this.waterColor[index], surfaceY - blockY + submergedExtra);
+    if (surfaceY == NO_WATER) {
+      this.veilMist[index] = this.mist;
+      this.veilY[index] = blockY;
+    }
     if (this.pickDepth != null && this.pickHeight != null) {
       this.pickDepth[index] = depth;
       this.pickHeight[index] = blockY;
     }
+  }
+
+  private void veil(final int index) {
+    final float screenX = this.tileBounds.minX() + index % this.size + 0.5f;
+    final float screenY = this.tileBounds.minY() + index / this.size + 0.5f;
+    final float across = screenX / HALF_WIDTH;
+    final float along = (screenY + Fog.layerY(this.veilMist[index]) * HALF_WIDTH) / QUARTER_WIDTH;
+    final float rotatedX = (along + across) / 2.0f;
+    final float rotatedZ = (along - across) / 2.0f;
+    this.pixels[index] =
+        Fog.veil(
+            this.pixels[index],
+            this.veilMist[index],
+            this.rotation.worldDeltaX(1, 0) * rotatedX + this.rotation.worldDeltaX(0, 1) * rotatedZ,
+            this.rotation.worldDeltaZ(1, 0) * rotatedX + this.rotation.worldDeltaZ(0, 1) * rotatedZ,
+            this.veilY[index]);
   }
 
   @NotNull
@@ -202,6 +244,16 @@ final class IsoRenderPass {
     for (int index = 0; index < this.size * this.size; index++) {
       if (this.pixels[index] == 0 && this.waterSurface[index] != NO_WATER) {
         this.pixels[index] = MapStyle.depthTinted(this.waterColor[index], Integer.MAX_VALUE);
+      }
+      if (this.veilMist[index] != Fog.NO_MIST) {
+        veil(index);
+      }
+      if (this.cloud[index] != 0) {
+        this.pixels[index] =
+            MapStyle.blend(
+                this.pixels[index] == 0 ? this.cloud[index] | 0xFF000000 : this.pixels[index],
+                this.cloud[index] | 0xFF000000,
+                (this.cloud[index] >>> 24) / 255.0f);
       }
     }
     return new RenderedImage(

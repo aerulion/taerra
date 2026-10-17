@@ -6,9 +6,9 @@ import net.aerulion.taerra.rendering.block.BlockShapeResolver;
 import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.rendering.block.Fluids;
 import net.aerulion.taerra.rendering.source.ColumnSource;
+import net.aerulion.taerra.rendering.style.Fog;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
-import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,8 +20,7 @@ public final class ColumnRunSampler {
   private static final int ROOF_THICKNESS = 5;
   private static final int MAX_GROUND_COVER_HEIGHT = 2;
   private static final int NO_THIN = Integer.MIN_VALUE;
-  private static final int BLOCKED_Y = 63;
-  private static final int STRIPE_WIDTH = 4;
+  private static final int FOG_GROUND = BlockTypes.id(Fog.GROUND);
 
   private ColumnRunSampler() {
     super();
@@ -65,23 +64,36 @@ public final class ColumnRunSampler {
   }
 
   public static @NotNull ChunkColumns blockedChunk(
-      final @NotNull ColumnSource source, final int chunkX, final int chunkZ) {
+      final @NotNull ColumnSource source,
+      final int @NotNull [] groundAround,
+      final int chunkX,
+      final int chunkZ) {
     final @NotNull ChunkColumnsBuilder builder = ChunkColumns.builder(chunkX, chunkZ);
-    final int y = Math.clamp(BLOCKED_Y, source.minHeight(), source.maxHeight() - 1);
     for (int localX = 0; localX < 16; localX++) {
       for (int localZ = 0; localZ < 16; localZ++) {
-        final int diagonal = (chunkX << 4) + localX + (chunkZ << 4) + localZ;
-        builder
-            .addRun(
-                y,
-                y,
-                Math.floorMod(diagonal, 2 * STRIPE_WIDTH) < STRIPE_WIDTH
-                    ? BlockType.YELLOW_CONCRETE
-                    : BlockType.BLACK_CONCRETE)
-            .completeColumn(null, BlockTypes.NONE);
+        final int y =
+            Math.clamp(
+                Fog.groundAt(groundAround, localX, localZ),
+                source.minHeight(),
+                source.maxHeight() - 1);
+        builder.addRun(y, source.minHeight(), FOG_GROUND).completeColumn(null, BlockTypes.NONE);
       }
     }
-    return builder.build();
+    return builder.build().withMist(Fog.hidden(chunkX, chunkZ, groundAround, false));
+  }
+
+  public static int @NotNull [] columnTops(
+      final @NotNull ColumnSource source,
+      final int ceilingY,
+      final @NotNull BlockShapeResolver shapes) {
+    final int @NotNull [] tops = new int[ChunkColumns.COLUMN_COUNT];
+    for (int localX = 0; localX < 16; localX++) {
+      for (int localZ = 0; localZ < 16; localZ++) {
+        tops[ChunkColumns.columnIndex(localX, localZ)] =
+            findColumnTop(source, ceilingY, shapes, localX, localZ);
+      }
+    }
+    return tops;
   }
 
   private static void sampleColumn(

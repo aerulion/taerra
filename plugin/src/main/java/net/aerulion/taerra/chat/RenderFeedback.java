@@ -27,11 +27,14 @@ public final class RenderFeedback {
     return Messages.tr("render.what.full");
   }
 
-  public static @NotNull Component area(final int chunks, final @Nullable Boolean hide) {
+  public static @NotNull Component area(
+      final int chunks, final @Nullable Boolean hide, final boolean tease) {
     final @NotNull Component amount = Messages.tr("unit.chunks", Messages.value(chunks));
     return hide == null
         ? amount
-        : Messages.tr(hide ? "render.what.hide" : "render.what.reveal", amount);
+        : Messages.tr(
+            !hide ? "render.what.reveal" : tease ? "render.what.tease" : "render.what.hide",
+            amount);
   }
 
   public static @NotNull Component canceled(final RenderService.@NotNull Stop stop) {

@@ -14,6 +14,7 @@ import net.aerulion.taerra.rendering.sample.BiomeBlend;
 import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
 import net.aerulion.taerra.rendering.sample.ColumnHeightField;
+import net.aerulion.taerra.rendering.style.Fog;
 import net.aerulion.taerra.rendering.style.Lighting;
 import net.aerulion.taerra.rendering.style.MapStyle;
 import net.aerulion.taerra.rendering.style.SunShadow;
@@ -293,7 +294,13 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       return;
     }
 
-    if (this.projection.screenY(rotatedX, chunk.runTopY(firstRun) + 1, rotatedZ)
+    final int blockX = chunk.chunkX() * CHUNK_SIZE + rotation.localX(localX, localZ);
+    final int blockZ = chunk.chunkZ() * CHUNK_SIZE + rotation.localZ(localX, localZ);
+    final int mist = chunk.mist(columnIndex);
+    final int terrainTopY = chunk.runTopY(firstRun);
+    final boolean sky = Fog.sky(mist) && Fog.SKY_Y > terrainTopY;
+
+    if (this.projection.screenY(rotatedX, sky ? Fog.ceilingY(mist) + 1 : terrainTopY + 1, rotatedZ)
             > pass.tileBounds().maxY()
         || this.projection.screenY(rotatedX, chunk.runBottomY(lastRun - 1), rotatedZ)
                 + this.projection.blockScreenHeight()
@@ -303,13 +310,14 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
     final int firstX = Math.max(0, originColumn + this.projection.firstColumnOffset());
     final int lastX = Math.min(pass.size() - 1, originColumn + this.projection.lastColumnOffset());
 
-    final int blockX = chunk.chunkX() * CHUNK_SIZE + rotation.localX(localX, localZ);
-    final int blockZ = chunk.chunkZ() * CHUNK_SIZE + rotation.localZ(localX, localZ);
-
     final @Nullable TintColors tint = pass.biomes().at(blockX, blockZ);
     final int capBlockId = chunk.capBlockId(columnIndex);
 
     neighborTops(rotation, around, localX, localZ, neighborTops);
+    pass.mist(mist);
+    if (sky) {
+      drawSky(pass, originColumn, rotatedX, rotatedZ, Fog.ceilingY(mist), Fog.SKY_Y);
+    }
 
     final int frontXX = blockX + rotation.worldDeltaX(1, 0);
     final int frontXZ = blockZ + rotation.worldDeltaZ(1, 0);
@@ -410,6 +418,42 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
           frontZX,
           frontZZ);
     }
+  }
+
+  private void drawSky(
+      final @NotNull IsoRenderPass pass,
+      final int originColumn,
+      final int rotatedX,
+      final int rotatedZ,
+      final int topY,
+      final int bottomY) {
+    final int size = pass.size();
+    final int top = skyFace(Lighting.TOP);
+    final int sideX = skyFace(Lighting.POSITIVE_X);
+    final int sideZ = skyFace(Lighting.POSITIVE_Z);
+    final int originRow =
+        (int) (this.projection.screenY(rotatedX, topY + 1, rotatedZ) - pass.tileBounds().minY());
+    final int sideHeight = (topY - bottomY + 1) * this.projection.halfWidth();
+    for (int offset = this.projection.firstColumnOffset();
+        offset <= this.projection.lastColumnOffset();
+        offset++) {
+      final int x = originColumn + offset;
+      if (x < 0 || x >= size) {
+        continue;
+      }
+      final int side = this.projection.isPositiveXFace(offset) ? sideX : sideZ;
+      final int sideStart = originRow + this.projection.sideFaceFirstRow(offset);
+      final int firstRow = Math.max(0, originRow + this.projection.topFaceFirstRow(offset));
+      final int lastRow = Math.min(size - 1, sideStart + sideHeight - 1);
+      for (int y = firstRow; y <= lastRow; y++) {
+        pass.cloud(y * size + x, y < sideStart ? top : side);
+      }
+    }
+  }
+
+  private static int skyFace(final int face) {
+    return (Lighting.face(Fog.SKY_COLOR, face, 0, false, Lighting.NO_CONTACT) & 0x00FFFFFF)
+        | Fog.SKY_ALPHA << 24;
   }
 
   private void drawTopFace(

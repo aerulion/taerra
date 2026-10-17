@@ -26,6 +26,7 @@ public final class WorldLimits {
   private final @NotNull File file;
   private final @NotNull Map<String, WorldLimit> limits = new ConcurrentHashMap<>();
   private final @NotNull Map<String, Set<Long>> hidden = new ConcurrentHashMap<>();
+  private final @NotNull Map<String, Set<Long>> teased = new ConcurrentHashMap<>();
 
   public WorldLimits(final @NotNull Plugin plugin) {
     super();
@@ -47,7 +48,22 @@ public final class WorldLimits {
         plugin.getLogger().warning("Skipping a malformed limit in limits.yml: " + entry);
       }
     }
-    for (final @NotNull Map<?, ?> entry : yaml.getMapList("hidden")) {
+    load(plugin, yaml, "hidden", this.hidden);
+    load(plugin, yaml, "teased", this.teased);
+    this.teased.replaceAll(
+        (world, chunks) -> {
+          final @NotNull Set<Long> kept = new HashSet<>(chunks);
+          kept.retainAll(this.hidden.getOrDefault(world, Set.of()));
+          return Set.copyOf(kept);
+        });
+  }
+
+  private static void load(
+      final @NotNull Plugin plugin,
+      final @NotNull YamlConfiguration yaml,
+      final @NotNull String key,
+      final @NotNull Map<String, Set<Long>> into) {
+    for (final @NotNull Map<?, ?> entry : yaml.getMapList(key)) {
       try {
         final @NotNull Set<Long> chunks = new HashSet<>();
         for (final @NotNull Object chunk : (List<?>) entry.get("chunks")) {
@@ -56,9 +72,9 @@ public final class WorldLimits {
               ChunkCoordinate.key(
                   Integer.parseInt(xz[0].strip()), Integer.parseInt(xz[1].strip())));
         }
-        this.hidden.put((String) entry.get("world"), Set.copyOf(chunks));
+        into.put((String) entry.get("world"), Set.copyOf(chunks));
       } catch (final RuntimeException e) {
-        plugin.getLogger().warning("Skipping malformed hidden chunks in limits.yml: " + entry);
+        plugin.getLogger().warning("Skipping malformed " + key + " chunks in limits.yml: " + entry);
       }
     }
   }
@@ -72,7 +88,19 @@ public final class WorldLimits {
   }
 
   public boolean hidden(final @NotNull String worldName, final int chunkX, final int chunkZ) {
-    final @Nullable Set<Long> chunks = this.hidden.get(worldName);
+    return contains(this.hidden, worldName, chunkX, chunkZ);
+  }
+
+  public boolean teased(final @NotNull String worldName, final int chunkX, final int chunkZ) {
+    return contains(this.teased, worldName, chunkX, chunkZ);
+  }
+
+  private static boolean contains(
+      final @NotNull Map<String, Set<Long>> chunksByWorld,
+      final @NotNull String worldName,
+      final int chunkX,
+      final int chunkZ) {
+    final @Nullable Set<Long> chunks = chunksByWorld.get(worldName);
     return chunks != null && chunks.contains(ChunkCoordinate.key(chunkX, chunkZ));
   }
 
@@ -86,19 +114,51 @@ public final class WorldLimits {
   }
 
   public synchronized void setHidden(
-      final @NotNull String worldName, final @NotNull Collection<Long> chunks, final boolean hide) {
-    final @NotNull Set<Long> updated = new HashSet<>(this.hidden.getOrDefault(worldName, Set.of()));
-    if (hide) {
+      final @NotNull String worldName,
+      final @NotNull Collection<Long> chunks,
+      final boolean hide,
+      final boolean tease) {
+    update(this.hidden, worldName, chunks, hide);
+    update(this.teased, worldName, chunks, hide && tease);
+    save();
+  }
+
+  private static void update(
+      final @NotNull Map<String, Set<Long>> chunksByWorld,
+      final @NotNull String worldName,
+      final @NotNull Collection<Long> chunks,
+      final boolean add) {
+    final @NotNull Set<Long> updated =
+        new HashSet<>(chunksByWorld.getOrDefault(worldName, Set.of()));
+    if (add) {
       updated.addAll(chunks);
     } else {
       updated.removeAll(chunks);
     }
     if (updated.isEmpty()) {
-      this.hidden.remove(worldName);
+      chunksByWorld.remove(worldName);
     } else {
-      this.hidden.put(worldName, Set.copyOf(updated));
+      chunksByWorld.put(worldName, Set.copyOf(updated));
     }
-    save();
+  }
+
+  private static @NotNull List<Map<String, Object>> entries(
+      final @NotNull Map<String, Set<Long>> chunksByWorld) {
+    final @NotNull List<Map<String, Object>> entries = new ArrayList<>();
+    chunksByWorld.forEach(
+        (world, chunks) ->
+            entries.add(
+                Map.of(
+                    "world",
+                    world,
+                    "chunks",
+                    chunks.stream()
+                        .sorted()
+                        .map(
+                            chunk ->
+                                ChunkCoordinate.keyX(chunk) + "," + ChunkCoordinate.keyZ(chunk))
+                        .toList())));
+    return entries;
   }
 
   private void save() {
@@ -115,21 +175,8 @@ public final class WorldLimits {
                     "max-z", saved.maxZ())));
     final @NotNull YamlConfiguration yaml = new YamlConfiguration();
     yaml.set("limits", entries);
-    final @NotNull List<Map<String, Object>> hidden = new ArrayList<>();
-    this.hidden.forEach(
-        (world, chunks) ->
-            hidden.add(
-                Map.of(
-                    "world",
-                    world,
-                    "chunks",
-                    chunks.stream()
-                        .sorted()
-                        .map(
-                            chunk ->
-                                ChunkCoordinate.keyX(chunk) + "," + ChunkCoordinate.keyZ(chunk))
-                        .toList())));
-    yaml.set("hidden", hidden);
+    yaml.set("hidden", entries(this.hidden));
+    yaml.set("teased", entries(this.teased));
     try {
       AtomicFiles.write(this.file, yaml.saveToString().getBytes(StandardCharsets.UTF_8));
     } catch (final IOException e) {

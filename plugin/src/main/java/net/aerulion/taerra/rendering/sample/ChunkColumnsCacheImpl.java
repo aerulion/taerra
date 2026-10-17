@@ -2,6 +2,7 @@ package net.aerulion.taerra.rendering.sample;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import net.aerulion.taerra.rendering.source.ChunkSourceProvider;
 import net.aerulion.taerra.rendering.source.ColumnSource;
 import net.aerulion.taerra.rendering.source.LiveChunk;
 import net.aerulion.taerra.rendering.source.LiveChunkSourceProvider;
+import net.aerulion.taerra.rendering.style.Fog;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
@@ -40,6 +42,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
   private final @NotNull AtomicLong epoch = new AtomicLong();
 
   private final @NotNull Map<String, Long2LongOpenHashMap> heights = new ConcurrentHashMap<>();
+  private final @NotNull Map<String, Long2IntOpenHashMap> grounds = new ConcurrentHashMap<>();
   private final @NotNull BlockShapeResolver shapes;
   private final @NotNull WorldLimits limits;
 
@@ -105,7 +108,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       }
       return null;
     }
-    final @NotNull ChunkColumns columns = sample(world, source, chunkX, chunkZ);
+    final @NotNull ChunkColumns columns = sample(world, provider, source, chunkX, chunkZ);
     if (current) {
       this.cache
           .asMap()
@@ -194,6 +197,12 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
   @Override
   public void forget(final @NotNull String worldName, final @NotNull Collection<Long> chunks) {
     this.epoch.incrementAndGet();
+    final @Nullable Long2IntOpenHashMap grounds = this.grounds.get(worldName);
+    if (grounds != null) {
+      synchronized (grounds) {
+        chunks.forEach(chunk -> grounds.remove((long) chunk));
+      }
+    }
     this.cache.invalidateAll(
         chunks.stream()
             .map(
@@ -208,6 +217,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
     this.epoch.incrementAndGet();
     this.cache.asMap().keySet().removeIf(key -> key.worldName().equals(worldName));
     this.heights.remove(worldName);
+    this.grounds.remove(worldName);
   }
 
   @Override
@@ -217,19 +227,105 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
 
   private @NotNull ChunkColumns sample(
       final @NotNull World world,
+      final @NotNull ChunkSourceProvider provider,
       final @NotNull ColumnSource source,
       final int chunkX,
       final int chunkZ) {
     final @NotNull String worldName = WorldKeys.id(world);
-    return this.limits.hidden(worldName, chunkX, chunkZ)
-        ? ColumnRunSampler.blockedChunk(source, chunkX, chunkZ)
-        : ColumnRunSampler.sampleChunk(
-            source,
-            ColumnRunSampler.ceilingY(world),
-            this.shapes,
-            chunkX,
-            chunkZ,
-            this.limits.get(worldName));
+    final int ceilingY = ColumnRunSampler.ceilingY(world);
+    final byte @NotNull [] hiddenAround = new byte[Fog.AROUND * Fog.AROUND];
+    boolean misted = false;
+    for (int offsetX = -Fog.REACH_CHUNKS; offsetX <= Fog.REACH_CHUNKS; offsetX++) {
+      for (int offsetZ = -Fog.REACH_CHUNKS; offsetZ <= Fog.REACH_CHUNKS; offsetZ++) {
+        final byte hidden =
+            this.limits.teased(worldName, chunkX + offsetX, chunkZ + offsetZ)
+                ? Fog.TEASED
+                : this.limits.hidden(worldName, chunkX + offsetX, chunkZ + offsetZ)
+                    ? Fog.HIDDEN
+                    : Fog.OPEN;
+        hiddenAround[Fog.around(offsetX, offsetZ)] = hidden;
+        misted |= hidden != Fog.OPEN;
+      }
+    }
+    if (!misted) {
+      return ColumnRunSampler.sampleChunk(
+          source, ceilingY, this.shapes, chunkX, chunkZ, this.limits.get(worldName));
+    }
+    final int @NotNull [] groundAround = new int[9];
+    for (int offsetX = -1; offsetX <= 1; offsetX++) {
+      for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
+        final int ground = ground(world, provider, ceilingY, chunkX + offsetX, chunkZ + offsetZ);
+        groundAround[(offsetX + 1) * 3 + offsetZ + 1] =
+            ground == ColumnSource.EMPTY_COLUMN ? world.getSeaLevel() : ground;
+      }
+    }
+    if (hiddenAround[Fog.around(0, 0)] == Fog.HIDDEN) {
+      return ColumnRunSampler.blockedChunk(source, groundAround, chunkX, chunkZ);
+    }
+    final @NotNull ChunkColumns columns =
+        ColumnRunSampler.sampleChunk(
+            source, ceilingY, this.shapes, chunkX, chunkZ, this.limits.get(worldName));
+    return columns.withMist(
+        hiddenAround[Fog.around(0, 0)] == Fog.TEASED
+            ? Fog.hidden(chunkX, chunkZ, groundAround, true)
+            : Fog.mist(chunkX, chunkZ, columns, groundAround, hiddenAround));
+  }
+
+  private int ground(
+      final @NotNull World world,
+      final @NotNull ChunkSourceProvider provider,
+      final int ceilingY,
+      final int chunkX,
+      final int chunkZ) {
+    if (!opaque(world, chunkX, chunkZ)) {
+      return visibleGround(world, provider, ceilingY, chunkX, chunkZ);
+    }
+    int sum = 0;
+    int count = 0;
+    for (int offsetX = -1; offsetX <= 1; offsetX++) {
+      for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
+        if (opaque(world, chunkX + offsetX, chunkZ + offsetZ)) {
+          continue;
+        }
+        final int ground =
+            visibleGround(world, provider, ceilingY, chunkX + offsetX, chunkZ + offsetZ);
+        if (ground != ColumnSource.EMPTY_COLUMN) {
+          sum += ground;
+          count++;
+        }
+      }
+    }
+    return count == 0 ? ColumnSource.EMPTY_COLUMN : Math.round((float) sum / count);
+  }
+
+  private boolean opaque(final @NotNull World world, final int chunkX, final int chunkZ) {
+    return this.limits.hidden(WorldKeys.id(world), chunkX, chunkZ)
+        && !this.limits.teased(WorldKeys.id(world), chunkX, chunkZ);
+  }
+
+  private int visibleGround(
+      final @NotNull World world,
+      final @NotNull ChunkSourceProvider provider,
+      final int ceilingY,
+      final int chunkX,
+      final int chunkZ) {
+    final @NotNull Long2IntOpenHashMap known =
+        this.grounds.computeIfAbsent(WorldKeys.id(world), ignored -> new Long2IntOpenHashMap());
+    final long key = ChunkCoordinate.key(chunkX, chunkZ);
+    synchronized (known) {
+      if (known.containsKey(key)) {
+        return known.get(key);
+      }
+    }
+    final @Nullable ColumnSource source = provider.sourceForChunk(chunkX, chunkZ);
+    if (source == null) {
+      return ColumnSource.EMPTY_COLUMN;
+    }
+    final int ground = Fog.ground(ColumnRunSampler.columnTops(source, ceilingY, this.shapes));
+    synchronized (known) {
+      known.put(key, ground);
+    }
+    return ground;
   }
 
   private void recordHeights(
@@ -256,7 +352,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
     if (source == null) {
       return;
     }
-    final @NotNull ChunkColumns columns = sample(world, source, chunkX, chunkZ);
+    final @NotNull ChunkColumns columns = sample(world, provider, source, chunkX, chunkZ);
     recordHeights(WorldKeys.id(world), chunkX, chunkZ, columns.heights());
     this.cache.put(new ChunkKey(WorldKeys.id(world), chunkX, chunkZ), columns);
   }

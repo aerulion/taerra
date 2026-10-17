@@ -11,6 +11,7 @@ import net.aerulion.taerra.rendering.block.BlockShape;
 import net.aerulion.taerra.rendering.block.BlockShapeResolver;
 import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.rendering.source.ColumnSource;
+import net.aerulion.taerra.rendering.style.Fog;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
@@ -76,28 +77,24 @@ class ColumnRunSamplerTest {
   }
 
   @Test
-  @DisplayName("a hidden chunk is a flat striped plane and never reads the blocks underneath")
-  void hiddenChunkIsStriped() {
+  @DisplayName("a hidden chunk is fogged ground and never reads its blocks")
+  void hiddenChunkIsFog() {
     final @NotNull ChunkColumns columns =
         ColumnRunSampler.blockedChunk(
             new TestChunk(
                 (localX, localZ, y) -> {
                   throw new AssertionError("read a hidden block");
                 }),
+            new int[] {63, 63, 63, 63, 63, 63, 63, 63, 63},
             -1,
             0);
 
     assertEquals(63, columns.minTopY());
-    assertEquals(63, columns.maxTopY());
-    assertEquals(
-        BlockType.YELLOW_CONCRETE,
-        columns.runBlockType(columns.runStart(ChunkColumns.columnIndex(0, 0))));
-    assertEquals(
-        BlockType.BLACK_CONCRETE,
-        columns.runBlockType(columns.runStart(ChunkColumns.columnIndex(4, 0))));
-    assertEquals(
-        BlockType.YELLOW_CONCRETE,
-        columns.runBlockType(columns.runStart(ChunkColumns.columnIndex(4, 4))));
+    for (int column = 0; column < ChunkColumns.COLUMN_COUNT; column++) {
+      assertEquals(63, columns.topY(column));
+      assertEquals(Fog.GROUND, columns.runBlockType(columns.runStart(column)));
+      assertTrue(columns.mist(column) != Fog.NO_MIST);
+    }
   }
 
   @Test

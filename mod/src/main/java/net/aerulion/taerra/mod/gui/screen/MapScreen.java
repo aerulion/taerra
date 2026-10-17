@@ -1730,6 +1730,7 @@ public final class MapScreen extends Screen {
       }
       if (account != null && account.hide()) {
         actions.add(actionButton("hide"));
+        actions.add(actionButton("tease"));
         actions.add(actionButton("reveal"));
       }
       actions.add(
