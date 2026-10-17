@@ -50,7 +50,7 @@ If something breaks or looks wrong, please report it on [GitHub](https://github.
 - **Right-click any place** to copy its coordinates, or a link straight to it.
 - **Search everything.** Press `/` to find players, markers, worlds, or coordinates across every world, and jump there. The mod has the same search on a key of its own.
 - **Limit the map** to a circle, square, or rectangle, so it ends where your playable area does, with `/taerra limit` or on the settings page.
-- **Select chunks on the map**, in the browser or in game, to render them again, or to hide them behind caution stripes while staff build there. Players inside a hidden area are hidden too.
+- **Select chunks on the map**, in the browser or in game, to render them again, or to hide them under fog while staff build there, or veil them in thin fog that only hints at what lies beneath. Players inside a hidden area are hidden too.
 - **Loaded chunks** as a private layer for staff, outlined by load level (entity ticking, ticking, loaded), with each area's players, force-loaded chunks and plugin tickets.
 - **Export the map as images** with `/taerra render image`.
 - **English and German** in the web map, the mod, and every in-game message.

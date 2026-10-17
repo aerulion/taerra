@@ -205,7 +205,7 @@ const en = {
                     },
                     {
                         title: 'Show only what is ready',
-                        text: 'Limit the map to a circle, square or rectangle, so it ends where your playable area does, and cover chunks in caution stripes while staff build there.'
+                        text: 'Limit the map to a circle, square or rectangle, so it ends where your playable area does, and cover chunks in fog while staff build there, or in a thin veil that only hints at what lies beneath.'
                     },
                     {
                         title: 'Installs like an app',

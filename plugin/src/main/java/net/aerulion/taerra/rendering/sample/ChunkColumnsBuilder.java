@@ -127,7 +127,8 @@ public final class ChunkColumnsBuilder {
         this.capBlockId,
         this.columnBiome,
         this.minTopY,
-        this.maxTopY);
+        this.maxTopY,
+        null);
   }
 
   private boolean isHidden(

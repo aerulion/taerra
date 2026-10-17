@@ -210,6 +210,7 @@ class ChunkSelection {
         markerManager.hide(editing?.id ?? null);
         $('selection-render').hidden = !chunks || !accountManager.canRender();
         $('selection-hide').hidden = !chunks || !accountManager.canHide();
+        $('selection-tease').hidden = !chunks || !accountManager.canHide();
         $('selection-reveal').hidden = !chunks || !accountManager.canHide();
         $('selection-smooth').hidden = kind !== 'line';
         $('selection-save').hidden = chunks;
