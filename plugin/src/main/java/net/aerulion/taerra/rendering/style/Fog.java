@@ -67,9 +67,9 @@ public final class Fog {
   private static final float THICK = 0.68f;
   private static final int TONES = 2;
   private static final int OPACITY_STEPS = 6;
-  private static final float TEASER_THIN = 0.4f;
-  private static final float TEASER_THICK = 0.8f;
-  private static final float TEASER_GREY = 0.5f;
+  private static final float TEASER_THIN = 0.45f;
+  private static final float TEASER_THICK = 0.88f;
+  private static final float TEASER_GREY = 0.65f;
   private static final float CLEAR = 1.15f;
   private static final float SOLID = -0.15f;
   private static final float EDGE = 0.3f;
