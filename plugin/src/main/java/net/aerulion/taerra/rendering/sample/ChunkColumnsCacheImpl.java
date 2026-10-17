@@ -22,6 +22,7 @@ import net.aerulion.taerra.rendering.source.ChunkSourceProvider;
 import net.aerulion.taerra.rendering.source.ColumnSource;
 import net.aerulion.taerra.rendering.source.LiveChunk;
 import net.aerulion.taerra.rendering.source.LiveChunkSourceProvider;
+import net.aerulion.taerra.rendering.source.RegionFileChunkSourceProvider;
 import net.aerulion.taerra.rendering.style.Fog;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -152,9 +153,14 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
         }
       }
 
+      if (changed.isEmpty()) {
+        return 0;
+      }
+
       int refreshed = 0;
       int next = 0;
-      try {
+      try (final @NotNull RegionFileChunkSourceProvider disk =
+              new RegionFileChunkSourceProvider(world)) {
         while (next < changed.size()) {
           final int from = next;
           final @NotNull Map<Long, LiveChunk> snapshots = new HashMap<>();
@@ -163,7 +169,8 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
                   .callSyncMethod(this.plugin, () -> takeSnapshots(world, changed, from, snapshots))
                   .get();
           final @NotNull LiveChunkSourceProvider live =
-              new LiveChunkSourceProvider(snapshots, world.getMinHeight(), world.getMaxHeight());
+              new LiveChunkSourceProvider(
+                  snapshots, world.getMinHeight(), world.getMaxHeight(), disk);
           for (final @NotNull ChunkCoordinate chunk : changed.subList(from, next)) {
             if (snapshots.containsKey(chunk.toKey())) {
               sampleAndStore(world, live, chunk.x(), chunk.z());
