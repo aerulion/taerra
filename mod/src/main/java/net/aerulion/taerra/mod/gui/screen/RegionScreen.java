@@ -44,7 +44,6 @@ public final class RegionScreen extends Screen {
   private boolean saving;
   private boolean saved;
   private boolean deleteArmed;
-  private boolean resetArmed;
 
   public RegionScreen(
       final @NotNull Screen parent,
@@ -142,15 +141,6 @@ public final class RegionScreen extends Screen {
               .onValueChange((_, value) -> this.discoverable = value)
               .maxWidth(WIDTH)
               .build());
-      if (this.draft.id() != null) {
-        contents.addChild(
-            Button.builder(
-                    Component.translatable(
-                        this.resetArmed ? "taerra.region.reset_confirm" : "taerra.region.reset"),
-                    _ -> reset())
-                .width(WIDTH)
-                .build());
-      }
     }
     this.colors.addTo(contents, this.font);
     contents.addChild(new StringWidget(WIDTH, 9, this.error, this.font));
@@ -201,11 +191,10 @@ public final class RegionScreen extends Screen {
       final @NotNull String fog, final int size, final boolean discoverable, final int found) {
     Component meta =
         Component.translatable("taerra.region.fog." + fog)
-            .append(" · ")
+            .append(", ")
             .append(Component.translatable("taerra.regions.size", size));
     if (!fog.equals("none") && discoverable) {
-      meta =
-          meta.copy().append(" · ").append(Component.translatable("taerra.regions.found", found));
+      meta = meta.copy().append(", ").append(Component.translatable("taerra.regions.found", found));
     }
     return meta;
   }
@@ -225,7 +214,6 @@ public final class RegionScreen extends Screen {
     this.error = error.copy().withStyle(ChatFormatting.RED);
     this.saving = false;
     this.deleteArmed = false;
-    this.resetArmed = false;
     rebuildWidgets();
   }
 
@@ -293,30 +281,6 @@ public final class RegionScreen extends Screen {
             this.listener.deleted();
           } else {
             fail(Component.translatable(problem(status, body)));
-          }
-        });
-  }
-
-  private void reset() {
-    final @Nullable Integer id = this.draft.id();
-    if (id == null) {
-      return;
-    }
-    if (!this.resetArmed) {
-      this.resetArmed = true;
-      rebuildWidgets();
-      return;
-    }
-    this.map.resetRegion(
-        id,
-        status -> {
-          this.resetArmed = false;
-          if (status == 204) {
-            this.error =
-                Component.translatable("taerra.region.reset_done").withStyle(ChatFormatting.GREEN);
-            rebuildWidgets();
-          } else {
-            fail(Component.translatable("taerra.region.problem.failed"));
           }
         });
   }

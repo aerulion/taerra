@@ -1054,8 +1054,7 @@ class ChunkSelection {
                 this.redraw();
             },
             onSave: (fields) => this.saveRegion(fields),
-            onDelete: () => this.deleteRegion(),
-            onReset: () => this.resetDiscoveries()
+            onDelete: () => this.deleteRegion()
         });
     }
 
@@ -1101,15 +1100,6 @@ class ChunkSelection {
             return null;
         }
         return response ? (await response.json().catch(() => null))?.problem ?? 'failed' : 'failed';
-    }
-
-    async resetDiscoveries() {
-        let response = null;
-        try {
-            response = await fetch(`/api/regions/${this.editing.id}/reset`, {method: 'POST'});
-        } catch {
-        }
-        return response?.ok ? null : 'failed';
     }
 
     save() {

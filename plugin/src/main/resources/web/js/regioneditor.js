@@ -16,7 +16,7 @@ function meta(region) {
         t('regions.size', {count: numbers.format(region.size ?? region.chunks?.length ?? 0)}),
         region.fog !== 'none' && region.discoverable
             ? t('regions.found', {count: numbers.format(region.discoveries ?? 0)}) : null
-    ].filter(Boolean).join(' · ');
+    ].filter(Boolean).join(', ');
 }
 
 function arm(button, key, confirmKey) {
@@ -58,7 +58,6 @@ class RegionEditor {
         }
         $('region-cancel').addEventListener('click', () => this.dialog.close());
         $('region-delete').addEventListener('click', () => void this.remove());
-        $('region-reset').addEventListener('click', () => void this.reset());
         $('region-form').addEventListener('input', () => this.showError(null));
         $('region-form').addEventListener('submit', (event) => {
             event.preventDefault();
@@ -87,7 +86,6 @@ class RegionEditor {
         $('region-discoverable').checked = region?.discoverable ?? true;
         this.picker.set(target.color);
         disarm($('region-delete'));
-        disarm($('region-reset'));
         $('region-delete').hidden = !region?.id;
         this.setFog(region?.fog ?? 'hide');
         this.showError(null);
@@ -101,7 +99,6 @@ class RegionEditor {
             button.setAttribute('aria-pressed', String(button.dataset.fog === fog));
         }
         $('region-discoverable').closest('label').hidden = fog === 'none';
-        $('region-reset').hidden = fog === 'none' || !this.target?.region?.id;
     }
 
     showError(problem) {
@@ -141,19 +138,6 @@ class RegionEditor {
         this.dialog.close();
     }
 
-    async reset() {
-        const button = $('region-reset');
-        if (!arm(button, 'region.reset', 'region.resetConfirm')) {
-            return;
-        }
-        const problem = await this.target?.onReset();
-        disarm(button);
-        if (problem) {
-            this.showError(problem);
-        } else {
-            button.textContent = t('region.resetDone');
-        }
-    }
 }
 
 class RegionList {
@@ -231,22 +215,26 @@ class RegionList {
             mapManager.centerOnBlock(x, z);
             this.actions.edit(region);
         });
-        action('delete', 'waypoint.delete', async (button) => {
+        const confirmed = (confirmKey, path, method) => async (button) => {
             if (!button.classList.contains('is-armed')) {
                 button.classList.add('is-armed');
-                button.title = t('waypoint.confirmDelete');
+                button.title = t(confirmKey);
                 return;
             }
             let response = null;
             try {
-                response = await fetch(`/api/regions/${region.id}`, {method: 'DELETE'});
+                response = await fetch(`/api/regions/${region.id}${path}`, {method});
             } catch {
             }
             button.classList.remove('is-armed');
             if (!response?.ok) {
                 button.title = t('region.problem.failed');
             }
-        });
+        };
+        if (region.fog !== 'none' && region.discoverable && region.discoveries > 0) {
+            action('reset', 'region.reset', confirmed('region.resetConfirm', '/reset', 'POST'));
+        }
+        action('delete', 'waypoint.delete', confirmed('waypoint.confirmDelete', '', 'DELETE'));
         row.append(icon, text, actions);
         return row;
     }

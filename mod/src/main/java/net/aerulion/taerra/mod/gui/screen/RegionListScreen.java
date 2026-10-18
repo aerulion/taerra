@@ -29,12 +29,16 @@ public final class RegionListScreen extends Screen {
   private static final int ROW = 26;
   private static final int ICON = 16;
   private static final int TOOLS_Y = 24;
+  private static final String[] FORGET = {
+    "........", "...##...", "..#####.", ".#######", "########", "########", ".######.", "........"
+  };
 
   private final @NotNull MapScreen parent;
   private final @NotNull WebMap map;
   private final @NotNull String world;
   private @NotNull String query = "";
   private @Nullable Integer armed;
+  private @Nullable Integer forgetting;
   private @Nullable RegionList list;
 
   public RegionListScreen(
@@ -163,6 +167,16 @@ public final class RegionListScreen extends Screen {
     this.map.deleteRegion(region.id(), (_, _) -> Minecraft.getInstance().execute(this::refresh));
   }
 
+  private void forget(final Regions.@NotNull Region region) {
+    if (!Integer.valueOf(region.id()).equals(this.forgetting)) {
+      this.forgetting = region.id();
+      refresh();
+      return;
+    }
+    this.forgetting = null;
+    this.map.resetRegion(region.id(), _ -> Minecraft.getInstance().execute(this::refresh));
+  }
+
   private final class RegionList extends ContainerObjectSelectionList<RegionList.Entry> {
 
     private RegionList(final int top, final int height) {
@@ -196,6 +210,17 @@ public final class RegionListScreen extends Screen {
         this.color = Colors.argb(region.color() == null ? "#ffffff" : region.color());
         button(WaypointListScreen.ON_MAP, "taerra.waypoints.show_on_map", () -> showOnMap(region));
         button(WaypointListScreen.EDIT, "taerra.waypoint.edit_short", () -> edit(region));
+        if (!"none".equals(region.fog())
+            && !Boolean.FALSE.equals(region.discoverable())
+            && region.discoveries() != null
+            && region.discoveries() > 0) {
+          button(
+              FORGET,
+              Integer.valueOf(region.id()).equals(RegionListScreen.this.forgetting)
+                  ? "taerra.region.reset_confirm"
+                  : "taerra.region.reset",
+              () -> forget(region));
+        }
         button(
             WaypointListScreen.DELETE,
             Integer.valueOf(region.id()).equals(RegionListScreen.this.armed)
