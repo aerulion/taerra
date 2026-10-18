@@ -136,7 +136,7 @@ public final class LoadedChunkMarkers {
                           .toList(),
                       63,
                       64,
-                      level.label + " · " + count(area.size(), "chunk"))
+                      level.label + ", " + count(area.size(), "chunk"))
                   .hollowed()
                   .withColor(level.color)
                   .withDetails(details));

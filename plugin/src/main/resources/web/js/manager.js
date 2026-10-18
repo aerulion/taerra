@@ -200,9 +200,10 @@ class WaypointManager {
         text.title = t('manager.showOnMap');
         const where = waypoint.type === 'point' ? `${waypoint.x}, ${waypoint.y}, ${waypoint.z}`
             : t(`manager.type.${waypoint.type}`);
-        text.append(element('span', 'manager__name', waypoint.name),
-            element('span', 'manager__meta', [this.app.worldName(waypoint.world), where, waypoint.description]
-                .filter(Boolean).join(' · ')));
+        const meta = element('span', 'manager__meta');
+        meta.append(...[this.app.worldName(waypoint.world), where, waypoint.description]
+            .filter(Boolean).map(part => element('span', 'manager__part', part)));
+        text.append(element('span', 'manager__name', waypoint.name), meta);
         text.addEventListener('click', () => this.showOnMap(waypoint));
         const distance = element('span', 'manager__distance',
             waypoint.distance === null ? '' : distanceText(waypoint.distance));

@@ -672,11 +672,11 @@ public final class WaypointListScreen extends Screen {
         this.where =
             Component.empty()
                 .append(worldLabel(waypoint.world()))
-                .append(" · " + coordinates)
+                .append("   " + coordinates)
                 .append(
                     waypoint.description() == null || waypoint.description().isBlank()
                         ? ""
-                        : " · " + waypoint.description().replace('\n', ' '));
+                        : "   " + waypoint.description().replace('\n', ' '));
         final double distance = distance(waypoint);
         this.distance = Double.isNaN(distance) ? "" : Distances.format(distance);
         this.color = Colors.argb(waypoint.color() == null ? "#ffffff" : waypoint.color());

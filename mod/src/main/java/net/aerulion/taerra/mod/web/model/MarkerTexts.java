@@ -109,9 +109,7 @@ public final class MarkerTexts {
     row(rows, "view", count(facts.get("view")));
     row(rows, "simulation", count(facts.get("simulation")));
     return with(
-        marker,
-        I18n.get("taerra.chunks.level." + level) + " · " + count(facts.get("chunks")),
-        rows);
+        marker, I18n.get("taerra.chunks.level." + level) + ", " + count(facts.get("chunks")), rows);
   }
 
   private static void row(

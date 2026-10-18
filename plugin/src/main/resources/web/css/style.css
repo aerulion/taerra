@@ -3253,6 +3253,10 @@ h2 .badge {
     white-space: nowrap;
 }
 
+.manager__part + .manager__part {
+    margin-left: 1.5ch;
+}
+
 .manager__distance {
     color: var(--stone-100);
     font: 600 12px var(--font-mono);

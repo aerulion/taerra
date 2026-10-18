@@ -17,7 +17,7 @@ public record Sky(
   }
 
   public @NotNull Component describe() {
-    final @NotNull Component separator = Component.literal(" · ");
+    final @NotNull Component separator = Component.literal(", ");
     final @NotNull MutableComponent text = phaseName().copy();
     if (!"clear".equals(this.weather)) {
       text.append(separator)

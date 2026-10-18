@@ -223,7 +223,7 @@ function chunkMarker(marker) {
     ].filter(Boolean);
     return {
         ...marker,
-        label: `${t(`chunks.level.${facts.level}`)} · ${chunkCount(facts.chunks)}`,
+        label: `${t(`chunks.level.${facts.level}`)}, ${chunkCount(facts.chunks)}`,
         details: rows.map(([key, value]) => [t(`chunks.detail.${key}`), value])
     };
 }
