@@ -24,6 +24,7 @@ import net.aerulion.taerra.config.LiveSettings;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.integration.ChunkyGeneration;
+import net.aerulion.taerra.integration.WorldEditChanges;
 import net.aerulion.taerra.limit.HiddenAreaMarkers;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.listener.JoinHint;
@@ -323,17 +324,17 @@ public final class Taerra extends JavaPlugin {
           getServer().getPluginManager().isPluginEnabled("Chunky")
               ? ChunkyGeneration.start(this)
               : null;
-      getServer()
-          .getPluginManager()
-          .registerEvents(
-              new WorldChangeListener(
-                  new WorldChanges(
-                      changeBuffer,
-                      chunkColumnsCache,
-                      configuration,
-                      isoTileService,
-                      chunkyGenerating == null ? _ -> false : chunkyGenerating)),
-              this);
+      final @NotNull WorldChanges worldChanges =
+          new WorldChanges(
+              changeBuffer,
+              chunkColumnsCache,
+              configuration,
+              isoTileService,
+              chunkyGenerating == null ? _ -> false : chunkyGenerating);
+      getServer().getPluginManager().registerEvents(new WorldChangeListener(worldChanges), this);
+      if (getServer().getPluginManager().isPluginEnabled("WorldEdit")) {
+        WorldEditChanges.start(this, worldChanges);
+      }
 
       playerBroadcaster.start();
 

@@ -133,6 +133,11 @@ paper {
     apiVersion = libs.versions.paper.get().substringBefore(".build")
     foliaSupported = false
     serverDependencies {
+        register("WorldEdit") {
+            required = false
+            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+            joinClasspath = true
+        }
         register("WorldGuard") {
             required = false
             load = PaperPluginDescription.RelativeLoadOrder.BEFORE
