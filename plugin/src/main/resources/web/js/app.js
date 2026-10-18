@@ -524,8 +524,8 @@ function setupContextMenu() {
         const owner = regionManager.at(Math.floor(block.x / 16), Math.floor(block.z / 16));
         const region = menu.querySelector('[data-action="region"]');
         region.hidden = !accountManager.canEditRegions();
-        region.dataset.i18n = owner ? 'menu.editRegion' : 'menu.drawRegion';
-        region.textContent = owner ? t('menu.editRegion', {name: owner.name || t('region.unnamed')}) : t('menu.drawRegion');
+        region.dataset.i18n = !owner ? 'menu.drawRegion' : owner.name ? 'menu.editRegion' : 'menu.editUnnamedRegion';
+        region.textContent = t(region.dataset.i18n, {name: owner?.name});
         regionTarget = owner;
         const rendering = renderingWorld === currentWorld.name;
         menu.querySelector('[data-action="render-world"]').hidden = !accountManager.canRender() || rendering;
