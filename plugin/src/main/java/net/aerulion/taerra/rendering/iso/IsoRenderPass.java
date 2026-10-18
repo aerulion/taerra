@@ -257,19 +257,48 @@ final class IsoRenderPass {
   private int fog(final int index, final int argb, final int mist, final boolean overlay) {
     final float screenX = this.tileBounds.minX() + index % this.size + 0.5f;
     final float screenY = this.tileBounds.minY() + index / this.size + 0.5f;
-    final float across = screenX / HALF_WIDTH;
-    final float along = (screenY + Fog.layerY(mist) * HALF_WIDTH) / QUARTER_WIDTH;
-    final float rotatedX = (along + across) / 2.0f;
-    final float rotatedZ = (along - across) / 2.0f;
-    final float worldX =
-        this.rotation.worldDeltaX(1, 0) * rotatedX + this.rotation.worldDeltaX(0, 1) * rotatedZ;
-    final float worldZ =
-        this.rotation.worldDeltaZ(1, 0) * rotatedX + this.rotation.worldDeltaZ(0, 1) * rotatedZ;
+    final int layerY = Fog.layerY(mist);
+    final float worldX = worldX(screenX, screenY, layerY);
+    final float worldZ = worldZ(screenX, screenY, layerY);
+    int blockY = this.veilY[index];
+    if (layerY > blockY
+        && !this.solids.hasColumn((int) Math.floor(worldX), (int) Math.floor(worldZ))) {
+      final double reach =
+          reach(worldX(screenX, screenY, blockY), worldZ(screenX, screenY, blockY), worldX, worldZ);
+      blockY = (int) Math.round(layerY - reach * (layerY - blockY));
+    }
     return Fog.skyShadow(
         overlay
-            ? Fog.overlay(mist, worldX, worldZ, this.veilY[index], this.fogCell)
-            : Fog.veil(argb, mist, worldX, worldZ, this.veilY[index], this.fogCell),
+            ? Fog.overlay(mist, worldX, worldZ, blockY, this.fogCell)
+            : Fog.veil(argb, mist, worldX, worldZ, blockY, this.fogCell),
         mist);
+  }
+
+  private double reach(final double fromX, final double fromZ, final double toX, final double toZ) {
+    final int steps = (int) Math.ceil(Math.max(Math.abs(toX - fromX), Math.abs(toZ - fromZ)));
+    for (int step = 1; step <= steps; step++) {
+      final double along = (double) step / steps;
+      if (!this.solids.hasColumn(
+          (int) Math.floor(fromX + (toX - fromX) * along),
+          (int) Math.floor(fromZ + (toZ - fromZ) * along))) {
+        return (step - 1) / (double) steps;
+      }
+    }
+    return 1;
+  }
+
+  private float worldX(final float screenX, final float screenY, final int y) {
+    final float across = screenX / HALF_WIDTH;
+    final float along = (screenY + y * HALF_WIDTH) / QUARTER_WIDTH;
+    return this.rotation.worldDeltaX(1, 0) * (along + across) / 2.0f
+        + this.rotation.worldDeltaX(0, 1) * (along - across) / 2.0f;
+  }
+
+  private float worldZ(final float screenX, final float screenY, final int y) {
+    final float across = screenX / HALF_WIDTH;
+    final float along = (screenY + y * HALF_WIDTH) / QUARTER_WIDTH;
+    return this.rotation.worldDeltaZ(1, 0) * (along + across) / 2.0f
+        + this.rotation.worldDeltaZ(0, 1) * (along - across) / 2.0f;
   }
 
   private static int clouded(final int argb, final int cloud) {

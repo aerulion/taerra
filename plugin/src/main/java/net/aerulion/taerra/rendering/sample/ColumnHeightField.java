@@ -38,6 +38,13 @@ public final class ColumnHeightField implements SolidField {
     return this.slotColumns[slot];
   }
 
+  public boolean hasColumn(final int blockX, final int blockZ) {
+    final @Nullable ChunkColumns columns = chunk(blockX >> 4, blockZ >> 4);
+    return columns != null
+        && columns.topY(ChunkColumns.columnIndex(blockX & 15, blockZ & 15))
+            != ChunkColumns.EMPTY_COLUMN;
+  }
+
   @Override
   public boolean isSolidAt(final int blockX, final int blockY, final int blockZ) {
     final @Nullable ChunkColumns columns = chunk(blockX >> 4, blockZ >> 4);

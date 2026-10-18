@@ -313,7 +313,8 @@ class MapManager {
             const Layered = L.GridLayer.extend({
                 createTile(coords, done) {
                     const tile = document.createElement('canvas');
-                    void manager.composeTile(tile, coords.z, coords.x, coords.y).then(() => done(null, tile), error => done(error, tile));
+                    void manager.composeTile(tile, coords.z, coords.x, coords.y).catch(() => {
+                    }).then(() => done(null, tile));
                     return tile;
                 }
             });
