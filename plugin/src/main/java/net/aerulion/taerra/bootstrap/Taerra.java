@@ -380,7 +380,13 @@ public final class Taerra extends JavaPlugin {
           this,
           regions,
           discoveries,
-          uuid -> webSocketHandler.sendTo(uuid, Map.of("type", "regions")));
+          modHandshake,
+          (uuid, name) ->
+              webSocketHandler.sendTo(
+                  uuid,
+                  name.isEmpty()
+                      ? Map.of("type", "regions")
+                      : Map.of("type", "regions", "discovered", name)));
 
       registerCommands(
           generatorService,

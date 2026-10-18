@@ -118,6 +118,7 @@
   "taerra.options.waypoints": "Waypoints in World",
   "taerra.options.waypoints.tooltip": "Shows waypoints as labels where they are in the world.",
   "taerra.options.zoom": "Minimap Zoom",
+  "taerra.discovered": "Region Discovered!",
   "taerra.outdated": "TAERRA Map Unavailable",
   "taerra.outdated.mod": "This server needs a newer TAERRA mod. Update the mod.",
   "taerra.outdated.plugin": "This server's TAERRA plugin is older than your mod. Ask the server to update it.",

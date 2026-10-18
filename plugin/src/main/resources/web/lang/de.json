@@ -231,6 +231,7 @@
   "region.fog.none": "Kein Nebel",
   "region.fog.none.tooltip": "Nur ein Name auf der Karte",
   "region.discoverable.tooltip": "Wer die Region betritt, lichtet den Nebel für sich",
+  "discovery.title": "Region entdeckt",
   "region.save": "Speichern",
   "region.saved": "Gespeichert",
   "region.started": "Gespeichert, die Karte aktualisiert sich, während die Region rendert",

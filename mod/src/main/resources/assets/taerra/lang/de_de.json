@@ -118,6 +118,7 @@
   "taerra.options.waypoints": "Wegpunkte in der Welt",
   "taerra.options.waypoints.tooltip": "Zeigt Wegpunkte als Beschriftung an ihrer Stelle in der Welt.",
   "taerra.options.zoom": "Zoom der Minikarte",
+  "taerra.discovered": "Region entdeckt!",
   "taerra.outdated": "TAERRA-Karte nicht verfügbar",
   "taerra.outdated.mod": "Dieser Server braucht eine neuere TAERRA-Mod. Aktualisiere die Mod.",
   "taerra.outdated.plugin": "Das TAERRA-Plugin dieses Servers ist älter als deine Mod. Bitte den Server, es zu aktualisieren.",

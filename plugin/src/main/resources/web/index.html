@@ -262,6 +262,12 @@
         <button class="placing__cancel" data-i18n="navigation.stop" id="navigation-stop" type="button">Stop</button>
     </div>
 
+    <div aria-live="polite" class="discovery" hidden id="discovery" role="status">
+        <span aria-hidden="true" class="discovery__burst" id="discovery-burst"></span>
+        <p class="discovery__title" data-i18n="discovery.title">Region discovered</p>
+        <p class="discovery__name" id="discovery-name"></p>
+    </div>
+
     <div class="placing" hidden id="placing">
         <span id="placing-text" role="status"></span>
         <button class="placing__cancel" data-i18n="waypoint.cancel" id="placing-cancel" type="button">Cancel</button>

@@ -1,10 +1,13 @@
 package net.aerulion.taerra.region;
 
 import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.model.WorldKeys;
+import net.aerulion.taerra.web.auth.ModHandshake;
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +25,8 @@ public final class RegionDiscovery {
       final @NotNull Plugin plugin,
       final @NotNull MapRegions regions,
       final @NotNull RegionDiscoveries discoveries,
-      final @NotNull Consumer<UUID> discovered) {
+      final @NotNull ModHandshake mods,
+      final @NotNull BiConsumer<UUID, String> discovered) {
     Bukkit.getScheduler()
         .runTaskTimer(
             plugin,
@@ -39,10 +43,13 @@ public final class RegionDiscovery {
                   continue;
                 }
                 if (!region.name().isEmpty()) {
-                  player.sendActionBar(
-                      Messages.tr("region.discovered", Messages.value(region.name())));
+                  player.playSound(
+                      player, Sound.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.UI, 1.0f, 1.0f);
+                  if (!mods.discovered(player, region.name())) {
+                    player.sendMessage(Messages.discovered(region.name()));
+                  }
                 }
-                discovered.accept(player.getUniqueId());
+                discovered.accept(player.getUniqueId(), region.name());
               }
             },
             INTERVAL_TICKS,

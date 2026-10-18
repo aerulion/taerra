@@ -655,7 +655,33 @@ wsManager.on('markers', (message) => {
 
 wsManager.on('worlds', () => void refreshWorlds());
 
-wsManager.on('regions', () => {
+const discovery = $('discovery');
+let discoveryTimer;
+discovery.addEventListener('click', () => discovery.hidden = true);
+
+function celebrate(region) {
+    $('discovery-name').textContent = region;
+    $('discovery-burst').replaceChildren(...Array.from({length: 28}, (_, index) => {
+        const spark = document.createElement('i');
+        const angle = index / 28 * 2 * Math.PI + Math.random() * .4;
+        const reach = 90 + Math.random() * 110;
+        spark.style.setProperty('--x', `${Math.round(Math.cos(angle) * reach)}px`);
+        spark.style.setProperty('--y', `${Math.round(Math.sin(angle) * reach * .55)}px`);
+        spark.style.setProperty('--delay', `${Math.round(Math.random() * 150)}ms`);
+        return spark;
+    }));
+    discovery.hidden = false;
+    discovery.classList.remove('is-shown');
+    void discovery.offsetWidth;
+    discovery.classList.add('is-shown');
+    clearTimeout(discoveryTimer);
+    discoveryTimer = setTimeout(() => discovery.hidden = true, 5000);
+}
+
+wsManager.on('regions', (message) => {
+    if (message.discovered) {
+        celebrate(message.discovered);
+    }
     if (currentWorld) {
         void regionManager.load(currentWorld.name).then(() => regionList.refresh());
         void markerManager.load(currentWorld.name);

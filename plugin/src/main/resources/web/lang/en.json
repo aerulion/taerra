@@ -231,6 +231,7 @@
   "region.fog.none": "No fog",
   "region.fog.none.tooltip": "Just a name on the map",
   "region.discoverable.tooltip": "Players clear the fog for themselves by walking in",
+  "discovery.title": "Region discovered",
   "region.save": "Save",
   "region.saved": "Saved",
   "region.started": "Saved, the map updates as the region renders",

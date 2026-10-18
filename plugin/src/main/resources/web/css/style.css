@@ -2607,6 +2607,112 @@ h2 .badge {
     color: var(--red);
 }
 
+.discovery {
+    position: absolute;
+    top: 72px;
+    left: 50%;
+    z-index: 1100;
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    min-width: 260px;
+    max-width: calc(100% - 2 * var(--gap));
+    padding: 18px 28px 16px;
+    translate: -50% 0;
+    background: var(--stone-700);
+    border: var(--edge);
+    border-bottom: 3px solid var(--accent);
+    box-shadow: var(--slab-shadow);
+    text-align: center;
+    cursor: pointer;
+}
+
+.discovery.is-shown {
+    animation: discovery-in .5s cubic-bezier(.2, .8, .3, 1.3) both, discovery-out .4s ease 4.6s forwards;
+}
+
+.discovery__title {
+    color: var(--gold);
+    font: 700 11px/1.2 var(--font-display);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.discovery__name {
+    overflow-wrap: anywhere;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.discovery__burst {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    pointer-events: none;
+}
+
+.discovery__burst i {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    margin: -3px;
+    background: var(--gold);
+    opacity: 0;
+}
+
+.discovery__burst i:nth-child(4n + 1) {
+    background: var(--accent-hi);
+}
+
+.discovery__burst i:nth-child(4n + 2) {
+    background: var(--white);
+}
+
+.discovery__burst i:nth-child(4n + 3) {
+    width: 4px;
+    height: 4px;
+    margin: -2px;
+    background: var(--green);
+}
+
+.discovery.is-shown .discovery__burst i {
+    animation: discovery-spark 1.1s cubic-bezier(.1, .7, .3, 1) var(--delay) both;
+}
+
+@keyframes discovery-in {
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(.85);
+    }
+}
+
+@keyframes discovery-out {
+    to {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}
+
+@keyframes discovery-spark {
+    15% {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+        transform: translate(var(--x), var(--y)) rotate(180deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .discovery.is-shown {
+        animation: discovery-out .4s ease 4.6s forwards;
+    }
+
+    .discovery__burst {
+        display: none;
+    }
+}
+
 .selection {
     position: absolute;
     top: var(--gap);
