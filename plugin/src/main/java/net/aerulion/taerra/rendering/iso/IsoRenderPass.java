@@ -302,8 +302,7 @@ final class IsoRenderPass {
   }
 
   private static int clouded(final int argb, final int cloud) {
-    return MapStyle.blend(
-        argb == 0 ? cloud | 0xFF000000 : argb, cloud | 0xFF000000, (cloud >>> 24) / 255.0f);
+    return MapStyle.blend(argb, cloud | 0xFF000000, (cloud >>> 24) / 255.0f);
   }
 
   @NotNull
@@ -324,7 +323,7 @@ final class IsoRenderPass {
       if (this.veilMist[index] != Fog.NO_MIST) {
         this.pixels[index] = fog(index, this.pixels[index], this.veilMist[index], false);
       }
-      if (this.cloud[index] != 0) {
+      if (this.cloud[index] != 0 && this.pixels[index] != 0) {
         this.pixels[index] = clouded(this.pixels[index], this.cloud[index]);
       }
     }
@@ -357,7 +356,7 @@ final class IsoRenderPass {
           mist == Fog.NO_MIST
               ? overlay ? 0 : unveiled[index]
               : fog(index, unveiled[index], mist, overlay);
-      if (clouds[index] != 0) {
+      if (clouds[index] != 0 && unveiled[index] != 0) {
         argb = overlay ? Fog.over(clouds[index], argb) : clouded(argb, clouds[index]);
       }
       out[index] = argb;
