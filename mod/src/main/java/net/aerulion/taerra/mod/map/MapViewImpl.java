@@ -1187,11 +1187,13 @@ public final class MapViewImpl implements MapView {
       final @NotNull String name = region.name().toUpperCase(Locale.ROOT);
       final double @NotNull [] at =
           toScreen(projection.toMap(region.label()[0], REGION_LABEL_Y, region.label()[1]));
-      final double @NotNull [] corner = snapped(at[0] - font.width(name) / 2.0, at[1] - 4);
+      final int width = font.width(name);
+      final double @NotNull [] corner = snapped(at[0] - (width + 1) / 2.0, at[1] - 4.5);
       final @NotNull Matrix3x2fStack pose = graphics.pose();
       pose.pushMatrix();
       pose.translate((float) corner[0], (float) corner[1]);
-      graphics.text(font, name, 0, 0, 0xFFFFFFFF, true);
+      graphics.fill(0, 0, width + 1, 9, 0x80000000);
+      graphics.text(font, name, 1, 1, 0xFFFFFFFF, false);
       pose.popMatrix();
     }
   }
@@ -1227,8 +1229,8 @@ public final class MapViewImpl implements MapView {
       }
       final double @NotNull [] at = toScreen(drawn.shape().point);
       final int width = font.width(label);
-      final double @NotNull [] corner = snapped(at[0] - width / 2 - 1, at[1] + 5);
-      final double @NotNull [] box = {corner[0], corner[1], corner[0] + width + 2, corner[1] + 10};
+      final double @NotNull [] corner = snapped(at[0] - (width + 1) / 2.0, at[1] + 5);
+      final double @NotNull [] box = {corner[0], corner[1], corner[0] + width + 1, corner[1] + 9};
       if (this.labels.stream()
           .anyMatch(
               other ->
@@ -1242,7 +1244,7 @@ public final class MapViewImpl implements MapView {
       final @NotNull Matrix3x2fStack pose = graphics.pose();
       pose.pushMatrix();
       pose.translate((float) corner[0], (float) corner[1]);
-      graphics.fill(0, 0, width + 2, 10, 0x80000000);
+      graphics.fill(0, 0, width + 1, 9, 0x80000000);
       graphics.text(font, label, 1, 1, 0xFFFFFFFF, false);
       pose.popMatrix();
     }

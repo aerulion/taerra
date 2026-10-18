@@ -1890,14 +1890,15 @@ h2 .badge {
 }
 
 .waypoint__label,
-.leaflet-tooltip.marker-tooltip {
-    padding: 3px 5px;
+.leaflet-tooltip.marker-tooltip,
+.region-name {
+    padding: 3px calc(5px - .23em) 3px 5px;
     background: rgb(0 0 0 / .6);
     border: 0;
     border-radius: 0;
     box-shadow: none;
     color: var(--white);
-    font: 700 7.5px/1 var(--font-display);
+    font: 700 10px/1 var(--font-display);
     letter-spacing: .04em;
     white-space: nowrap;
 }
@@ -1934,11 +1935,11 @@ h2 .badge {
 .region-flag {
     display: block;
     translate: 0 -100%;
-    padding: 4px 6px;
+    padding: 4px calc(6px - .23em) 4px 6px;
     background: var(--marker);
     box-shadow: 0 0 0 2px rgb(0 0 0 / .5), inset 0 2px rgb(255 255 255 / .25), inset 0 -2px rgb(0 0 0 / .2);
     color: var(--white);
-    font: 700 7.5px/1 var(--font-display);
+    font: 700 10px/1 var(--font-display);
     letter-spacing: .04em;
     text-shadow: 1px 1px 0 rgb(0 0 0 / .55);
     white-space: nowrap;
@@ -2790,12 +2791,11 @@ h2 .badge {
 
 .region-name {
     display: block;
+    padding-right: calc(5px - .27em);
     translate: -50% -50%;
-    color: var(--white);
-    font: 700 9px/1 var(--font-display);
+    font: 700 10px/1 var(--font-display);
     letter-spacing: .08em;
     text-transform: uppercase;
-    text-shadow: 1px 1px 0 rgb(0 0 0 / .7), 0 0 6px rgb(0 0 0 / .5);
     white-space: nowrap;
     pointer-events: none;
 }
