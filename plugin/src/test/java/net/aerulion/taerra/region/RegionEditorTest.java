@@ -1,8 +1,11 @@
 package net.aerulion.taerra.region;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import java.util.List;
 import java.util.Set;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import org.jetbrains.annotations.NotNull;
@@ -39,5 +42,24 @@ class RegionEditorTest {
     assertEquals(
         Set.of(), RegionEditor.rendered(region(RegionFog.NONE, a), region(RegionFog.NONE, b)));
     assertEquals(Set.of(a), RegionEditor.rendered(null, region(RegionFog.VEIL, a)));
+  }
+
+  @Test
+  @DisplayName(
+      "a name another region already has is taken, whatever its case, and blank names never are")
+  void namesAreUnique() {
+    final @NotNull List<MapRegion> regions = List.of(region(RegionFog.HIDE, 0L));
+
+    assertTrue(RegionEditor.nameTaken(regions, null, "town"));
+    assertTrue(RegionEditor.nameTaken(regions, 2, "TOWN"));
+    assertFalse(RegionEditor.nameTaken(regions, 1, "Town"));
+    assertFalse(RegionEditor.nameTaken(regions, null, "Harbour"));
+    assertFalse(
+        RegionEditor.nameTaken(
+            List.of(
+                region(RegionFog.HIDE, 0L)
+                    .with("", 0, RegionFog.HIDE, true, new LongOpenHashSet())),
+            null,
+            ""));
   }
 }

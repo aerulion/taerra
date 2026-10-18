@@ -68,7 +68,6 @@
   "keys.title": "Keyboard shortcuts",
   "marker.blocks.one": "{count} block",
   "marker.blocks.other": "{count} blocks",
-  "marker.region": "Region without a name",
   "marker.worldborder": "World border",
   "marker.detail.owners": "Owners",
   "marker.detail.members": "Members",
@@ -471,5 +470,6 @@
   "selection.redo": "Redo",
   "selection.redo.tooltip": "Redo (Ctrl+Shift+Z)",
   "hint.key.undoKey": "Ctrl Z",
-  "hint.do.history": "Undo"
+  "hint.do.history": "Undo",
+  "region.problem.name_taken": "Another region already has that name"
 }

@@ -430,7 +430,8 @@ public final class MapViewImpl implements MapView {
         if (this.isometric && shape.face != null && shape.ground == null && !tiny) {
           requestGround(map, marker, shape);
         }
-        if (hits(shape, marker, pointerX, pointerY, hit, far, tiny)) {
+        if ((!"regions".equals(layer.id()) || marker.label() != null && !marker.label().isEmpty())
+            && hits(shape, marker, pointerX, pointerY, hit, far, tiny)) {
           hovered = new DrawnPoint(layer, marker, shape);
         }
       }

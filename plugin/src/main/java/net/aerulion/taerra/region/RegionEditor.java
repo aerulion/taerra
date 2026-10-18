@@ -70,6 +70,9 @@ public final class RegionEditor {
             if (id != null && (previous == null || !previous.world().equals(worldName))) {
               return Problem.NOT_FOUND;
             }
+            if (nameTaken(this.regions.in(worldName), id, trimmed)) {
+              return Problem.NAME_TAKEN;
+            }
             for (final @NotNull MapRegion other : this.regions.in(worldName)) {
               if (other.id() != (id == null ? 0 : id)
                   && painted.longStream().anyMatch(chunk -> other.chunks().contains(chunk))) {
@@ -148,6 +151,17 @@ public final class RegionEditor {
         : new Saved(region, start);
   }
 
+  static boolean nameTaken(
+      final @NotNull Collection<MapRegion> regions,
+      final @Nullable Integer id,
+      final @NotNull String name) {
+    return !name.isEmpty()
+        && regions.stream()
+            .anyMatch(
+                other ->
+                    other.id() != (id == null ? 0 : id) && other.name().equalsIgnoreCase(name));
+  }
+
   static @NotNull Set<Long> rendered(
       final @Nullable MapRegion previous, final @NotNull MapRegion region) {
     final boolean was = previous != null && previous.fog().fogged();
@@ -197,6 +211,7 @@ public final class RegionEditor {
     SPLIT,
     OVERLAP,
     NAME_TOO_LONG,
+    NAME_TAKEN,
     BUSY,
     WORLD_DISABLED
   }

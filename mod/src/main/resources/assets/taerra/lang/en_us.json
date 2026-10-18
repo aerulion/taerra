@@ -21,7 +21,6 @@
   "taerra.layer.worldguard": "WorldGuard Regions",
   "taerra.layer.regions": "Map regions",
   "taerra.layer.chunks": "Loaded Chunks",
-  "taerra.marker.region": "Region without a Name",
   "taerra.marker.worldborder": "World Border",
   "taerra.marker.detail.owners": "Owners",
   "taerra.marker.detail.members": "Members",
@@ -483,5 +482,6 @@
   "taerra.regions.unnamed": "Unnamed region",
   "taerra.regions.size": "%s chunks",
   "taerra.regions.found": "found by %s",
-  "taerra.regions.none": "No regions in this world yet"
+  "taerra.regions.none": "No regions in this world yet",
+  "taerra.region.problem.name_taken": "Another region already has that name"
 }

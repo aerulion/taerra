@@ -182,8 +182,6 @@ function translatedOr(key, fallback) {
 
 function localize(layer) {
     switch (layer.id) {
-        case 'regions':
-            return {...layer, markers: layer.markers.map(marker => ({...marker, label: marker.label || t('marker.region')}))};
         case 'chunks':
             return {...layer, markers: layer.markers.map(chunkMarker)};
         case 'worldborder':
@@ -455,8 +453,10 @@ class MarkerManager {
                 unfinished = true;
             } else if (inView && !entry.drawn) {
                 entry.drawn = this.draw(entry.marker, entry.layer.personal);
-                entry.drawn?.bindPopup(() => this.popup(entry.layer, entry.marker), {className: 'marker-popup-frame'});
-                entry.drawn?.off('click', entry.drawn._openPopup, entry.drawn).on('click', togglePopup);
+                if (entry.layer.id !== 'regions' || entry.marker.label) {
+                    entry.drawn?.bindPopup(() => this.popup(entry.layer, entry.marker), {className: 'marker-popup-frame'});
+                    entry.drawn?.off('click', entry.drawn._openPopup, entry.drawn).on('click', togglePopup);
+                }
             }
             if (entry.drawn && inView !== group.hasLayer(entry.drawn)) {
                 if (inView) {

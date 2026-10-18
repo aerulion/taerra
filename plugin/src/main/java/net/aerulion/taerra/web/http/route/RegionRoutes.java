@@ -243,7 +243,7 @@ public final class RegionRoutes implements Routes {
                         ctx.status(
                                 switch (problem) {
                                   case NOT_FOUND -> 404;
-                                  case BUSY, OVERLAP -> 409;
+                                  case BUSY, OVERLAP, NAME_TAKEN -> 409;
                                   default -> 400;
                                 })
                             .json(Map.of("problem", problem.name().toLowerCase(Locale.ROOT)));

@@ -68,7 +68,6 @@
   "keys.title": "Tastenkürzel",
   "marker.blocks.one": "{count} Block",
   "marker.blocks.other": "{count} Blöcke",
-  "marker.region": "Region ohne Namen",
   "marker.worldborder": "Weltbarriere",
   "marker.detail.owners": "Besitzer:innen",
   "marker.detail.members": "Mitglieder",
@@ -471,5 +470,6 @@
   "selection.redo": "Wiederholen",
   "selection.redo.tooltip": "Wiederholen (Strg+Umschalt+Z)",
   "hint.key.undoKey": "Strg Z",
-  "hint.do.history": "Rückgängig"
+  "hint.do.history": "Rückgängig",
+  "region.problem.name_taken": "Eine andere Region heißt schon so"
 }

@@ -21,7 +21,6 @@
   "taerra.layer.worldguard": "WorldGuard-Regionen",
   "taerra.layer.regions": "Kartenregionen",
   "taerra.layer.chunks": "Geladene Chunks",
-  "taerra.marker.region": "Region ohne Namen",
   "taerra.marker.worldborder": "Weltbarriere",
   "taerra.marker.detail.owners": "Besitzer:innen",
   "taerra.marker.detail.members": "Mitglieder",
@@ -483,5 +482,6 @@
   "taerra.regions.unnamed": "Region ohne Namen",
   "taerra.regions.size": "%s Chunks",
   "taerra.regions.found": "von %s entdeckt",
-  "taerra.regions.none": "In dieser Welt gibt es noch keine Regionen"
+  "taerra.regions.none": "In dieser Welt gibt es noch keine Regionen",
+  "taerra.region.problem.name_taken": "Eine andere Region heißt schon so"
 }
