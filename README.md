@@ -7,14 +7,14 @@
 
 One map, rendered on your server: in the browser, and in game.
 
-| Directory      | Part                                                        |
-|----------------|-------------------------------------------------------------|
-| `plugin/`      | The Paper plugin: renders the tiles, serves the web map     |
-| `api/`         | The API other plugins add markers and layers through        |
-| `mod/`         | The Fabric mod: map screen and minimap, a viewer only       |
-| `tools/mcdata` | Generates `block_data.json` and `colormaps.json`            |
-| `branding/`    | Renders the logo and store images from the map tiles        |
-| `site/`        | taerra.dev, the project's web page (Astro, Bun)             |
+| Directory      | Part                                                                          |
+|----------------|-------------------------------------------------------------------------------|
+| `plugin/`      | The Paper plugin: renders the tiles, serves the web map                       |
+| `api/`         | The API other plugins add markers and layers and report block changes through |
+| `mod/`         | The Fabric mod: map screen and minimap, a viewer only                         |
+| `tools/mcdata` | Generates `block_data.json` and `colormaps.json`                              |
+| `branding/`    | Renders the logo and store images from the map tiles                          |
+| `site/`        | taerra.dev, the project's web page (Astro, Bun)                               |
 
 Rendering happens on the server and nowhere else. The mod draws the tiles the plugin serves and speaks the same HTTP
 API as the web map, which is why both live in one repository: a change to that API and every client of it belong in
@@ -68,12 +68,12 @@ and mod metadata keep the plain version.
 
 Every push to `main` releases whichever parts it changed.
 
-| Touches            | Releases                          | Tags          |
-|--------------------|-----------------------------------|---------------|
-| anything else      | plugin jar, API → GitHub Packages | `plugin-<n>`  |
-| `mod/`             | mod jar                           | `mod-<n>`     |
-| shared build files | both                              | both          |
-| `site/`            | taerra.dev → GitHub Pages         | moves `site`  |
+| Touches            | Releases                          | Tags         |
+|--------------------|-----------------------------------|--------------|
+| anything else      | plugin jar, API → GitHub Packages | `plugin-<n>` |
+| `mod/`             | mod jar                           | `mod-<n>`    |
+| shared build files | both                              | both         |
+| `site/`            | taerra.dev → GitHub Pages         | moves `site` |
 
 Each release starts as a GitHub prerelease: it is a development build until it is published to Modrinth. `<n>` is the
 release workflow's run number, shared by both streams, so each stream's tags skip numbers. The shared build files are
@@ -98,26 +98,27 @@ rebuild, with the player-facing changes since the previous Modrinth version of t
 Latest), deploys the website and announces each part on Discord. Only the ten most recent builds per stream still have a
 release to publish from.
 
-| Secret                                         | Value                                                                  |
-|------------------------------------------------|------------------------------------------------------------------------|
-| `MODRINTH_TOKEN`                               | A personal access token with the *Read projects* and *Create versions* scopes; the project is a draft until approved, so even reading it needs the token |
-| `DISCORD_WEBHOOK_ID`, `DISCORD_WEBHOOK_TOKEN`  | The webhook of the public announcement channel                         |
+| Secret                                        | Value                                                                                                                                                    |
+|-----------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `MODRINTH_TOKEN`                              | A personal access token with the *Read projects* and *Create versions* scopes; the project is a draft until approved, so even reading it needs the token |
+| `DISCORD_WEBHOOK_ID`, `DISCORD_WEBHOOK_TOKEN` | The webhook of the public announcement channel                                                                                                           |
 
 Publishing a plugin build also rebuilds and tests its tag and publishes its API to Maven Central under the same version.
 Central versions can never be deleted, so this is the only path there. It needs:
 
-| Secret                                  | Value                                                                  |
-|-----------------------------------------|------------------------------------------------------------------------|
-| `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`  | A Central Portal user token, from an account that owns `net.aerulion` |
-| `SIGNING_KEY`                           | An ASCII-armored PGP secret key whose public key is on a keyserver     |
-| `SIGNING_PASSWORD`                      | Its passphrase                                                         |
+| Secret                                 | Value                                                                 |
+|----------------------------------------|-----------------------------------------------------------------------|
+| `CENTRAL_USERNAME`, `CENTRAL_PASSWORD` | A Central Portal user token, from an account that owns `net.aerulion` |
+| `SIGNING_KEY`                          | An ASCII-armored PGP secret key whose public key is on a keyserver    |
+| `SIGNING_PASSWORD`                     | Its passphrase                                                        |
 
 ## Website
 
 `site/` is [taerra.dev](https://taerra.dev), the project's page and its download page, built with Astro and Bun. CI
 runs `bun run check` (Prettier, ESLint, `astro check`) on every pull request that touches it. The download page lists
 every build mirrored from Modrinth: `bun run downloads` fetches them from the GitHub releases, which needs the `gh` CLI,
-and without it the page shows none. `site.yml` is the only way to GitHub Pages and can be run by hand for a deploy alone.
+and without it the page shows none. `site.yml` is the only way to GitHub Pages and can be run by hand for a deploy
+alone.
 
 ## Commit messages
 
@@ -159,10 +160,10 @@ title edit or a label other than `deploy` checks the title and repeats the last 
 it again. Add the `deploy` label and the PR also gets a snapshot, refreshed on every push while
 the label is on:
 
-| PR changes | Gets                                                        |
-|------------|-------------------------------------------------------------|
-| plugin     | `pr<n>-<build>-<commit>` of the API in GitHub Packages      |
-| any part   | the plugin and mod jars as workflow artifacts               |
+| PR changes | Gets                                                   |
+|------------|--------------------------------------------------------|
+| plugin     | `pr<n>-<build>-<commit>` of the API in GitHub Packages |
+| any part   | the plugin and mod jars as workflow artifacts          |
 
 All of it is listed in one comment on the PR. Removing the label or closing the PR deletes the API versions; the jar
 artifacts expire on their own. A pull request from a fork gets no secrets and no write access, so it is validated but

@@ -340,7 +340,11 @@ public final class Taerra extends JavaPlugin {
 
       getServer()
           .getServicesManager()
-          .register(TaerraApi.class, new TaerraApiImpl(markers), this, ServicePriority.Normal);
+          .register(
+              TaerraApi.class,
+              new TaerraApiImpl(this, markers, worldChanges),
+              this,
+              ServicePriority.Normal);
       liveSettings.startLayers();
       HiddenAreaMarkers.start(this, markers, worldLimits);
 
