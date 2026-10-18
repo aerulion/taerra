@@ -394,8 +394,8 @@ function canRender() {
     return current?.render === true;
 }
 
-function canHide() {
-    return current?.hide === true;
+function canEditRegions() {
+    return current?.regions === true;
 }
 
 function canConfigure() {
@@ -404,5 +404,5 @@ function canConfigure() {
 
 export const accountManager = {
     initialize, loggedIn, usesMod, ownUuid, canTeleport, canEditMarkers, canKeepPersonal, canCreatePrivateGroups, canRender,
-    canHide, canConfigure
+    canEditRegions, canConfigure
 };

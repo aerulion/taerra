@@ -40,6 +40,7 @@ final class IsoRenderPass {
   private final int @NotNull [] veilY;
   private final int @NotNull [] cloud;
   private final Fog.@NotNull Cell fogCell = new Fog.Cell();
+  private final boolean overlay;
   private int mist = Fog.NO_MIST;
   private int lastSunX = Integer.MIN_VALUE;
   private int lastSunY;
@@ -52,8 +53,10 @@ final class IsoRenderPass {
       final @NotNull MapRotation rotation,
       final @NotNull ColumnHeightField solids,
       final @NotNull BiomeBlend biomes,
-      final boolean withPick) {
+      final boolean withPick,
+      final boolean overlay) {
     super();
+    this.overlay = overlay;
     this.size = size;
     this.tileBounds = tileBounds;
     this.rotation = rotation;
@@ -231,22 +234,31 @@ final class IsoRenderPass {
     final float along = (screenY + Fog.layerY(this.veilMist[index]) * HALF_WIDTH) / QUARTER_WIDTH;
     final float rotatedX = (along + across) / 2.0f;
     final float rotatedZ = (along - across) / 2.0f;
+    final float worldX =
+        this.rotation.worldDeltaX(1, 0) * rotatedX + this.rotation.worldDeltaX(0, 1) * rotatedZ;
+    final float worldZ =
+        this.rotation.worldDeltaZ(1, 0) * rotatedX + this.rotation.worldDeltaZ(0, 1) * rotatedZ;
     this.pixels[index] =
-        Fog.skyShadow(
-            Fog.veil(
-                this.pixels[index],
-                this.veilMist[index],
-                this.rotation.worldDeltaX(1, 0) * rotatedX
-                    + this.rotation.worldDeltaX(0, 1) * rotatedZ,
-                this.rotation.worldDeltaZ(1, 0) * rotatedX
-                    + this.rotation.worldDeltaZ(0, 1) * rotatedZ,
-                this.veilY[index],
-                this.fogCell),
-            this.veilMist[index]);
+        this.overlay
+            ? Fog.skyShadow(
+                Fog.overlay(this.veilMist[index], worldX, worldZ, this.veilY[index], this.fogCell),
+                this.veilMist[index])
+            : Fog.skyShadow(
+                Fog.veil(
+                    this.pixels[index],
+                    this.veilMist[index],
+                    worldX,
+                    worldZ,
+                    this.veilY[index],
+                    this.fogCell),
+                this.veilMist[index]);
   }
 
   @NotNull
   RenderedImage finish() {
+    if (this.overlay) {
+      return finishOverlay();
+    }
     for (int index = 0; index < this.size * this.size; index++) {
       if (this.pixels[index] == 0 && this.waterSurface[index] != NO_WATER) {
         this.pixels[index] = MapStyle.depthTinted(this.waterColor[index], Integer.MAX_VALUE);
@@ -272,5 +284,19 @@ final class IsoRenderPass {
                 this.pickHeight,
                 PickBuffer.ISOMETRIC_SCALE,
                 PickBuffer.ISOMETRIC_DEPTH_PER_HEIGHT));
+  }
+
+  private @NotNull RenderedImage finishOverlay() {
+    for (int index = 0; index < this.size * this.size; index++) {
+      if (this.veilMist[index] != Fog.NO_MIST) {
+        veil(index);
+      } else {
+        this.pixels[index] = 0;
+      }
+      if (this.cloud[index] != 0) {
+        this.pixels[index] = Fog.over(this.cloud[index], this.pixels[index]);
+      }
+    }
+    return new RenderedImage(ImageUtils.fromPixels(this.size, this.pixels), null);
   }
 }

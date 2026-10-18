@@ -39,6 +39,7 @@ import net.aerulion.taerra.mod.web.model.NavigationTarget;
 import net.aerulion.taerra.mod.web.model.PersonalWaypoint;
 import net.aerulion.taerra.mod.web.model.Player;
 import net.aerulion.taerra.mod.web.model.Progress;
+import net.aerulion.taerra.mod.web.model.Regions;
 import net.aerulion.taerra.mod.web.model.ServerSettings;
 import net.aerulion.taerra.mod.web.model.Sky;
 import net.aerulion.taerra.mod.web.model.Waypoint;
@@ -76,6 +77,9 @@ public final class WebMapImpl implements WebMap {
   private final Map<String, Boolean> layers = new HashMap<>();
   private final List<WebMapListener> listeners = new ArrayList<>();
   private final Set<String> staleMarkers = new HashSet<>();
+  private final Map<String, Regions> regions = new HashMap<>();
+  private final Map<String, Set<Integer>> revealed = new HashMap<>();
+  private final Set<String> staleRegions = new HashSet<>();
   private @Nullable MapConfig config;
   private @NotNull List<World> worlds = List.of();
   private @NotNull List<Player> players = List.of();
@@ -98,8 +102,8 @@ public final class WebMapImpl implements WebMap {
 
   public WebMapImpl(final WebClient client, final Settings settings) {
     this.client = client;
-    this.tiles = new TileCacheImpl(client, settings);
-    this.picks = new PickCacheImpl(client, this::config);
+    this.tiles = new TileCacheImpl(client, settings, this::revealed);
+    this.picks = new PickCacheImpl(client, this::config, this::revealed);
   }
 
   @Override
@@ -419,6 +423,77 @@ public final class WebMapImpl implements WebMap {
   }
 
   @Override
+  public @NotNull Regions regions(final @NotNull String world) {
+    final Regions known = this.regions.get(world);
+    if (known == null) {
+      this.regions.put(world, Regions.NONE);
+      refreshRegions(world);
+      return Regions.NONE;
+    }
+    if (this.staleRegions.remove(world)) {
+      refreshRegions(world);
+    }
+    return known;
+  }
+
+  @Override
+  public @NotNull Set<Integer> revealed(final @NotNull String world) {
+    return this.revealed.getOrDefault(world, Set.of());
+  }
+
+  @Override
+  public void saveRegion(
+      final @NotNull String world,
+      final @Nullable Integer id,
+      final @NotNull String name,
+      final @NotNull String fog,
+      final boolean discoverable,
+      final @NotNull Collection<Long> chunks,
+      final @NotNull BiConsumer<Integer, @Nullable String> then) {
+    final @NotNull Map<String, Object> body = new HashMap<>();
+    body.put("world", world);
+    if (id != null) {
+      body.put("id", id);
+    }
+    body.put("name", name);
+    body.put("fog", fog);
+    body.put("discoverable", discoverable);
+    body.put(
+        "chunks",
+        chunks.stream().map(chunk -> new int[] {(int) (chunk >> 32), chunk.intValue()}).toList());
+    this.client.request("POST", "/api/regions", body, then);
+  }
+
+  @Override
+  public void deleteRegion(
+      final int id, final @NotNull BiConsumer<Integer, @Nullable String> then) {
+    this.client.request("DELETE", "/api/regions/" + id, null, then);
+  }
+
+  @Override
+  public void resetRegion(final int id, final @NotNull IntConsumer then) {
+    this.client.send("POST", "/api/regions/" + id + "/reset", null, then);
+  }
+
+  private void refreshRegions(final @NotNull String world) {
+    this.client.<Regions>json(
+        "/api/regions/" + Urls.segment(world),
+        Regions.class,
+        loaded -> {
+          final @NotNull Regions regions = loaded == null ? Regions.NONE : loaded;
+          this.regions.put(world, regions);
+          final @NotNull Set<Integer> revealed =
+              Set.copyOf(regions.revealed() == null ? List.of() : regions.revealed());
+          if (!revealed.equals(this.revealed.getOrDefault(world, Set.of()))) {
+            this.revealed.put(world, revealed);
+            this.tiles.refreshWorld(world);
+            this.picks.forgetWorld(world);
+          }
+          List.copyOf(this.listeners).forEach(listener -> listener.regionsChanged(world));
+        });
+  }
+
+  @Override
   public @NotNull String link(
       final @NotNull String world,
       final int x,
@@ -482,6 +557,9 @@ public final class WebMapImpl implements WebMap {
         connect();
       }
       return;
+    }
+    if (!world.isEmpty()) {
+      regions(world);
     }
     if (!world.isEmpty() && !world.equals(this.subscribed)) {
       this.subscribed = world;
@@ -626,6 +704,8 @@ public final class WebMapImpl implements WebMap {
                             this.picks.refreshAll();
                             refreshWorlds();
                             this.staleMarkers.addAll(this.markers.keySet());
+                            this.staleRegions.addAll(this.regions.keySet());
+                            refreshPlayers();
                             if (this.settingsOpen) {
                               send(Map.of("type", "settings", "open", true, "client", "mod"));
                               List.copyOf(this.listeners)
@@ -687,6 +767,12 @@ public final class WebMapImpl implements WebMap {
         refreshAccount();
         refreshWorlds();
         this.staleMarkers.addAll(this.markers.keySet());
+        this.staleRegions.addAll(this.regions.keySet());
+      }
+      case "regions" -> {
+        this.staleRegions.addAll(this.regions.keySet());
+        this.staleMarkers.addAll(this.markers.keySet());
+        refreshPlayers();
       }
       case "progress" -> this.progress = GSON.fromJson(message, Progress.class);
       case "config" -> {

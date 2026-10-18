@@ -41,8 +41,8 @@ public record Viewer(@Nullable UUID uuid, @NotNull Set<String> grants) {
     return this.grants.contains(TaerraPermission.WEB_RENDER.node());
   }
 
-  public boolean canHide() {
-    return this.grants.contains(TaerraPermission.WEB_HIDE.node());
+  public boolean canEditRegions() {
+    return this.grants.contains(TaerraPermission.WEB_REGIONS.node());
   }
 
   public boolean canConfigure() {

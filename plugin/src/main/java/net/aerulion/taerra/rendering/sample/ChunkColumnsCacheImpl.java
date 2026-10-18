@@ -17,6 +17,9 @@ import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.model.WorldLimit;
+import net.aerulion.taerra.region.MapRegion;
+import net.aerulion.taerra.region.MapRegions;
+import net.aerulion.taerra.region.RegionFog;
 import net.aerulion.taerra.rendering.block.BlockShapeResolver;
 import net.aerulion.taerra.rendering.source.ChunkSourceProvider;
 import net.aerulion.taerra.rendering.source.ColumnSource;
@@ -36,7 +39,13 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
   private static final int CHECKS_PER_TICK = 4096;
 
   private final @NotNull Plugin plugin;
-  private final @NotNull Cache<ChunkKey, ChunkColumns> cache;
+  static final int PLAIN = 0;
+  static final int FOGGED = -1;
+  static final int BARE = -2;
+  static final int SKY = -3;
+  private static final int SKY_CEILING = Fog.SKY_Y + Fog.SKY_THICKNESS - 1;
+
+  private final @NotNull Cache<ChunkKey, Map<Integer, ChunkColumns>> cache;
 
   private final @NotNull Set<ChunkKey> changed = ConcurrentHashMap.newKeySet();
   private final @NotNull Map<String, Object> refreshLocks = new ConcurrentHashMap<>();
@@ -46,12 +55,14 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
   private final @NotNull Map<String, Long2IntOpenHashMap> grounds = new ConcurrentHashMap<>();
   private final @NotNull BlockShapeResolver shapes;
   private final @NotNull WorldLimits limits;
+  private final @NotNull MapRegions regions;
 
   public ChunkColumnsCacheImpl(
       final @NotNull Plugin plugin,
       final int maximumChunks,
       final @NotNull BlockShapeResolver shapes,
-      final @NotNull WorldLimits limits) {
+      final @NotNull WorldLimits limits,
+      final @NotNull MapRegions regions) {
     super();
     this.plugin = plugin;
     this.cache =
@@ -61,6 +72,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
             .build();
     this.shapes = shapes;
     this.limits = limits;
+    this.regions = regions;
   }
 
   private static int takeSnapshots(
@@ -82,15 +94,41 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
     return index;
   }
 
+  int variant(
+      final @NotNull String worldName,
+      final int chunkX,
+      final int chunkZ,
+      final @NotNull FogView view) {
+    final @Nullable MapRegion owner = this.regions.foggedAt(worldName, chunkX, chunkZ);
+    final int base = owner == null ? PLAIN : FOGGED;
+    return switch (view.kind()) {
+      case BASE -> base;
+      case CLEAR -> PLAIN;
+      case BODY -> owner != null && owner.id() == view.region() ? PLAIN : base;
+      case SPILL -> {
+        if (owner != null && owner.id() == view.region()) {
+          yield SKY;
+        }
+        final @Nullable MapRegion spilling = this.regions.get(view.region());
+        yield spilling != null
+                && spilling.fog().fogged()
+                && spilling.reaches(chunkX, chunkZ, chunkX, chunkZ, Fog.REACH_CHUNKS)
+            ? view.region()
+            : owner == null ? PLAIN : BARE;
+      }
+    };
+  }
+
   @Nullable
   ChunkColumns get(
       final @NotNull World world,
       final @NotNull ChunkSourceProvider provider,
       final int chunkX,
-      final int chunkZ) {
+      final int chunkZ,
+      final int variant) {
     final @NotNull ChunkKey key = new ChunkKey(WorldKeys.id(world), chunkX, chunkZ);
     final long epoch = this.epoch.get();
-    final @Nullable ChunkColumns cached = this.cache.getIfPresent(key);
+    final @Nullable ChunkColumns cached = getIfPresent(key, variant);
     if (cached != null) {
       return cached;
     }
@@ -109,26 +147,49 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       }
       return null;
     }
-    final @NotNull ChunkColumns columns = sample(world, provider, source, chunkX, chunkZ);
+    final @NotNull ChunkColumns columns = sample(world, provider, source, chunkX, chunkZ, variant);
     if (current) {
       this.cache
           .asMap()
           .compute(
               key,
               (ignored, existing) -> {
-                if (existing != null || epoch != this.epoch.get()) {
+                if (epoch != this.epoch.get()) {
                   return existing;
                 }
-                recordHeights(WorldKeys.id(world), chunkX, chunkZ, columns.heights());
-                return columns;
+                final @NotNull Map<Integer, ChunkColumns> variants =
+                    existing == null ? new ConcurrentHashMap<>() : existing;
+                variants.putIfAbsent(variant, columns);
+                recordHeights(WorldKeys.id(world), chunkX, chunkZ, envelope(variants));
+                return variants;
               });
     }
     return columns;
   }
 
+  private static long envelope(final @NotNull Map<Integer, ChunkColumns> variants) {
+    int min = Integer.MAX_VALUE;
+    int max = Integer.MIN_VALUE;
+    for (final @NotNull ChunkColumns columns : variants.values()) {
+      if (!columns.isEmpty()) {
+        min = Math.min(min, columns.minTopY());
+        max = Math.max(max, columns.maxTopY());
+      }
+    }
+    return max == Integer.MIN_VALUE
+        ? variants.values().iterator().next().heights()
+        : ((long) min << 32) | (max & 0xFFFFFFFFL);
+  }
+
+  private @Nullable ChunkColumns getIfPresent(final @NotNull ChunkKey key, final int variant) {
+    final @Nullable Map<Integer, ChunkColumns> variants = this.cache.getIfPresent(key);
+    return variants == null ? null : variants.get(variant);
+  }
+
   @Nullable
-  ChunkColumns getIfPresent(final @NotNull String worldName, final int chunkX, final int chunkZ) {
-    return this.cache.getIfPresent(new ChunkKey(worldName, chunkX, chunkZ));
+  ChunkColumns getIfPresent(
+      final @NotNull String worldName, final int chunkX, final int chunkZ, final int variant) {
+    return getIfPresent(new ChunkKey(worldName, chunkX, chunkZ), variant);
   }
 
   @Override
@@ -138,9 +199,18 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       return ChunkColumns.UNKNOWN_HEIGHTS;
     }
 
+    final long known;
     synchronized (world) {
-      return world.get(ChunkCoordinate.key(chunkX, chunkZ));
+      known = world.get(ChunkCoordinate.key(chunkX, chunkZ));
     }
+    if (known == ChunkColumns.UNKNOWN_HEIGHTS
+        || known == ChunkColumns.MISSING_HEIGHTS
+        || ChunkColumns.maxTopOf(known) == ChunkColumns.EMPTY_COLUMN
+        || ChunkColumns.maxTopOf(known) >= SKY_CEILING
+        || !this.regions.foggedNear(worldName, chunkX, chunkZ, Fog.REACH_CHUNKS)) {
+      return known;
+    }
+    return ((long) ChunkColumns.minTopOf(known) << 32) | (SKY_CEILING & 0xFFFFFFFFL);
   }
 
   @Override
@@ -192,8 +262,10 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
 
   @Override
   public @NotNull CachedChunkColumnsSource sourceFor(
-      final @NotNull World world, final @NotNull ChunkSourceProvider provider) {
-    return new CachedChunkColumnsSource(this, world, provider);
+      final @NotNull World world,
+      final @NotNull ChunkSourceProvider provider,
+      final @NotNull FogView view) {
+    return new CachedChunkColumnsSource(this, world, provider, view);
   }
 
   @Override
@@ -240,28 +312,22 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       final @NotNull ChunkSourceProvider provider,
       final @NotNull ColumnSource source,
       final int chunkX,
-      final int chunkZ) {
+      final int chunkZ,
+      final int variant) {
     final @NotNull String worldName = WorldKeys.id(world);
     final int ceilingY = ColumnRunSampler.ceilingY(world);
-    final byte @NotNull [] hiddenAround = new byte[Fog.AROUND * Fog.AROUND];
-    boolean misted = false;
-    for (int offsetX = -Fog.REACH_CHUNKS; offsetX <= Fog.REACH_CHUNKS; offsetX++) {
-      for (int offsetZ = -Fog.REACH_CHUNKS; offsetZ <= Fog.REACH_CHUNKS; offsetZ++) {
-        final byte hidden =
-            this.limits.teased(worldName, chunkX + offsetX, chunkZ + offsetZ)
-                ? Fog.TEASED
-                : this.limits.hidden(worldName, chunkX + offsetX, chunkZ + offsetZ)
-                    ? Fog.HIDDEN
-                    : Fog.OPEN;
-        hiddenAround[Fog.around(offsetX, offsetZ)] = hidden;
-        misted |= hidden != Fog.OPEN;
-      }
-    }
-    if (!misted) {
+    if (variant == PLAIN) {
       return ColumnRunSampler.sampleChunk(
           source, ceilingY, this.shapes, chunkX, chunkZ, this.limits.get(worldName));
     }
-    if (!opaque(world, chunkX, chunkZ)) {
+    if (variant == BARE) {
+      final @Nullable ChunkColumns fogged = get(world, provider, chunkX, chunkZ, FOGGED);
+      return fogged == null
+          ? ColumnRunSampler.sampleChunk(
+              source, ceilingY, this.shapes, chunkX, chunkZ, this.limits.get(worldName))
+          : fogged.withoutMist();
+    }
+    if (!opaque(worldName, chunkX, chunkZ)) {
       remember(
           worldName,
           chunkX,
@@ -276,16 +342,57 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
             ground == ColumnSource.EMPTY_COLUMN ? world.getSeaLevel() : ground;
       }
     }
-    if (hiddenAround[Fog.around(0, 0)] == Fog.HIDDEN) {
-      return ColumnRunSampler.blockedChunk(source, groundAround, hiddenAround, chunkX, chunkZ);
+    final @Nullable MapRegion owner = this.regions.foggedAt(worldName, chunkX, chunkZ);
+    final @Nullable MapRegion spilling = variant > 0 ? this.regions.get(variant) : null;
+    if (variant != FOGGED && variant != SKY) {
+      final @Nullable ChunkColumns geometry =
+          get(world, provider, chunkX, chunkZ, owner == null ? PLAIN : FOGGED);
+      final @NotNull ChunkColumns plain =
+          geometry == null
+              ? ColumnRunSampler.sampleChunk(
+                  source, ceilingY, this.shapes, chunkX, chunkZ, this.limits.get(worldName))
+              : geometry;
+      return spilling == null
+          ? plain.withoutMist()
+          : plain.withMist(
+              Fog.mist(
+                  chunkX,
+                  chunkZ,
+                  plain,
+                  groundAround,
+                  fogAround(worldName, chunkX, chunkZ, spilling)));
     }
-    final @NotNull ChunkColumns columns =
-        ColumnRunSampler.sampleChunk(
-            source, ceilingY, this.shapes, chunkX, chunkZ, this.limits.get(worldName));
-    return columns.withMist(
-        hiddenAround[Fog.around(0, 0)] == Fog.TEASED
-            ? Fog.hidden(chunkX, chunkZ, groundAround, hiddenAround, true)
-            : Fog.mist(chunkX, chunkZ, columns, groundAround, hiddenAround));
+    if (owner == null) {
+      return ColumnRunSampler.sampleChunk(
+          source, ceilingY, this.shapes, chunkX, chunkZ, this.limits.get(worldName));
+    }
+    final byte @NotNull [] fogAround = fogAround(worldName, chunkX, chunkZ, null);
+    final @NotNull ChunkColumns fogged =
+        owner.fog() == RegionFog.HIDE
+            ? ColumnRunSampler.blockedChunk(source, groundAround, fogAround, chunkX, chunkZ)
+            : ColumnRunSampler.sampleChunk(
+                    source, ceilingY, this.shapes, chunkX, chunkZ, this.limits.get(worldName))
+                .withMist(Fog.hidden(chunkX, chunkZ, groundAround, fogAround, true));
+    return fogged.mapMist(variant == SKY ? Fog::skyOnly : Fog::withoutSky);
+  }
+
+  private byte @NotNull [] fogAround(
+      final @NotNull String worldName,
+      final int chunkX,
+      final int chunkZ,
+      final @Nullable MapRegion only) {
+    final byte @NotNull [] around = new byte[Fog.AROUND * Fog.AROUND];
+    for (int offsetX = -Fog.REACH_CHUNKS; offsetX <= Fog.REACH_CHUNKS; offsetX++) {
+      for (int offsetZ = -Fog.REACH_CHUNKS; offsetZ <= Fog.REACH_CHUNKS; offsetZ++) {
+        final @Nullable MapRegion region =
+            only == null
+                ? this.regions.foggedAt(worldName, chunkX + offsetX, chunkZ + offsetZ)
+                : only.contains(chunkX + offsetX, chunkZ + offsetZ) ? only : null;
+        around[Fog.around(offsetX, offsetZ)] =
+            region == null ? Fog.OPEN : region.fog() == RegionFog.VEIL ? Fog.TEASED : Fog.HIDDEN;
+      }
+    }
+    return around;
   }
 
   private int ground(
@@ -294,14 +401,14 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       final int ceilingY,
       final int chunkX,
       final int chunkZ) {
-    if (!opaque(world, chunkX, chunkZ)) {
+    if (!opaque(WorldKeys.id(world), chunkX, chunkZ)) {
       return visibleGround(world, provider, ceilingY, chunkX, chunkZ);
     }
     int sum = 0;
     int count = 0;
     for (int offsetX = -1; offsetX <= 1; offsetX++) {
       for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-        if (opaque(world, chunkX + offsetX, chunkZ + offsetZ)) {
+        if (opaque(WorldKeys.id(world), chunkX + offsetX, chunkZ + offsetZ)) {
           continue;
         }
         final int ground =
@@ -315,9 +422,9 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
     return count == 0 ? ColumnSource.EMPTY_COLUMN : Math.round((float) sum / count);
   }
 
-  private boolean opaque(final @NotNull World world, final int chunkX, final int chunkZ) {
-    return this.limits.hidden(WorldKeys.id(world), chunkX, chunkZ)
-        && !this.limits.teased(WorldKeys.id(world), chunkX, chunkZ);
+  private boolean opaque(final @NotNull String worldName, final int chunkX, final int chunkZ) {
+    final @Nullable MapRegion region = this.regions.foggedAt(worldName, chunkX, chunkZ);
+    return region != null && region.fog() == RegionFog.HIDE;
   }
 
   private int visibleGround(
@@ -376,9 +483,14 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
     if (source == null) {
       return;
     }
-    final @NotNull ChunkColumns columns = sample(world, provider, source, chunkX, chunkZ);
+    final @NotNull ChunkKey key = new ChunkKey(WorldKeys.id(world), chunkX, chunkZ);
+    this.cache.invalidate(key);
+    final int variant = variant(WorldKeys.id(world), chunkX, chunkZ, FogView.BASE);
+    final @NotNull ChunkColumns columns = sample(world, provider, source, chunkX, chunkZ, variant);
+    final @NotNull Map<Integer, ChunkColumns> variants = new ConcurrentHashMap<>();
+    variants.put(variant, columns);
     recordHeights(WorldKeys.id(world), chunkX, chunkZ, columns.heights());
-    this.cache.put(new ChunkKey(WorldKeys.id(world), chunkX, chunkZ), columns);
+    this.cache.put(key, variants);
   }
 
   @Override

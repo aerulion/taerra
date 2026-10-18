@@ -1,4 +1,4 @@
-package net.aerulion.taerra.limit;
+package net.aerulion.taerra.region;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -10,13 +10,13 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class HiddenAreaMarkersTest {
+class RegionShapesTest {
 
   @Test
   @DisplayName("an L of chunks is outlined by one ring with only its six corners")
   void lShapeIsOneRing() {
     final @NotNull List<List<long[]>> rings =
-        HiddenAreaMarkers.rings(
+        RegionShapes.rings(
             Set.of(
                 ChunkCoordinate.key(0, 0), ChunkCoordinate.key(1, 0), ChunkCoordinate.key(0, 1)));
 
@@ -36,10 +36,27 @@ class HiddenAreaMarkersTest {
       }
     }
 
-    final @NotNull List<List<long[]>> rings = HiddenAreaMarkers.rings(chunks);
+    final @NotNull List<List<long[]>> rings = RegionShapes.rings(chunks);
 
     assertEquals(2, rings.size());
     assertEquals(4, rings.get(0).size());
     assertEquals(4, rings.get(1).size());
+  }
+
+  @Test
+  @DisplayName("chunks touching at a side share an area, chunks touching at a corner do not")
+  void areasJoinOnlyAtSides() {
+    final @NotNull List<Set<Long>> areas =
+        RegionShapes.areas(
+            Set.of(
+                ChunkCoordinate.key(0, 0),
+                ChunkCoordinate.key(1, 0),
+                ChunkCoordinate.key(2, 1),
+                ChunkCoordinate.key(-5, -5)));
+
+    assertEquals(3, areas.size());
+    assertEquals(
+        Set.of(ChunkCoordinate.key(0, 0), ChunkCoordinate.key(1, 0)),
+        areas.stream().filter(area -> area.size() == 2).findFirst().orElseThrow());
   }
 }

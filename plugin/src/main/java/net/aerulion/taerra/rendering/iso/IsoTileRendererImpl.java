@@ -172,6 +172,19 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       final int maxWorldY,
       final @NotNull ChunkColumnsSource source,
       final boolean withPick) {
+    return renderTile(rotation, tileX, tileY, minWorldY, maxWorldY, source, withPick, false);
+  }
+
+  @Override
+  public @NotNull RenderedImage renderTile(
+      final @NotNull MapRotation rotation,
+      final int tileX,
+      final int tileY,
+      final int minWorldY,
+      final int maxWorldY,
+      final @NotNull ChunkColumnsSource source,
+      final boolean withPick,
+      final boolean overlay) {
     final int size = IsoTileGeometry.TILE_SIZE;
     final @NotNull ScreenBounds tileBounds = IsoTileGeometry.tileBounds(tileX, tileY, 0);
     final @NotNull IsoRenderPass pass =
@@ -181,7 +194,8 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
             rotation,
             new ColumnHeightField(source),
             new BiomeBlend(source, this.colors),
-            withPick);
+            withPick && !overlay,
+            overlay);
 
     for (final long chunk : candidateChunks(pass, minWorldY, maxWorldY)) {
       if (pass.isFullyPainted()) {

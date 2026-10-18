@@ -1,6 +1,7 @@
 import {accountManager} from './account.js';
 import {numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
+import {regionManager} from './regions.js';
 import {element, groundNow, markerManager, spline} from './markers.js';
 import {DEFAULT_COLOR, waypointEditor, waypointUrl} from './waypoints.js';
 
@@ -8,6 +9,8 @@ const $ = (id) => document.getElementById(id);
 
 const CHUNK = 16;
 const MAX_CHUNKS = 16384;
+const MAX_REGION_CHUNKS = 65536;
+const OTHER_REGION = '#9aa0a6';
 const STEP_PIXELS = 4;
 const STATUS_MILLIS = 4000;
 const UNKNOWN_GROUND = 63;
@@ -22,7 +25,7 @@ const HINTS = {
     chunksTouch: [['drag', 'paint'], ['startSelected', 'erase'], ['twoFingers', 'panZoom']],
     pointsTouch: [['tap', 'add'], ['drag', 'move'], ['tapPoint', 'remove'], ['twoFingers', 'panZoom']]
 };
-const TOOLS = {chunks: ['brush', 'rectangle', 'lasso'], area: ['brush', 'rectangle', 'lasso', 'points'], line: ['points']};
+const TOOLS = {chunks: ['brush', 'rectangle', 'lasso'], region: ['brush', 'rectangle', 'lasso'], area: ['brush', 'rectangle', 'lasso', 'points'], line: ['points']};
 
 const key = (chunkX, chunkZ) => `${chunkX},${chunkZ}`;
 const SIDES = [[0, -1], [1, 0], [0, 1], [-1, 0]];
@@ -71,6 +74,22 @@ function corners(ring) {
     });
 }
 
+function connected(chunks) {
+    const left = new Map(chunks);
+    const open = [left.keys().next().value];
+    left.delete(open[0]);
+    while (open.length > 0) {
+        const [x, z] = open.pop().split(',').map(Number);
+        for (const [dx, dz] of SIDES) {
+            const next = key(x + dx, z + dz);
+            if (left.delete(next)) {
+                open.push(next);
+            }
+        }
+    }
+    return left.size === 0;
+}
+
 const chunkOf = (block) => Math.floor(block / CHUNK);
 const touching = (at) => at % CHUNK === 0 ? [at / CHUNK - 1, at / CHUNK] : [chunkOf(at)];
 
@@ -110,6 +129,8 @@ class ChunkSelection {
         this.missing = false;
         this.frame = 0;
         this.retry = 0;
+        this.fog = 'hide';
+        this.discoverable = false;
     }
 
     initialize() {
@@ -179,6 +200,17 @@ class ChunkSelection {
             button.addEventListener('click', () => void this.act(button.dataset.action));
         }
         $('selection-delete').addEventListener('click', () => void this.remove());
+        $('region-reset').addEventListener('click', () => void this.resetDiscoveries());
+        for (const button of $('region-fog').querySelectorAll('[data-fog]')) {
+            button.addEventListener('click', () => {
+                this.fog = button.dataset.fog;
+                this.changed();
+            });
+        }
+        $('region-discoverable').addEventListener('click', () => {
+            this.discoverable = !this.discoverable;
+            this.changed();
+        });
         $('selection-smooth').addEventListener('click', () => {
             this.smooth = !this.smooth;
             this.changed();
@@ -193,7 +225,20 @@ class ChunkSelection {
         this.editing = editing;
         this.chunks.clear();
         this.traced = false;
-        this.points = editing?.points.map(([x, , z]) => [x, z]) ?? [];
+        const region = kind === 'region';
+        if (region) {
+            for (const [x, z] of editing?.chunks ?? []) {
+                this.chunks.set(key(x, z), [x, z]);
+            }
+            this.fog = editing?.fog ?? 'hide';
+            this.discoverable = editing?.discoverable ?? true;
+            $('region-name').value = editing?.name ?? '';
+            $('region-name').placeholder = t('region.name');
+            this.label($('region-reset'), 'region.reset');
+            $('region-reset').classList.remove('is-armed');
+            regionManager.hide(editing?.id ?? null);
+        }
+        this.points = region ? [] : editing?.points.map(([x, , z]) => [x, z]) ?? [];
         this.smooth = editing?.smooth ?? false;
         this.color = editing?.color ?? DEFAULT_COLOR;
         this.grounds.clear();
@@ -202,18 +247,19 @@ class ChunkSelection {
         map.dragging.disable();
         map.boxZoom.disable();
         const chunks = kind === 'chunks';
-        this.label($('selection-title'), chunks ? 'selection.title' : `selection.title.${kind}`);
+        this.label($('selection-title'), chunks ? 'selection.title'
+            : region && editing ? 'selection.title.regionEdit' : `selection.title.${kind}`);
         this.label($('selection-done'), chunks ? 'selection.done' : 'selection.cancel');
         this.label($('selection-delete'), 'waypoint.delete');
         $('selection-delete').classList.remove('is-armed');
         $('selection-delete').hidden = !editing;
-        markerManager.hide(editing?.id ?? null);
+        markerManager.hide(region ? null : editing?.id ?? null);
         $('selection-render').hidden = !chunks || !accountManager.canRender();
-        $('selection-hide').hidden = !chunks || !accountManager.canHide();
-        $('selection-tease').hidden = !chunks || !accountManager.canHide();
-        $('selection-reveal').hidden = !chunks || !accountManager.canHide();
+        $('selection-region').hidden = !region;
+        $('region-reset').hidden = !region || !editing;
         $('selection-smooth').hidden = kind !== 'line';
         $('selection-save').hidden = chunks;
+        this.label($('selection-save'), region ? 'region.save' : 'selection.save');
         $('selection-tools').hidden = kind === 'line';
         for (const button of $('selection').querySelectorAll('[data-tool]')) {
             button.hidden = !TOOLS[kind].includes(button.dataset.tool);
@@ -236,6 +282,7 @@ class ChunkSelection {
         this.points = [];
         this.editing = null;
         markerManager.hide(null);
+        regionManager.hide(null);
         map.dragging.enable();
         map.boxZoom.enable();
         $('selection').hidden = true;
@@ -419,10 +466,23 @@ class ChunkSelection {
             if (this.chunks.delete(key(chunkX, chunkZ))) {
                 this.traced = false;
             }
-        } else if (this.chunks.size < MAX_CHUNKS && !this.chunks.has(key(chunkX, chunkZ))) {
+        } else if (this.chunks.size < this.limit() && !this.chunks.has(key(chunkX, chunkZ))
+            && !this.taken(chunkX, chunkZ)) {
             this.chunks.set(key(chunkX, chunkZ), [chunkX, chunkZ]);
             this.traced = false;
         }
+    }
+
+    limit() {
+        return this.kind === 'region' ? MAX_REGION_CHUNKS : MAX_CHUNKS;
+    }
+
+    taken(chunkX, chunkZ) {
+        if (this.kind !== 'region') {
+            return false;
+        }
+        const owner = regionManager.at(chunkX, chunkZ);
+        return owner !== null && owner.id !== this.editing?.id;
     }
 
     outlines() {
@@ -550,8 +610,24 @@ class ChunkSelection {
         }
         this.layers = [];
         this.missing = false;
-        const marker = this.kind !== 'chunks';
+        if (!this.world) {
+            return;
+        }
+        const region = this.kind === 'region';
+        const marker = this.kind !== 'chunks' && !region;
         const color = marker ? this.color : LINE;
+        if (region) {
+            for (const other of regionManager.regions) {
+                if (other.id === this.editing?.id || !other.chunks) {
+                    continue;
+                }
+                const owned = new Map(other.chunks.map(([x, z]) => [key(x, z), [x, z]]));
+                this.add(L.polygon(trace(owned).map(ring => corners(ring).map(([x, z]) => this.level(x, z, owned))), {
+                    color: OTHER_REGION, opacity: .8, weight: 1, dashArray: '4 4',
+                    fillColor: OTHER_REGION, fillOpacity: .15, interactive: false
+                }));
+            }
+        }
         if (this.chunks.size > 0) {
             this.add(L.polygon(this.outlines().map(ring => this.draped(corners(ring))?.flat() ?? ring.map(([x, z]) => this.level(x, z, this.chunks))), {
                 color, opacity: marker ? 1 : .75, weight: marker ? 2 : 1,
@@ -584,11 +660,12 @@ class ChunkSelection {
             this.retry = setTimeout(() => this.redraw(), 300);
         }
         const points = this.tool === 'points';
-        const split = this.kind === 'area' && !points && this.outlines().length > 1;
+        const split = (this.kind === 'area' && !points && this.outlines().length > 1)
+            || (region && this.chunks.size > 0 && !connected(this.chunks));
         $('selection-count').textContent = numbers.format(points ? this.points.length : this.chunks.size);
-        const full = !points && this.chunks.size >= MAX_CHUNKS;
-        const message = this.status ?? (split ? t('selection.split')
-            : full ? t('selection.full', {count: numbers.format(MAX_CHUNKS)}) : null);
+        const full = !points && this.chunks.size >= this.limit();
+        const message = this.status ?? (split ? t(region ? 'region.split' : 'selection.split')
+            : full ? t('selection.full', {count: numbers.format(this.limit())}) : null);
         $('selection-text').classList.toggle('selection__message--keys', !message);
         if (message) {
             $('selection-text').textContent = message;
@@ -597,7 +674,12 @@ class ChunkSelection {
         }
         $('selection-smooth').setAttribute('aria-pressed', String(this.smooth));
         $('selection-smooth').textContent = t(this.smooth ? 'selection.smooth.on' : 'selection.smooth.off');
-        $('selection-save').disabled = this.sending || !this.shape();
+        $('selection-save').disabled = this.sending || (region ? this.chunks.size === 0 || split : !this.shape());
+        for (const button of $('region-fog').querySelectorAll('[data-fog]')) {
+            button.setAttribute('aria-pressed', String(button.dataset.fog === this.fog));
+        }
+        $('region-discoverable').setAttribute('aria-pressed', String(this.discoverable));
+        $('region-discoverable').textContent = t(this.discoverable ? 'region.discoverable.on' : 'region.discoverable.off');
         $('selection').classList.toggle('is-failed', split || full || (this.status !== null && this.failed));
         $('selection').classList.toggle('is-done', !split && !full && this.status !== null && !this.failed);
     }
@@ -659,7 +741,64 @@ class ChunkSelection {
             : response?.status === 409 ? 'selection.busy' : 'selection.failed'), response?.status !== 202);
     }
 
+    async saveRegion() {
+        if (this.sending || this.chunks.size === 0 || !connected(this.chunks)) {
+            return;
+        }
+        const world = this.world;
+        this.setSending(true);
+        let response = null;
+        try {
+            response = await fetch('/api/regions', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    world, id: this.editing?.id ?? null, name: $('region-name').value, fog: this.fog,
+                    discoverable: this.discoverable, chunks: [...this.chunks.values()]
+                })
+            });
+        } catch {
+        }
+        this.setSending(false);
+        if (world !== this.world) {
+            return;
+        }
+        if (response?.ok) {
+            const {id} = await response.json();
+            this.editing = {...this.editing, id};
+            $('selection-delete').hidden = false;
+            $('region-reset').hidden = false;
+            this.label($('selection-title'), 'selection.title.regionEdit');
+            regionManager.hide(id);
+            this.show(t(response.status === 202 ? 'region.started' : 'region.saved'), false);
+            return;
+        }
+        const problem = response ? (await response.json().catch(() => null))?.problem : null;
+        this.show(t(`region.problem.${problem ?? 'failed'}`), true);
+    }
+
+    async resetDiscoveries() {
+        const button = $('region-reset');
+        if (!button.classList.contains('is-armed')) {
+            button.classList.add('is-armed');
+            this.label(button, 'region.resetConfirm');
+            return;
+        }
+        let response = null;
+        try {
+            response = await fetch(`/api/regions/${this.editing.id}/reset`, {method: 'POST'});
+        } catch {
+        }
+        button.classList.remove('is-armed');
+        this.label(button, 'region.reset');
+        this.show(t(response?.ok ? 'region.resetDone' : 'region.problem.failed'), !response?.ok);
+    }
+
     save() {
+        if (this.kind === 'region') {
+            void this.saveRegion();
+            return;
+        }
         const shape = this.shape();
         if (!shape) {
             return;
@@ -684,6 +823,22 @@ class ChunkSelection {
             return;
         }
         const world = this.world;
+        if (this.kind === 'region') {
+            let response = null;
+            try {
+                response = await fetch(`/api/regions/${this.editing.id}`, {method: 'DELETE'});
+            } catch {
+            }
+            if (response?.ok) {
+                this.stop();
+                return;
+            }
+            button.classList.remove('is-armed');
+            this.label(button, 'waypoint.delete');
+            const problem = response ? (await response.json().catch(() => null))?.problem : null;
+            this.show(t(`region.problem.${problem ?? 'failed'}`), true);
+            return;
+        }
         const previous = this.editing.previous;
         let response = null;
         try {

@@ -154,7 +154,7 @@ export const de: Copy = {
                     },
                     {
                         title: 'Nur zeigen, was fertig ist',
-                        text: 'Begrenze die Karte auf einen Kreis, ein Quadrat oder ein Rechteck, damit sie endet, wo dein Spielbereich endet, und decke Chunks mit Nebel ab, solange das Team dort baut, oder mit einem dünnen Schleier, der nur erahnen lässt, was darunter liegt.'
+                        text: 'Begrenze die Karte auf einen Kreis, ein Quadrat oder ein Rechteck, damit sie endet, wo dein Spielbereich endet, und zeichne benannte Regionen Chunk für Chunk. Decke eine mit Nebel ab, solange das Team dort baut, oder mit einem dünnen Schleier, der nur erahnen lässt, was darunter liegt, und lass alle den Nebel für sich lichten, sobald sie die Region betreten.'
                     },
                     {
                         title: 'Installierbar wie eine App',
@@ -226,7 +226,7 @@ export const de: Copy = {
             },
             layers: {
                 title: 'Ebenen und Werkzeuge fürs Team',
-                text: 'WorldGuard-Regionen und Weltbarrieren sind Ebenen, die du einschaltest. Mit Berechtigung wählst du Chunks aus, um sie neu zu rendern oder zu verbergen, während ihr dort baut, und siehst den Fortschritt beim Rendern direkt auf der Karte. Dein Team ändert die Einstellungen des Servers auf einem eigenen Bildschirm.',
+                text: 'WorldGuard-Regionen und Weltbarrieren sind Ebenen, die du einschaltest. Mit Berechtigung wählst du Chunks aus, um sie neu zu rendern, zeichnest Regionen und legst Nebel darüber, und siehst den Fortschritt beim Rendern direkt auf der Karte. Dein Team ändert die Einstellungen des Servers auf einem eigenen Bildschirm.',
                 alt: 'Eine nahe isometrische Ansicht einer Küste mit grün umrandeten WorldGuard-Regionen, einem verborgenen Bereich mit Warnstreifen und 112 Chunks, die zum Neurendern ausgewählt sind'
             }
         },
@@ -371,7 +371,7 @@ export const de: Copy = {
                 {
                     permission: 'taerra.web.see-hidden',
                     standard: 'OP',
-                    text: 'Versteckte Personen auf der Karte sehen, wenn angemeldet'
+                    text: 'Versteckte Personen und durch den Nebel jeder Region sehen, wenn angemeldet'
                 },
                 {
                     permission: 'taerra.web.render',
@@ -379,9 +379,9 @@ export const de: Copy = {
                     text: 'Eine ganze Welt oder ausgewählte Chunks neu rendern und das Rendern abbrechen, wenn angemeldet'
                 },
                 {
-                    permission: 'taerra.web.hide',
+                    permission: 'taerra.web.regions',
                     standard: 'OP',
-                    text: 'Ausgewählte Chunks verbergen und wieder einblenden, wenn angemeldet'
+                    text: 'Regionen zeichnen, benennen, vernebeln und entfernen, wenn angemeldet'
                 },
                 {
                     permission: 'taerra.web.markers',

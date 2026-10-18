@@ -48,7 +48,8 @@ public enum TaerraPermission {
       PermissionDefault.OP),
   WEB_SEE_HIDDEN(
       "web.see-hidden",
-      "Lets the user see hidden players on the web map, marked as hidden, while logged in.",
+      "Lets the user see hidden players and through the fog of every region on the web map"
+          + " while logged in.",
       PermissionDefault.OP),
   WEB_TELEPORT(
       "web.teleport",
@@ -59,9 +60,9 @@ public enum TaerraPermission {
       "Lets the user render a whole world or chunks selected on the map again, and cancel a"
           + " render, while logged in.",
       PermissionDefault.OP),
-  WEB_HIDE(
-      "web.hide",
-      "Lets the user hide and reveal chunks selected on the map while logged in.",
+  WEB_REGIONS(
+      "web.regions",
+      "Lets the user draw, name, fog and remove regions on the map while logged in.",
       PermissionDefault.OP),
   WEB_MARKERS(
       "web.markers",

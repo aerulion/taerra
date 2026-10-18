@@ -12,7 +12,8 @@ public sealed interface ChunkColumnsCache permits ChunkColumnsCacheImpl {
   int refreshChanged(@NotNull World world) throws Exception;
 
   @NotNull
-  CachedChunkColumnsSource sourceFor(@NotNull World world, @NotNull ChunkSourceProvider provider);
+  CachedChunkColumnsSource sourceFor(
+      @NotNull World world, @NotNull ChunkSourceProvider provider, @NotNull FogView view);
 
   void markChanged(@NotNull String worldName, int chunkX, int chunkZ);
 

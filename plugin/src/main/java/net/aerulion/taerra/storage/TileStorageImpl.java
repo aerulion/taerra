@@ -9,12 +9,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.MapView;
 import net.aerulion.taerra.model.TileCoordinate;
+import net.aerulion.taerra.rendering.sample.FogView;
 import net.aerulion.taerra.rendering.tile.PickBuffer;
 import net.aerulion.taerra.util.AtomicFiles;
 import net.aerulion.taerra.util.ImageUtils;
@@ -26,7 +31,8 @@ public final class TileStorageImpl implements TileStorage {
 
   private final @NotNull Plugin plugin;
   private final @NotNull File dataDirectory;
-  private final @NotNull Cache<TileCoordinate, EncodedTile> encodedTiles;
+  private final @NotNull Cache<LayerKey, EncodedTile> encodedTiles;
+  private final @NotNull Cache<File, Map<Integer, Set<FogView>>> layers;
 
   public TileStorageImpl(final @NotNull Plugin plugin, final int maxEncodedTiles) {
     super();
@@ -36,6 +42,7 @@ public final class TileStorageImpl implements TileStorage {
       new File(this.dataDirectory, view.directoryName()).mkdirs();
     }
     this.encodedTiles = Caffeine.newBuilder().maximumSize(Math.max(64, maxEncodedTiles)).build();
+    this.layers = Caffeine.newBuilder().maximumSize(Math.max(64, maxEncodedTiles)).build();
   }
 
   private static @NotNull String sanitizeWorldName(final @NotNull String worldName) {
@@ -76,9 +83,20 @@ public final class TileStorageImpl implements TileStorage {
     }
   }
 
-  private @NotNull File pickFile(final @NotNull TileCoordinate coord) {
-    final @NotNull File tile = tileFile(coord);
-    return new File(tile.getParentFile(), coord.z() + ".pick");
+  private @NotNull File pickFile(
+      final @NotNull TileCoordinate coord, final @NotNull FogView layer) {
+    return new File(tileFile(coord).getParentFile(), coord.z() + suffix(layer) + ".pick");
+  }
+
+  private static @NotNull String suffix(final @NotNull FogView layer) {
+    return layer.base() ? "" : "." + layer.id();
+  }
+
+  @Override
+  public @NotNull File tileFile(final @NotNull TileCoordinate coord, final @NotNull FogView layer) {
+    return layer.base()
+        ? tileFile(coord)
+        : new File(tileFile(coord).getParentFile(), coord.z() + suffix(layer) + ".png");
   }
 
   @Override
@@ -101,32 +119,97 @@ public final class TileStorageImpl implements TileStorage {
   @Override
   public boolean saveTile(final @NotNull TileCoordinate coord, final @NotNull BufferedImage image)
       throws IOException {
+    return saveTile(coord, FogView.BASE, image);
+  }
+
+  @Override
+  public boolean saveTile(
+      final @NotNull TileCoordinate coord,
+      final @NotNull FogView layer,
+      final @NotNull BufferedImage image)
+      throws IOException {
     final byte @NotNull [] encoded = ImageUtils.encodePNG(image);
     final @NotNull EncodedTile tile = new EncodedTile(encoded, EncodedTile.eTagOf(encoded));
-    if (readEncodedTile(coord).map(stored -> stored.eTag().equals(tile.eTag())).orElse(false)) {
+    final @NotNull File file = tileFile(coord, layer);
+    if (readEncodedTile(coord, layer)
+        .map(stored -> stored.eTag().equals(tile.eTag()))
+        .orElse(false)) {
       try {
-        Files.setLastModifiedTime(
-            tileFile(coord).toPath(), FileTime.fromMillis(System.currentTimeMillis()));
+        Files.setLastModifiedTime(file.toPath(), FileTime.fromMillis(System.currentTimeMillis()));
         return false;
       } catch (final IOException e) {
       }
     }
-    AtomicFiles.write(tileFile(coord), encoded);
-    this.encodedTiles.put(coord, tile);
+    final boolean created = !layer.base() && !file.exists();
+    AtomicFiles.write(file, encoded);
+    this.encodedTiles.put(new LayerKey(coord, layer), tile);
+    if (created) {
+      final @Nullable Map<Integer, Set<FogView>> column =
+          this.layers.getIfPresent(tileFile(coord).getParentFile());
+      if (column != null) {
+        column.computeIfAbsent(coord.z(), _ -> ConcurrentHashMap.newKeySet()).add(layer);
+      }
+    }
     return true;
   }
 
   @Override
   public boolean deleteTile(final @NotNull TileCoordinate coord) {
+    for (final @NotNull FogView layer : layers(coord)) {
+      deleteLayer(coord, layer);
+    }
+    return deleteLayer(coord, FogView.BASE);
+  }
+
+  @Override
+  public boolean deleteLayer(final @NotNull TileCoordinate coord, final @NotNull FogView layer) {
     try {
-      Files.deleteIfExists(pickFile(coord).toPath());
-      return Files.deleteIfExists(tileFile(coord).toPath());
+      Files.deleteIfExists(pickFile(coord, layer).toPath());
+      return Files.deleteIfExists(tileFile(coord, layer).toPath());
     } catch (final IOException e) {
       this.plugin.getLogger().warning("Failed to delete tile " + coord + ": " + e.getMessage());
       return false;
     } finally {
-      this.encodedTiles.invalidate(coord);
+      this.encodedTiles.invalidate(new LayerKey(coord, layer));
+      final @Nullable Map<Integer, Set<FogView>> column =
+          layer.base() ? null : this.layers.getIfPresent(tileFile(coord).getParentFile());
+      final @Nullable Set<FogView> stored = column == null ? null : column.get(coord.z());
+      if (stored != null) {
+        stored.remove(layer);
+      }
     }
+  }
+
+  @Override
+  public @NotNull List<FogView> layers(final @NotNull TileCoordinate coord) {
+    final @Nullable Set<FogView> stored =
+        this.layers
+            .get(tileFile(coord).getParentFile(), TileStorageImpl::scanLayers)
+            .get(coord.z());
+    if (stored == null || stored.isEmpty()) {
+      return List.of();
+    }
+    final @NotNull List<FogView> found = new ArrayList<>(stored);
+    found.sort(Comparator.comparingInt(FogView::region).thenComparing(FogView::kind));
+    return List.copyOf(found);
+  }
+
+  private static @NotNull Map<Integer, Set<FogView>> scanLayers(final @NotNull File column) {
+    final @NotNull Map<Integer, Set<FogView>> found = new ConcurrentHashMap<>();
+    final @Nullable String @Nullable [] names = column.list((dir, name) -> name.endsWith(".png"));
+    for (final @Nullable String name : names == null ? new String[0] : names) {
+      final int dot = name == null ? -1 : name.indexOf('.');
+      if (dot < 0 || dot == name.length() - ".png".length()) {
+        continue;
+      }
+      final @Nullable Integer z = parseInt(name.substring(0, dot));
+      final @Nullable FogView layer =
+          FogView.parse(name.substring(dot + 1, name.length() - ".png".length()));
+      if (z != null && layer != null && !layer.base()) {
+        found.computeIfAbsent(z, _ -> ConcurrentHashMap.newKeySet()).add(layer);
+      }
+    }
+    return found;
   }
 
   @Override
@@ -182,11 +265,18 @@ public final class TileStorageImpl implements TileStorage {
 
   @Override
   public @NotNull Optional<EncodedTile> readEncodedTile(final @NotNull TileCoordinate coord) {
-    return Optional.ofNullable(this.encodedTiles.get(coord, this::loadEncodedTile));
+    return readEncodedTile(coord, FogView.BASE);
   }
 
-  private @Nullable EncodedTile loadEncodedTile(final @NotNull TileCoordinate coord) {
-    final @NotNull File file = tileFile(coord);
+  @Override
+  public @NotNull Optional<EncodedTile> readEncodedTile(
+      final @NotNull TileCoordinate coord, final @NotNull FogView layer) {
+    return Optional.ofNullable(
+        this.encodedTiles.get(new LayerKey(coord, layer), this::loadEncodedTile));
+  }
+
+  private @Nullable EncodedTile loadEncodedTile(final @NotNull LayerKey key) {
+    final @NotNull File file = tileFile(key.coord(), key.layer());
     if (!file.exists()) {
       return null;
     }
@@ -195,14 +285,20 @@ public final class TileStorageImpl implements TileStorage {
       final byte @NotNull [] data = Files.readAllBytes(file.toPath());
       return new EncodedTile(data, EncodedTile.eTagOf(data));
     } catch (final IOException e) {
-      this.plugin.getLogger().warning("Failed to read tile " + coord + ": " + e.getMessage());
+      this.plugin.getLogger().warning("Failed to read tile " + key.coord() + ": " + e.getMessage());
       return null;
     }
   }
 
   @Override
   public @NotNull Optional<BufferedImage> loadTile(final @NotNull TileCoordinate coord) {
-    final @NotNull File file = tileFile(coord);
+    return loadTile(coord, FogView.BASE);
+  }
+
+  @Override
+  public @NotNull Optional<BufferedImage> loadTile(
+      final @NotNull TileCoordinate coord, final @NotNull FogView layer) {
+    final @NotNull File file = tileFile(coord, layer);
 
     if (!file.exists()) {
       return Optional.empty();
@@ -220,12 +316,27 @@ public final class TileStorageImpl implements TileStorage {
   @Override
   public void savePick(final @NotNull TileCoordinate coord, final byte @NotNull [] data)
       throws IOException {
-    AtomicFiles.write(pickFile(coord), data);
+    savePick(coord, FogView.BASE, data);
+  }
+
+  @Override
+  public void savePick(
+      final @NotNull TileCoordinate coord,
+      final @NotNull FogView layer,
+      final byte @NotNull [] data)
+      throws IOException {
+    AtomicFiles.write(pickFile(coord, layer), data);
   }
 
   @Override
   public @NotNull Optional<byte[]> readPick(final @NotNull TileCoordinate coord) {
-    final @NotNull File file = pickFile(coord);
+    return readPick(coord, FogView.BASE);
+  }
+
+  @Override
+  public @NotNull Optional<byte[]> readPick(
+      final @NotNull TileCoordinate coord, final @NotNull FogView layer) {
+    final @NotNull File file = pickFile(coord, layer);
     if (!file.exists()) {
       return Optional.empty();
     }
@@ -255,5 +366,11 @@ public final class TileStorageImpl implements TileStorage {
         .policy()
         .eviction()
         .ifPresent(eviction -> eviction.setMaximum(Math.max(64, maxEncodedTiles)));
+    this.layers
+        .policy()
+        .eviction()
+        .ifPresent(eviction -> eviction.setMaximum(Math.max(64, maxEncodedTiles)));
   }
+
+  private record LayerKey(@NotNull TileCoordinate coord, @NotNull FogView layer) {}
 }

@@ -16,11 +16,15 @@ public final class MarkerTexts {
 
   public static @NotNull Layer localize(final @NotNull Layer layer) {
     return switch (layer.id()) {
-      case "hidden" ->
+      case "regions" ->
           withMarkers(
               layer,
               layer.markers().stream()
-                  .map(marker -> with(marker, I18n.get("taerra.marker.hidden"), marker.details()))
+                  .map(
+                      marker ->
+                          marker.label() == null || marker.label().isEmpty()
+                              ? with(marker, I18n.get("taerra.marker.region"), marker.details())
+                              : marker)
                   .toList());
       case "chunks" ->
           withMarkers(layer, layer.markers().stream().map(MarkerTexts::chunk).toList());

@@ -181,8 +181,8 @@ function translatedOr(key, fallback) {
 
 function localize(layer) {
     switch (layer.id) {
-        case 'hidden':
-            return {...layer, markers: layer.markers.map(marker => ({...marker, label: t('marker.hidden')}))};
+        case 'regions':
+            return {...layer, markers: layer.markers.map(marker => ({...marker, label: marker.label || t('marker.region')}))};
         case 'chunks':
             return {...layer, markers: layer.markers.map(chunkMarker)};
         case 'worldborder':
@@ -337,6 +337,12 @@ class MarkerManager {
         this.showPending();
         this.redraw();
         this.renderControls();
+        this.onLayers?.();
+    }
+
+    shownLayer(id) {
+        const layer = this.layers.find(candidate => candidate.id === id);
+        return layer !== undefined && this.isShown(layer);
     }
 
     isShown(layer) {
@@ -354,6 +360,7 @@ class MarkerManager {
         params.getAll('show').forEach(id => this.visibility[id] = true);
         params.getAll('hide').forEach(id => this.visibility[id] = false);
         this.onPlayers?.();
+        this.onLayers?.();
         this.redraw();
         this.renderControls();
     }
@@ -373,6 +380,7 @@ class MarkerManager {
         if (layer === PLAYER_LAYER) {
             this.onPlayers?.();
         }
+        this.onLayers?.();
         this.cull();
     }
 

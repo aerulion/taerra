@@ -74,6 +74,24 @@ public final class MarkerPayloadSerializer {
     return layers;
   }
 
+  public static @NotNull List<Map<String, Object>> layer(
+      final @NotNull String id,
+      final @NotNull String label,
+      final boolean shown,
+      final @NotNull Collection<? extends Marker> markers,
+      final @NotNull Predicate<String> layerPrivate) {
+    return markers.isEmpty()
+        ? List.of()
+        : List.of(
+            layer(
+                id,
+                label,
+                shown,
+                false,
+                layerPrivate,
+                markers.stream().map(MarkerPayloadSerializer::marker).toList()));
+  }
+
   private static @NotNull Map<String, Object> layer(
       final @NotNull String id,
       final @NotNull String label,

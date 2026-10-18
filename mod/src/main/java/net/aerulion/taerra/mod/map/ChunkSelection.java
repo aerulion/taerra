@@ -3,13 +3,16 @@ package net.aerulion.taerra.mod.map;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.LongPredicate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,7 +24,47 @@ public final class ChunkSelection {
   private static final int[][] CORNERS = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
 
   private final Set<Long> chunks = new LinkedHashSet<>();
+  private final int limit;
+  private final LongPredicate taken;
   private @Nullable List<int[][]> rings;
+
+  public ChunkSelection() {
+    this(MAX_CHUNKS, _ -> false);
+  }
+
+  public ChunkSelection(final int limit, final @NotNull LongPredicate taken) {
+    this.limit = limit;
+    this.taken = taken;
+  }
+
+  public int limit() {
+    return this.limit;
+  }
+
+  public void addAll(final @NotNull Collection<Long> chunks) {
+    this.chunks.addAll(chunks);
+    this.rings = null;
+  }
+
+  public boolean connected() {
+    if (this.chunks.isEmpty()) {
+      return true;
+    }
+    final @NotNull Set<Long> left = new HashSet<>(this.chunks);
+    final @NotNull Deque<Long> open = new ArrayDeque<>();
+    open.add(left.iterator().next());
+    left.remove(open.peek());
+    while (!open.isEmpty()) {
+      final long at = open.poll();
+      for (final int @NotNull [] side : SIDES) {
+        final long next = key(chunkX(at) + side[0], chunkZ(at) + side[1]);
+        if (left.remove(next)) {
+          open.add(next);
+        }
+      }
+    }
+    return left.isEmpty();
+  }
 
   public static long key(final int chunkX, final int chunkZ) {
     return ((long) chunkX << 32) ^ (chunkZ & 0xFFFFFFFFL);
@@ -140,7 +183,9 @@ public final class ChunkSelection {
     final boolean changed =
         erase
             ? this.chunks.remove(key(chunkX, chunkZ))
-            : this.chunks.size() < MAX_CHUNKS && this.chunks.add(key(chunkX, chunkZ));
+            : this.chunks.size() < this.limit
+                && !this.taken.test(key(chunkX, chunkZ))
+                && this.chunks.add(key(chunkX, chunkZ));
     if (changed) {
       this.rings = null;
     }

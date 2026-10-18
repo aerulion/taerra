@@ -240,6 +240,7 @@
         <button data-action="area" data-i18n="menu.area" hidden role="menuitem" type="button">Draw area</button>
         <button data-action="line" data-i18n="menu.line" hidden role="menuitem" type="button">Draw line</button>
         <button data-action="select" data-i18n="menu.select" hidden role="menuitem" type="button">Select chunks</button>
+        <button data-action="region" data-i18n="menu.drawRegion" hidden role="menuitem" type="button">Draw region</button>
         <button data-action="render-world" data-i18n="menu.renderWorld" hidden role="menuitem" type="button">Render whole
             world
         </button>
@@ -281,19 +282,30 @@
                     data-i18n-title="selection.tool.points.tooltip" data-tool="points" hidden type="button">Points
             </button>
         </div>
+        <div class="selection__region" hidden id="selection-region">
+            <input aria-label="Region name" autocomplete="off" class="editor__input" data-i18n-label="region.name"
+                   id="region-name" maxlength="48" spellcheck="false">
+            <div aria-label="Fog" class="segmented segmented--small" data-i18n-label="region.fog" id="region-fog"
+                 role="group">
+                <button aria-pressed="true" class="btn" data-fog="hide" data-i18n="region.fog.hide"
+                        data-i18n-title="region.fog.hide.tooltip" type="button">Hidden
+                </button>
+                <button aria-pressed="false" class="btn" data-fog="veil" data-i18n="region.fog.veil"
+                        data-i18n-title="region.fog.veil.tooltip" type="button">Veiled
+                </button>
+                <button aria-pressed="false" class="btn" data-fog="none" data-i18n="region.fog.none"
+                        data-i18n-title="region.fog.none.tooltip" type="button">No fog
+                </button>
+            </div>
+            <button aria-pressed="false" class="btn" data-i18n-title="region.discoverable.tooltip"
+                    id="region-discoverable" type="button">Discoverable
+            </button>
+        </div>
         <div class="selection__actions">
             <button class="btn" data-action="render" data-i18n="selection.render" hidden id="selection-render"
                     type="button">Re-render
             </button>
-            <button class="btn" data-action="hide" data-i18n="selection.hide" hidden id="selection-hide"
-                    type="button">Hide from map
-            </button>
-            <button class="btn" data-action="tease" data-i18n="selection.tease"
-                    data-i18n-title="selection.tease.tooltip" hidden id="selection-tease" type="button">Veil on map
-            </button>
-            <button class="btn" data-action="reveal" data-i18n="selection.reveal" hidden id="selection-reveal"
-                    type="button">Show on map
-            </button>
+            <button class="btn" hidden id="region-reset" type="button">Forget discoveries</button>
             <button aria-pressed="false" class="btn" hidden id="selection-smooth" type="button">Smooth: off</button>
             <button class="btn btn--danger" hidden id="selection-delete" type="button">Delete</button>
             <button class="btn selection__done" data-action="done" data-i18n="selection.done" id="selection-done"

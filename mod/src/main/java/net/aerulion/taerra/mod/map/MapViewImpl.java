@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.OptionalInt;
 import net.aerulion.taerra.mod.TaerraClient;
@@ -25,6 +26,7 @@ import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.MapConfig;
 import net.aerulion.taerra.mod.web.model.Marker;
 import net.aerulion.taerra.mod.web.model.Player;
+import net.aerulion.taerra.mod.web.model.Regions;
 import net.aerulion.taerra.mod.web.model.World;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -53,6 +55,7 @@ public final class MapViewImpl implements MapView {
   private static final long GROUND_DEBOUNCE_MILLIS = 250;
   private static final int CULL_MARGIN = 64;
   private static final int LABEL_GAP = 3;
+  private static final int REGION_LABEL_Y = 64;
   private static final int FALLBACK_LEVELS = 4;
   private static final double ZOOM_EASE = 18;
   private static final double GLIDE_FRICTION = 6;
@@ -461,6 +464,7 @@ public final class MapViewImpl implements MapView {
           this.spin == 0 ? y0 : 0,
           this.spin == 0 ? y1 : graphics.guiHeight());
     }
+    drawRegionNames(graphics, map, projection);
     drawPoints(graphics, points, mouse);
     drawTarget(graphics, map, projection, x0, y0, x1, y1);
     drawPlayers(graphics, map, projection, x0, y0, x1, y1, mouse, partialTick);
@@ -1059,6 +1063,37 @@ public final class MapViewImpl implements MapView {
       }
     }
     return projection.toMap(x, y + 1, z);
+  }
+
+  private void drawRegionNames(
+      final @NotNull GuiGraphicsExtractor graphics,
+      final @NotNull WebMap map,
+      final @NotNull Projection projection) {
+    final @Nullable List<Regions.Region> regions =
+        this.minimap || this.world == null ? null : map.regions(this.world).regions();
+    if (regions == null
+        || map.markers(this.world).stream()
+            .noneMatch(layer -> layer.id().equals("regions") && map.shown(layer))) {
+      return;
+    }
+    final @NotNull Font font = Minecraft.getInstance().font;
+    final @Nullable String hidden = this.drawing == null ? null : this.drawing.hidden();
+    for (final Regions.@NotNull Region region : regions) {
+      if (region.name().isEmpty()
+          || region.label() == null
+          || ("region:" + region.id()).equals(hidden)) {
+        continue;
+      }
+      final @NotNull String name = region.name().toUpperCase(Locale.ROOT);
+      final double @NotNull [] at =
+          toScreen(projection.toMap(region.label()[0], REGION_LABEL_Y, region.label()[1]));
+      final double @NotNull [] corner = snapped(at[0] - font.width(name) / 2.0, at[1] - 4);
+      final @NotNull Matrix3x2fStack pose = graphics.pose();
+      pose.pushMatrix();
+      pose.translate((float) corner[0], (float) corner[1]);
+      graphics.text(font, name, 0, 0, 0xFFFFFFFF, true);
+      pose.popMatrix();
+    }
   }
 
   private void drawPoints(

@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,6 +25,7 @@ import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.MapView;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.WorldKeys;
+import net.aerulion.taerra.region.MapRegions;
 import net.aerulion.taerra.rendering.iso.IsoTileService;
 import net.aerulion.taerra.rendering.queue.RenderPriority;
 import net.aerulion.taerra.rendering.queue.RenderQueue;
@@ -32,6 +35,7 @@ import net.aerulion.taerra.rendering.region.RegionScanProgress;
 import net.aerulion.taerra.rendering.region.RegionScanResult;
 import net.aerulion.taerra.rendering.sample.CachedChunkColumnsSource;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsCache;
+import net.aerulion.taerra.rendering.sample.FogView;
 import net.aerulion.taerra.rendering.session.CompletedRender;
 import net.aerulion.taerra.rendering.session.ManualRenderSession;
 import net.aerulion.taerra.rendering.session.ManualRenderSessionSnapshot;
@@ -68,6 +72,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   private final @NotNull TileStorage storage;
   private final @NotNull RenderQueue renderQueue;
   private final @NotNull TileUpdateBroadcaster tileUpdateBroadcaster;
+  private final @NotNull MapRegions regions;
   private final @NotNull ThreadPoolExecutor baseExecutorService;
   private final @NotNull ThreadPoolExecutor zoomExecutorService;
   private final @NotNull ScheduledExecutorService scheduler;
@@ -97,6 +102,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       final @NotNull TileStorage storage,
       final @NotNull RenderQueue renderQueue,
       final @NotNull TileUpdateBroadcaster tileUpdateBroadcaster,
+      final @NotNull MapRegions regions,
       final int threadCount) {
     super();
     this.plugin = plugin;
@@ -107,6 +113,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     this.storage = storage;
     this.renderQueue = renderQueue;
     this.tileUpdateBroadcaster = tileUpdateBroadcaster;
+    this.regions = regions;
     this.depths = new PyramidDepths(storage::tilesAt);
     this.manualRenders = new ManualRenderCoordinator(renderQueue, isoTileService, this::depth);
 
@@ -353,6 +360,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       this.manualRenders.markDispatched(tileCoordinates);
 
       final @NotNull List<RenderedTile> renderedTiles;
+      final @NotNull List<RenderedTile> layers;
       long chunkReadNanos = 0L;
       long sampleNanos = 0L;
       long renderTilesNanos = 0L;
@@ -364,16 +372,26 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
 
       if (tileCoordinates.getFirst().view() == MapView.ISOMETRIC) {
         final long renderStartedAt = System.nanoTime();
-        renderedTiles = this.isoTileService.renderBatch(world, tileCoordinates);
+        layers = this.isoTileService.renderBatch(world, tileCoordinates);
+        renderedTiles = layers.stream().filter(tile -> tile.layer().base()).toList();
         renderTilesNanos = System.nanoTime() - renderStartedAt;
       } else {
         try (final @NotNull RegionFileChunkSourceProvider provider =
                 new RegionFileChunkSourceProvider(world)) {
 
           final @NotNull CachedChunkColumnsSource source =
-              this.columnsCache.sourceFor(world, provider);
+              this.columnsCache.sourceFor(world, provider, FogView.BASE);
           final long renderStartedAt = System.nanoTime();
           renderedTiles = this.topDownRenderer.renderBatch(source, tileCoordinates);
+          layers = new ArrayList<>(renderedTiles);
+          layers.addAll(
+              FogLayers.topDown(
+                  world,
+                  provider,
+                  this.regions,
+                  this.columnsCache,
+                  this.topDownRenderer,
+                  renderedTiles));
           final long batchNanos = System.nanoTime() - renderStartedAt;
           sampleNanos = source.sampleNanos();
           renderTilesNanos = Math.max(0L, batchNanos - sampleNanos);
@@ -394,10 +412,22 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       }
 
       final long persistStartedAt = System.nanoTime();
-      for (final @NotNull RenderedTile renderedTile : renderedTiles) {
-        persistTile(renderedTile.coordinate(), renderedTile.image());
+      layers.addAll(FogLayers.clear(layers));
+      for (final @NotNull RenderedTile renderedTile : layers) {
+        persistTile(renderedTile.coordinate(), renderedTile.layer(), renderedTile.image());
         persistPick(renderedTile);
-        this.completedZoom0Tiles.increment();
+        if (renderedTile.layer().base()) {
+          this.completedZoom0Tiles.increment();
+        }
+      }
+      for (final @NotNull RenderedTile renderedTile : renderedTiles) {
+        keepOnly(
+            renderedTile.coordinate(),
+            layers.stream()
+                .filter(layer -> layer.coordinate().equals(renderedTile.coordinate()))
+                .map(RenderedTile::layer)
+                .filter(layer -> !layer.base())
+                .collect(Collectors.toSet()));
       }
 
       final @NotNull Set<TileCoordinate> produced =
@@ -530,6 +560,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
 
           final @NotNull BufferedImage image = combine(children, parent.view());
           persistTile(parent, image);
+          persistLayers(parent, childCoordinates);
           recordTileCompletion(parent);
           nextLevel.put(parent, image);
           nextLevelCoordinates.add(parent);
@@ -564,6 +595,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       }
       if (anyPresent && coord.zoom() <= depth(coord)) {
         persistTile(coord, combine(childTiles, coord.view()));
+        persistLayers(coord, childCoordinates);
         this.completedZoomTiles.increment();
         this.totalZoomNanos.add(System.nanoTime() - startedAt);
       } else if (deleteStoredTile(coord)) {
@@ -650,15 +682,58 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
 
   private void persistTile(final @NotNull TileCoordinate coord, final @NotNull BufferedImage image)
       throws Exception {
-    final boolean created = !this.storage.tileFile(coord).exists();
-    final boolean changed = this.storage.saveTile(coord, image);
-    this.cache.put(coord, image);
+    persistTile(coord, FogView.BASE, image);
+  }
+
+  private void persistTile(
+      final @NotNull TileCoordinate coord,
+      final @NotNull FogView layer,
+      final @NotNull BufferedImage image)
+      throws Exception {
+    final boolean created = layer.base() && !this.storage.tileFile(coord).exists();
+    final boolean changed = this.storage.saveTile(coord, layer, image);
+    this.cache.put(coord, layer, image);
     if (changed) {
       this.tileUpdateBroadcaster.tileUpdated(coord);
     }
     if (created) {
       this.depths.extend(coord);
       pyramidChanged(coord);
+    }
+  }
+
+  private void persistLayers(
+      final @NotNull TileCoordinate parent, final TileCoordinate @NotNull [] children)
+      throws Exception {
+    final @NotNull Set<FogView> layers = new TreeSet<>(FogLayers.ORDER);
+    for (final @NotNull TileCoordinate child : children) {
+      layers.addAll(this.storage.layers(child));
+    }
+    for (final @NotNull FogView layer : layers) {
+      final BufferedImage @NotNull [] images = new BufferedImage[children.length];
+      for (int index = 0; index < children.length; index++) {
+        final @NotNull TileCoordinate child = children[index];
+        images[index] =
+            this.cache
+                .get(child, layer)
+                .or(
+                    () ->
+                        layer.kind() == FogView.Kind.CLEAR
+                            ? this.cache.get(child, FogView.BASE)
+                            : Optional.empty())
+                .orElse(null);
+      }
+      persistTile(parent, layer, combine(images, parent.view()));
+    }
+    keepOnly(parent, layers);
+  }
+
+  private void keepOnly(final @NotNull TileCoordinate coord, final @NotNull Set<FogView> layers) {
+    for (final @NotNull FogView stored : this.storage.layers(coord)) {
+      if (!layers.contains(stored) && this.storage.deleteLayer(coord, stored)) {
+        this.cache.invalidate(coord, stored);
+        this.tileUpdateBroadcaster.tileUpdated(coord);
+      }
     }
   }
 
@@ -670,7 +745,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     try {
       final byte @Nullable [] encoded = pick.encode();
       if (encoded != null) {
-        this.storage.savePick(tile.coordinate(), encoded);
+        this.storage.savePick(tile.coordinate(), tile.layer(), encoded);
       }
     } catch (final IOException e) {
       this.plugin

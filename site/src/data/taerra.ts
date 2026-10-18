@@ -205,7 +205,7 @@ const en = {
                     },
                     {
                         title: 'Show only what is ready',
-                        text: 'Limit the map to a circle, square or rectangle, so it ends where your playable area does, and cover chunks in fog while staff build there, or in a thin veil that only hints at what lies beneath.'
+                        text: 'Limit the map to a circle, square or rectangle, so it ends where your playable area does, and draw named regions chunk by chunk. Cover one in fog while staff build there, or in a thin veil that only hints at what lies beneath, and let every player clear the fog for themselves by walking in.'
                     },
                     {
                         title: 'Installs like an app',
@@ -271,7 +271,7 @@ const en = {
             },
             layers: {
                 title: 'Layers and staff tools',
-                text: 'WorldGuard regions and world borders are layers you switch on. With permission, select chunks to render them again or hide them while you build, and watch a render’s progress right on the map. Staff change the server’s settings on a screen of their own.',
+                text: 'WorldGuard regions and world borders are layers you switch on. With permission, select chunks to render them again, draw regions and fog them, and watch a render’s progress right on the map. Staff change the server’s settings on a screen of their own.',
                 alt: 'A close isometric view of a coast with WorldGuard regions outlined in green, a hidden area in caution stripes and 112 chunks selected for rendering again'
             }
         },
@@ -409,7 +409,7 @@ const en = {
                 {
                     permission: 'taerra.web.see-hidden',
                     standard: 'op',
-                    text: 'Seeing hidden players on the map while logged in'
+                    text: 'Seeing hidden players and through every region’s fog while logged in'
                 },
                 {
                     permission: 'taerra.web.render',
@@ -417,9 +417,9 @@ const en = {
                     text: 'Rendering a whole world or selected chunks again, and canceling renders, while logged in'
                 },
                 {
-                    permission: 'taerra.web.hide',
+                    permission: 'taerra.web.regions',
                     standard: 'op',
-                    text: 'Hiding and revealing selected chunks while logged in'
+                    text: 'Drawing, naming, fogging and removing regions while logged in'
                 },
                 {
                     permission: 'taerra.web.markers',

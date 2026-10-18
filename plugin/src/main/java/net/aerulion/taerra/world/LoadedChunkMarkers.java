@@ -1,9 +1,6 @@
 package net.aerulion.taerra.world;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -16,11 +13,12 @@ import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.config.TaerraConfig;
-import net.aerulion.taerra.limit.HiddenAreaMarkers;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.model.WorldLimit;
+import net.aerulion.taerra.region.MapRegions;
+import net.aerulion.taerra.region.RegionShapes;
 import net.aerulion.taerra.web.player.PlayerMapPayloadSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -36,7 +34,6 @@ import org.jetbrains.annotations.Nullable;
 public final class LoadedChunkMarkers {
 
   private static final long SYNC_INTERVAL_TICKS = 100L;
-  private static final int[][] SIDES = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
 
   private LoadedChunkMarkers() {
     super();
@@ -47,6 +44,7 @@ public final class LoadedChunkMarkers {
       final @NotNull MarkerRegistry registry,
       final @NotNull TaerraConfig config,
       final @NotNull WorldLimits limits,
+      final @NotNull MapRegions regions,
       final boolean shownByDefault) {
     final @NotNull MarkerLayer layer =
         registry.layer(plugin, "chunks", "Loaded chunks", shownByDefault);
@@ -57,7 +55,7 @@ public final class LoadedChunkMarkers {
               final @NotNull List<Marker> markers = new ArrayList<>();
               for (final @NotNull World world : Bukkit.getWorlds()) {
                 if (config.worldEnabled(WorldKeys.id(world))) {
-                  markers.addAll(markers(world, limits));
+                  markers.addAll(markers(world, limits, regions));
                 }
               }
               layer.setAll(markers);
@@ -67,14 +65,16 @@ public final class LoadedChunkMarkers {
   }
 
   private static @NotNull List<Marker> markers(
-      final @NotNull World world, final @NotNull WorldLimits limits) {
+      final @NotNull World world,
+      final @NotNull WorldLimits limits,
+      final @NotNull MapRegions regions) {
     final @NotNull String worldName = WorldKeys.id(world);
     final @Nullable WorldLimit limit = limits.get(worldName);
     final @NotNull Map<Long, Level> levels = new HashMap<>();
     for (final @NotNull Chunk chunk : world.getLoadedChunks()) {
       final @Nullable Level level = Level.of(chunk.getLoadLevel());
       if (level == null
-          || limits.hidden(worldName, chunk.getX(), chunk.getZ())
+          || regions.foggedAt(worldName, chunk.getX(), chunk.getZ()) != null
           || (limit != null && !limit.contains((chunk.getX() << 4) + 8, (chunk.getZ() << 4) + 8))) {
         continue;
       }
@@ -121,11 +121,11 @@ public final class LoadedChunkMarkers {
               reached.add(key);
             }
           });
-      for (final @NotNull Set<Long> area : areas(reached)) {
+      for (final @NotNull Set<Long> area : RegionShapes.areas(reached)) {
         final @NotNull Map<String, String> details =
             details(world, level, area, levels, forced, tickets, players);
         final long id = area.stream().mapToLong(Long::longValue).min().orElseThrow();
-        final @NotNull List<List<long[]>> rings = HiddenAreaMarkers.rings(area);
+        final @NotNull List<List<long[]>> rings = RegionShapes.rings(area);
         for (int i = 0; i < rings.size(); i++) {
           markers.add(
               Marker.polygon(
@@ -216,32 +216,6 @@ public final class LoadedChunkMarkers {
 
   private static @NotNull String count(final int count, final @NotNull String noun) {
     return count + " " + noun + (count == 1 ? "" : "s");
-  }
-
-  static @NotNull List<Set<Long>> areas(final @NotNull Collection<Long> chunks) {
-    final @NotNull Set<Long> left = new HashSet<>(chunks);
-    final @NotNull List<Set<Long>> areas = new ArrayList<>();
-    while (!left.isEmpty()) {
-      final long start = left.iterator().next();
-      left.remove(start);
-      final @NotNull Set<Long> area = new HashSet<>();
-      final @NotNull Deque<Long> open = new ArrayDeque<>();
-      open.add(start);
-      while (!open.isEmpty()) {
-        final long at = open.poll();
-        area.add(at);
-        for (final int @NotNull [] side : SIDES) {
-          final long next =
-              ChunkCoordinate.key(
-                  ChunkCoordinate.keyX(at) + side[0], ChunkCoordinate.keyZ(at) + side[1]);
-          if (left.remove(next)) {
-            open.add(next);
-          }
-        }
-      }
-      areas.add(area);
-    }
-    return areas;
   }
 
   private enum Level {

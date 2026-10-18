@@ -69,7 +69,8 @@ public final class Fog {
   private static final int OPACITY_STEPS = 6;
   private static final float TEASER_THIN = 0.45f;
   private static final float TEASER_THICK = 0.88f;
-  private static final float TEASER_GREY = 0.65f;
+  private static final float WASH = 0.45f;
+  private static final int WASH_COLOR = 0xFF8E96A0;
   private static final float CLEAR = 1.15f;
   private static final float SOLID = -0.15f;
   private static final float EDGE = 0.3f;
@@ -187,29 +188,58 @@ public final class Fog {
       final float z,
       final int blockY,
       final @NotNull Cell cell) {
+    final int overlay = overlay(mist, x, z, blockY, cell);
+    return overlay == 0 ? argb : over(overlay, argb);
+  }
+
+  public static int overlay(
+      final int mist, final float x, final float z, final int blockY, final @NotNull Cell cell) {
     if (mist == NO_MIST) {
-      return argb;
+      return 0;
     }
     final float cover = Math.clamp((float) (layerY(mist) - blockY) / COVER_FADE, 0.0f, 1.0f);
     if (cover <= 0.0f || (mist & FULL) == 0) {
-      return argb;
+      return 0;
     }
     cell.at((float) Math.floor(x) + 0.5f, (float) Math.floor(z) + 0.5f, mist & (FULL | TEASER));
     final float body = cell.body * cover;
-    final float shadow = Math.max(0.0f, cell.shadow * cover - body) * cell.reach * SHADOW;
+    final float shadow =
+        step(Math.max(0.0f, cell.shadow * cover - body) * cell.reach * SHADOW, OPACITY_STEPS);
     final float opacity = step(body * cell.reach, OPACITY_STEPS);
-    final int ground =
-        teased(mist)
-            ? MapStyle.blend(argb, grey(argb), step(TEASER_GREY * body, OPACITY_STEPS))
-            : argb;
-    return MapStyle.blend(
-        MapStyle.blend(ground, SHADOW_COLOR, step(shadow, OPACITY_STEPS)),
-        step(body, OPACITY_STEPS) < 1.0f ? CLOUD_LIGHT : cell.tone,
-        opacity);
+    final int wash = teased(mist) ? withAlpha(WASH_COLOR, step(WASH * body, OPACITY_STEPS)) : 0;
+    return over(
+        withAlpha(step(body, OPACITY_STEPS) < 1.0f ? CLOUD_LIGHT : cell.tone, opacity),
+        over(withAlpha(SHADOW_COLOR, shadow), wash));
   }
 
   public static int skyShadow(final int argb, final int mist) {
-    return (mist & SHADE) != 0 ? MapStyle.blend(argb, SHADOW_COLOR, SKY_SHADOW) : argb;
+    if ((mist & SHADE) == 0) {
+      return argb;
+    }
+    return (argb >>> 24) == 0xFF
+        ? MapStyle.blend(argb, SHADOW_COLOR, SKY_SHADOW)
+        : over(withAlpha(SHADOW_COLOR, SKY_SHADOW), argb);
+  }
+
+  public static int over(final int top, final int bottom) {
+    final float topAlpha = (top >>> 24) / 255.0f;
+    final float bottomAlpha = (bottom >>> 24) / 255.0f;
+    final float alpha = topAlpha + bottomAlpha * (1.0f - topAlpha);
+    if (alpha <= 0.0f) {
+      return 0;
+    }
+    final float bottomWeight = bottomAlpha * (1.0f - topAlpha);
+    int argb = Math.round(alpha * 255.0f) << 24;
+    for (int shift = 16; shift >= 0; shift -= 8) {
+      final float channel =
+          (((top >> shift) & 0xFF) * topAlpha + ((bottom >> shift) & 0xFF) * bottomWeight) / alpha;
+      argb |= Math.clamp(Math.round(channel), 0, 0xFF) << shift;
+    }
+    return argb;
+  }
+
+  private static int withAlpha(final int rgb, final float alpha) {
+    return Math.round(Math.clamp(alpha, 0.0f, 1.0f) * 255.0f) << 24 | (rgb & 0x00FFFFFF);
   }
 
   public static final class Cell {
@@ -244,6 +274,14 @@ public final class Fog {
     }
   }
 
+  public static int withoutSky(final int mist) {
+    return mist & ~(SKY | SHADE);
+  }
+
+  public static int skyOnly(final int mist) {
+    return (mist & (SKY | SHADE)) == 0 ? NO_MIST : mist & ~(FULL | TEASER);
+  }
+
   public static boolean sky(final int mist) {
     return (mist & SKY) != 0;
   }
@@ -254,12 +292,6 @@ public final class Fog {
 
   public static int around(final int offsetX, final int offsetZ) {
     return (offsetX + REACH_CHUNKS) * AROUND + offsetZ + REACH_CHUNKS;
-  }
-
-  private static int grey(final int argb) {
-    final int luma =
-        (((argb >> 16) & 0xFF) * 77 + ((argb >> 8) & 0xFF) * 150 + (argb & 0xFF) * 29) >> 8;
-    return (argb & 0xFF000000) | luma << 16 | luma << 8 | luma;
   }
 
   private static int tone(final float cloud, final float cellX, final float cellZ) {

@@ -121,4 +121,19 @@ public record PickBuffer(int size, int scale, int[] depths, int[] heights) {
     }
     return new int[] {this.depths[index], this.heights[index]};
   }
+
+  public @NotNull PickBuffer under(final @Nullable PickBuffer body) {
+    if (body == null || body.size != this.size || body.scale != this.scale) {
+      return this;
+    }
+    final int @NotNull [] depths = this.depths.clone();
+    final int @NotNull [] heights = this.heights.clone();
+    for (int cell = 0; cell < depths.length; cell++) {
+      if (body.depths[cell] != EMPTY) {
+        depths[cell] = body.depths[cell];
+        heights[cell] = body.heights[cell];
+      }
+    }
+    return new PickBuffer(this.size, this.scale, depths, heights);
+  }
 }

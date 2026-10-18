@@ -4,16 +4,20 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import java.awt.image.BufferedImage;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import net.aerulion.taerra.model.TileCoordinate;
+import net.aerulion.taerra.rendering.sample.FogView;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class TileCacheImpl implements TileCache {
 
   private static final int EXPIRY_SECONDS = 300;
   private final @NotNull TileStorage storage;
-  private final @NotNull Cache<TileCoordinate, BufferedImage> cache;
+  private final @NotNull Cache<TileCoordinate, Map<FogView, BufferedImage>> cache;
 
   public TileCacheImpl(final @NotNull TileStorage storage, final int maxSize) {
     super();
@@ -28,18 +32,47 @@ public final class TileCacheImpl implements TileCache {
 
   @Override
   public @NotNull Optional<BufferedImage> get(final @NotNull TileCoordinate coord) {
-    return Optional.ofNullable(
-        this.cache.get(coord, key -> this.storage.loadTile(key).orElse(null)));
+    return get(coord, FogView.BASE);
+  }
+
+  @Override
+  public @NotNull Optional<BufferedImage> get(
+      final @NotNull TileCoordinate coord, final @NotNull FogView layer) {
+    final @NotNull Map<FogView, BufferedImage> layers =
+        this.cache.get(coord, _ -> new ConcurrentHashMap<>());
+    final @Nullable BufferedImage cached = layers.get(layer);
+    if (cached != null) {
+      return Optional.of(cached);
+    }
+    final @NotNull Optional<BufferedImage> loaded = this.storage.loadTile(coord, layer);
+    loaded.ifPresent(image -> layers.put(layer, image));
+    return loaded;
   }
 
   @Override
   public void put(final @NotNull TileCoordinate coord, final @NotNull BufferedImage image) {
-    this.cache.put(coord, image);
+    put(coord, FogView.BASE, image);
+  }
+
+  @Override
+  public void put(
+      final @NotNull TileCoordinate coord,
+      final @NotNull FogView layer,
+      final @NotNull BufferedImage image) {
+    this.cache.get(coord, _ -> new ConcurrentHashMap<>()).put(layer, image);
   }
 
   @Override
   public void invalidate(final @NotNull TileCoordinate coord) {
     this.cache.invalidate(coord);
+  }
+
+  @Override
+  public void invalidate(final @NotNull TileCoordinate coord, final @NotNull FogView layer) {
+    final @Nullable Map<FogView, BufferedImage> layers = this.cache.getIfPresent(coord);
+    if (layers != null) {
+      layers.remove(layer);
+    }
   }
 
   @Override

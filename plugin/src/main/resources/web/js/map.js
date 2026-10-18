@@ -38,6 +38,7 @@ class MapManager {
         this.pickPending = new Map();
         this.epoch = Date.now();
         this.tileVersions = new Map();
+        this.revealed = new Set();
     }
 
     static rotateCell(rotation, x, z) {
@@ -300,17 +301,19 @@ class MapManager {
             this.map.removeLayer(this.tileLayer);
         }
 
-        const template = this.isIsometric() ? '/api/iso/{world}/{rotation}/{z}/{x}/{y}.png?v={v}' :
-            '/api/tiles/{world}/{z}/{x}/{y}.png?v={v}';
-        this.tileLayer = L.tileLayer(template, {
-            world: encodeURIComponent(this.currentWorld),
-            rotation: this.rotation,
-            v: (data) => this.tileVersion(data.z, data.x, data.y),
+        const manager = this;
+        const Layered = L.GridLayer.extend({
+            createTile(coords, done) {
+                const tile = document.createElement('div');
+                void manager.composeTile(tile, coords.z, coords.x, coords.y).then(() => done(null, tile), error => done(error, tile));
+                return tile;
+            }
+        });
+        this.tileLayer = new Layered({
             tileSize: MapManager.LEAFLET_TILE_SIZE,
             minZoom: this.activeMinZoom(),
             maxZoom: this.activeMaxZoom(),
-            noWrap: true,
-            errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+            noWrap: true
         });
 
         this.tileLayer.addTo(this.map);
@@ -372,20 +375,45 @@ class MapManager {
         }
     }
 
-    swapTileImage(element, url) {
-        const next = new Image();
-        const swap = () => {
-            element.src = url;
-        };
-
-        next.src = url;
-
-        if (typeof next.decode === 'function') {
-            next.decode().then(swap).catch(() => {
-            });
-        } else {
-            next.onload = swap;
+    setRevealed(ids) {
+        const next = new Set(ids);
+        if (next.size === this.revealed.size && [...next].every(id => this.revealed.has(id))) {
+            return;
         }
+        this.revealed = next;
+        this.refreshAllTiles();
+    }
+
+    wantedLayers(header) {
+        return (header ?? '').split(',').filter(id => {
+            const region = Number(id.slice(1));
+            return id[0] === 'b' ? this.revealed.has(region) : id[0] === 's' && !this.revealed.has(region);
+        }).sort((a, b) => a[0] === b[0] ? 0 : a[0] === 'b' ? -1 : 1);
+    }
+
+    async composeTile(tile, zoom, x, y) {
+        const url = this.tileUrl(zoom, x, y);
+        const response = await fetch(url);
+        if (!response.ok) {
+            tile.replaceChildren();
+            return;
+        }
+        const layers = this.wantedLayers(response.headers.get('X-Taerra-Layers'));
+        const images = [url, ...layers.map(id => `${url}&layer=${id}`)].map(src => {
+            const image = new Image();
+            image.alt = '';
+            image.src = src;
+            return image;
+        });
+        await Promise.all(images.map(image => image.decode().catch(() => image.remove())));
+        tile.replaceChildren(...images.filter(image => image.complete && image.naturalWidth > 0));
+    }
+
+    recompose(tile) {
+        const {x, y, z} = tile.coords;
+        const next = document.createElement('div');
+        void this.composeTile(next, z, x, y).then(() => tile.el.replaceChildren(...next.childNodes)).catch(() => {
+        });
     }
 
     refreshTiles(tiles) {
@@ -421,11 +449,11 @@ class MapManager {
             }
 
             const tile = loaded[`${x}:${z}:${zoom}`];
-            if (!tile || !tile.el) {
+            if (!tile || !tile.el || !tile.coords) {
                 continue;
             }
 
-            this.swapTileImage(tile.el, this.tileUrl(zoom, x, z));
+            this.recompose(tile);
         }
     }
 
@@ -443,8 +471,7 @@ class MapManager {
                 continue;
             }
 
-            const {x, y, z} = tile.coords;
-            this.swapTileImage(tile.el, this.tileUrl(z, x, y));
+            this.recompose(tile);
         }
     }
 
@@ -494,8 +521,7 @@ class MapManager {
     requestPick(key, url) {
         let pending = this.pickPending.get(key);
         if (!pending) {
-            pending = fetch(url)
-                .then(async response => response.ok ? MapManager.decodePick(new Uint8Array(await response.arrayBuffer())) : null)
+            pending = this.fetchPick(url)
                 .catch(() => null)
                 .then(buffer => {
                     this.pickPending.delete(key);
@@ -508,6 +534,31 @@ class MapManager {
             this.pickPending.set(key, pending);
         }
         return pending;
+    }
+
+    async fetchPick(url) {
+        const response = await fetch(url);
+        if (!response.ok) {
+            return null;
+        }
+        const base = await MapManager.decodePick(new Uint8Array(await response.arrayBuffer()));
+        const ids = this.wantedLayers(response.headers.get('X-Taerra-Layers')).filter(id => id[0] === 'b');
+        const bodies = await Promise.all(ids.map(async id => {
+            const layer = await fetch(`${url}?layer=${id}`);
+            return layer.ok ? MapManager.decodePick(new Uint8Array(await layer.arrayBuffer())) : null;
+        }));
+        for (const body of bodies) {
+            if (base && body && body.stored === base.stored) {
+                for (let cell = 0; cell < base.empty.length; cell++) {
+                    if (!body.empty[cell]) {
+                        base.empty[cell] = 0;
+                        base.depths[cell] = body.depths[cell];
+                        base.heights[cell] = body.heights[cell];
+                    }
+                }
+            }
+        }
+        return base;
     }
 
     pickAt(screenX, screenY) {

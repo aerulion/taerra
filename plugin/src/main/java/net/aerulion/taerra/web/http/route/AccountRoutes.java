@@ -65,7 +65,7 @@ public final class AccountRoutes implements Routes {
         "privateGroups", viewer.canCreatePrivateGroups(),
         "personal", viewer.canKeepPersonalMarkers(),
         "render", viewer.canRender(),
-        "hide", viewer.canHide(),
+        "regions", viewer.canEditRegions(),
         "config", viewer.canConfigure());
   }
 

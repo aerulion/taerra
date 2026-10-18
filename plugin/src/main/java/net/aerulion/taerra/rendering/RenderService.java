@@ -106,28 +106,36 @@ public final class RenderService {
                 listener));
   }
 
-  public @NotNull Start area(
+  public @NotNull Start area(final @NotNull World world, final @NotNull Set<Long> chunks) {
+    return area(TileGeneratorService.AREA_RENDER, world, chunks, () -> {}, true);
+  }
+
+  public @NotNull Start regions(
+      final @NotNull World world, final @NotNull Set<Long> changed, final @NotNull Runnable apply) {
+    final @NotNull Set<Long> affected = new HashSet<>(changed);
+    for (final long chunk : changed) {
+      for (int offsetX = -Fog.REACH_CHUNKS; offsetX <= Fog.REACH_CHUNKS; offsetX++) {
+        for (int offsetZ = -Fog.REACH_CHUNKS; offsetZ <= Fog.REACH_CHUNKS; offsetZ++) {
+          affected.add(
+              ChunkCoordinate.key(
+                  ChunkCoordinate.keyX(chunk) + offsetX, ChunkCoordinate.keyZ(chunk) + offsetZ));
+        }
+      }
+    }
+    return area(TileGeneratorService.REGION_RENDER, world, affected, apply, false);
+  }
+
+  private @NotNull Start area(
+      final @NotNull String mode,
       final @NotNull World world,
-      final @NotNull Set<Long> chunks,
-      final @Nullable Boolean hide,
-      final boolean tease) {
+      final @NotNull Set<Long> affected,
+      final @NotNull Runnable apply,
+      final boolean terrain) {
     final @NotNull String worldName = WorldKeys.id(world);
     final @Nullable WorldLimit limit = this.limits.get(worldName);
     final @NotNull Set<Long> regions = new HashSet<>();
     final @NotNull Set<Long> tiles = new HashSet<>();
     final @NotNull Set<TileCoordinate> isometric = new LinkedHashSet<>();
-    final @NotNull Set<Long> affected = new HashSet<>(chunks);
-    if (hide != null) {
-      for (final long chunk : chunks) {
-        for (int offsetX = -Fog.REACH_CHUNKS; offsetX <= Fog.REACH_CHUNKS; offsetX++) {
-          for (int offsetZ = -Fog.REACH_CHUNKS; offsetZ <= Fog.REACH_CHUNKS; offsetZ++) {
-            affected.add(
-                ChunkCoordinate.key(
-                    ChunkCoordinate.keyX(chunk) + offsetX, ChunkCoordinate.keyZ(chunk) + offsetZ));
-          }
-        }
-      }
-    }
     for (final long chunk : affected) {
       final int blockX = ChunkCoordinate.keyX(chunk) << 4;
       final int blockZ = ChunkCoordinate.keyZ(chunk) << 4;
@@ -152,13 +160,11 @@ public final class RenderService {
       }
     }
     return start(
-        hide == null ? TileGeneratorService.AREA_RENDER : TileGeneratorService.HIDE_RENDER,
+        mode,
         world,
+        apply,
         listener -> {
-          if (hide != null) {
-            this.limits.setHidden(worldName, chunks, hide, tease);
-          }
-          this.columns.forget(worldName, affected, hide == null);
+          this.columns.forget(worldName, affected, terrain);
           this.renderQueue.enqueueAll(isometric, RenderPriority.FULL_RENDER_ZOOM_0);
           return RegionFileScanner.scanWorld(
               world,

@@ -16,4 +16,15 @@ public sealed interface IsoTileRenderer permits IsoTileRendererImpl {
       int maxWorldY,
       @NotNull ChunkColumnsSource source,
       boolean withPick);
+
+  @NotNull
+  RenderedImage renderTile(
+      @NotNull MapRotation rotation,
+      int tileX,
+      int tileY,
+      int minWorldY,
+      int maxWorldY,
+      @NotNull ChunkColumnsSource source,
+      boolean withPick,
+      boolean overlay);
 }

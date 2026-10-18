@@ -1,5 +1,6 @@
 package net.aerulion.taerra.rendering.sample;
 
+import java.util.function.IntUnaryOperator;
 import net.aerulion.taerra.rendering.block.BlockTypes;
 import net.aerulion.taerra.rendering.block.Fluids;
 import net.aerulion.taerra.rendering.style.Fog;
@@ -181,6 +182,34 @@ public final class ChunkColumns {
         this.minTopY,
         ceilingY,
         mist);
+  }
+
+  public @NotNull ChunkColumns mapMist(final @NotNull IntUnaryOperator map) {
+    if (this.mist == null) {
+      return this;
+    }
+    final int @NotNull [] mapped = new int[this.mist.length];
+    for (int index = 0; index < mapped.length; index++) {
+      mapped[index] = map.applyAsInt(this.mist[index]);
+    }
+    return withMist(mapped);
+  }
+
+  public @NotNull ChunkColumns withoutMist() {
+    return this.mist == null
+        ? this
+        : new ChunkColumns(
+            this.chunkX,
+            this.chunkZ,
+            this.runOffsets,
+            this.runTopY,
+            this.runBottomY,
+            this.runBlockId,
+            this.capBlockId,
+            this.columnBiome,
+            this.minTopY,
+            this.maxTopY,
+            null);
   }
 
   public long heights() {

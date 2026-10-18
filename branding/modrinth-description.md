@@ -44,13 +44,14 @@ If something breaks or looks wrong, please report it on [GitHub](https://github.
 - **Teleport from the map.** Logged-in players with permission right-click the map to teleport there.
 - **Waypoints, areas, and lines** in named groups and colors, private ones too, each with an optional description. Players with permission draw, move, and recolor them right on the map, in the browser or in game, with areas traced from selected chunks or clicked point by point, and lines straight or smooth. The mod shows waypoints as labels in the world itself.
 - **Waypoints of your own.** Every logged-in player can keep up to 100 waypoints, areas, and lines only they see, in the browser and in game. They are drawn as gems and dashed lines, so they never pass for the server's. A list of them, on the web map and in the mod, sorts by name or distance, filters by world, hides single ones from the map, and exports any of them to a JSON file to share or back up, which imports again by adding to yours or replacing them. When you die, a Last Death waypoint marks the spot, replacing the one before. Other plugins can show players their own markers the same way, like their homes.
-- **Privacy built in.** Players in spectator mode, invisible or vanished, don't appear, and neither does anyone with `taerra.hide`. Staff with `taerra.web.see-hidden` still see them, marked as hidden. Players who turned off server listings in their client show as an anonymous gray dot. Player heads are served by your server, so viewing the map never reveals a visitor's address to Mojang.
+- **Privacy built in.** Players in spectator mode, invisible or vanished, don't appear, and neither does anyone with `taerra.hide`. Staff with `taerra.web.see-hidden` still see them, marked as hidden, and see through the fog of every region. Players who turned off server listings in their client show as an anonymous gray dot. Player heads are served by your server, so viewing the map never reveals a visitor's address to Mojang.
 - **One jar.** No external database, no CDN, and no separate admin panel: everything is configured in game, or on the settings page of the web map and the mod.
 - **A settings page** for staff with `taerra.web.config`, in the browser and in the mod: which worlds are on the map, their order and names, where each map ends, private worlds and layers, the built-in layers, the server name, the join hint, and how the renderer and its caches run. Every change applies right away, without a restart. Several staff can edit at once: the page shows who else has it open, and where, updates live as others save, and when two people changed the same setting, asks which to keep. Each setting shows who changed it last. The web server's port and address stay in game only, so the page can never cut itself off.
 - **Right-click any place** to copy its coordinates, or a link straight to it.
 - **Search everything.** Press `/` to find players, markers, worlds, or coordinates across every world, and jump there. The mod has the same search on a key of its own.
 - **Limit the map** to a circle, square, or rectangle, so it ends where your playable area does, with `/taerra limit` or on the settings page.
-- **Select chunks on the map**, in the browser or in game, to render them again, or to hide them under fog while staff build there, or veil them in thin fog that only hints at what lies beneath. Players inside a hidden area are hidden too.
+- **Select chunks on the map**, in the browser or in game, to render them again.
+- **Regions you draw chunk by chunk**, in the browser or in game, each with a name shown on the map. Hide a region under fog while staff build there, or veil it in thin fog that only hints at what lies beneath. Make it discoverable, and every player clears the fog for themselves by walking in, a fog of war that is theirs alone. Players inside a region are hidden from everyone who hasn't discovered it.
 - **Loaded chunks** as a private layer for staff, outlined by load level (entity ticking, ticking, loaded), with each area's players, force-loaded chunks and plugin tickets.
 - **Export the map as images** with `/taerra render image`.
 - **English and German** in the web map, the mod, and every in-game message.
@@ -123,9 +124,9 @@ Every setting can also be changed in game with `/taerra config`, or on the setti
 | `taerra.command.logout.others` | op | Logging other players out |
 | `taerra.command.mod` | op | `/taerra mod` |
 | `taerra.web.teleport` | op | Teleporting from the map while logged in |
-| `taerra.web.see-hidden` | op | Seeing hidden players on the map while logged in |
+| `taerra.web.see-hidden` | op | Seeing hidden players and through every region's fog while logged in |
 | `taerra.web.render` | op | Rendering a whole world or selected chunks again, and canceling renders, while logged in |
-| `taerra.web.hide` | op | Hiding and revealing selected chunks while logged in |
+| `taerra.web.regions` | op | Drawing, naming, fogging and removing regions while logged in |
 | `taerra.web.markers` | op | Adding, editing, moving, and removing markers while logged in |
 | `taerra.web.markers.private` | op | Creating private marker groups while logged in |
 | `taerra.web.markers.personal` | everyone | Keeping waypoints only you see while logged in |

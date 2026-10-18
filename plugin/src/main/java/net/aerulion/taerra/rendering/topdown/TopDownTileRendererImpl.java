@@ -47,9 +47,22 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
       final int startBlockX,
       final int startBlockZ,
       final int tileSize) {
+    return render(source, startBlockX, startBlockZ, tileSize, false);
+  }
+
+  @Override
+  public @NotNull RenderedImage render(
+      final @NotNull ChunkColumnsSource source,
+      final int startBlockX,
+      final int startBlockZ,
+      final int tileSize,
+      final boolean overlay) {
     final @NotNull SurfaceGrid surface =
         SurfaceGrid.sample(
             source, startBlockX, startBlockZ, tileSize, SunShadow.reach(this.shadowDistance));
+    if (overlay) {
+      return overlay(surface, startBlockX, startBlockZ, tileSize);
+    }
     final @NotNull BiomeBlend biomes = new BiomeBlend(source, this.colors);
     final int @NotNull [] pixels = new int[tileSize * tileSize];
     final int @NotNull [] pickDepth = new int[tileSize * tileSize];
@@ -113,6 +126,30 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
 
     return new RenderedImage(
         ImageUtils.fromPixels(tileSize, pixels), new PickBuffer(tileSize, pickDepth, pickHeight));
+  }
+
+  private static @NotNull RenderedImage overlay(
+      final @NotNull SurfaceGrid surface,
+      final int startBlockX,
+      final int startBlockZ,
+      final int tileSize) {
+    final int @NotNull [] pixels = new int[tileSize * tileSize];
+    final Fog.@NotNull Cell cell = new Fog.Cell();
+    for (int x = 0; x < tileSize; x++) {
+      for (int z = 0; z < tileSize; z++) {
+        final int index = surface.index(x, z);
+        if (surface.blockId(index) != BlockTypes.NONE) {
+          pixels[z * tileSize + x] =
+              Fog.overlay(
+                  surface.mist(index),
+                  startBlockX + x + 0.5f,
+                  startBlockZ + z + 0.5f,
+                  surface.surfaceY(index),
+                  cell);
+        }
+      }
+    }
+    return new RenderedImage(ImageUtils.fromPixels(tileSize, pixels), null);
   }
 
   @Override

@@ -6,12 +6,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.model.WorldLimit;
+import net.aerulion.taerra.region.MapRegion;
+import net.aerulion.taerra.region.RegionVisibility;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.socket.MapWebSocketHandler;
 import org.bukkit.Bukkit;
@@ -30,24 +33,25 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
   private final @NotNull TaerraConfig config;
   private final @NotNull MapWebSocketHandler wsHandler;
   private final @NotNull WorldLimits limits;
+  private final @NotNull RegionVisibility visibility;
   private final @NotNull ObjectMapper mapper;
   private final @NotNull String anonymousSalt = UUID.randomUUID().toString();
-  private volatile @NotNull Map<String, String> lastSent = Map.of();
-  private volatile @NotNull Map<String, String> lastSentWithHidden = Map.of();
-  private volatile @NotNull Map<UUID, Player> shown = Map.of();
-  private volatile @NotNull Map<UUID, Player> shownWithHidden = Map.of();
+  private volatile @NotNull Map<String, List<Entry>> lastSent = Map.of();
+  private volatile @NotNull Map<UUID, Entry> shown = Map.of();
   private @Nullable BukkitTask task;
 
   public PlayerPositionBroadcasterImpl(
       final @NotNull Plugin plugin,
       final @NotNull TaerraConfig config,
       final @NotNull MapWebSocketHandler wsHandler,
-      final @NotNull WorldLimits limits) {
+      final @NotNull WorldLimits limits,
+      final @NotNull RegionVisibility visibility) {
     super();
     this.plugin = plugin;
     this.config = config;
     this.wsHandler = wsHandler;
     this.limits = limits;
+    this.visibility = visibility;
     this.mapper = new ObjectMapper();
   }
 
@@ -81,19 +85,32 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
   @Override
   public @NotNull String players(final @NotNull Viewer viewer) {
     final @NotNull StringJoiner players = new StringJoiner(",", "[", "]");
-    (viewer.canSeeHidden() ? this.lastSentWithHidden : this.lastSent)
-        .forEach(
-            (world, json) -> {
-              if (json.length() > 2 && viewer.canSee(this.config, world)) {
-                players.add(json.substring(1, json.length() - 1));
-              }
-            });
+    this.lastSent.forEach(
+        (world, entries) -> {
+          if (!viewer.canSee(this.config, world)) {
+            return;
+          }
+          for (final @NotNull Entry entry : entries) {
+            if (viewer.canSeeHidden()) {
+              players.add(entry.withHidden());
+            } else if (entry.listed() != null && visible(entry, viewer)) {
+              players.add(entry.listed());
+            }
+          }
+        });
     return players.toString();
   }
 
   @Override
-  public @Nullable Player shown(final @NotNull UUID uuid, final boolean withHidden) {
-    return (withHidden ? this.shownWithHidden : this.shown).get(uuid);
+  public @Nullable Player shown(final @NotNull UUID uuid, final @NotNull Viewer viewer) {
+    final @Nullable Entry entry = this.shown.get(uuid);
+    return entry == null || (!viewer.canSeeHidden() && (!entry.named() || !visible(entry, viewer)))
+        ? null
+        : entry.player();
+  }
+
+  private boolean visible(final @NotNull Entry entry, final @NotNull Viewer viewer) {
+    return entry.region() == 0 || this.visibility.revealed(viewer.uuid(), false, entry.region());
   }
 
   private @NotNull Map<String, Object> anonymize(
@@ -113,18 +130,15 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
   }
 
   private void broadcastPlayerUpdates() {
-    final @NotNull Map<String, String> sent = new HashMap<>();
-    final @NotNull Map<String, String> sentWithHidden = new HashMap<>();
-    final @NotNull Map<UUID, Player> shown = new HashMap<>();
-    final @NotNull Map<UUID, Player> shownWithHidden = new HashMap<>();
+    final @NotNull Map<String, List<Entry>> sent = new HashMap<>();
+    final @NotNull Map<UUID, Entry> shown = new HashMap<>();
     for (final @NotNull World world : Bukkit.getWorlds()) {
       final @NotNull String worldName = WorldKeys.id(world);
       if (!this.config.worldEnabled(worldName)) {
         continue;
       }
 
-      final @NotNull List<Map<String, Object>> playerData = new ArrayList<>();
-      final @NotNull List<Map<String, Object>> withHidden = new ArrayList<>();
+      final @NotNull List<Entry> entries = new ArrayList<>();
       final @Nullable WorldLimit limit = this.limits.get(worldName);
 
       for (final @NotNull Player player : world.getPlayers()) {
@@ -133,42 +147,67 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
                 player.getLocation().getBlockX(), player.getLocation().getBlockZ())) {
           continue;
         }
-        final boolean hidden =
-            !PlayerMapPayloadSerializer.shouldIncludePlayer(player)
-                || this.limits.hidden(
+        final @Nullable MapRegion region =
+            this.visibility
+                .regions()
+                .foggedAt(
                     worldName,
                     player.getLocation().getBlockX() >> 4,
                     player.getLocation().getBlockZ() >> 4);
+        final boolean included = PlayerMapPayloadSerializer.shouldIncludePlayer(player);
         final @NotNull Map<String, Object> data = PlayerMapPayloadSerializer.serialize(player);
-        data.put("hidden", hidden);
-        withHidden.add(data);
-        shownWithHidden.put(player.getUniqueId(), player);
-        if (hidden) {
-          continue;
-        }
-        if (player.isAllowingServerListings()) {
-          playerData.add(data);
-          shown.put(player.getUniqueId(), player);
-        } else {
-          playerData.add(anonymize(data, player));
+        try {
+          data.put("hidden", !included || region != null);
+          final @NotNull String withHidden = this.mapper.writeValueAsString(data);
+          data.put("hidden", false);
+          final @Nullable String listed =
+              !included
+                  ? null
+                  : this.mapper.writeValueAsString(
+                      player.isAllowingServerListings() ? data : anonymize(data, player));
+          final @NotNull Entry entry =
+              new Entry(
+                  player,
+                  region == null ? 0 : region.id(),
+                  included && player.isAllowingServerListings(),
+                  listed,
+                  withHidden);
+          entries.add(entry);
+          shown.put(player.getUniqueId(), entry);
+        } catch (final Exception e) {
+          this.plugin
+              .getLogger()
+              .warning("Failed to serialize player positions: " + e.getMessage());
         }
       }
-
-      try {
-        sent.put(worldName, this.mapper.writeValueAsString(playerData));
-        sentWithHidden.put(worldName, this.mapper.writeValueAsString(withHidden));
-      } catch (final Exception e) {
-        this.plugin.getLogger().warning("Failed to serialize player positions: " + e.getMessage());
-      }
+      sent.put(worldName, List.copyOf(entries));
     }
-    final boolean changed =
-        !sent.equals(this.lastSent) || !sentWithHidden.equals(this.lastSentWithHidden);
+    final boolean changed = !sent.equals(this.lastSent);
     this.lastSent = Map.copyOf(sent);
-    this.lastSentWithHidden = Map.copyOf(sentWithHidden);
     this.shown = Map.copyOf(shown);
-    this.shownWithHidden = Map.copyOf(shownWithHidden);
     if (changed) {
       this.wsHandler.broadcast(viewer -> "{\"type\":\"players\",\"data\":" + players(viewer) + "}");
+    }
+  }
+
+  private record Entry(
+      @NotNull Player player,
+      int region,
+      boolean named,
+      @Nullable String listed,
+      @NotNull String withHidden) {
+
+    @Override
+    public boolean equals(final @Nullable Object other) {
+      return other instanceof Entry entry
+          && entry.region == this.region
+          && entry.withHidden.equals(this.withHidden)
+          && Objects.equals(entry.listed, this.listed);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(this.region, this.listed, this.withHidden);
     }
   }
 }

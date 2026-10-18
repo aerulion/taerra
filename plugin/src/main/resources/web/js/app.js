@@ -7,6 +7,7 @@ import {navigationManager} from './navigation.js';
 import {setupOffline} from './offline.js';
 import {element, markerManager, privateIcon} from './markers.js';
 import {playerManager} from './players.js';
+import {regionManager} from './regions.js';
 import {searchPalette} from './search.js';
 import {settingsDialog} from './settings.js';
 import {skyManager} from './sky.js';
@@ -129,6 +130,7 @@ async function selectWorld(name) {
     navigationManager.setWorld(world.name);
     wsManager.subscribe(world.name);
     void markerManager.load(world.name);
+    void regionManager.load(world.name);
 }
 
 async function loadPlayers() {
@@ -331,6 +333,7 @@ function syncViewControls() {
     $('rotation-readout').setAttribute('aria-label', t('view.facing', {direction}));
     playerManager.reposition();
     markerManager.redraw();
+    regionManager.redraw();
     navigationManager.redraw();
     chunkSelection.redraw();
 }
@@ -488,6 +491,7 @@ function placeLink(block) {
 function setupContextMenu() {
     const menu = $('context-menu');
     let block = null;
+    let regionTarget = null;
     let closeTimer = 0;
 
     const close = () => {
@@ -515,7 +519,13 @@ function setupContextMenu() {
         menu.querySelector('[data-action="teleport"]').hidden = !accountManager.canTeleport();
         const placing = accountManager.canEditMarkers() || accountManager.canKeepPersonal();
         menu.querySelector('[data-action="waypoint"]').hidden = !placing;
-        menu.querySelector('[data-action="select"]').hidden = !accountManager.canRender() && !accountManager.canHide();
+        menu.querySelector('[data-action="select"]').hidden = !accountManager.canRender();
+        const owner = regionManager.at(Math.floor(block.x / 16), Math.floor(block.z / 16));
+        const region = menu.querySelector('[data-action="region"]');
+        region.hidden = !accountManager.canEditRegions();
+        region.dataset.i18n = owner ? 'menu.editRegion' : 'menu.drawRegion';
+        region.textContent = owner ? t('menu.editRegion', {name: owner.name || t('region.unnamed')}) : t('menu.drawRegion');
+        regionTarget = owner;
         const rendering = renderingWorld === currentWorld.name;
         menu.querySelector('[data-action="render-world"]').hidden = !accountManager.canRender() || rendering;
         menu.querySelector('[data-action="cancel-render"]').hidden = !accountManager.canRender() || !rendering;
@@ -564,6 +574,11 @@ function setupContextMenu() {
                 label: exact ? `${x}, ${y}, ${z}` : `${x}, ${z}`, world: currentWorld.name,
                 x: x + .5, y, z: z + .5, color: '#ffffff', player: null
             });
+            return;
+        }
+        if (action === 'region') {
+            close();
+            chunkSelection.start(currentWorld.name, 'region', regionTarget);
             return;
         }
         if (action === 'select' || action === 'area' || action === 'line') {
@@ -639,6 +654,14 @@ wsManager.on('markers', (message) => {
 
 wsManager.on('worlds', () => void refreshWorlds());
 
+wsManager.on('regions', () => {
+    if (currentWorld) {
+        void regionManager.load(currentWorld.name);
+        void markerManager.load(currentWorld.name);
+    }
+    void loadPlayers();
+});
+
 let connectedBefore = false;
 wsManager.on('config', () => void refreshServerName());
 wsManager.on('connect', () => {
@@ -648,7 +671,9 @@ wsManager.on('connect', () => {
         mapManager.refreshAllTiles();
         if (currentWorld) {
             void markerManager.load(currentWorld.name);
+            void regionManager.load(currentWorld.name);
         }
+        void loadPlayers();
     }
     connectedBefore = true;
 });
@@ -657,6 +682,7 @@ translatePage();
 const accountReady = accountManager.initialize().catch(error => console.error('Failed to log in:', error));
 await mapManager.initialize();
 markerManager.initialize();
+regionManager.initialize();
 skyManager.initialize({
     worlds: () => worlds,
     worldName,
@@ -690,6 +716,7 @@ waypointManager.initialize({
 playerManager.worldLabel = worldName;
 playerManager.onWorld = selectWorld;
 markerManager.onPlayers = () => playerManager.showAll();
+markerManager.onLayers = () => regionManager.redraw();
 markerManager.onWaypoint = async (action, waypoint, button) => {
     if (action === 'navigate') {
         mapManager.getMap().closePopup();

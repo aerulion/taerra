@@ -1,5 +1,6 @@
 package net.aerulion.taerra.mod.gui.screen;
 
+import com.google.gson.JsonParser;
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +36,7 @@ import net.aerulion.taerra.mod.web.model.MapConfig;
 import net.aerulion.taerra.mod.web.model.Marker;
 import net.aerulion.taerra.mod.web.model.Player;
 import net.aerulion.taerra.mod.web.model.Progress;
+import net.aerulion.taerra.mod.web.model.Regions;
 import net.aerulion.taerra.mod.web.model.Waypoint;
 import net.aerulion.taerra.mod.web.model.World;
 import net.minecraft.ChatFormatting;
@@ -65,6 +67,7 @@ public final class MapScreen extends Screen {
   private static final Identifier LIST_BACKGROUND =
       Identifier.withDefaultNamespace("textures/gui/inworld_menu_list_background.png");
   private static final int BUTTON_WIDTH = 74;
+  private static final int REGION_CHUNKS = 65536;
   private static final int PANEL_BUTTON_WIDTH = 74;
   private static final int SPAWN_BUTTON_WIDTH = 50;
   private static final int TITLE_GAP = 6;
@@ -130,6 +133,11 @@ public final class MapScreen extends Screen {
   private @Nullable Button saveButton;
   private @Nullable String editingId;
   private boolean deleteArmed;
+  private @Nullable Integer regionId;
+  private @NotNull String regionName = "";
+  private @NotNull String regionFog = "hide";
+  private boolean regionDiscoverable = true;
+  private boolean resetArmed;
   private @NotNull String color = Waypoint.DEFAULT_COLOR;
   private int vertex = -1;
   private boolean vertexExisting;
@@ -306,6 +314,7 @@ public final class MapScreen extends Screen {
       return true;
     }
     if (this.selection != null
+        && !(getFocused() instanceof EditBox)
         && event.key() >= InputConstants.KEY_1
         && event.key() < InputConstants.KEY_1 + tools().size()) {
       setTool(tools().get(event.key() - InputConstants.KEY_1));
@@ -1187,18 +1196,20 @@ public final class MapScreen extends Screen {
           this.selectionStatus != null && System.currentTimeMillis() < this.selectionStatusUntil;
       final boolean split =
           this.kind == Kind.AREA
-              && this.tool != SelectionTool.POINTS
-              && this.selection.rings().size() > 1;
+                  && this.tool != SelectionTool.POINTS
+                  && this.selection.rings().size() > 1
+              || this.kind == Kind.REGION && !this.selection.connected();
       final boolean full =
-          this.tool != SelectionTool.POINTS && this.selection.size() >= ChunkSelection.MAX_CHUNKS;
+          this.tool != SelectionTool.POINTS && this.selection.size() >= this.selection.limit();
       graphics.centeredText(
           this.font,
           split
-              ? Component.translatable("taerra.selection.split")
+              ? Component.translatable(
+                  this.kind == Kind.REGION ? "taerra.region.split" : "taerra.selection.split")
               : status
                   ? this.selectionStatus
                   : full
-                      ? Component.translatable("taerra.selection.full", ChunkSelection.MAX_CHUNKS)
+                      ? Component.translatable("taerra.selection.full", this.selection.limit())
                       : this.tool == SelectionTool.POINTS
                           ? Component.translatable("taerra.selection.points", this.path.size())
                           : this.selection.isEmpty()
@@ -1323,12 +1334,28 @@ public final class MapScreen extends Screen {
             startDrawing(Kind.LINE, null, null);
           });
     }
-    if (account != null && (account.render() || account.hide())) {
+    if (account != null && account.render()) {
       menu.add(
           Component.translatable("taerra.menu.select"),
           _ -> {
             closeMenu();
             startDrawing(Kind.CHUNKS, null, null);
+          });
+    }
+    if (account != null && account.regions()) {
+      final Regions.@Nullable Region owner =
+          regionAt(world, Math.floorDiv(place.x(), 16), Math.floorDiv(place.z(), 16));
+      menu.add(
+          owner == null
+              ? Component.translatable("taerra.menu.draw_region")
+              : Component.translatable(
+                  "taerra.menu.edit_region",
+                  owner.name().isEmpty()
+                      ? Component.translatable("taerra.region.unnamed")
+                      : Component.literal(owner.name())),
+          _ -> {
+            closeMenu();
+            startRegion(owner);
           });
     }
     if (account != null && account.render()) {
@@ -1498,6 +1525,52 @@ public final class MapScreen extends Screen {
     }
   }
 
+  private Regions.@Nullable Region regionAt(
+      final @NotNull String world, final int chunkX, final int chunkZ) {
+    final @Nullable List<Regions.Region> regions = this.map.regions(world).regions();
+    if (regions == null) {
+      return null;
+    }
+    for (final Regions.@NotNull Region region : regions) {
+      if (region.chunks() != null) {
+        for (final int @NotNull [] chunk : region.chunks()) {
+          if (chunk[0] == chunkX && chunk[1] == chunkZ) {
+            return region;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  private void startRegion(final Regions.@Nullable Region region) {
+    final @Nullable String world = this.view.world();
+    if (world == null) {
+      return;
+    }
+    this.regionId = region == null ? null : region.id();
+    this.regionName = region == null ? "" : region.name();
+    this.regionFog = region == null || region.fog() == null ? "hide" : region.fog();
+    this.regionDiscoverable = region == null || !Boolean.FALSE.equals(region.discoverable());
+    this.resetArmed = false;
+    startDrawing(Kind.REGION, null, region == null ? null : "region:" + region.id());
+    final @Nullable ChunkSelection selection = this.selection;
+    if (region != null && region.chunks() != null && selection != null) {
+      selection.addAll(
+          region.chunks().stream().map(chunk -> ChunkSelection.key(chunk[0], chunk[1])).toList());
+      selectionChanged();
+    }
+  }
+
+  private boolean taken(final long chunk) {
+    final @Nullable String world = this.view.world();
+    final Regions.@Nullable Region owner =
+        world == null
+            ? null
+            : regionAt(world, ChunkSelection.chunkX(chunk), ChunkSelection.chunkZ(chunk));
+    return owner != null && !Integer.valueOf(owner.id()).equals(this.regionId);
+  }
+
   private void startDrawing(
       final @NotNull Kind kind,
       final @Nullable Waypoint editing,
@@ -1507,7 +1580,8 @@ public final class MapScreen extends Screen {
     this.editing = editing;
     this.editingId = editingId;
     this.deleteArmed = false;
-    this.selection = new ChunkSelection();
+    this.selection =
+        kind == Kind.REGION ? new ChunkSelection(REGION_CHUNKS, this::taken) : new ChunkSelection();
     this.path.clear();
     if (editing != null && editing.points() != null) {
       editing.points().forEach(point -> this.path.add(new double[] {point.get(0), point.get(2)}));
@@ -1562,7 +1636,8 @@ public final class MapScreen extends Screen {
 
   private @NotNull List<SelectionTool> tools() {
     return switch (this.kind) {
-      case CHUNKS -> List.of(SelectionTool.BRUSH, SelectionTool.RECTANGLE, SelectionTool.LASSO);
+      case CHUNKS, REGION ->
+          List.of(SelectionTool.BRUSH, SelectionTool.RECTANGLE, SelectionTool.LASSO);
       case AREA -> List.of(SelectionTool.values());
       case LINE -> List.of();
     };
@@ -1583,7 +1658,119 @@ public final class MapScreen extends Screen {
     return rings.size() == 1 ? ChunkSelection.corners(rings.getFirst()) : null;
   }
 
+  private void saveRegion() {
+    final @Nullable ChunkSelection selection = this.selection;
+    final @Nullable String world = this.view.world();
+    if (selection == null || world == null || this.sending || !regionReady()) {
+      return;
+    }
+    this.sending = true;
+    rebuildWidgets();
+    this.map.saveRegion(
+        world,
+        this.regionId,
+        this.regionName,
+        this.regionFog,
+        this.regionDiscoverable,
+        Set.copyOf(selection.chunks()),
+        (status, body) -> {
+          this.sending = false;
+          if (selection == this.selection) {
+            if (status == 200 || status == 202) {
+              final @Nullable Integer id = regionId(body);
+              if (id != null) {
+                this.regionId = id;
+                this.editingId = "region:" + id;
+                selectionChanged();
+              }
+              showSelectionStatus(
+                  Component.translatable(
+                      status == 202 ? "taerra.region.started" : "taerra.region.saved"),
+                  false);
+            } else {
+              showSelectionStatus(Component.translatable(regionProblem(status, body)), true);
+            }
+          }
+          rebuildWidgets();
+        });
+  }
+
+  private boolean regionReady() {
+    final @Nullable ChunkSelection selection = this.selection;
+    return selection != null && !selection.isEmpty() && selection.connected();
+  }
+
+  private static @Nullable Integer regionId(final @Nullable String body) {
+    try {
+      return body == null
+          ? null
+          : JsonParser.parseString(body).getAsJsonObject().get("id").getAsInt();
+    } catch (final RuntimeException e) {
+      return null;
+    }
+  }
+
+  private static @NotNull String regionProblem(final int status, final @Nullable String body) {
+    try {
+      if (body != null) {
+        return "taerra.region.problem."
+            + JsonParser.parseString(body).getAsJsonObject().get("problem").getAsString();
+      }
+    } catch (final RuntimeException ignored) {
+    }
+    return status == 409 ? "taerra.region.problem.busy" : "taerra.region.problem.failed";
+  }
+
+  private void deleteRegion() {
+    final @Nullable Integer id = this.regionId;
+    if (id == null) {
+      return;
+    }
+    if (!this.deleteArmed) {
+      this.deleteArmed = true;
+      rebuildWidgets();
+      return;
+    }
+    this.map.deleteRegion(
+        id,
+        (status, body) -> {
+          if (status == 200 || status == 202) {
+            stopSelecting();
+          } else {
+            this.deleteArmed = false;
+            showSelectionStatus(Component.translatable(regionProblem(status, body)), true);
+            rebuildWidgets();
+          }
+        });
+  }
+
+  private void resetRegion() {
+    final @Nullable Integer id = this.regionId;
+    if (id == null) {
+      return;
+    }
+    if (!this.resetArmed) {
+      this.resetArmed = true;
+      rebuildWidgets();
+      return;
+    }
+    this.map.resetRegion(
+        id,
+        status -> {
+          this.resetArmed = false;
+          showSelectionStatus(
+              Component.translatable(
+                  status == 204 ? "taerra.region.reset_done" : "taerra.region.problem.failed"),
+              status != 204);
+          rebuildWidgets();
+        });
+  }
+
   private void save() {
+    if (this.kind == Kind.REGION) {
+      saveRegion();
+      return;
+    }
     final @Nullable List<double[]> shape = shape();
     final @Nullable String world = this.view.world();
     if (shape == null || world == null) {
@@ -1685,7 +1872,7 @@ public final class MapScreen extends Screen {
                 this.kind == Kind.CHUNKS ? null : Colors.argb(this.color),
                 this.editingId));
     if (this.saveButton != null) {
-      this.saveButton.active = shape() != null;
+      this.saveButton.active = this.kind == Kind.REGION ? regionReady() : shape() != null;
     }
   }
 
@@ -1728,14 +1915,66 @@ public final class MapScreen extends Screen {
       if (account != null && account.render()) {
         actions.add(actionButton("render"));
       }
-      if (account != null && account.hide()) {
-        actions.add(actionButton("hide"));
-        actions.add(actionButton("tease"));
-        actions.add(actionButton("reveal"));
-      }
       actions.add(
           Button.builder(Component.translatable("taerra.selection.done"), _ -> stopSelecting())
               .build());
+    } else if (this.kind == Kind.REGION) {
+      final @NotNull EditBox name =
+          new EditBox(this.font, 120, 20, Component.translatable("taerra.region.name"));
+      name.setMaxLength(48);
+      name.setValue(this.regionName);
+      name.setHint(Component.translatable("taerra.region.name"));
+      name.setResponder(value -> this.regionName = value);
+      actions.add(name);
+      actions.add(
+          CycleButton.<String>builder(
+                  fog -> Component.translatable("taerra.region.fog." + fog), this.regionFog)
+              .withValues("hide", "veil", "none")
+              .withTooltip(
+                  fog ->
+                      Tooltip.create(
+                          Component.translatable("taerra.region.fog." + fog + ".tooltip")))
+              .create(
+                  0,
+                  0,
+                  110,
+                  20,
+                  Component.translatable("taerra.region.fog"),
+                  (_, fog) -> this.regionFog = fog));
+      actions.add(
+          CycleButton.onOffBuilder(this.regionDiscoverable)
+              .withTooltip(
+                  _ -> Tooltip.create(Component.translatable("taerra.region.discoverable.tooltip")))
+              .create(
+                  0,
+                  0,
+                  130,
+                  20,
+                  Component.translatable("taerra.region.discoverable"),
+                  (_, value) -> this.regionDiscoverable = value));
+      if (this.regionId != null) {
+        actions.add(
+            Button.builder(
+                    Component.translatable(
+                        this.resetArmed ? "taerra.region.reset_confirm" : "taerra.region.reset"),
+                    _ -> resetRegion())
+                .build());
+        actions.add(
+            Button.builder(
+                    Component.translatable(
+                            this.deleteArmed
+                                ? "taerra.waypoint.confirm_delete"
+                                : "taerra.waypoint.delete")
+                        .withStyle(ChatFormatting.RED),
+                    _ -> deleteRegion())
+                .build());
+      }
+      actions.add(
+          Button.builder(Component.translatable("gui.cancel"), _ -> stopSelecting()).build());
+      this.saveButton =
+          Button.builder(Component.translatable("taerra.region.save"), _ -> save()).build();
+      this.saveButton.active = regionReady() && !this.sending;
+      actions.add(this.saveButton);
     } else {
       if (this.kind == Kind.LINE) {
         actions.add(
@@ -1853,6 +2092,7 @@ public final class MapScreen extends Screen {
 
   private enum Kind {
     CHUNKS,
+    REGION,
     AREA,
     LINE
   }

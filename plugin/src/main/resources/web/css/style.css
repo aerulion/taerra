@@ -2617,10 +2617,52 @@ h2 .badge {
     text-transform: uppercase;
 }
 
-.selection__actions {
+.selection__actions,
+.selection__region {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+}
+
+.selection__region {
+    align-items: center;
+}
+
+.selection__region .editor__input {
+    flex: 1 1 160px;
+    min-height: 32px;
+}
+
+.selection__region > .btn {
+    min-height: 32px;
+    padding: 0 10px 3px;
+    font-size: 12px;
+}
+
+.leaflet-tile > img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+
+.region-name-icon {
+    background: none;
+    border: 0;
+}
+
+.region-name {
+    display: block;
+    translate: -50% -50%;
+    color: var(--white);
+    font: 700 9px/1 var(--font-display);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    text-shadow: 1px 1px 0 rgb(0 0 0 / .7), 0 0 6px rgb(0 0 0 / .5);
+    white-space: nowrap;
+    pointer-events: none;
 }
 
 .selection__actions .btn {

@@ -16,5 +16,5 @@ public sealed interface PlayerPositionBroadcaster permits PlayerPositionBroadcas
   String players(@NotNull Viewer viewer);
 
   @Nullable
-  Player shown(@NotNull UUID uuid, boolean withHidden);
+  Player shown(@NotNull UUID uuid, @NotNull Viewer viewer);
 }

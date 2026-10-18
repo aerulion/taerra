@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -17,6 +18,7 @@ import net.aerulion.taerra.mod.web.model.NavigationTarget;
 import net.aerulion.taerra.mod.web.model.PersonalWaypoint;
 import net.aerulion.taerra.mod.web.model.Player;
 import net.aerulion.taerra.mod.web.model.Progress;
+import net.aerulion.taerra.mod.web.model.Regions;
 import net.aerulion.taerra.mod.web.model.ServerSettings;
 import net.aerulion.taerra.mod.web.model.Sky;
 import net.aerulion.taerra.mod.web.model.Waypoint;
@@ -95,6 +97,23 @@ public sealed interface WebMap permits WebMapImpl {
   void setSettingsOpen(boolean open);
 
   void area(String action, String world, Collection<Long> chunks, IntConsumer then);
+
+  Regions regions(String world);
+
+  Set<Integer> revealed(String world);
+
+  void saveRegion(
+      String world,
+      @Nullable Integer id,
+      String name,
+      String fog,
+      boolean discoverable,
+      Collection<Long> chunks,
+      BiConsumer<Integer, @Nullable String> then);
+
+  void deleteRegion(int id, BiConsumer<Integer, @Nullable String> then);
+
+  void resetRegion(int id, IntConsumer then);
 
   void render(String action, String world, IntConsumer then);
 
