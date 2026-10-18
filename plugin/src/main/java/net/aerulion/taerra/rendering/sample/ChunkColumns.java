@@ -164,7 +164,7 @@ public final class ChunkColumns {
   }
 
   public @NotNull ChunkColumns withMist(final int @NotNull [] mist) {
-    int ceilingY = this.maxTopY;
+    int ceilingY = terrainTopY();
     for (final int column : mist) {
       if (column != Fog.NO_MIST) {
         ceilingY = Math.max(ceilingY, Fog.ceilingY(column));
@@ -208,8 +208,19 @@ public final class ChunkColumns {
             this.capBlockId,
             this.columnBiome,
             this.minTopY,
-            this.maxTopY,
+            terrainTopY(),
             null);
+  }
+
+  private int terrainTopY() {
+    if (this.mist == null) {
+      return this.maxTopY;
+    }
+    int topY = EMPTY_COLUMN;
+    for (int column = 0; column < COLUMN_COUNT; column++) {
+      topY = Math.max(topY, topY(column));
+    }
+    return topY;
   }
 
   public long heights() {

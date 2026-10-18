@@ -10,17 +10,26 @@ public record RenderedTile(
     @NotNull TileCoordinate coordinate,
     @NotNull FogView layer,
     @NotNull BufferedImage image,
-    @Nullable PickBuffer pick) {
+    @Nullable PickBuffer pick,
+    @Nullable BufferedImage unveiled) {
+
+  public RenderedTile(
+      final @NotNull TileCoordinate coordinate,
+      final @NotNull FogView layer,
+      final @NotNull BufferedImage image,
+      final @Nullable PickBuffer pick) {
+    this(coordinate, layer, image, pick, null);
+  }
 
   public RenderedTile(
       final @NotNull TileCoordinate coordinate,
       final @NotNull BufferedImage image,
       final @Nullable PickBuffer pick) {
-    this(coordinate, FogView.BASE, image, pick);
+    this(coordinate, FogView.BASE, image, pick, null);
   }
 
   public RenderedTile(
       final @NotNull TileCoordinate coordinate, final @NotNull RenderedImage rendered) {
-    this(coordinate, FogView.BASE, rendered.image(), rendered.pick());
+    this(coordinate, FogView.BASE, rendered.image(), rendered.pick(), rendered.unveiled());
   }
 }

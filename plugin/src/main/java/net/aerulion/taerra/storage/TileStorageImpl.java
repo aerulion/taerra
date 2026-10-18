@@ -213,6 +213,34 @@ public final class TileStorageImpl implements TileStorage {
   }
 
   @Override
+  public void deleteLayers(final @NotNull String worldName) throws IOException {
+    for (final @NotNull MapView view : MapView.values()) {
+      final @NotNull Path directory =
+          this.dataDirectory
+              .toPath()
+              .resolve(view.directoryName())
+              .resolve(sanitizeWorldName(worldName));
+      if (!Files.isDirectory(directory)) {
+        continue;
+      }
+      try (final @NotNull Stream<Path> paths = Files.walk(directory)) {
+        for (final @NotNull Path path : (Iterable<Path>) paths::iterator) {
+          final @NotNull String name = path.getFileName().toString();
+          final int dot = name.indexOf('.');
+          if (dot > 0
+              && name.indexOf('.', dot + 1) > 0
+              && !name.endsWith(".tmp")
+              && FogView.parse(name.substring(dot + 1, name.lastIndexOf('.'))) != null) {
+            Files.deleteIfExists(path);
+          }
+        }
+      }
+    }
+    this.encodedTiles.asMap().keySet().removeIf(key -> !key.layer().base());
+    this.layers.invalidateAll();
+  }
+
+  @Override
   public @NotNull List<TileCoordinate> tilesAt(final @NotNull TileCoordinate level) {
     final @NotNull List<TileCoordinate> tiles = new ArrayList<>();
     final @Nullable File @Nullable [] columns =

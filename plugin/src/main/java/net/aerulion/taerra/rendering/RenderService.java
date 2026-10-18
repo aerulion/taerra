@@ -1,20 +1,22 @@
 package net.aerulion.taerra.rendering;
 
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.function.LongPredicate;
 import java.util.logging.Level;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.ChunkCoordinate;
-import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.model.WorldLimit;
-import net.aerulion.taerra.rendering.iso.IsoTileGeometry;
+import net.aerulion.taerra.rendering.iso.IsoTileService;
 import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
 import net.aerulion.taerra.rendering.queue.ChangeBuffer;
 import net.aerulion.taerra.rendering.queue.RenderPriority;
@@ -41,6 +43,7 @@ public final class RenderService {
   private final @NotNull RenderQueue renderQueue;
   private final @NotNull ChangeBuffer changes;
   private final @NotNull ChunkColumnsCache columns;
+  private final @NotNull IsoTileService isoTiles;
   private final @NotNull WorldLimits limits;
   private final @NotNull TaerraConfig config;
 
@@ -50,6 +53,7 @@ public final class RenderService {
       final @NotNull RenderQueue renderQueue,
       final @NotNull ChangeBuffer changes,
       final @NotNull ChunkColumnsCache columns,
+      final @NotNull IsoTileService isoTiles,
       final @NotNull WorldLimits limits,
       final @NotNull TaerraConfig config) {
     super();
@@ -58,6 +62,7 @@ public final class RenderService {
     this.renderQueue = renderQueue;
     this.changes = changes;
     this.columns = columns;
+    this.isoTiles = isoTiles;
     this.limits = limits;
     this.config = config;
   }
@@ -135,7 +140,7 @@ public final class RenderService {
     final @Nullable WorldLimit limit = this.limits.get(worldName);
     final @NotNull Set<Long> regions = new HashSet<>();
     final @NotNull Set<Long> tiles = new HashSet<>();
-    final @NotNull Set<TileCoordinate> isometric = new LinkedHashSet<>();
+    final @NotNull LongSet chunks = new LongOpenHashSet(affected);
     for (final long chunk : affected) {
       final int blockX = ChunkCoordinate.keyX(chunk) << 4;
       final int blockZ = ChunkCoordinate.keyZ(chunk) << 4;
@@ -147,23 +152,18 @@ public final class RenderService {
           ChunkCoordinate.key(
               Math.floorDiv(blockX, TileGeometry.TILE_SIZE),
               Math.floorDiv(blockZ, TileGeometry.TILE_SIZE)));
-      for (final @NotNull MapRotation rotation : MapRotation.values()) {
-        IsoTileGeometry.forEachTileCovering(
-            blockX,
-            blockZ,
-            16,
-            world.getMinHeight(),
-            world.getMaxHeight(),
-            rotation,
-            (tileX, tileY) ->
-                isometric.add(TileCoordinate.isometric(worldName, rotation, 0, tileX, tileY)));
-      }
     }
+    final @NotNull List<TileCoordinate> isometric =
+        this.isoTiles.tilesShowing(world, chunks, terrain);
     return start(
         mode,
         world,
         apply,
+        terrain ? _ -> true : chunks::contains,
         listener -> {
+          if (!terrain) {
+            this.generator.dropUnusedLayers(worldName);
+          }
           this.columns.forget(worldName, affected, terrain);
           this.renderQueue.enqueueAll(isometric, RenderPriority.FULL_RENDER_ZOOM_0);
           return RegionFileScanner.scanWorld(
@@ -228,6 +228,15 @@ public final class RenderService {
       final @NotNull World world,
       final @NotNull Runnable began,
       final @NotNull Function<RegionScanListener, RegionScanResult> scan) {
+    return start(mode, world, began, _ -> true, scan);
+  }
+
+  private @NotNull Start start(
+      final @NotNull String mode,
+      final @NotNull World world,
+      final @NotNull Runnable began,
+      final @NotNull LongPredicate chunks,
+      final @NotNull Function<RegionScanListener, RegionScanResult> scan) {
     final @NotNull String worldName = WorldKeys.id(world);
     if (!this.config.worldEnabled(worldName)) {
       return new Refused(Refusal.WORLD_DISABLED);
@@ -237,6 +246,7 @@ public final class RenderService {
     if (session == null) {
       return new Refused(Refusal.BUSY);
     }
+    session.limitTo(chunks);
     began.run();
 
     final @NotNull CompletableFuture<Scan> scanned = new CompletableFuture<>();

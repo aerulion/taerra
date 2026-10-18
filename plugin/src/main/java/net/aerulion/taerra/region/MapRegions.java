@@ -2,12 +2,14 @@ package net.aerulion.taerra.region;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import net.aerulion.taerra.model.ChunkCoordinate;
+import net.aerulion.taerra.rendering.style.Fog;
 import net.aerulion.taerra.util.AtomicFiles;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
@@ -22,6 +25,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class MapRegions {
+
+  public static final int CLOSE_CHUNKS = 5;
+  private static final int @NotNull [] NONE = new int[0];
 
   private final @NotNull Plugin plugin;
   private final @NotNull File file;
@@ -165,35 +171,29 @@ public final class MapRegions {
     return List.copyOf(this.snapshot.byId().values());
   }
 
-  public @NotNull List<MapRegion> fogged(
-      final @NotNull String worldName,
-      final int minChunkX,
-      final int minChunkZ,
-      final int maxChunkX,
-      final int maxChunkZ,
-      final int reach) {
-    final @NotNull List<MapRegion> found = new ArrayList<>();
-    for (final @NotNull MapRegion region : in(worldName)) {
-      if (region.fog().fogged()
-          && region.reaches(minChunkX, minChunkZ, maxChunkX, maxChunkZ, reach)) {
-        found.add(region);
-      }
-    }
-    return found;
+  public int @NotNull [] foggedNear(
+      final @NotNull String worldName, final int chunkX, final int chunkZ) {
+    return near(this.snapshot.near(), worldName, chunkX, chunkZ);
   }
 
-  public boolean foggedNear(
-      final @NotNull String worldName, final int chunkX, final int chunkZ, final int reach) {
-    for (final @NotNull MapRegion region : in(worldName)) {
-      if (region.fog().fogged() && region.reaches(chunkX, chunkZ, chunkX, chunkZ, reach)) {
-        return true;
-      }
-    }
-    return false;
+  public int @NotNull [] foggedClose(
+      final @NotNull String worldName, final int chunkX, final int chunkZ) {
+    return near(this.snapshot.close(), worldName, chunkX, chunkZ);
+  }
+
+  private static int @NotNull [] near(
+      final @NotNull Map<String, Long2ObjectOpenHashMap<int[]>> reach,
+      final @NotNull String worldName,
+      final int chunkX,
+      final int chunkZ) {
+    final @Nullable Long2ObjectOpenHashMap<int[]> world = reach.get(worldName);
+    final int @Nullable [] ids =
+        world == null ? null : world.get(ChunkCoordinate.key(chunkX, chunkZ));
+    return ids == null ? NONE : ids;
   }
 
   public boolean anyFogged(final @NotNull String worldName) {
-    return in(worldName).stream().anyMatch(region -> region.fog().fogged());
+    return this.snapshot.near().containsKey(worldName);
   }
 
   public long revision() {
@@ -260,9 +260,12 @@ public final class MapRegions {
       @NotNull Map<Integer, MapRegion> byId,
       @NotNull Map<String, List<MapRegion>> byWorld,
       @NotNull Map<String, Long2IntOpenHashMap> owners,
+      @NotNull Map<String, Long2ObjectOpenHashMap<int[]>> near,
+      @NotNull Map<String, Long2ObjectOpenHashMap<int[]>> close,
       long revision) {
 
-    private static final @NotNull Snapshot EMPTY = new Snapshot(Map.of(), Map.of(), Map.of(), 0L);
+    private static final @NotNull Snapshot EMPTY =
+        new Snapshot(Map.of(), Map.of(), Map.of(), Map.of(), Map.of(), 0L);
 
     private static @NotNull Snapshot of(final @NotNull List<MapRegion> regions) {
       return of(regions, 1L);
@@ -273,7 +276,13 @@ public final class MapRegions {
       final @NotNull Map<Integer, MapRegion> byId = new Int2ObjectOpenHashMap<>();
       final @NotNull Map<String, List<MapRegion>> byWorld = new HashMap<>();
       final @NotNull Map<String, Long2IntOpenHashMap> owners = new HashMap<>();
+      final @NotNull Map<String, Long2ObjectOpenHashMap<int[]>> near = new HashMap<>();
+      final @NotNull Map<String, Long2ObjectOpenHashMap<int[]>> close = new HashMap<>();
       for (final @NotNull MapRegion region : regions) {
+        if (region.fog().fogged()) {
+          spread(near, region, Fog.REACH_CHUNKS);
+          spread(close, region, CLOSE_CHUNKS);
+        }
         byId.put(region.id(), region);
         byWorld.computeIfAbsent(region.world(), _ -> new ArrayList<>()).add(region);
         final @NotNull Long2IntOpenHashMap world =
@@ -284,7 +293,57 @@ public final class MapRegions {
       }
       byWorld.replaceAll(
           (world, list) -> list.stream().sorted(Comparator.comparingInt(MapRegion::id)).toList());
-      return new Snapshot(Map.copyOf(byId), Map.copyOf(byWorld), Map.copyOf(owners), revision);
+      return new Snapshot(
+          Map.copyOf(byId),
+          Map.copyOf(byWorld),
+          Map.copyOf(owners),
+          Map.copyOf(near),
+          Map.copyOf(close),
+          revision);
+    }
+
+    private static void spread(
+        final @NotNull Map<String, Long2ObjectOpenHashMap<int[]>> into,
+        final @NotNull MapRegion region,
+        final int reach) {
+      final @NotNull LongSet reached = new LongOpenHashSet();
+      for (final long chunk : region.chunks()) {
+        final int chunkX = ChunkCoordinate.keyX(chunk);
+        final int chunkZ = ChunkCoordinate.keyZ(chunk);
+        if (inside(region, chunkX, chunkZ)) {
+          reached.add(chunk);
+          continue;
+        }
+        for (int offsetX = -reach; offsetX <= reach; offsetX++) {
+          for (int offsetZ = -reach; offsetZ <= reach; offsetZ++) {
+            reached.add(ChunkCoordinate.key(chunkX + offsetX, chunkZ + offsetZ));
+          }
+        }
+      }
+      final @NotNull Long2ObjectOpenHashMap<int[]> world =
+          into.computeIfAbsent(region.world(), _ -> new Long2ObjectOpenHashMap<>());
+      for (final long chunk : reached) {
+        final int @Nullable [] ids = world.get(chunk);
+        if (ids == null) {
+          world.put(chunk, new int[] {region.id()});
+        } else {
+          final int @NotNull [] grown = Arrays.copyOf(ids, ids.length + 1);
+          grown[ids.length] = region.id();
+          world.put(chunk, grown);
+        }
+      }
+    }
+
+    private static boolean inside(
+        final @NotNull MapRegion region, final int chunkX, final int chunkZ) {
+      for (int offsetX = -1; offsetX <= 1; offsetX++) {
+        for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
+          if (!region.contains(chunkX + offsetX, chunkZ + offsetZ)) {
+            return false;
+          }
+        }
+      }
+      return true;
     }
   }
 }

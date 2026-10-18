@@ -8,11 +8,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.LongPredicate;
 import java.util.function.ToIntFunction;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.rendering.region.RegionRenderTiming;
 import net.aerulion.taerra.rendering.tile.TileHierarchy;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class ManualRenderSession {
 
@@ -48,6 +50,7 @@ public final class ManualRenderSession {
   private volatile int lastChunksRead;
   private volatile int lastTilesRendered;
   private volatile long finishedAtNanos;
+  private volatile @Nullable LongPredicate chunks;
 
   public ManualRenderSession(
       final String mode,
@@ -262,6 +265,14 @@ public final class ManualRenderSession {
     this.lastMessage = this.mode + " completed";
     this.knownTiles.clear();
     return true;
+  }
+
+  public @Nullable LongPredicate chunks() {
+    return this.chunks;
+  }
+
+  public void limitTo(final @Nullable LongPredicate chunks) {
+    this.chunks = chunks;
   }
 
   public boolean owns(final TileCoordinate coord) {

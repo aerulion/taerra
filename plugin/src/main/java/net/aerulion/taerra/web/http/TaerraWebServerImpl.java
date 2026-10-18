@@ -93,7 +93,9 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     this.markers = markers;
     final @NotNull Requests requests = new Requests(sessions, taerraConfig);
     final @NotNull PlayerAvatars avatars = new PlayerAvatars();
-    this.worldList = new WorldList(plugin, taerraConfig, generatorService, wsHandler);
+    this.worldList =
+        new WorldList(
+            plugin, taerraConfig, generatorService, wsHandler, regionVisibility.regions());
     this.skyList = new SkyList(plugin, taerraConfig, wsHandler);
     this.routes =
         List.of(

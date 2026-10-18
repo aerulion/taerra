@@ -68,6 +68,7 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
     final int @NotNull [] pickDepth = new int[tileSize * tileSize];
     final int @NotNull [] pickHeight = new int[tileSize * tileSize];
     Arrays.fill(pickDepth, PickBuffer.UNPAINTED);
+    int @Nullable [] unveiled = null;
 
     for (int x = 0; x < tileSize; x++) {
       for (int z = 0; z < tileSize; z++) {
@@ -112,6 +113,12 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
           final int depth = surface.surfaceY(index) - surface.floorY(index);
           shaded = MapStyle.shallow(MapStyle.depthTinted(shaded, depth), depth);
         }
+        if (unveiled == null && surface.mist(index) != Fog.NO_MIST) {
+          unveiled = pixels.clone();
+        }
+        if (unveiled != null) {
+          unveiled[z * tileSize + x] = shaded;
+        }
         pixels[z * tileSize + x] =
             Fog.veil(
                 shaded,
@@ -125,7 +132,9 @@ public final class TopDownTileRendererImpl implements TopDownTileRenderer {
     }
 
     return new RenderedImage(
-        ImageUtils.fromPixels(tileSize, pixels), new PickBuffer(tileSize, pickDepth, pickHeight));
+        ImageUtils.fromPixels(tileSize, pixels),
+        new PickBuffer(tileSize, pickDepth, pickHeight),
+        unveiled == null ? null : ImageUtils.fromPixels(tileSize, unveiled));
   }
 
   private static @NotNull RenderedImage overlay(

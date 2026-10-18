@@ -2639,15 +2639,6 @@ h2 .badge {
     font-size: 12px;
 }
 
-.leaflet-tile > img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    image-rendering: pixelated;
-    pointer-events: none;
-}
-
 .region-name-icon {
     background: none;
     border: 0;

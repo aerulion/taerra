@@ -39,6 +39,7 @@ class MapManager {
         this.epoch = Date.now();
         this.tileVersions = new Map();
         this.revealed = new Set();
+        this.layered = false;
     }
 
     static rotateCell(rotation, x, z) {
@@ -301,20 +302,34 @@ class MapManager {
             this.map.removeLayer(this.tileLayer);
         }
 
-        const manager = this;
-        const Layered = L.GridLayer.extend({
-            createTile(coords, done) {
-                const tile = document.createElement('div');
-                void manager.composeTile(tile, coords.z, coords.x, coords.y).then(() => done(null, tile), error => done(error, tile));
-                return tile;
-            }
-        });
-        this.tileLayer = new Layered({
+        const options = {
             tileSize: MapManager.LEAFLET_TILE_SIZE,
             minZoom: this.activeMinZoom(),
             maxZoom: this.activeMaxZoom(),
             noWrap: true
-        });
+        };
+        if (this.layered) {
+            const manager = this;
+            const Layered = L.GridLayer.extend({
+                createTile(coords, done) {
+                    const tile = document.createElement('canvas');
+                    void manager.composeTile(tile, coords.z, coords.x, coords.y).then(() => done(null, tile), error => done(error, tile));
+                    return tile;
+                }
+            });
+            this.tileLayer = new Layered(options);
+            this.tileLayer.on('tileunload', event => event.tile.loading?.abort());
+        } else {
+            const template = this.isIsometric() ? '/api/iso/{world}/{rotation}/{z}/{x}/{y}.png?v={v}' :
+                '/api/tiles/{world}/{z}/{x}/{y}.png?v={v}';
+            this.tileLayer = L.tileLayer(template, {
+                ...options,
+                world: encodeURIComponent(this.currentWorld),
+                rotation: this.rotation,
+                v: (data) => this.tileVersion(data.z, data.x, data.y),
+                errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+            });
+        }
 
         this.tileLayer.addTo(this.map);
         this.map.setMinZoom(this.activeMinZoom());
@@ -367,11 +382,19 @@ class MapManager {
         this.map.getContainer().dataset.environment = world.environment ?? '';
         this.depth = world.depth ?? this.depth;
         this.bounds = world.bounds ?? null;
+        this.layered = world.layered === true;
 
         this.rebuildTileLayer();
 
         if (world.spawn && world.spawn.x !== undefined && world.spawn.z !== undefined) {
             this.centerOnBlock(world.spawn.x, world.spawn.z, Math.max(this.map.getZoom(), 2));
+        }
+    }
+
+    setLayered(layered) {
+        if (layered !== this.layered) {
+            this.layered = layered;
+            this.rebuildTileLayer();
         }
     }
 
@@ -381,7 +404,9 @@ class MapManager {
             return;
         }
         this.revealed = next;
-        this.refreshAllTiles();
+        if (this.layered) {
+            this.refreshAllTiles();
+        }
     }
 
     wantedLayers(header) {
@@ -391,29 +416,92 @@ class MapManager {
         }).sort((a, b) => a[0] === b[0] ? 0 : a[0] === 'b' ? -1 : 1);
     }
 
-    async composeTile(tile, zoom, x, y) {
-        const url = this.tileUrl(zoom, x, y);
-        const response = await fetch(url);
-        if (!response.ok) {
-            tile.replaceChildren();
-            return;
-        }
-        const layers = this.wantedLayers(response.headers.get('X-Taerra-Layers'));
-        const images = [url, ...layers.map(id => `${url}&layer=${id}`)].map(src => {
-            const image = new Image();
-            image.alt = '';
-            image.src = src;
-            return image;
-        });
-        await Promise.all(images.map(image => image.decode().catch(() => image.remove())));
-        tile.replaceChildren(...images.filter(image => image.complete && image.naturalWidth > 0));
+    static async fetchImage(url, signal) {
+        const response = await fetch(url, {signal});
+        return response.ok ? {response, image: await createImageBitmap(await response.blob())} : null;
     }
 
-    recompose(tile) {
-        const {x, y, z} = tile.coords;
-        const next = document.createElement('div');
-        void this.composeTile(next, z, x, y).then(() => tile.el.replaceChildren(...next.childNodes)).catch(() => {
+    async composeTile(tile, zoom, x, y) {
+        tile.loading?.abort();
+        const loading = new AbortController();
+        tile.loading = loading;
+        const url = this.tileUrl(zoom, x, y);
+        const base = await MapManager.fetchImage(url, loading.signal);
+        if (!base) {
+            if (!loading.signal.aborted) {
+                tile.getContext('2d').clearRect(0, 0, tile.width, tile.height);
+            }
+            return;
+        }
+        const ids = this.wantedLayers(base.response.headers.get('X-Taerra-Layers'));
+        const pieces = await Promise.all(ids.map(id => MapManager.fetchImage(`${url}&layer=${id}`, loading.signal).catch(() => null)));
+        if (loading.signal.aborted) {
+            return;
+        }
+        const {width, height} = base.image;
+        tile.width = width;
+        tile.height = height;
+        const context = tile.getContext('2d', {willReadFrequently: ids.length > 0});
+        context.drawImage(base.image, 0, 0);
+        if (ids.length === 0) {
+            return;
+        }
+        const out = context.getImageData(0, 0, width, height);
+        const scratch = new OffscreenCanvas(width, height).getContext('2d', {willReadFrequently: true});
+        pieces.forEach((piece, index) => {
+            if (!piece || piece.image.width !== width || piece.image.height !== height) {
+                return;
+            }
+            scratch.clearRect(0, 0, width, height);
+            scratch.drawImage(piece.image, 0, 0);
+            MapManager.blendPiece(out.data, scratch.getImageData(0, 0, width, height).data, ids[index][0] === 'b');
         });
+        context.putImageData(out, 0, 0);
+    }
+
+    static blendPiece(under, over, body) {
+        for (let i = 0; i < under.length; i += 4) {
+            const alpha = over[i + 3];
+            if (alpha === 0) {
+                continue;
+            }
+            if (body && alpha === 1) {
+                under[i + 3] = 0;
+                continue;
+            }
+            const keep = (255 - alpha) * under[i + 3] / 255;
+            const total = alpha + keep;
+            for (let channel = 0; channel < 3; channel++) {
+                under[i + channel] = (over[i + channel] * alpha + under[i + channel] * keep) / total;
+            }
+            under[i + 3] = total;
+        }
+    }
+
+    swapTileImage(element, url) {
+        const next = new Image();
+        const swap = () => {
+            element.src = url;
+        };
+
+        next.src = url;
+
+        if (typeof next.decode === 'function') {
+            next.decode().then(swap).catch(() => {
+            });
+        } else {
+            next.onload = swap;
+        }
+    }
+
+    refreshTile(tile) {
+        const {x, y, z} = tile.coords;
+        if (this.layered) {
+            void this.composeTile(tile.el, z, x, y).catch(() => {
+            });
+        } else {
+            this.swapTileImage(tile.el, this.tileUrl(z, x, y));
+        }
     }
 
     refreshTiles(tiles) {
@@ -453,7 +541,7 @@ class MapManager {
                 continue;
             }
 
-            this.recompose(tile);
+            this.refreshTile(tile);
         }
     }
 
@@ -471,7 +559,7 @@ class MapManager {
                 continue;
             }
 
-            this.recompose(tile);
+            this.refreshTile(tile);
         }
     }
 

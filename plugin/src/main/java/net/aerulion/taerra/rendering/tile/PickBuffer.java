@@ -8,6 +8,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
+import net.aerulion.taerra.util.ImageUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -196,8 +197,9 @@ public final class PickBuffer {
 
   public @NotNull PickBuffer masked(final @NotNull BufferedImage image) {
     final int @NotNull [] depth = this.depth.clone();
+    final int @NotNull [] pixels = ImageUtils.pixels(image);
     for (int index = 0; index < depth.length; index++) {
-      if ((image.getRGB(index % this.size, index / this.size) >>> 24) == 0) {
+      if ((pixels[index] >>> 24) == 0) {
         depth[index] = UNPAINTED;
       }
     }

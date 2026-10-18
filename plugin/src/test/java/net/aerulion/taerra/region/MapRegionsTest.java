@@ -1,5 +1,6 @@
 package net.aerulion.taerra.region;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -99,5 +100,35 @@ class MapRegionsTest {
     assertNull(reloaded.at(WORLD, 3, 3));
     assertTrue(reloaded.reserveId() > second);
     assertEquals(List.of(), reloaded.in("minecraft:the_nether"));
+  }
+
+  @Test
+  @DisplayName("fog reaches as far from a region's own chunks as it spills, not across its bounds")
+  void reachFollowsChunks() {
+    final @NotNull MapRegions regions = new MapRegions(plugin());
+    final @NotNull LongOpenHashSet chunks = new LongOpenHashSet();
+    for (int step = 0; step < 40; step++) {
+      chunks.add(ChunkCoordinate.key(step, 0));
+      chunks.add(ChunkCoordinate.key(0, step));
+    }
+    final int id = regions.reserveId();
+    regions.put(MapRegion.of(id, WORLD, "", RegionFog.VEIL, true, chunks));
+    regions.put(
+        MapRegion.of(
+            regions.reserveId(),
+            WORLD,
+            "",
+            RegionFog.NONE,
+            true,
+            new LongOpenHashSet(Set.of(ChunkCoordinate.key(100, 100)))));
+
+    assertArrayEquals(new int[] {id}, regions.foggedNear(WORLD, 20, 20 - 12));
+    assertArrayEquals(new int[] {id}, regions.foggedNear(WORLD, 47, -8));
+    assertArrayEquals(new int[0], regions.foggedNear(WORLD, 20, 20));
+    assertArrayEquals(new int[0], regions.foggedNear(WORLD, 48, 0));
+    assertArrayEquals(new int[0], regions.foggedClose(WORLD, 20, 20 - 12));
+    assertArrayEquals(new int[] {id}, regions.foggedClose(WORLD, 5, 5));
+    assertTrue(regions.anyFogged(WORLD));
+    assertFalse(regions.anyFogged("minecraft:the_nether"));
   }
 }

@@ -37,6 +37,9 @@ class RegionManager {
             }
         }
         mapManager.setRevealed(data?.revealed ?? []);
+        if (data) {
+            mapManager.setLayered(data.layered === true);
+        }
         this.redraw();
     }
 

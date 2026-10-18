@@ -116,6 +116,10 @@ public final class MapRoutes implements Routes {
       respondWithTile(ctx, this.tileStorage.readEncodedTile(coord, layer), "");
       return;
     }
+    if (!this.visibility.regions().anyFogged(coord.world())) {
+      respondWithTile(ctx, this.tileStorage.readEncodedTile(coord), "");
+      return;
+    }
     final @NotNull List<FogView> stored = this.tileStorage.layers(coord);
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
     final boolean clear =
@@ -192,7 +196,7 @@ public final class MapRoutes implements Routes {
 
   private void respondWithPick(final @NotNull Context ctx, final @NotNull TileCoordinate coord) {
     final @Nullable FogView layer = layer(ctx);
-    if (layer != null && layer.base()) {
+    if (layer != null && layer.base() && this.visibility.regions().anyFogged(coord.world())) {
       ctx.header(
           LAYERS_HEADER,
           this.tileStorage.layers(coord).stream()

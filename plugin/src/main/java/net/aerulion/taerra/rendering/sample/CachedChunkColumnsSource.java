@@ -50,7 +50,8 @@ public final class CachedChunkColumnsSource implements ChunkColumnsSource {
     if (resolved != null) {
       return resolved.map(ChunkColumns::heights).orElse(ChunkColumns.MISSING_HEIGHTS);
     }
-    return this.cache.knownHeights(WorldKeys.id(this.world), chunkX, chunkZ);
+    return this.cache.knownHeights(
+        WorldKeys.id(this.world), chunkX, chunkZ, this.view.kind() == FogView.Kind.SPILL);
   }
 
   public @NotNull FogView view() {

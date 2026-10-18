@@ -17,7 +17,8 @@ public final class TileCacheImpl implements TileCache {
 
   private static final int EXPIRY_SECONDS = 300;
   private final @NotNull TileStorage storage;
-  private final @NotNull Cache<TileCoordinate, Map<FogView, BufferedImage>> cache;
+  private final @NotNull Cache<TileCoordinate, BufferedImage> cache;
+  private final @NotNull Cache<TileCoordinate, Map<FogView, BufferedImage>> layers;
 
   public TileCacheImpl(final @NotNull TileStorage storage, final int maxSize) {
     super();
@@ -28,18 +29,27 @@ public final class TileCacheImpl implements TileCache {
             .recordStats()
             .expireAfterAccess(EXPIRY_SECONDS, TimeUnit.SECONDS)
             .build();
+    this.layers =
+        Caffeine.newBuilder()
+            .maximumSize(maxSize)
+            .expireAfterAccess(EXPIRY_SECONDS, TimeUnit.SECONDS)
+            .build();
   }
 
   @Override
   public @NotNull Optional<BufferedImage> get(final @NotNull TileCoordinate coord) {
-    return get(coord, FogView.BASE);
+    return Optional.ofNullable(
+        this.cache.get(coord, key -> this.storage.loadTile(key).orElse(null)));
   }
 
   @Override
   public @NotNull Optional<BufferedImage> get(
       final @NotNull TileCoordinate coord, final @NotNull FogView layer) {
+    if (layer.base()) {
+      return get(coord);
+    }
     final @NotNull Map<FogView, BufferedImage> layers =
-        this.cache.get(coord, _ -> new ConcurrentHashMap<>());
+        this.layers.get(coord, _ -> new ConcurrentHashMap<>());
     final @Nullable BufferedImage cached = layers.get(layer);
     if (cached != null) {
       return Optional.of(cached);
@@ -51,7 +61,7 @@ public final class TileCacheImpl implements TileCache {
 
   @Override
   public void put(final @NotNull TileCoordinate coord, final @NotNull BufferedImage image) {
-    put(coord, FogView.BASE, image);
+    this.cache.put(coord, image);
   }
 
   @Override
@@ -59,17 +69,26 @@ public final class TileCacheImpl implements TileCache {
       final @NotNull TileCoordinate coord,
       final @NotNull FogView layer,
       final @NotNull BufferedImage image) {
-    this.cache.get(coord, _ -> new ConcurrentHashMap<>()).put(layer, image);
+    if (layer.base()) {
+      put(coord, image);
+    } else {
+      this.layers.get(coord, _ -> new ConcurrentHashMap<>()).put(layer, image);
+    }
   }
 
   @Override
   public void invalidate(final @NotNull TileCoordinate coord) {
     this.cache.invalidate(coord);
+    this.layers.invalidate(coord);
   }
 
   @Override
   public void invalidate(final @NotNull TileCoordinate coord, final @NotNull FogView layer) {
-    final @Nullable Map<FogView, BufferedImage> layers = this.cache.getIfPresent(coord);
+    if (layer.base()) {
+      this.cache.invalidate(coord);
+      return;
+    }
+    final @Nullable Map<FogView, BufferedImage> layers = this.layers.getIfPresent(coord);
     if (layers != null) {
       layers.remove(layer);
     }
@@ -78,6 +97,7 @@ public final class TileCacheImpl implements TileCache {
   @Override
   public void clear() {
     this.cache.invalidateAll();
+    this.layers.invalidateAll();
   }
 
   @Override
@@ -90,5 +110,6 @@ public final class TileCacheImpl implements TileCache {
   @Override
   public void resize(final int maxSize) {
     this.cache.policy().eviction().ifPresent(eviction -> eviction.setMaximum(maxSize));
+    this.layers.policy().eviction().ifPresent(eviction -> eviction.setMaximum(maxSize));
   }
 }

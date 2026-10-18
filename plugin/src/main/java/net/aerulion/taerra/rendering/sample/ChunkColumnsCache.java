@@ -9,6 +9,8 @@ public sealed interface ChunkColumnsCache permits ChunkColumnsCacheImpl {
 
   long knownHeights(@NotNull String worldName, int chunkX, int chunkZ);
 
+  long knownHeights(@NotNull String worldName, int chunkX, int chunkZ, boolean sky);
+
   int refreshChanged(@NotNull World world) throws Exception;
 
   @NotNull

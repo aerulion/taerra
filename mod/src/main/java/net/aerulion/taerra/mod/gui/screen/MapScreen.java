@@ -4,8 +4,10 @@ import com.google.gson.JsonParser;
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.aerulion.taerra.mod.TaerraClient;
@@ -86,6 +88,8 @@ public final class MapScreen extends Screen {
   private final @NotNull MapView view;
   private final Settings settings;
   private final @NotNull PlayerList players;
+  private final @NotNull Map<Long, Regions.Region> regionOwners = new HashMap<>();
+  private @Nullable Regions indexedRegions;
   private final @NotNull LayerList layers;
   private final @NotNull WorldPicker worldPicker;
   private final WebMapListener listener =
@@ -1527,20 +1531,19 @@ public final class MapScreen extends Screen {
 
   private Regions.@Nullable Region regionAt(
       final @NotNull String world, final int chunkX, final int chunkZ) {
-    final @Nullable List<Regions.Region> regions = this.map.regions(world).regions();
-    if (regions == null) {
-      return null;
-    }
-    for (final Regions.@NotNull Region region : regions) {
-      if (region.chunks() != null) {
-        for (final int @NotNull [] chunk : region.chunks()) {
-          if (chunk[0] == chunkX && chunk[1] == chunkZ) {
-            return region;
-          }
+    final @NotNull Regions regions = this.map.regions(world);
+    if (regions != this.indexedRegions) {
+      this.indexedRegions = regions;
+      this.regionOwners.clear();
+      for (final Regions.@NotNull Region region :
+          regions.regions() == null ? List.<Regions.Region>of() : regions.regions()) {
+        for (final int @NotNull [] chunk :
+            region.chunks() == null ? List.<int[]>of() : region.chunks()) {
+          this.regionOwners.put(ChunkSelection.key(chunk[0], chunk[1]), region);
         }
       }
     }
-    return null;
+    return this.regionOwners.get(ChunkSelection.key(chunkX, chunkZ));
   }
 
   private void startRegion(final Regions.@Nullable Region region) {

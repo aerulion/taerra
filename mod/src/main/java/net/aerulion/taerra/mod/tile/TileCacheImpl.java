@@ -220,6 +220,10 @@ public final class TileCacheImpl implements TileCache {
                   status == 200 ? response.headers().firstValue("ETag").orElse(null) : tile.etag;
               final @NotNull List<String> wanted =
                   wanted(response.headers().firstValue(LAYERS_HEADER).orElse(null), revealed);
+              if (status == 304 && wanted.equals(tile.pieces.stream().map(Piece::id).toList())) {
+                return CompletableFuture.completedFuture(
+                    new Fetched(status, null, List.of(), null));
+              }
               final @NotNull List<CompletableFuture<@Nullable Piece>> pieces =
                   wanted.stream()
                       .map(
@@ -229,7 +233,7 @@ public final class TileCacheImpl implements TileCache {
                                   .handle(
                                       (layer, error) ->
                                           error == null && layer.statusCode() == 200
-                                              ? new Piece(id.charAt(0) == 'b', layer.body())
+                                              ? new Piece(id, layer.body())
                                               : null))
                       .toList();
               return CompletableFuture.allOf(pieces.toArray(CompletableFuture[]::new))
@@ -286,7 +290,7 @@ public final class TileCacheImpl implements TileCache {
       releaseTexture(tile);
       setPng(tile, null, List.of(), null);
       tile.missing = true;
-    } else {
+    } else if (status != 304) {
       if (image != null) {
         image.close();
       }
@@ -379,7 +383,12 @@ public final class TileCacheImpl implements TileCache {
     }
   }
 
-  private record Piece(boolean body, byte @NotNull [] png) {}
+  private record Piece(@NotNull String id, byte @NotNull [] png) {
+
+    boolean body() {
+      return this.id.charAt(0) == 'b';
+    }
+  }
 
   private record Fetched(
       int status, byte @Nullable [] png, @NotNull List<Piece> pieces, @Nullable String etag) {}

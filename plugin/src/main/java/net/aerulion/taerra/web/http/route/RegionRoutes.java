@@ -115,7 +115,16 @@ public final class RegionRoutes implements Routes {
       regions.add(entry);
     }
     ctx.header("Cache-Control", "no-cache")
-        .json(Map.of("revealed", revealed, "regions", regions, "editable", editing));
+        .json(
+            Map.of(
+                "revealed",
+                revealed,
+                "regions",
+                regions,
+                "editable",
+                editing,
+                "layered",
+                this.visibility.regions().anyFogged(worldName)));
   }
 
   private boolean mayEdit(final @NotNull Context ctx) {

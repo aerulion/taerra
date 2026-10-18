@@ -269,6 +269,7 @@ public final class Taerra extends JavaPlugin {
               renderQueue,
               changeBuffer,
               chunkColumnsCache,
+              isoTileService,
               worldLimits,
               configuration);
       final @NotNull RenderFeedback renderFeedback = new RenderFeedback(this);

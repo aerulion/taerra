@@ -4,9 +4,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,6 +61,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   private static final long DISPATCH_INTERVAL_MS = 20L;
   private static final int LIVE_BATCH_SIZE = 16;
   private static final int REGION_BATCH_SIZE = 64;
+  private static final int MIN_BATCH_SIZE = 4;
   private static final long STALE_TILE_MARGIN_MILLIS = 2_000L;
   private static final int RENDER_ATTEMPTS = 3;
 
@@ -137,8 +138,13 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
             Thread.ofPlatform().name("Taerra-Scheduler").daemon().factory());
   }
 
-  private static int batchSizeFor(final @NotNull RenderPriority priority) {
-    return priority.isLive() ? LIVE_BATCH_SIZE : REGION_BATCH_SIZE;
+  private int batchSizeFor(final @NotNull RenderPriority priority) {
+    if (priority.isLive()) {
+      return LIVE_BATCH_SIZE;
+    }
+    final int threads = Math.max(1, this.baseThreads + this.zoomThreads);
+    return Math.clamp(
+        Math.ceilDiv(this.renderQueue.size(), threads), MIN_BATCH_SIZE, REGION_BATCH_SIZE);
   }
 
   private static @NotNull BufferedImage combine(
@@ -420,14 +426,16 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
           this.completedZoom0Tiles.increment();
         }
       }
-      for (final @NotNull RenderedTile renderedTile : renderedTiles) {
-        keepOnly(
-            renderedTile.coordinate(),
-            layers.stream()
-                .filter(layer -> layer.coordinate().equals(renderedTile.coordinate()))
-                .map(RenderedTile::layer)
-                .filter(layer -> !layer.base())
-                .collect(Collectors.toSet()));
+      if (this.regions.anyFogged(WorldKeys.id(world))) {
+        final @NotNull Map<TileCoordinate, Set<FogView>> kept = new HashMap<>();
+        for (final @NotNull RenderedTile renderedTile : layers) {
+          final @NotNull Set<FogView> tile =
+              kept.computeIfAbsent(renderedTile.coordinate(), _ -> new HashSet<>());
+          if (!renderedTile.layer().base()) {
+            tile.add(renderedTile.layer());
+          }
+        }
+        kept.forEach(this::keepOnly);
       }
 
       final @NotNull Set<TileCoordinate> produced =
@@ -705,27 +713,43 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   private void persistLayers(
       final @NotNull TileCoordinate parent, final TileCoordinate @NotNull [] children)
       throws Exception {
+    if (!this.regions.anyFogged(parent.world())) {
+      return;
+    }
     final @NotNull Set<FogView> layers = new TreeSet<>(FogLayers.ORDER);
+    final @NotNull List<List<FogView>> stored = new ArrayList<>(children.length);
     for (final @NotNull TileCoordinate child : children) {
-      layers.addAll(this.storage.layers(child));
+      final @NotNull List<FogView> childLayers = this.storage.layers(child);
+      stored.add(childLayers);
+      layers.addAll(childLayers);
     }
     for (final @NotNull FogView layer : layers) {
       final BufferedImage @NotNull [] images = new BufferedImage[children.length];
       for (int index = 0; index < children.length; index++) {
         final @NotNull TileCoordinate child = children[index];
         images[index] =
-            this.cache
-                .get(child, layer)
-                .or(
-                    () ->
-                        layer.kind() == FogView.Kind.CLEAR
-                            ? this.cache.get(child, FogView.BASE)
-                            : Optional.empty())
-                .orElse(null);
+            stored.get(index).contains(layer)
+                ? this.cache.get(child, layer).orElse(null)
+                : layer.kind() == FogView.Kind.CLEAR ? this.cache.get(child).orElse(null) : null;
       }
       persistTile(parent, layer, combine(images, parent.view()));
     }
     keepOnly(parent, layers);
+  }
+
+  @Override
+  public void dropUnusedLayers(final @NotNull String worldName) {
+    if (this.regions.anyFogged(worldName)) {
+      return;
+    }
+    try {
+      this.storage.deleteLayers(worldName);
+      this.cache.clear();
+    } catch (final IOException e) {
+      this.plugin
+          .getLogger()
+          .log(Level.WARNING, "Failed to delete the region layers of " + worldName, e);
+    }
   }
 
   private void keepOnly(final @NotNull TileCoordinate coord, final @NotNull Set<FogView> layers) {

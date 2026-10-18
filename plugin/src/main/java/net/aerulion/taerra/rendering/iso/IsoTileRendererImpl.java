@@ -172,7 +172,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       final int maxWorldY,
       final @NotNull ChunkColumnsSource source,
       final boolean withPick) {
-    return renderTile(rotation, tileX, tileY, minWorldY, maxWorldY, source, withPick, false);
+    return renderTile(rotation, tileX, tileY, minWorldY, maxWorldY, source, withPick, List.of());
   }
 
   @Override
@@ -184,7 +184,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       final int maxWorldY,
       final @NotNull ChunkColumnsSource source,
       final boolean withPick,
-      final boolean overlay) {
+      final @NotNull List<MistView> views) {
     final int size = IsoTileGeometry.TILE_SIZE;
     final @NotNull ScreenBounds tileBounds = IsoTileGeometry.tileBounds(tileX, tileY, 0);
     final @NotNull IsoRenderPass pass =
@@ -194,8 +194,8 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
             rotation,
             new ColumnHeightField(source),
             new BiomeBlend(source, this.colors),
-            withPick && !overlay,
-            overlay);
+            withPick,
+            overlays(views));
 
     for (final long chunk : candidateChunks(pass, minWorldY, maxWorldY)) {
       if (pass.isFullyPainted()) {
@@ -203,7 +203,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       }
       final int chunkX = ChunkCoordinate.keyX(chunk);
       final int chunkZ = ChunkCoordinate.keyZ(chunk);
-      final long known = source.knownHeights(chunkX, chunkZ);
+      final long known = knownHeights(source, views, chunkX, chunkZ);
       if (known == ChunkColumns.MISSING_HEIGHTS
           || (known != ChunkColumns.UNKNOWN_HEIGHTS
               && ChunkColumns.maxTopOf(known) == ChunkColumns.EMPTY_COLUMN)) {
@@ -218,17 +218,51 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       }
       final @Nullable ChunkColumns columns = source.columnsFor(chunkX, chunkZ);
       if (columns != null && !columns.isEmpty()) {
-        renderChunk(pass, columns, source);
+        final @Nullable ChunkColumns @NotNull [] viewColumns = new ChunkColumns[views.size()];
+        for (int view = 0; view < viewColumns.length; view++) {
+          viewColumns[view] = views.get(view).source().columnsFor(chunkX, chunkZ);
+        }
+        renderChunk(pass, columns, source, viewColumns);
       }
     }
 
     return pass.finish();
   }
 
+  private static boolean @NotNull [] overlays(final @NotNull List<MistView> views) {
+    final boolean @NotNull [] overlays = new boolean[views.size()];
+    for (int view = 0; view < overlays.length; view++) {
+      overlays[view] = views.get(view).overlay();
+    }
+    return overlays;
+  }
+
+  private static long knownHeights(
+      final @NotNull ChunkColumnsSource source,
+      final @NotNull List<MistView> views,
+      final int chunkX,
+      final int chunkZ) {
+    long known = source.knownHeights(chunkX, chunkZ);
+    for (final @NotNull MistView view : views) {
+      final long viewed = view.source().knownHeights(chunkX, chunkZ);
+      if (known == ChunkColumns.UNKNOWN_HEIGHTS
+          || known == ChunkColumns.MISSING_HEIGHTS
+          || viewed == ChunkColumns.UNKNOWN_HEIGHTS
+          || viewed == ChunkColumns.MISSING_HEIGHTS) {
+        continue;
+      }
+      if (ChunkColumns.maxTopOf(viewed) > ChunkColumns.maxTopOf(known)) {
+        known = viewed;
+      }
+    }
+    return known;
+  }
+
   private void renderChunk(
       final @NotNull IsoRenderPass pass,
       final @NotNull ChunkColumns chunk,
-      final @NotNull ChunkColumnsSource source) {
+      final @NotNull ChunkColumnsSource source,
+      final @Nullable ChunkColumns @NotNull [] viewColumns) {
     final @NotNull MapRotation rotation = pass.rotation();
     final int rotatedChunkX = rotation.rotatedX(chunk.chunkX(), chunk.chunkZ());
     final int rotatedChunkZ = rotation.rotatedZ(chunk.chunkX(), chunk.chunkZ());
@@ -253,6 +287,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
         renderColumn(
             pass,
             chunk,
+            viewColumns,
             rotatedChunkX,
             rotatedChunkZ,
             around,
@@ -285,6 +320,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
   private void renderColumn(
       final @NotNull IsoRenderPass pass,
       final @NotNull ChunkColumns chunk,
+      final @Nullable ChunkColumns @NotNull [] viewColumns,
       final int rotatedChunkX,
       final int rotatedChunkZ,
       final ChunkColumns @NotNull [] @NotNull [] around,
@@ -313,9 +349,15 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
     final int mist = chunk.mist(columnIndex);
     final int terrainTopY = chunk.runTopY(firstRun);
     final boolean sky = Fog.sky(mist) && Fog.SKY_Y > terrainTopY;
+    int topY = sky ? Fog.ceilingY(mist) : terrainTopY;
+    for (final @Nullable ChunkColumns view : viewColumns) {
+      final int viewMist = view == null ? Fog.NO_MIST : view.mist(columnIndex);
+      if (Fog.sky(viewMist) && Fog.SKY_Y > terrainTopY) {
+        topY = Math.max(topY, Fog.ceilingY(viewMist));
+      }
+    }
 
-    if (this.projection.screenY(rotatedX, sky ? Fog.ceilingY(mist) + 1 : terrainTopY + 1, rotatedZ)
-            > pass.tileBounds().maxY()
+    if (this.projection.screenY(rotatedX, topY + 1, rotatedZ) > pass.tileBounds().maxY()
         || this.projection.screenY(rotatedX, chunk.runBottomY(lastRun - 1), rotatedZ)
                 + this.projection.blockScreenHeight()
             < pass.tileBounds().minY()) {
@@ -330,7 +372,15 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
     neighborTops(rotation, around, localX, localZ, neighborTops);
     pass.mist(mist);
     if (sky) {
-      drawSky(pass, originColumn, rotatedX, rotatedZ, Fog.ceilingY(mist), Fog.SKY_Y);
+      drawSky(pass, -1, originColumn, rotatedX, rotatedZ, Fog.ceilingY(mist), Fog.SKY_Y);
+    }
+    for (int view = 0; view < viewColumns.length; view++) {
+      final @Nullable ChunkColumns viewed = viewColumns[view];
+      final int viewMist = viewed == null ? Fog.NO_MIST : viewed.mist(columnIndex);
+      pass.viewMist(view, viewMist);
+      if (Fog.sky(viewMist) && Fog.SKY_Y > terrainTopY) {
+        drawSky(pass, view, originColumn, rotatedX, rotatedZ, Fog.ceilingY(viewMist), Fog.SKY_Y);
+      }
     }
 
     final int frontXX = blockX + rotation.worldDeltaX(1, 0);
@@ -436,6 +486,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
 
   private void drawSky(
       final @NotNull IsoRenderPass pass,
+      final int view,
       final int originColumn,
       final int rotatedX,
       final int rotatedZ,
@@ -460,7 +511,7 @@ public final class IsoTileRendererImpl implements IsoTileRenderer {
       final int firstRow = Math.max(0, originRow + this.projection.topFaceFirstRow(offset));
       final int lastRow = Math.min(size - 1, sideStart + sideHeight - 1);
       for (int y = firstRow; y <= lastRow; y++) {
-        pass.cloud(y * size + x, y < sideStart ? top : side);
+        pass.cloud(view, y * size + x, y < sideStart ? top : side);
       }
     }
   }

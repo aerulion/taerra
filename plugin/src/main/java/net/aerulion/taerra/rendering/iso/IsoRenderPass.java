@@ -1,6 +1,9 @@
 package net.aerulion.taerra.rendering.iso;
 
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.rendering.sample.BiomeBlend;
 import net.aerulion.taerra.rendering.sample.ColumnHeightField;
@@ -40,8 +43,12 @@ final class IsoRenderPass {
   private final int @NotNull [] veilY;
   private final int @NotNull [] cloud;
   private final Fog.@NotNull Cell fogCell = new Fog.Cell();
-  private final boolean overlay;
+  private final boolean @NotNull [] overlays;
+  private final int @NotNull [] viewMist;
+  private final int @NotNull [] @NotNull [] viewVeilMist;
+  private final int @NotNull [] @NotNull [] viewCloud;
   private int mist = Fog.NO_MIST;
+  private boolean misted;
   private int lastSunX = Integer.MIN_VALUE;
   private int lastSunY;
   private int lastSunZ;
@@ -54,9 +61,12 @@ final class IsoRenderPass {
       final @NotNull ColumnHeightField solids,
       final @NotNull BiomeBlend biomes,
       final boolean withPick,
-      final boolean overlay) {
+      final boolean @NotNull [] overlays) {
     super();
-    this.overlay = overlay;
+    this.overlays = overlays;
+    this.viewMist = new int[overlays.length];
+    this.viewVeilMist = new int[overlays.length][size * size];
+    this.viewCloud = new int[overlays.length][size * size];
     this.size = size;
     this.tileBounds = tileBounds;
     this.rotation = rotation;
@@ -98,6 +108,10 @@ final class IsoRenderPass {
 
   int size() {
     return this.size;
+  }
+
+  int views() {
+    return this.overlays.length;
   }
 
   @NotNull
@@ -181,11 +195,24 @@ final class IsoRenderPass {
 
   void mist(final int mist) {
     this.mist = mist;
+    this.misted |= mist != Fog.NO_MIST;
   }
 
-  void cloud(final int index, final int argb) {
-    if (this.pixels[index] == 0 && this.waterSurface[index] == NO_WATER && this.cloud[index] == 0) {
-      this.cloud[index] = argb;
+  void viewMist(final int view, final int mist) {
+    this.viewMist[view] = mist;
+  }
+
+  void cloud(final int view, final int index, final int argb) {
+    final int @NotNull [] cloud = view < 0 ? this.cloud : this.viewCloud[view];
+    if (this.pixels[index] == 0 && this.waterSurface[index] == NO_WATER && cloud[index] == 0) {
+      cloud[index] = argb;
+    }
+  }
+
+  private void veiled(final int index) {
+    this.veilMist[index] = this.mist;
+    for (int view = 0; view < this.viewMist.length; view++) {
+      this.viewVeilMist[view][index] = this.viewMist[view];
     }
   }
 
@@ -193,7 +220,7 @@ final class IsoRenderPass {
     if (this.pixels[index] == 0 && this.waterSurface[index] == NO_WATER) {
       this.waterSurface[index] = surfaceY;
       this.waterColor[index] = color;
-      this.veilMist[index] = this.mist;
+      veiled(index);
       this.veilY[index] = surfaceY;
     }
   }
@@ -218,7 +245,7 @@ final class IsoRenderPass {
                 : MapStyle.underwater(
                     color, this.waterColor[index], surfaceY - blockY + submergedExtra);
     if (surfaceY == NO_WATER) {
-      this.veilMist[index] = this.mist;
+      veiled(index);
       this.veilY[index] = blockY;
     }
     if (this.pickDepth != null && this.pickHeight != null) {
@@ -227,52 +254,54 @@ final class IsoRenderPass {
     }
   }
 
-  private void veil(final int index) {
+  private int fog(final int index, final int argb, final int mist, final boolean overlay) {
     final float screenX = this.tileBounds.minX() + index % this.size + 0.5f;
     final float screenY = this.tileBounds.minY() + index / this.size + 0.5f;
     final float across = screenX / HALF_WIDTH;
-    final float along = (screenY + Fog.layerY(this.veilMist[index]) * HALF_WIDTH) / QUARTER_WIDTH;
+    final float along = (screenY + Fog.layerY(mist) * HALF_WIDTH) / QUARTER_WIDTH;
     final float rotatedX = (along + across) / 2.0f;
     final float rotatedZ = (along - across) / 2.0f;
     final float worldX =
         this.rotation.worldDeltaX(1, 0) * rotatedX + this.rotation.worldDeltaX(0, 1) * rotatedZ;
     final float worldZ =
         this.rotation.worldDeltaZ(1, 0) * rotatedX + this.rotation.worldDeltaZ(0, 1) * rotatedZ;
-    this.pixels[index] =
-        this.overlay
-            ? Fog.skyShadow(
-                Fog.overlay(this.veilMist[index], worldX, worldZ, this.veilY[index], this.fogCell),
-                this.veilMist[index])
-            : Fog.skyShadow(
-                Fog.veil(
-                    this.pixels[index],
-                    this.veilMist[index],
-                    worldX,
-                    worldZ,
-                    this.veilY[index],
-                    this.fogCell),
-                this.veilMist[index]);
+    return Fog.skyShadow(
+        overlay
+            ? Fog.overlay(mist, worldX, worldZ, this.veilY[index], this.fogCell)
+            : Fog.veil(argb, mist, worldX, worldZ, this.veilY[index], this.fogCell),
+        mist);
+  }
+
+  private static int clouded(final int argb, final int cloud) {
+    return MapStyle.blend(
+        argb == 0 ? cloud | 0xFF000000 : argb, cloud | 0xFF000000, (cloud >>> 24) / 255.0f);
   }
 
   @NotNull
   RenderedImage finish() {
-    if (this.overlay) {
-      return finishOverlay();
+    int @Nullable [] unveiled = null;
+    if (this.misted || this.overlays.length > 0) {
+      for (int index = 0; index < this.size * this.size; index++) {
+        if (this.pixels[index] == 0 && this.waterSurface[index] != NO_WATER) {
+          this.pixels[index] = MapStyle.depthTinted(this.waterColor[index], Integer.MAX_VALUE);
+        }
+      }
+      unveiled = this.pixels.clone();
     }
     for (int index = 0; index < this.size * this.size; index++) {
       if (this.pixels[index] == 0 && this.waterSurface[index] != NO_WATER) {
         this.pixels[index] = MapStyle.depthTinted(this.waterColor[index], Integer.MAX_VALUE);
       }
       if (this.veilMist[index] != Fog.NO_MIST) {
-        veil(index);
+        this.pixels[index] = fog(index, this.pixels[index], this.veilMist[index], false);
       }
       if (this.cloud[index] != 0) {
-        this.pixels[index] =
-            MapStyle.blend(
-                this.pixels[index] == 0 ? this.cloud[index] | 0xFF000000 : this.pixels[index],
-                this.cloud[index] | 0xFF000000,
-                (this.cloud[index] >>> 24) / 255.0f);
+        this.pixels[index] = clouded(this.pixels[index], this.cloud[index]);
       }
+    }
+    final @NotNull List<BufferedImage> views = new ArrayList<>(this.overlays.length);
+    for (int view = 0; view < this.overlays.length; view++) {
+      views.add(ImageUtils.fromPixels(this.size, finishView(view, unveiled)));
     }
     return new RenderedImage(
         ImageUtils.fromPixels(this.size, this.pixels),
@@ -283,20 +312,27 @@ final class IsoRenderPass {
                 this.pickDepth,
                 this.pickHeight,
                 PickBuffer.ISOMETRIC_SCALE,
-                PickBuffer.ISOMETRIC_DEPTH_PER_HEIGHT));
+                PickBuffer.ISOMETRIC_DEPTH_PER_HEIGHT),
+        unveiled == null || !this.misted ? null : ImageUtils.fromPixels(this.size, unveiled),
+        views);
   }
 
-  private @NotNull RenderedImage finishOverlay() {
-    for (int index = 0; index < this.size * this.size; index++) {
-      if (this.veilMist[index] != Fog.NO_MIST) {
-        veil(index);
-      } else {
-        this.pixels[index] = 0;
+  private int @NotNull [] finishView(final int view, final int @NotNull [] unveiled) {
+    final boolean overlay = this.overlays[view];
+    final int @NotNull [] mists = this.viewVeilMist[view];
+    final int @NotNull [] clouds = this.viewCloud[view];
+    final int @NotNull [] out = new int[this.size * this.size];
+    for (int index = 0; index < out.length; index++) {
+      final int mist = mists[index];
+      int argb =
+          mist == Fog.NO_MIST
+              ? overlay ? 0 : unveiled[index]
+              : fog(index, unveiled[index], mist, overlay);
+      if (clouds[index] != 0) {
+        argb = overlay ? Fog.over(clouds[index], argb) : clouded(argb, clouds[index]);
       }
-      if (this.cloud[index] != 0) {
-        this.pixels[index] = Fog.over(this.cloud[index], this.pixels[index]);
-      }
+      out[index] = argb;
     }
-    return new RenderedImage(ImageUtils.fromPixels(this.size, this.pixels), null);
+    return out;
   }
 }

@@ -49,4 +49,6 @@ public sealed interface TileGeneratorService permits TileGeneratorServiceImpl {
   int @Nullable [] renderedArea(@NotNull String worldName);
 
   void setThreads(int configuredThreads);
+
+  void dropUnusedLayers(@NotNull String worldName);
 }

@@ -30,6 +30,8 @@ public sealed interface TileStorage permits TileStorageImpl {
   @NotNull
   List<FogView> layers(@NotNull TileCoordinate coord);
 
+  void deleteLayers(@NotNull String worldName) throws IOException;
+
   @NotNull
   List<TileCoordinate> tilesAt(@NotNull TileCoordinate level);
 
