@@ -2352,6 +2352,21 @@ h2 .badge {
     color: var(--waypoint);
 }
 
+.editor__inline {
+    justify-self: start;
+    min-height: 28px;
+    padding: 0 10px 3px;
+    font-size: 12px;
+}
+
+.editor__preview--region::before {
+    content: "";
+    width: 22px;
+    height: 22px;
+    background: color-mix(in srgb, var(--waypoint) 35%, transparent);
+    border: 2px solid var(--waypoint);
+}
+
 .editor__preview svg {
     shape-rendering: crispEdges;
     filter: drop-shadow(0 2px 0 rgb(0 0 0 / .45));
@@ -2617,26 +2632,56 @@ h2 .badge {
     text-transform: uppercase;
 }
 
-.selection__actions,
-.selection__region {
+.selection__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
 }
 
-.selection__region {
-    align-items: center;
+.selection__brush {
+    display: flex;
+    gap: 6px;
 }
 
-.selection__region .editor__input {
-    flex: 1 1 160px;
-    min-height: 32px;
+.selection__mode {
+    flex: 2 1 0;
 }
 
-.selection__region > .btn {
-    min-height: 32px;
-    padding: 0 10px 3px;
-    font-size: 12px;
+.selection__size {
+    flex: 3 1 0;
+}
+
+.selection__history {
+    flex: none;
+    grid-auto-columns: 36px;
+}
+
+.selection__mode[hidden],
+.selection__size[hidden] {
+    display: none;
+}
+
+.selection__brush[hidden] {
+    display: none;
+}
+
+.selection__history .btn {
+    padding: 0;
+}
+
+.selection__icon::before {
+    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M2 0h1v1H2zM1 1h2v1H1zM0 2h6v1H0zM1 3h2v1H1zM6 3h1v1H6zM2 4h1v1H2zM7 4h1v1H7zM7 5h1v1H7zM6 6h1v1H6zM3 7h3v1H3z'/></svg>");
+    content: "";
+    display: block;
+    width: 16px;
+    height: 16px;
+    margin: auto;
+    background: currentColor;
+    mask: var(--icon) center / contain no-repeat;
+}
+
+#selection-redo::before {
+    scale: -1 1;
 }
 
 .region-name-icon {
@@ -2790,6 +2835,10 @@ h2 .badge {
 .placing__cancel:focus-visible {
     background: var(--stone-500);
     outline: none;
+}
+
+.color-picker {
+    display: contents;
 }
 
 .swatches {
@@ -3042,6 +3091,10 @@ h2 .badge {
     background: var(--stone-800);
 }
 
+.manager__row--region {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
 .manager__row.is-hidden .search__icon,
 .manager__row.is-hidden .manager__text {
     opacity: .45;
@@ -3240,6 +3293,14 @@ footer.manager__buttons .btn--danger {
     .manager__actions {
         grid-column: 3 / -1;
         justify-content: flex-end;
+    }
+
+    .manager__row--region {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .manager__row--region .manager__actions {
+        grid-column: auto;
     }
 }
 

@@ -12,7 +12,10 @@ public record Regions(
       int id,
       String name,
       int[] label,
+      @Nullable String color,
       @Nullable String fog,
       @Nullable Boolean discoverable,
+      @Nullable Integer size,
+      @Nullable Integer discoveries,
       @Nullable List<int[]> chunks) {}
 }

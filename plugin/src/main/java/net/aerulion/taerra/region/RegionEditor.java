@@ -44,6 +44,7 @@ public final class RegionEditor {
       final @NotNull String worldName,
       final @Nullable Integer id,
       final @NotNull String name,
+      final @Nullable Integer color,
       final @NotNull RegionFog fog,
       final boolean discoverable,
       final @NotNull Collection<Long> chunks) {
@@ -78,8 +79,19 @@ public final class RegionEditor {
             final @NotNull MapRegion region =
                 previous == null
                     ? MapRegion.of(
-                        this.regions.reserveId(), worldName, trimmed, fog, discoverable, painted)
-                    : previous.with(trimmed, fog, discoverable, painted);
+                        this.regions.reserveId(),
+                        worldName,
+                        trimmed,
+                        color == null ? this.regions.freshColor(worldName) : color,
+                        fog,
+                        discoverable,
+                        painted)
+                    : previous.with(
+                        trimmed,
+                        color == null ? previous.color() : color,
+                        fog,
+                        discoverable,
+                        painted);
             return apply(world, region, rendered(previous, region), () -> this.regions.put(region));
           }
         });

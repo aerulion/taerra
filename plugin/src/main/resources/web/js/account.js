@@ -43,6 +43,7 @@ function show(account) {
     $('account-name').textContent = account?.name ?? '';
     $('manager-open').hidden = account?.personal !== true;
     $('settings-open').hidden = account?.config !== true;
+    $('regions-open').hidden = account?.regions !== true;
     const label = account ? `${t('account.as')} ${account.name}` : t('account.login');
     $('account-button').setAttribute('aria-label', label);
     $('account-button').title = label;

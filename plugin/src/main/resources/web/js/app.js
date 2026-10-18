@@ -13,6 +13,7 @@ import {settingsDialog} from './settings.js';
 import {skyManager} from './sky.js';
 import {chunkSelection} from './selection.js';
 import {waypointEditor} from './waypoints.js';
+import {regionEditor, regionList} from './regioneditor.js';
 import {wsManager} from './websocket.js';
 
 let serverName = document.getElementById('server-name').textContent;
@@ -656,7 +657,7 @@ wsManager.on('worlds', () => void refreshWorlds());
 
 wsManager.on('regions', () => {
     if (currentWorld) {
-        void regionManager.load(currentWorld.name);
+        void regionManager.load(currentWorld.name).then(() => regionList.refresh());
         void markerManager.load(currentWorld.name);
     }
     void loadPlayers();
@@ -699,6 +700,11 @@ navigationManager.onShow = (target) => {
     }
 };
 waypointEditor.initialize();
+regionEditor.initialize();
+regionList.initialize({
+    create: () => currentWorld && chunkSelection.start(currentWorld.name, 'region'),
+    edit: (region) => currentWorld && chunkSelection.start(currentWorld.name, 'region', region)
+});
 settingsDialog.initialize();
 chunkSelection.initialize();
 searchPalette.initialize({

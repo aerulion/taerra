@@ -69,7 +69,7 @@ public final class WaypointListScreen extends Screen {
   private static final String[] HIDDEN = {
     "#.......", ".#......", "..#.##..", ".#.#..#.", "#...#..#", ".#...#..", "..###.#.", ".......#"
   };
-  private static final String[] ON_MAP = {
+  static final String[] ON_MAP = {
     "...##...", "...##...", "........", "##.##.##", "##.##.##", "........", "...##...", "...##..."
   };
   private static final String[] NAVIGATE = {
@@ -78,10 +78,10 @@ public final class WaypointListScreen extends Screen {
   private static final String[] TELEPORT = {
     "..####..", ".#....#.", "#..##..#", "#.#..#.#", "#.#..#.#", "#..##..#", ".#....#.", "..####.."
   };
-  private static final String[] EDIT = {
+  static final String[] EDIT = {
     "......##", ".....#.#", "....#.#.", "...#.#..", "..#.#...", ".#.#....", "###.....", "##......"
   };
-  private static final String[] DELETE = {
+  static final String[] DELETE = {
     "..####..", "########", ".#....#.", ".#.##.#.", ".#.##.#.", ".#.##.#.", ".#....#.", "..####.."
   };
 

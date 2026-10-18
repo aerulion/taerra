@@ -97,6 +97,9 @@
                 <button aria-keyshortcuts="W" class="account-action" data-i18n="manager.title" data-icon="pin" hidden
                         id="manager-open" type="button">My waypoints
                 </button>
+                <button class="account-action" data-i18n="regions.title" data-icon="map" hidden id="regions-open"
+                        type="button">Regions
+                </button>
                 <button class="account-action" data-i18n="settings.title" data-icon="gear" hidden id="settings-open"
                         type="button">Settings
                 </button>
@@ -282,30 +285,35 @@
                     data-i18n-title="selection.tool.points.tooltip" data-tool="points" hidden type="button">Points
             </button>
         </div>
-        <div class="selection__region" hidden id="selection-region">
-            <input aria-label="Region name" autocomplete="off" class="editor__input" data-i18n-label="region.name"
-                   id="region-name" maxlength="48" spellcheck="false">
-            <div aria-label="Fog" class="segmented segmented--small" data-i18n-label="region.fog" id="region-fog"
-                 role="group">
-                <button aria-pressed="true" class="btn" data-fog="hide" data-i18n="region.fog.hide"
-                        data-i18n-title="region.fog.hide.tooltip" type="button">Hidden
+        <div class="selection__brush" id="selection-brush">
+            <div aria-label="Mode" class="segmented segmented--small selection__mode" data-i18n-label="selection.mode"
+                 id="selection-mode" role="group">
+                <button aria-keyshortcuts="B" aria-pressed="true" class="btn" data-i18n="selection.mode.paint"
+                        data-i18n-title="selection.mode.paint.tooltip" data-mode="paint" type="button">Paint
                 </button>
-                <button aria-pressed="false" class="btn" data-fog="veil" data-i18n="region.fog.veil"
-                        data-i18n-title="region.fog.veil.tooltip" type="button">Veiled
-                </button>
-                <button aria-pressed="false" class="btn" data-fog="none" data-i18n="region.fog.none"
-                        data-i18n-title="region.fog.none.tooltip" type="button">No fog
+                <button aria-keyshortcuts="E" aria-pressed="false" class="btn" data-i18n="selection.mode.erase"
+                        data-i18n-title="selection.mode.erase.tooltip" data-mode="erase" type="button">Erase
                 </button>
             </div>
-            <button aria-pressed="false" class="btn" data-i18n-title="region.discoverable.tooltip"
-                    id="region-discoverable" type="button">Discoverable
-            </button>
+            <div aria-label="Brush size" class="segmented segmented--small selection__size" data-i18n-label="selection.size"
+                 id="selection-size" role="group">
+                <button aria-pressed="true" class="btn" data-size="1" type="button">1×1</button>
+                <button aria-pressed="false" class="btn" data-size="3" type="button">3×3</button>
+                <button aria-pressed="false" class="btn" data-size="5" type="button">5×5</button>
+            </div>
+            <div class="segmented segmented--small selection__history" role="group">
+                <button aria-keyshortcuts="Control+Z" aria-label="Undo" class="btn selection__icon"
+                        data-i18n-label="selection.undo" data-i18n-title="selection.undo.tooltip" id="selection-undo"
+                        type="button"></button>
+                <button aria-keyshortcuts="Control+Shift+Z" aria-label="Redo" class="btn selection__icon"
+                        data-i18n-label="selection.redo" data-i18n-title="selection.redo.tooltip" id="selection-redo"
+                        type="button"></button>
+            </div>
         </div>
         <div class="selection__actions">
             <button class="btn" data-action="render" data-i18n="selection.render" hidden id="selection-render"
                     type="button">Re-render
             </button>
-            <button class="btn" hidden id="region-reset" type="button">Forget discoveries</button>
             <button aria-pressed="false" class="btn" hidden id="selection-smooth" type="button">Smooth: off</button>
             <button class="btn btn--danger" hidden id="selection-delete" type="button">Delete</button>
             <button class="btn selection__done" data-action="done" data-i18n="selection.done" id="selection-done"
@@ -397,18 +405,7 @@
 
         <div aria-labelledby="waypoint-color-label" class="editor__section" role="group">
             <span class="editor__label" data-i18n="waypoint.color" id="waypoint-color-label">Color</span>
-            <div class="swatches" id="waypoint-swatches"></div>
-            <div aria-label="Saturation and brightness" class="picker" data-i18n-label="waypoint.shade"
-                 id="waypoint-shade" role="slider" tabindex="0">
-                <span class="picker__thumb" id="waypoint-shade-thumb"></span>
-            </div>
-            <input aria-label="Hue" class="hue" data-i18n-label="waypoint.hue" id="waypoint-hue" max="359" min="0"
-                   type="range">
-            <label class="hex">
-                <span aria-hidden="true">#</span>
-                <input aria-label="Hex color" autocomplete="off" data-i18n-label="waypoint.hex" id="waypoint-hex"
-                       maxlength="6" spellcheck="false" type="text">
-            </label>
+            <div class="color-picker" id="waypoint-color"></div>
         </div>
 
         <p class="editor__error" hidden id="waypoint-error" role="alert"></p>
@@ -420,6 +417,80 @@
             <button class="btn btn--primary" data-i18n="waypoint.save" type="submit">Save</button>
         </footer>
     </form>
+</dialog>
+
+<dialog aria-labelledby="region-title" class="editor" id="region-editor">
+    <form class="editor__form" id="region-form" novalidate>
+        <header class="editor__header">
+            <span class="editor__preview editor__preview--region" id="region-preview"></span>
+            <div>
+                <h2 class="editor__title" id="region-title"></h2>
+                <p class="editor__where" id="region-where"></p>
+            </div>
+        </header>
+
+        <div class="editor__section">
+            <label class="editor__label" data-i18n="region.name" for="region-name">Name</label>
+            <input autocomplete="off" class="editor__input" id="region-name" maxlength="48" spellcheck="false"
+                   type="text">
+        </div>
+
+        <div aria-labelledby="region-fog-label" class="editor__section" role="group">
+            <span class="editor__label" data-i18n="region.fog" id="region-fog-label">Fog</span>
+            <div class="segmented segmented--small" id="region-fog">
+                <button aria-pressed="true" class="btn" data-fog="hide" data-i18n="region.fog.hide"
+                        data-i18n-title="region.fog.hide.tooltip" type="button">Hidden
+                </button>
+                <button aria-pressed="false" class="btn" data-fog="veil" data-i18n="region.fog.veil"
+                        data-i18n-title="region.fog.veil.tooltip" type="button">Veiled
+                </button>
+                <button aria-pressed="false" class="btn" data-fog="none" data-i18n="region.fog.none"
+                        data-i18n-title="region.fog.none.tooltip" type="button">No fog
+                </button>
+            </div>
+            <label class="editor__check">
+                <input aria-describedby="region-discoverable-hint" id="region-discoverable" type="checkbox">
+                <span class="editor__check-text">
+                    <span class="editor__check-title" data-i18n="region.discoverable">Discoverable</span>
+                    <span class="editor__hint" data-i18n="region.discoverable.tooltip"
+                          id="region-discoverable-hint">Players clear the fog for themselves by walking in</span>
+                </span>
+            </label>
+            <button class="btn editor__inline" data-i18n="region.reset" id="region-reset" type="button">Forget
+                discoveries
+            </button>
+        </div>
+
+        <div aria-labelledby="region-color-label" class="editor__section" role="group">
+            <span class="editor__label" data-i18n="region.color" id="region-color-label">Color</span>
+            <div class="color-picker" id="region-color"></div>
+        </div>
+
+        <p class="editor__error" hidden id="region-error" role="alert"></p>
+
+        <footer class="editor__actions">
+            <button class="btn btn--danger" data-i18n="waypoint.delete" id="region-delete" type="button">Delete
+            </button>
+            <button class="btn" data-i18n="waypoint.cancel" id="region-cancel" type="button">Cancel</button>
+            <button class="btn btn--primary" data-i18n="region.save" type="submit">Save</button>
+        </footer>
+    </form>
+</dialog>
+
+<dialog aria-labelledby="regions-title" class="manager" id="regions">
+    <header class="manager__header">
+        <h2 class="manager__title" data-i18n="regions.title" id="regions-title">Regions</h2>
+        <span class="badge" id="regions-count"></span>
+        <button aria-label="Close" class="manager__close" data-i18n-label="manager.close" id="regions-close"
+                type="button"></button>
+    </header>
+    <div class="manager__tools">
+        <input aria-label="Filter" autocomplete="off" class="editor__input manager__filter" data-i18n-label="manager.filter"
+               id="regions-filter" spellcheck="false" type="search">
+        <button class="btn btn--primary" data-i18n="regions.new" id="regions-new" type="button">New region</button>
+    </div>
+    <ul class="manager__list" id="regions-list"></ul>
+    <p class="manager__empty" hidden id="regions-empty"></p>
 </dialog>
 
 <dialog aria-labelledby="settings-title" class="manager settings" id="settings">

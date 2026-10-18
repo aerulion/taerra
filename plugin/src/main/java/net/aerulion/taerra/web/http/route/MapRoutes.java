@@ -460,11 +460,12 @@ public final class MapRoutes implements Routes {
     final @Nullable MarkerLayer regions = this.markers.existingLayer(RegionMarkers.LAYER);
     if (regions != null && visible.test(RegionMarkers.LAYER)) {
       layers.addAll(
-          MarkerPayloadSerializer.layer(
-              RegionMarkers.LAYER,
+          RegionMarkers.layer(
+              this.visibility,
+              viewer,
+              worldName,
               regions.label(),
               regions.shownByDefault(),
-              RegionMarkers.markers(this.visibility, viewer, worldName),
               this.taerraConfig::layerPrivate));
     }
     ctx.header("Cache-Control", "no-cache").json(layers);

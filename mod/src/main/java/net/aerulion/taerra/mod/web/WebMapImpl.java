@@ -446,12 +446,14 @@ public final class WebMapImpl implements WebMap {
       final @NotNull String world,
       final @Nullable Integer id,
       final @NotNull String name,
+      final @NotNull String color,
       final @NotNull String fog,
       final boolean discoverable,
       final @NotNull Collection<Long> chunks,
       final @NotNull BiConsumer<Integer, @Nullable String> then) {
     final @NotNull Map<String, Object> body = new HashMap<>();
     body.put("world", world);
+    body.put("color", color);
     if (id != null) {
       body.put("id", id);
     }

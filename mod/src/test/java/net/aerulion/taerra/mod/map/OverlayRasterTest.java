@@ -44,6 +44,7 @@ class OverlayRasterTest {
         256,
         false,
         false,
+        false,
         false);
   }
 

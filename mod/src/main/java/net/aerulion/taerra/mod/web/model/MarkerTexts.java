@@ -155,6 +155,7 @@ public final class MarkerTexts {
         marker.maxY(),
         marker.hollow(),
         marker.fullHeight(),
-        marker.smooth());
+        marker.smooth(),
+        marker.muted());
   }
 }

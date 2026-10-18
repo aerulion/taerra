@@ -14,11 +14,13 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.logging.Level;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.rendering.style.Fog;
 import net.aerulion.taerra.util.AtomicFiles;
+import net.aerulion.taerra.util.HexColors;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -46,11 +48,15 @@ public final class MapRegions {
         try {
           final int id = ((Number) entry.get("id")).intValue();
           final @Nullable RegionFog fog = RegionFog.parse(String.valueOf(entry.get("fog")));
+          final @NotNull OptionalInt color =
+              HexColors.parseRgb(
+                  entry.get("color") == null ? null : String.valueOf(entry.get("color")));
           loaded.add(
               MapRegion.of(
                   id,
                   (String) entry.get("world"),
                   entry.get("name") == null ? "" : String.valueOf(entry.get("name")),
+                  color.orElse(MapRegion.PALETTE[Math.floorMod(id - 1, MapRegion.PALETTE.length)]),
                   fog == null ? RegionFog.HIDE : fog,
                   Boolean.TRUE.equals(entry.get("discoverable")),
                   chunks((List<?>) entry.get("chunks"))));
@@ -141,7 +147,9 @@ public final class MapRegions {
       }
       if (!chunks.isEmpty()) {
         world.addAll(chunks);
-        kept.add(region.with(region.name(), region.fog(), region.discoverable(), chunks));
+        kept.add(
+            region.with(
+                region.name(), region.color(), region.fog(), region.discoverable(), chunks));
       }
     }
     return kept;
@@ -200,6 +208,24 @@ public final class MapRegions {
     return this.snapshot.revision();
   }
 
+  public int freshColor(final @NotNull String worldName) {
+    final int @NotNull [] uses = new int[MapRegion.PALETTE.length];
+    for (final @NotNull MapRegion region : in(worldName)) {
+      for (int index = 0; index < uses.length; index++) {
+        if (MapRegion.PALETTE[index] == region.color()) {
+          uses[index]++;
+        }
+      }
+    }
+    int best = 0;
+    for (int index = 1; index < uses.length; index++) {
+      if (uses[index] < uses[best]) {
+        best = index;
+      }
+    }
+    return MapRegion.PALETTE[best];
+  }
+
   public synchronized int reserveId() {
     return this.nextId++;
   }
@@ -233,6 +259,8 @@ public final class MapRegions {
                         region.world(),
                         "name",
                         region.name(),
+                        "color",
+                        HexColors.format(region.color()),
                         "fog",
                         region.fog().id(),
                         "discoverable",

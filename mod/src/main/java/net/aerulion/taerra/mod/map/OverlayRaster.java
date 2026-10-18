@@ -11,6 +11,7 @@ final class OverlayRaster {
   static final int SIZE = 256;
   static final int GROUND_LINE = 0xE6;
   static final int FAR_LINE = 0xB3;
+  private static final int MUTED = 0xB3;
   static final int DETAIL_ZOOM_RANGE = 2;
   static final double TINY = 3;
   private static final int MAX_LINE = 3;
@@ -73,11 +74,11 @@ final class OverlayRaster {
       final boolean tiny) {
     final int color = item.color();
     if (item.path() != null) {
-      canvas.lines(item.path(), false, 2, color, item.dashed());
+      canvas.lines(item.path(), false, 2, faded(item, color), item.dashed());
       return;
     }
     if (tiny) {
-      canvas.dot(item.bounds(), Colors.withAlpha(FAR_LINE, color));
+      canvas.dot(item.bounds(), faded(item, Colors.withAlpha(FAR_LINE, color)));
       return;
     }
     final Look look = scene.look();
@@ -94,13 +95,13 @@ final class OverlayRaster {
       return;
     }
     if (!item.hollow()) {
-      canvas.fill(ground, Colors.withAlpha(look.ground(), color));
+      canvas.fill(ground, faded(item, Colors.withAlpha(look.ground(), color)));
     }
-    canvas.lines(ground, true, 2, Colors.withAlpha(GROUND_LINE, color), item.dashed());
+    canvas.lines(ground, true, 2, faded(item, Colors.withAlpha(GROUND_LINE, color)), item.dashed());
     for (int i = 0; i < item.walls().size(); i++) {
       final double[][] wall = item.walls().get(i);
-      canvas.fill(wall, Colors.withAlpha(look.wall(), item.wallColors()[i]));
-      canvas.lines(wall, true, 1, Colors.withAlpha(look.wallLine(), color), false);
+      canvas.fill(wall, faded(item, Colors.withAlpha(look.wall(), item.wallColors()[i])));
+      canvas.lines(wall, true, 1, faded(item, Colors.withAlpha(look.wallLine(), color)), false);
     }
     region(canvas, look, item, item.face(), false);
   }
@@ -113,10 +114,18 @@ final class OverlayRaster {
       final boolean far) {
     final int color = item.color();
     if (!item.hollow()) {
-      canvas.fill(outline, Colors.withAlpha(look.fill(), color));
+      canvas.fill(outline, faded(item, Colors.withAlpha(look.fill(), color)));
     }
     canvas.lines(
-        outline, true, far ? 1 : 2, far ? Colors.withAlpha(FAR_LINE, color) : color, item.dashed());
+        outline,
+        true,
+        far ? 1 : 2,
+        faded(item, far ? Colors.withAlpha(FAR_LINE, color) : color),
+        item.dashed());
+  }
+
+  private static int faded(final @NotNull OverlayItem item, final int color) {
+    return item.muted() ? Colors.withAlpha((color >>> 24) * MUTED / 0xFF, color) : color;
   }
 
   private static final class Canvas {

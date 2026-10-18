@@ -15,7 +15,8 @@ record OverlayItem(
     double @Nullable [][] path,
     boolean hollow,
     boolean fullHeight,
-    boolean dashed) {
+    boolean dashed,
+    boolean muted) {
 
   static @Nullable OverlayItem of(
       final @NotNull Marker marker, final @NotNull MarkerShape shape, final boolean personal) {
@@ -32,7 +33,8 @@ record OverlayItem(
         shape.path,
         marker.hollow(),
         marker.fullHeight(),
-        personal);
+        personal,
+        marker.muted());
   }
 
   double extent() {

@@ -17,6 +17,10 @@ public final class IconButton extends AbstractButton {
     "...#...", "...#...", "...#...", "#######", "...#...", "...#...", "...#..."
   };
   public static final String[] MINUS = {"#######"};
+  public static final String[] UNDO = {
+    "..#.....", ".##.....", "######..", ".##...#.", "..#....#", ".......#", "......#.", "...###.."
+  };
+  public static final String[] REDO = mirrored(UNDO);
 
   private static final int COLOR = 0xFFFFFFFF;
   private static final int INACTIVE = 0xFFA0A0A0;

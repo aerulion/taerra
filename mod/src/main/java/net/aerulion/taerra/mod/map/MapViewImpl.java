@@ -6,6 +6,7 @@ import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.function.LongPredicate;
 import net.aerulion.taerra.mod.TaerraClient;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.navigation.Navigation;
@@ -49,6 +51,9 @@ public final class MapViewImpl implements MapView {
   private static final int SELECTION_LINE = 0xC0FFFFFF;
   private static final int ERASE_LINE = 0xFFFF5555;
   private static final int MARKER_FILL = 0x50;
+  private static final int OTHER_FILL = 0x38;
+  private static final int ERASE_FILL = 0x80FF5555;
+  private static final int HOVER_ERASE_FILL = 0x40000000;
   private static final int UNKNOWN_GROUND = 63;
   private static final int HOVER_RADIUS = 5;
   private static final int HIT_PIXELS = 3;
@@ -884,36 +889,55 @@ public final class MapViewImpl implements MapView {
     final int line = drawing.color() == null ? SELECTION_LINE : drawing.color();
     final int area =
         drawing.color() == null ? SELECTION_FILL : Colors.withAlpha(MARKER_FILL, drawing.color());
-    final @NotNull List<int[][]> rings = drawing.chunks().rings();
-    if (!rings.isEmpty()) {
-      final @NotNull List<double[][]> shapes = new ArrayList<>(rings.size());
-      int bridged = 0;
-      for (final int @NotNull [][] ring : rings) {
-        final @Nullable List<List<double[]>> draped =
-            drawing.closed() ? drape(map, projection, ChunkSelection.corners(ring)) : null;
-        final double @NotNull [][] points =
-            draped == null ? new double[ring.length][] : flat(draped);
-        for (int i = 0; draped == null && i < ring.length; i++) {
-          points[i] = level(map, projection, ring[i][0], ring[i][1], drawing.chunks());
-        }
-        final double @NotNull [][] shape = screen(points);
-        shapes.add(shape);
-        bridged += shape.length + 2;
-      }
-      final double @NotNull [] anchor = shapes.getFirst()[0];
-      final double @NotNull [][] bridge = new double[bridged][];
-      int next = 0;
-      for (final double @NotNull [][] shape : shapes) {
-        bridge[next++] = anchor;
-        System.arraycopy(shape, 0, bridge, next, shape.length);
-        next += shape.length;
-        bridge[next++] = shape[0];
-      }
-      fill(graphics, bridge, top, bottom, area);
-      for (final double @NotNull [][] shape : shapes) {
-        Geometry.ring(graphics, shape, 1, line);
-      }
+    for (final Drawing.@NotNull Area other : drawing.others()) {
+      region(
+          graphics,
+          map,
+          projection,
+          other.rings(),
+          other.chunks()::contains,
+          false,
+          top,
+          bottom,
+          Colors.withAlpha(OTHER_FILL, other.color()),
+          0xFF000000 | other.color());
     }
+    final @NotNull ChunkSelection chunks = drawing.chunks();
+    region(
+        graphics,
+        map,
+        projection,
+        chunks.settledRings(),
+        chunks::containsChunk,
+        drawing.closed(),
+        top,
+        bottom,
+        area,
+        line);
+    squares(graphics, map, projection, chunks.strokeAdded(), top, bottom, area, 0);
+    squares(graphics, map, projection, chunks.strokeRemoved(), top, bottom, ERASE_FILL, ERASE_LINE);
+    if (!chunks.stroking()) {
+      squares(graphics, map, projection, chunks.detached(), top, bottom, ERASE_FILL, ERASE_LINE);
+    }
+    final @NotNull List<Long> free = new ArrayList<>();
+    final @NotNull List<Long> taken = new ArrayList<>();
+    for (final long chunk : drawing.hover()) {
+      (!drawing.hoverErase()
+                  && chunks.taken(ChunkSelection.chunkX(chunk), ChunkSelection.chunkZ(chunk))
+              ? taken
+              : free)
+          .add(chunk);
+    }
+    squares(
+        graphics,
+        map,
+        projection,
+        free,
+        top,
+        bottom,
+        drawing.hoverErase() ? HOVER_ERASE_FILL : 0,
+        drawing.hoverErase() ? ERASE_LINE : SELECTION_LINE);
+    squares(graphics, map, projection, taken, top, bottom, ERASE_FILL, ERASE_LINE);
     final double @Nullable [][] outline = drawing.stroke();
     if (outline != null && outline.length > 1) {
       final double @NotNull [][] path = new double[outline.length][];
@@ -968,6 +992,81 @@ public final class MapViewImpl implements MapView {
     }
   }
 
+  private void region(
+      final @NotNull GuiGraphicsExtractor graphics,
+      final @NotNull WebMap map,
+      final @NotNull Projection projection,
+      final @NotNull List<int[][]> rings,
+      final @NotNull LongPredicate owned,
+      final boolean closed,
+      final int top,
+      final int bottom,
+      final int area,
+      final int line) {
+    if (rings.isEmpty()) {
+      return;
+    }
+    final @NotNull List<double[][]> shapes = new ArrayList<>(rings.size());
+    int bridged = 0;
+    for (final int @NotNull [][] ring : rings) {
+      final @Nullable List<List<double[]>> draped =
+          closed ? drape(map, projection, ChunkSelection.corners(ring)) : null;
+      final double @NotNull [][] points = draped == null ? new double[ring.length][] : flat(draped);
+      for (int i = 0; draped == null && i < ring.length; i++) {
+        points[i] = level(map, projection, ring[i][0], ring[i][1], owned);
+      }
+      final double @NotNull [][] shape = screen(points);
+      shapes.add(shape);
+      bridged += shape.length + 2;
+    }
+    final double @NotNull [] anchor = shapes.getFirst()[0];
+    final double @NotNull [][] bridge = new double[bridged][];
+    int next = 0;
+    for (final double @NotNull [][] shape : shapes) {
+      bridge[next++] = anchor;
+      System.arraycopy(shape, 0, bridge, next, shape.length);
+      next += shape.length;
+      bridge[next++] = shape[0];
+    }
+    fill(graphics, bridge, top, bottom, area);
+    for (final double @NotNull [][] shape : shapes) {
+      Geometry.ring(graphics, shape, 1, line);
+    }
+  }
+
+  private void squares(
+      final @NotNull GuiGraphicsExtractor graphics,
+      final @NotNull WebMap map,
+      final @NotNull Projection projection,
+      final @NotNull Collection<Long> chunks,
+      final int top,
+      final int bottom,
+      final int area,
+      final int line) {
+    for (final long chunk : chunks) {
+      final int x0 = ChunkSelection.chunkX(chunk) << 4;
+      final int z0 = ChunkSelection.chunkZ(chunk) << 4;
+      final double y =
+          this.isometric && this.world != null
+              ? level(map, ChunkSelection.chunkX(chunk), ChunkSelection.chunkZ(chunk)) + 1
+              : 0;
+      final double @NotNull [][] square =
+          screen(
+              new double[][] {
+                projection.toMap(x0, y, z0),
+                projection.toMap(x0 + 16, y, z0),
+                projection.toMap(x0 + 16, y, z0 + 16),
+                projection.toMap(x0, y, z0 + 16)
+              });
+      if ((area >>> 24) != 0) {
+        fill(graphics, square, top, bottom, area);
+      }
+      if ((line >>> 24) != 0) {
+        Geometry.ring(graphics, square, 1, line);
+      }
+    }
+  }
+
   private @Nullable List<List<double[]>> drape(
       final @NotNull WebMap map,
       final @NotNull Projection projection,
@@ -1001,7 +1100,7 @@ public final class MapViewImpl implements MapView {
       final @NotNull Projection projection,
       final double x,
       final double z,
-      final @Nullable ChunkSelection selected) {
+      final @Nullable LongPredicate owned) {
     if (!this.isometric || this.world == null) {
       return projection.toMap(x, 0, z);
     }
@@ -1009,7 +1108,7 @@ public final class MapViewImpl implements MapView {
     int count = 0;
     for (final int chunkX : ChunkSelection.touching(x)) {
       for (final int chunkZ : ChunkSelection.touching(z)) {
-        if (selected == null || selected.contains(chunkX << 4, chunkZ << 4)) {
+        if (owned == null || owned.test(ChunkSelection.key(chunkX, chunkZ))) {
           sum += level(map, chunkX, chunkZ);
           count++;
         }

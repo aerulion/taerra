@@ -16,4 +16,5 @@ public record Marker(
     double maxY,
     boolean hollow,
     boolean fullHeight,
-    boolean smooth) {}
+    boolean smooth,
+    boolean muted) {}

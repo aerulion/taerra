@@ -1,20 +1,15 @@
 import {accountManager} from './account.js';
 import {numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
+import {ColorPicker, DEFAULT_COLOR, HEX} from './colors.js';
 import {element, GEM_SVG, markerManager, personalIcon, PIN_SVG, privateIcon} from './markers.js';
+
+export {DEFAULT_COLOR};
 
 const $ = (id) => document.getElementById(id);
 
-const DYES = [
-    ['white', '#f9fffe'], ['light_gray', '#9d9d97'], ['gray', '#474f52'], ['black', '#1d1d21'],
-    ['brown', '#835432'], ['red', '#b02e26'], ['orange', '#f9801d'], ['yellow', '#fed83d'],
-    ['lime', '#80c71f'], ['green', '#5e7c16'], ['cyan', '#169c9c'], ['light_blue', '#3ab3da'],
-    ['blue', '#3c44aa'], ['purple', '#8932b8'], ['magenta', '#c74ebd'], ['pink', '#f38baa']
-];
-export const DEFAULT_COLOR = '#3ab3da';
 const NEW_GROUP = '\u0000new';
 const PERSONAL = '\u0000personal';
-const SHADE_STEP = .02;
 const NOT_NAME = /[^\p{L}\p{N} _.,:'&()#!?+-]/gu;
 
 const SAVE_ERRORS = {409: 'waypoint.taken', 422: 'waypoint.full'};
@@ -24,32 +19,10 @@ const cleanName = (text) => text.normalize('NFC').replace(NOT_NAME, '');
 export const waypointUrl = (name, personal) =>
     `/api/waypoints/${encodeURIComponent(name)}${personal ? '?personal=true' : ''}`;
 
-function hsvToHex(h, s, v) {
-    const channel = (n) => {
-        const k = (n + h / 60) % 6;
-        return v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
-    };
-    return `#${[5, 3, 1].map(n => Math.round(channel(n) * 255).toString(16).padStart(2, '0')).join('')}`;
-}
-
-function hexToHsv(hex) {
-    const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
-    const max = Math.max(r, g, b);
-    const range = max - Math.min(r, g, b);
-    const h = range === 0 ? 0
-        : max === r ? ((g - b) / range + 6) % 6
-            : max === g ? (b - r) / range + 2
-                : (r - g) / range + 4;
-    return {h: h * 60, s: max === 0 ? 0 : range / max, v: max};
-}
-
-const clamp = (value) => Math.min(1, Math.max(0, value));
-
 class WaypointEditor {
     constructor() {
         this.dialog = $('waypoint-editor');
         this.target = null;
-        this.hsv = hexToHsv(DEFAULT_COLOR);
         this.hex = DEFAULT_COLOR;
         this.moving = null;
         this.placingTimer = 0;
@@ -66,32 +39,11 @@ class WaypointEditor {
                 this.stopMoving();
             }
         });
-        $('waypoint-swatches').replaceChildren(...DYES.map(([dye, hex]) => {
-            const swatch = element('label', 'swatch');
-            swatch.title = t(`dye.${dye}`);
-            swatch.style.setProperty('--swatch', hex);
-            const radio = document.createElement('input');
-            radio.type = 'radio';
-            radio.name = 'waypoint-dye';
-            radio.value = hex;
-            radio.setAttribute('aria-label', t(`dye.${dye}`));
-            radio.addEventListener('change', () => this.setColor(hex));
-            swatch.append(radio);
-            return swatch;
-        }));
-
-        this.setupShade();
-        $('waypoint-hue').addEventListener('input', (event) => {
-            this.hsv.h = Number(event.target.value);
-            this.setColor(hsvToHex(this.hsv.h, this.hsv.s, this.hsv.v), false);
+        this.picker = new ColorPicker($('waypoint-color'), (hex) => {
+            this.hex = hex;
+            this.target?.onColor?.(hex);
+            this.dialog.style.setProperty('--waypoint', hex);
         });
-        $('waypoint-hex').addEventListener('input', (event) => {
-            const value = event.target.value.replace(/[^0-9a-f]/gi, '');
-            if (value.length === 6) {
-                this.setColor(`#${value.toLowerCase()}`, true, false);
-            }
-        });
-        $('waypoint-hex').addEventListener('blur', () => $('waypoint-hex').value = this.hex.slice(1));
 
         $('waypoint-groups').addEventListener('change', () => {
             this.showPreview();
@@ -121,59 +73,6 @@ class WaypointEditor {
                 this.dialog.close();
             }
         });
-    }
-
-    setupShade() {
-        const field = $('waypoint-shade');
-        const pick = (event) => {
-            const box = field.getBoundingClientRect();
-            this.hsv.s = clamp((event.clientX - box.left) / box.width);
-            this.hsv.v = clamp(1 - (event.clientY - box.top) / box.height);
-            this.setColor(hsvToHex(this.hsv.h, this.hsv.s, this.hsv.v), false);
-        };
-        field.addEventListener('pointerdown', (event) => {
-            field.setPointerCapture(event.pointerId);
-            field.focus();
-            pick(event);
-        });
-        field.addEventListener('pointermove', (event) => {
-            if (field.hasPointerCapture(event.pointerId)) {
-                pick(event);
-            }
-        });
-        field.addEventListener('keydown', (event) => {
-            const step = SHADE_STEP * (event.shiftKey ? 5 : 1);
-            const moves = {ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, step], ArrowDown: [0, -step]};
-            const move = moves[event.key];
-            if (move) {
-                event.preventDefault();
-                this.hsv.s = clamp(this.hsv.s + move[0]);
-                this.hsv.v = clamp(this.hsv.v + move[1]);
-                this.setColor(hsvToHex(this.hsv.h, this.hsv.s, this.hsv.v), false);
-            }
-        });
-    }
-
-    setColor(hex, fromHex = true, writeHex = true) {
-        this.hex = hex;
-        this.target?.onColor?.(hex);
-        if (fromHex) {
-            const hsv = hexToHsv(hex);
-            this.hsv = {h: hsv.s === 0 ? this.hsv.h : hsv.h, s: hsv.s, v: hsv.v};
-        }
-        this.dialog.style.setProperty('--waypoint', hex);
-        this.dialog.style.setProperty('--hue', `hsl(${this.hsv.h} 100% 50%)`);
-        $('waypoint-hue').value = String(Math.round(this.hsv.h));
-        const thumb = $('waypoint-shade-thumb');
-        thumb.style.left = `${this.hsv.s * 100}%`;
-        thumb.style.top = `${(1 - this.hsv.v) * 100}%`;
-        $('waypoint-shade').setAttribute('aria-valuetext', hex);
-        if (writeHex) {
-            $('waypoint-hex').value = hex.slice(1);
-        }
-        for (const radio of $('waypoint-swatches').querySelectorAll('input')) {
-            radio.checked = radio.value === hex;
-        }
     }
 
     selectedGroup() {
@@ -239,7 +138,7 @@ class WaypointEditor {
         $('waypoint-delete').hidden = !previous;
         this.disarm();
         this.showError(null);
-        this.setColor(/^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : DEFAULT_COLOR);
+        this.picker.set(HEX.test(color) ? color : DEFAULT_COLOR);
         const current = personal || (!previous && accountManager.canKeepPersonal()) ? PERSONAL : group;
         this.renderGroups([], current);
         this.dialog.showModal();

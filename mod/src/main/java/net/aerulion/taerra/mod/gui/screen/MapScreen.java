@@ -1,13 +1,16 @@
 package net.aerulion.taerra.mod.gui.screen;
 
-import com.google.gson.JsonParser;
 import com.mojang.blaze3d.platform.InputConstants;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.aerulion.taerra.mod.TaerraClient;
@@ -82,6 +85,12 @@ public final class MapScreen extends Screen {
   private static final long STATUS_MILLIS = 4000;
   private static final long CURSOR_HOLD_MILLIS = 500;
   private static final int MIN_SELECTION_BUTTON = 40;
+  private static final List<Integer> BRUSH_SIZES = List.of(1, 3, 5);
+  private static final int HISTORY = 200;
+  private static final List<String> REGION_PALETTE =
+      List.of(
+          "#3ab3da", "#b02e26", "#80c71f", "#f9801d", "#8932b8", "#fed83d", "#169c9c", "#c74ebd",
+          "#3c44aa", "#5e7c16", "#f38baa", "#835432");
 
   private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
   private final @NotNull WebMap map;
@@ -135,13 +144,25 @@ public final class MapScreen extends Screen {
   private @NotNull SelectionTool lastTool = SelectionTool.BRUSH;
   private boolean smooth;
   private @Nullable Button saveButton;
+  private @Nullable IconButton undoButton;
+  private @Nullable IconButton redoButton;
   private @Nullable String editingId;
   private boolean deleteArmed;
   private @Nullable Integer regionId;
   private @NotNull String regionName = "";
   private @NotNull String regionFog = "hide";
   private boolean regionDiscoverable = true;
-  private boolean resetArmed;
+  private @Nullable Regions.Region region;
+  private int brushSize = 1;
+  private boolean eraseMode;
+  private final Deque<Edit> history = new ArrayDeque<>();
+  private final Deque<Edit> future = new ArrayDeque<>();
+  private @Nullable List<double[]> pathBefore;
+  private @NotNull List<Long> hover = List.of();
+  private boolean hoverErase;
+  private @Nullable Regions othersOf;
+  private @Nullable Integer othersWithout;
+  private @NotNull List<Drawing.Area> others = List.of();
   private @NotNull String color = Waypoint.DEFAULT_COLOR;
   private int vertex = -1;
   private boolean vertexExisting;
@@ -218,6 +239,7 @@ public final class MapScreen extends Screen {
         32,
         32);
     final boolean hovering = overMap(mouseX, mouseY);
+    updateHover(hovering ? mouseX : -1, mouseY);
     this.view.draw(
         graphics,
         this.map,
@@ -336,8 +358,30 @@ public final class MapScreen extends Screen {
         && this.tool == SelectionTool.POINTS
         && event.key() == InputConstants.KEY_BACKSPACE
         && !this.path.isEmpty()) {
+      remember(new Edit(copyPath(), null));
       this.path.removeLast();
       selectionChanged();
+      return true;
+    }
+    if (this.selection != null
+        && !this.stroking
+        && event.hasControlDown()
+        && (event.key() == InputConstants.KEY_Z || event.key() == InputConstants.KEY_Y)) {
+      if (event.key() == InputConstants.KEY_Y || event.hasShiftDown()) {
+        redo();
+      } else {
+        undo();
+      }
+      return true;
+    }
+    if (this.selection != null
+        && !(getFocused() instanceof EditBox)
+        && (event.key() == InputConstants.KEY_LBRACKET
+            || event.key() == InputConstants.KEY_RBRACKET)) {
+      final int at =
+          BRUSH_SIZES.indexOf(this.brushSize)
+              + (event.key() == InputConstants.KEY_RBRACKET ? 1 : -1);
+      setBrushSize(BRUSH_SIZES.get(Math.clamp(at, 0, BRUSH_SIZES.size() - 1)));
       return true;
     }
     if (this.selection == null && TaerraKeys.SEARCH.matches(event) && !event.hasAltDown()) {
@@ -469,6 +513,12 @@ public final class MapScreen extends Screen {
                         Component.translatable(
                             "taerra.waypoints.tooltip",
                             TaerraKeys.WAYPOINT_LIST.getTranslatedKeyMessage())))
+                .width(BUTTON_WIDTH)
+                .build());
+      }
+      if (account != null && account.regions()) {
+        menu.add(
+            Button.builder(Component.translatable("taerra.regions"), _ -> openRegionList())
                 .width(BUTTON_WIDTH)
                 .build());
       }
@@ -645,8 +695,10 @@ public final class MapScreen extends Screen {
       final @Nullable Place place = this.view.placeAt(this.map, event.x(), event.y());
       if (place != null && this.tool == SelectionTool.POINTS) {
         int hit = this.view.pathPointAt(event.x(), event.y());
+        this.pathBefore = copyPath();
         if (event.hasShiftDown()) {
           if (hit >= 0) {
+            remember(new Edit(this.pathBefore, null));
             this.path.remove(hit);
           }
         } else {
@@ -662,13 +714,15 @@ public final class MapScreen extends Screen {
         selectionChanged();
       } else if (place != null) {
         this.stroking = true;
-        this.erasing = event.hasShiftDown() || this.selection.contains(place.x(), place.z());
+        this.erasing = this.eraseMode != event.hasShiftDown();
+        this.hover = List.of();
+        this.selection.begin(this.erasing);
         this.anchor = place;
         this.reach = place;
         this.lasso.clear();
         this.lasso.add(new double[] {place.x() + .5, place.z() + .5});
         if (this.tool == SelectionTool.BRUSH) {
-          this.selection.brush(place.x(), place.z(), this.erasing);
+          this.selection.brush(place.x(), place.z(), this.brushSize);
         }
         selectionChanged();
       }
@@ -698,8 +752,12 @@ public final class MapScreen extends Screen {
     if (this.vertex >= 0 && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
       if (this.vertexExisting && !this.vertexMoved && this.vertex < this.path.size()) {
         this.path.remove(this.vertex);
-        selectionChanged();
       }
+      if (this.pathBefore != null && !samePath(this.pathBefore, this.path)) {
+        remember(new Edit(this.pathBefore, null));
+      }
+      this.pathBefore = null;
+      selectionChanged();
       this.vertex = -1;
       return true;
     }
@@ -708,10 +766,15 @@ public final class MapScreen extends Screen {
       final @Nullable ChunkSelection selection = this.selection;
       if (selection != null && this.anchor != null && this.reach != null) {
         if (this.tool == SelectionTool.RECTANGLE) {
-          selection.box(
-              this.anchor.x(), this.anchor.z(), this.reach.x(), this.reach.z(), this.erasing);
+          selection.box(this.anchor.x(), this.anchor.z(), this.reach.x(), this.reach.z());
         } else if (this.tool == SelectionTool.LASSO) {
-          selection.lasso(this.lasso.toArray(double[][]::new), this.erasing);
+          selection.lasso(this.lasso.toArray(double[][]::new));
+        }
+      }
+      if (selection != null) {
+        final ChunkSelection.@Nullable Change change = selection.end();
+        if (change != null) {
+          remember(new Edit(null, change));
         }
       }
       this.lasso.clear();
@@ -1521,6 +1584,20 @@ public final class MapScreen extends Screen {
             + waypoint.name().toLowerCase(java.util.Locale.ROOT));
   }
 
+  public void editRegion(final Regions.@Nullable Region region) {
+    closeMenu();
+    startRegion(region);
+  }
+
+  public void openRegionList() {
+    final @Nullable Account account = this.map.account();
+    final @Nullable String world = this.view.world();
+    if (account != null && account.regions() && world != null) {
+      closeMenu();
+      this.minecraft.setScreenAndShow(new RegionListScreen(this, this.map, world));
+    }
+  }
+
   public void openWaypointList() {
     final @Nullable Account account = this.map.account();
     if (account != null && account.personal()) {
@@ -1551,18 +1628,39 @@ public final class MapScreen extends Screen {
     if (world == null) {
       return;
     }
+    this.region = region;
     this.regionId = region == null ? null : region.id();
     this.regionName = region == null ? "" : region.name();
     this.regionFog = region == null || region.fog() == null ? "hide" : region.fog();
     this.regionDiscoverable = region == null || !Boolean.FALSE.equals(region.discoverable());
-    this.resetArmed = false;
     startDrawing(Kind.REGION, null, region == null ? null : "region:" + region.id());
+    this.color =
+        region != null && region.color() != null && Colors.isHex(region.color())
+            ? region.color()
+            : freshColor(this.map.regions(world));
     final @Nullable ChunkSelection selection = this.selection;
     if (region != null && region.chunks() != null && selection != null) {
       selection.addAll(
           region.chunks().stream().map(chunk -> ChunkSelection.key(chunk[0], chunk[1])).toList());
-      selectionChanged();
     }
+    selectionChanged();
+  }
+
+  private static @NotNull String freshColor(final @NotNull Regions regions) {
+    final @NotNull Map<String, Integer> uses = new HashMap<>();
+    for (final Regions.@NotNull Region region :
+        regions.regions() == null ? List.<Regions.Region>of() : regions.regions()) {
+      if (region.color() != null) {
+        uses.merge(region.color(), 1, Integer::sum);
+      }
+    }
+    String best = REGION_PALETTE.getFirst();
+    for (final @NotNull String color : REGION_PALETTE) {
+      if (uses.getOrDefault(color, 0) < uses.getOrDefault(best, 0)) {
+        best = color;
+      }
+    }
+    return best;
   }
 
   private boolean taken(final long chunk) {
@@ -1583,6 +1681,9 @@ public final class MapScreen extends Screen {
     this.editing = editing;
     this.editingId = editingId;
     this.deleteArmed = false;
+    this.history.clear();
+    this.future.clear();
+    this.hover = List.of();
     this.selection =
         kind == Kind.REGION ? new ChunkSelection(REGION_CHUNKS, this::taken) : new ChunkSelection();
     this.path.clear();
@@ -1625,9 +1726,13 @@ public final class MapScreen extends Screen {
         this.path.addAll(ChunkSelection.corners(rings.getFirst()));
         selection.clear();
       } else if (tool != SelectionTool.POINTS && this.path.size() >= 3) {
-        selection.lasso(this.path.toArray(double[][]::new), false);
+        selection.begin(false);
+        selection.lasso(this.path.toArray(double[][]::new));
+        selection.end();
         this.path.clear();
       }
+      this.history.clear();
+      this.future.clear();
     }
     this.tool = tool;
     if (tool != SelectionTool.POINTS) {
@@ -1661,67 +1766,61 @@ public final class MapScreen extends Screen {
     return rings.size() == 1 ? ChunkSelection.corners(rings.getFirst()) : null;
   }
 
-  private void saveRegion() {
+  private void openRegion() {
     final @Nullable ChunkSelection selection = this.selection;
     final @Nullable String world = this.view.world();
     if (selection == null || world == null || this.sending || !regionReady()) {
       return;
     }
-    this.sending = true;
-    rebuildWidgets();
-    this.map.saveRegion(
-        world,
-        this.regionId,
-        this.regionName,
-        this.regionFog,
-        this.regionDiscoverable,
-        Set.copyOf(selection.chunks()),
-        (status, body) -> {
-          this.sending = false;
-          if (selection == this.selection) {
-            if (status == 200 || status == 202) {
-              final @Nullable Integer id = regionId(body);
-              if (id != null) {
-                this.regionId = id;
-                this.editingId = "region:" + id;
+    final @Nullable Regions.Region region = this.region;
+    this.minecraft.setScreenAndShow(
+        new RegionScreen(
+            this,
+            this.map,
+            new RegionScreen.Draft(
+                world,
+                this.regionId,
+                this.regionName,
+                this.color,
+                this.regionFog,
+                this.regionDiscoverable,
+                region == null || region.discoveries() == null ? 0 : region.discoveries()),
+            Set.copyOf(selection.chunks()),
+            color -> {
+              this.color = color;
+              updateDrawing();
+            },
+            new RegionScreen.Listener() {
+              @Override
+              public void saved(
+                  final int id, final RegionScreen.@NotNull Draft draft, final boolean rendering) {
+                if (selection != MapScreen.this.selection) {
+                  return;
+                }
+                MapScreen.this.regionId = id;
+                MapScreen.this.editingId = "region:" + id;
+                MapScreen.this.regionName = draft.name();
+                MapScreen.this.regionFog = draft.fog();
+                MapScreen.this.regionDiscoverable = draft.discoverable();
+                MapScreen.this.color = draft.color();
                 selectionChanged();
+                showSelectionStatus(
+                    Component.translatable(
+                        rendering ? "taerra.region.started" : "taerra.region.saved"),
+                    false);
+                rebuildWidgets();
               }
-              showSelectionStatus(
-                  Component.translatable(
-                      status == 202 ? "taerra.region.started" : "taerra.region.saved"),
-                  false);
-            } else {
-              showSelectionStatus(Component.translatable(regionProblem(status, body)), true);
-            }
-          }
-          rebuildWidgets();
-        });
+
+              @Override
+              public void deleted() {
+                stopSelecting();
+              }
+            }));
   }
 
   private boolean regionReady() {
     final @Nullable ChunkSelection selection = this.selection;
     return selection != null && !selection.isEmpty() && selection.connected();
-  }
-
-  private static @Nullable Integer regionId(final @Nullable String body) {
-    try {
-      return body == null
-          ? null
-          : JsonParser.parseString(body).getAsJsonObject().get("id").getAsInt();
-    } catch (final RuntimeException e) {
-      return null;
-    }
-  }
-
-  private static @NotNull String regionProblem(final int status, final @Nullable String body) {
-    try {
-      if (body != null) {
-        return "taerra.region.problem."
-            + JsonParser.parseString(body).getAsJsonObject().get("problem").getAsString();
-      }
-    } catch (final RuntimeException ignored) {
-    }
-    return status == 409 ? "taerra.region.problem.busy" : "taerra.region.problem.failed";
   }
 
   private void deleteRegion() {
@@ -1741,37 +1840,15 @@ public final class MapScreen extends Screen {
             stopSelecting();
           } else {
             this.deleteArmed = false;
-            showSelectionStatus(Component.translatable(regionProblem(status, body)), true);
+            showSelectionStatus(Component.translatable(RegionScreen.problem(status, body)), true);
             rebuildWidgets();
           }
         });
   }
 
-  private void resetRegion() {
-    final @Nullable Integer id = this.regionId;
-    if (id == null) {
-      return;
-    }
-    if (!this.resetArmed) {
-      this.resetArmed = true;
-      rebuildWidgets();
-      return;
-    }
-    this.map.resetRegion(
-        id,
-        status -> {
-          this.resetArmed = false;
-          showSelectionStatus(
-              Component.translatable(
-                  status == 204 ? "taerra.region.reset_done" : "taerra.region.problem.failed"),
-              status != 204);
-          rebuildWidgets();
-        });
-  }
-
   private void save() {
     if (this.kind == Kind.REGION) {
-      saveRegion();
+      openRegion();
       return;
     }
     final @Nullable List<double[]> shape = shape();
@@ -1843,7 +1920,7 @@ public final class MapScreen extends Screen {
     }
     this.reach = place;
     if (this.tool == SelectionTool.BRUSH) {
-      selection.brush(place.x(), place.z(), this.erasing);
+      selection.brush(place.x(), place.z(), this.brushSize);
     } else if (this.tool == SelectionTool.LASSO) {
       final double @NotNull [] last = this.lasso.getLast();
       if (Math.abs(last[0] - place.x() - .5) + Math.abs(last[1] - place.z() - .5) >= 1) {
@@ -1861,6 +1938,132 @@ public final class MapScreen extends Screen {
   private void selectionChanged() {
     this.selectionStatus = null;
     this.selectionFailed = false;
+    updateDrawing();
+  }
+
+  private @NotNull List<double[]> copyPath() {
+    return this.path.stream().map(double[]::clone).toList();
+  }
+
+  private static boolean samePath(
+      final @NotNull List<double[]> a, final @NotNull List<double[]> b) {
+    if (a.size() != b.size()) {
+      return false;
+    }
+    for (int i = 0; i < a.size(); i++) {
+      if (!Arrays.equals(a.get(i), b.get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private void remember(final @NotNull Edit edit) {
+    this.history.push(edit);
+    while (this.history.size() > HISTORY) {
+      this.history.removeLast();
+    }
+    this.future.clear();
+  }
+
+  private void undo() {
+    step(this.history, this.future);
+  }
+
+  private void redo() {
+    step(this.future, this.history);
+  }
+
+  private void step(final @NotNull Deque<Edit> from, final @NotNull Deque<Edit> to) {
+    final @Nullable ChunkSelection selection = this.selection;
+    if (selection == null || this.stroking || from.isEmpty()) {
+      return;
+    }
+    final @NotNull Edit edit = from.pop();
+    final ChunkSelection.@Nullable Change change = edit.change();
+    if (change != null) {
+      if (from == this.history) {
+        selection.revert(change);
+      } else {
+        selection.replay(change);
+      }
+      to.push(edit);
+    } else if (edit.points() != null) {
+      to.push(new Edit(copyPath(), null));
+      this.path.clear();
+      this.path.addAll(edit.points().stream().map(double[]::clone).toList());
+    }
+    selectionChanged();
+  }
+
+  private void setBrushSize(final int size) {
+    if (this.selection != null && size != this.brushSize) {
+      this.brushSize = size;
+      rebuildWidgets();
+    }
+  }
+
+  private void setEraseMode(final boolean erase) {
+    if (this.selection != null && erase != this.eraseMode) {
+      this.eraseMode = erase;
+      rebuildWidgets();
+    }
+  }
+
+  private void updateHover(final double x, final double y) {
+    final @Nullable ChunkSelection selection = this.selection;
+    @NotNull List<Long> hover = List.of();
+    if (selection != null
+        && !this.stroking
+        && this.tool != SelectionTool.POINTS
+        && this.menu == null
+        && x >= 0) {
+      final @Nullable Place place = this.view.placeAt(this.map, x, y);
+      if (place != null) {
+        hover =
+            ChunkSelection.footprint(
+                place.x(), place.z(), this.tool == SelectionTool.BRUSH ? this.brushSize : 1);
+      }
+    }
+    final boolean erase = this.eraseMode != this.minecraft.hasShiftDown();
+    if (!hover.equals(this.hover) || erase != this.hoverErase) {
+      this.hover = hover;
+      this.hoverErase = erase;
+      updateDrawing();
+    }
+  }
+
+  private @NotNull List<Drawing.Area> others() {
+    final @Nullable String world = this.view.world();
+    if (world == null) {
+      return List.of();
+    }
+    final @NotNull Regions regions = this.map.regions(world);
+    if (regions != this.othersOf || !Objects.equals(this.othersWithout, this.regionId)) {
+      this.othersOf = regions;
+      this.othersWithout = this.regionId;
+      final @NotNull List<Drawing.Area> areas = new ArrayList<>();
+      for (final Regions.@NotNull Region other :
+          regions.regions() == null ? List.<Regions.Region>of() : regions.regions()) {
+        if (other.chunks() == null || Integer.valueOf(other.id()).equals(this.regionId)) {
+          continue;
+        }
+        final @NotNull Set<Long> chunks = new HashSet<>();
+        for (final int @NotNull [] chunk : other.chunks()) {
+          chunks.add(ChunkSelection.key(chunk[0], chunk[1]));
+        }
+        areas.add(
+            new Drawing.Area(
+                Set.copyOf(chunks),
+                ChunkSelection.outline(chunks),
+                other.color() == null ? 0xFFFFFF : Colors.argb(other.color()) & 0xFFFFFF));
+      }
+      this.others = List.copyOf(areas);
+    }
+    return this.others;
+  }
+
+  private void updateDrawing() {
     final @Nullable ChunkSelection selection = this.selection;
     this.view.select(
         selection == null
@@ -1873,9 +2076,18 @@ public final class MapScreen extends Screen {
                 this.kind == Kind.AREA,
                 this.smooth,
                 this.kind == Kind.CHUNKS ? null : Colors.argb(this.color),
-                this.editingId));
-    if (this.saveButton != null) {
+                this.editingId,
+                this.hover,
+                this.hoverErase,
+                this.kind == Kind.REGION ? others() : List.of()));
+    if (this.saveButton != null && !this.stroking) {
       this.saveButton.active = this.kind == Kind.REGION ? regionReady() : shape() != null;
+    }
+    if (this.undoButton != null) {
+      this.undoButton.active = !this.history.isEmpty();
+    }
+    if (this.redoButton != null) {
+      this.redoButton.active = !this.future.isEmpty();
     }
   }
 
@@ -1913,6 +2125,47 @@ public final class MapScreen extends Screen {
       button.active = tool != this.tool;
       tools.add(button);
     }
+    final @NotNull List<AbstractWidget> controls = new ArrayList<>();
+    if (this.kind != Kind.LINE) {
+      if (this.tool != SelectionTool.POINTS) {
+        for (final boolean erase : new boolean[] {false, true}) {
+          final @NotNull String key = erase ? "taerra.selection.erase" : "taerra.selection.paint";
+          final @NotNull Button mode =
+              Button.builder(Component.translatable(key), _ -> setEraseMode(erase))
+                  .tooltip(Tooltip.create(Component.translatable(key + ".tooltip")))
+                  .build();
+          mode.active = erase != this.eraseMode;
+          controls.add(mode);
+        }
+      }
+      if (this.tool == SelectionTool.BRUSH) {
+        for (final int size : BRUSH_SIZES) {
+          final @NotNull Button button =
+              Button.builder(Component.literal(size + "×" + size), _ -> setBrushSize(size))
+                  .tooltip(Tooltip.create(Component.translatable("taerra.selection.size")))
+                  .build();
+          button.active = size != this.brushSize;
+          controls.add(button);
+        }
+      }
+      this.undoButton =
+          new IconButton(
+              20, IconButton.UNDO, Component.translatable("taerra.selection.undo"), this::undo);
+      this.undoButton.setTooltip(
+          Tooltip.create(Component.translatable("taerra.selection.undo.tooltip")));
+      this.undoButton.active = !this.history.isEmpty();
+      this.redoButton =
+          new IconButton(
+              20, IconButton.REDO, Component.translatable("taerra.selection.redo"), this::redo);
+      this.redoButton.setTooltip(
+          Tooltip.create(Component.translatable("taerra.selection.redo.tooltip")));
+      this.redoButton.active = !this.future.isEmpty();
+      controls.add(this.undoButton);
+      controls.add(this.redoButton);
+    } else {
+      this.undoButton = null;
+      this.redoButton = null;
+    }
     final @NotNull List<AbstractWidget> actions = new ArrayList<>();
     if (this.kind == Kind.CHUNKS) {
       if (account != null && account.render()) {
@@ -1921,63 +2174,6 @@ public final class MapScreen extends Screen {
       actions.add(
           Button.builder(Component.translatable("taerra.selection.done"), _ -> stopSelecting())
               .build());
-    } else if (this.kind == Kind.REGION) {
-      final @NotNull EditBox name =
-          new EditBox(this.font, 120, 20, Component.translatable("taerra.region.name"));
-      name.setMaxLength(48);
-      name.setValue(this.regionName);
-      name.setHint(Component.translatable("taerra.region.name"));
-      name.setResponder(value -> this.regionName = value);
-      actions.add(name);
-      actions.add(
-          CycleButton.<String>builder(
-                  fog -> Component.translatable("taerra.region.fog." + fog), this.regionFog)
-              .withValues("hide", "veil", "none")
-              .withTooltip(
-                  fog ->
-                      Tooltip.create(
-                          Component.translatable("taerra.region.fog." + fog + ".tooltip")))
-              .create(
-                  0,
-                  0,
-                  110,
-                  20,
-                  Component.translatable("taerra.region.fog"),
-                  (_, fog) -> this.regionFog = fog));
-      actions.add(
-          CycleButton.onOffBuilder(this.regionDiscoverable)
-              .withTooltip(
-                  _ -> Tooltip.create(Component.translatable("taerra.region.discoverable.tooltip")))
-              .create(
-                  0,
-                  0,
-                  130,
-                  20,
-                  Component.translatable("taerra.region.discoverable"),
-                  (_, value) -> this.regionDiscoverable = value));
-      if (this.regionId != null) {
-        actions.add(
-            Button.builder(
-                    Component.translatable(
-                        this.resetArmed ? "taerra.region.reset_confirm" : "taerra.region.reset"),
-                    _ -> resetRegion())
-                .build());
-        actions.add(
-            Button.builder(
-                    Component.translatable(
-                            this.deleteArmed
-                                ? "taerra.waypoint.confirm_delete"
-                                : "taerra.waypoint.delete")
-                        .withStyle(ChatFormatting.RED),
-                    _ -> deleteRegion())
-                .build());
-      }
-      actions.add(
-          Button.builder(Component.translatable("gui.cancel"), _ -> stopSelecting()).build());
-      this.saveButton =
-          Button.builder(Component.translatable("taerra.region.save"), _ -> save()).build();
-      this.saveButton.active = regionReady() && !this.sending;
-      actions.add(this.saveButton);
     } else {
       if (this.kind == Kind.LINE) {
         actions.add(
@@ -1993,7 +2189,7 @@ public final class MapScreen extends Screen {
                       selectionChanged();
                     }));
       }
-      if (this.editing != null) {
+      if (this.editing != null || this.kind == Kind.REGION && this.regionId != null) {
         actions.add(
             Button.builder(
                     Component.translatable(
@@ -2001,35 +2197,56 @@ public final class MapScreen extends Screen {
                                 ? "taerra.waypoint.confirm_delete"
                                 : "taerra.waypoint.delete")
                         .withStyle(ChatFormatting.RED),
-                    _ -> delete())
+                    _ -> {
+                      if (this.kind == Kind.REGION) {
+                        deleteRegion();
+                      } else {
+                        delete();
+                      }
+                    })
                 .build());
       }
       actions.add(
           Button.builder(Component.translatable("gui.cancel"), _ -> stopSelecting()).build());
       this.saveButton =
           Button.builder(Component.translatable("taerra.selection.save"), _ -> save()).build();
-      this.saveButton.active = shape() != null;
+      this.saveButton.active =
+          !this.sending && (this.kind == Kind.REGION ? regionReady() : shape() != null);
       actions.add(this.saveButton);
     }
     final @NotNull List<AbstractWidget> all = new ArrayList<>(tools);
+    all.addAll(controls);
     all.addAll(actions);
     if (fit(all)) {
       all.forEach(footer::addChild);
       return;
     }
-    fit(tools);
-    fit(actions);
-    addRows(footer, tools, actions);
+    final @NotNull List<AbstractWidget> first = new ArrayList<>(tools);
+    first.addAll(controls);
+    if (fit(first)) {
+      fit(actions);
+      addRows(footer, first, actions);
+    } else {
+      fit(tools);
+      fit(controls);
+      fit(actions);
+      addRows(footer, tools, controls, actions);
+    }
   }
 
+  @SafeVarargs
   private void addRows(
-      final @NotNull LinearLayout footer,
-      final @NotNull List<? extends AbstractWidget> first,
-      final @NotNull List<? extends AbstractWidget> second) {
-    final @NotNull LinearLayout rows = footer.addChild(LinearLayout.vertical().spacing(4));
-    first.forEach(rows.addChild(LinearLayout.horizontal().spacing(6))::addChild);
-    second.forEach(rows.addChild(LinearLayout.horizontal().spacing(6))::addChild);
-    this.layout.setFooterHeight(HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT + 24);
+      final @NotNull LinearLayout footer, final @NotNull List<? extends AbstractWidget>... rows) {
+    final @NotNull LinearLayout column = footer.addChild(LinearLayout.vertical().spacing(4));
+    int count = 0;
+    for (final @NotNull List<? extends AbstractWidget> row : rows) {
+      if (!row.isEmpty()) {
+        row.forEach(column.addChild(LinearLayout.horizontal().spacing(6))::addChild);
+        count++;
+      }
+    }
+    this.layout.setFooterHeight(
+        HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT + 24 * Math.max(0, count - 1));
   }
 
   private static int wanted(final @NotNull List<? extends AbstractWidget> row) {
@@ -2038,17 +2255,24 @@ public final class MapScreen extends Screen {
 
   private boolean fit(final @NotNull List<? extends AbstractWidget> row) {
     final int room = this.width - 16 - 6 * (row.size() - 1);
+    int fixed = 0;
     int wanted = 0;
     for (final @NotNull AbstractWidget button : row) {
-      button.setWidth(Math.max(MIN_SELECTION_BUTTON, this.font.width(button.getMessage()) + 12));
-      wanted += button.getWidth();
-    }
-    if (wanted > room) {
-      for (final @NotNull AbstractWidget button : row) {
-        button.setWidth(button.getWidth() * room / wanted);
+      if (button instanceof IconButton) {
+        fixed += button.getWidth();
+      } else {
+        button.setWidth(Math.max(MIN_SELECTION_BUTTON, this.font.width(button.getMessage()) + 12));
+        wanted += button.getWidth();
       }
     }
-    return wanted <= room;
+    if (wanted + fixed > room && wanted > 0) {
+      for (final @NotNull AbstractWidget button : row) {
+        if (!(button instanceof IconButton)) {
+          button.setWidth(button.getWidth() * Math.max(0, room - fixed) / wanted);
+        }
+      }
+    }
+    return wanted + fixed <= room;
   }
 
   private @NotNull Button actionButton(final @NotNull String action) {
@@ -2092,6 +2316,8 @@ public final class MapScreen extends Screen {
           rebuildWidgets();
         });
   }
+
+  private record Edit(@Nullable List<double[]> points, ChunkSelection.@Nullable Change change) {}
 
   private enum Kind {
     CHUNKS,

@@ -2,6 +2,8 @@ package net.aerulion.taerra.web.http.route;
 
 import io.javalin.config.RoutesConfig;
 import io.javalin.http.Context;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMaps;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,6 +19,7 @@ import net.aerulion.taerra.region.RegionEditor;
 import net.aerulion.taerra.region.RegionFog;
 import net.aerulion.taerra.region.RegionVisibility;
 import net.aerulion.taerra.rendering.RenderService;
+import net.aerulion.taerra.util.HexColors;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.http.Requests;
 import net.kyori.adventure.audience.Audience;
@@ -86,6 +89,8 @@ public final class RegionRoutes implements Routes {
       return;
     }
     final boolean editing = viewer.canEditRegions();
+    final @NotNull Int2IntMap discoveries =
+        editing ? this.visibility.discoveries().counts() : Int2IntMaps.EMPTY_MAP;
     final @NotNull List<Integer> revealed = new ArrayList<>();
     final @NotNull List<Map<String, Object>> regions = new ArrayList<>();
     for (final @NotNull MapRegion region : this.visibility.regions().in(worldName)) {
@@ -100,7 +105,10 @@ public final class RegionRoutes implements Routes {
       entry.put("id", region.id());
       entry.put("name", region.name());
       entry.put("label", label(region));
+      entry.put("color", HexColors.format(region.color()));
       if (editing) {
+        entry.put("size", region.chunks().size());
+        entry.put("discoveries", discoveries.get(region.id()));
         entry.put("fog", region.fog().id());
         entry.put("discoverable", region.discoverable());
         entry.put(
@@ -169,6 +177,7 @@ public final class RegionRoutes implements Routes {
             request.world(),
             request.id(),
             name,
+            HexColors.parseRgb(request.color()).stream().boxed().findFirst().orElse(null),
             fog,
             Boolean.TRUE.equals(request.discoverable()),
             request.chunks().stream()
@@ -246,6 +255,7 @@ public final class RegionRoutes implements Routes {
       @Nullable String world,
       @Nullable Integer id,
       @Nullable String name,
+      @Nullable String color,
       @Nullable String fog,
       @Nullable Boolean discoverable,
       @Nullable List<int[]> chunks) {}

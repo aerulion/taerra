@@ -1,5 +1,7 @@
 package net.aerulion.taerra.region;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.ints.IntSets;
@@ -49,6 +51,14 @@ public final class RegionDiscoveries {
 
   public @NotNull IntSet of(final @NotNull UUID player) {
     return this.discovered.getOrDefault(player, IntSets.EMPTY_SET);
+  }
+
+  public @NotNull Int2IntMap counts() {
+    final @NotNull Int2IntMap counts = new Int2IntOpenHashMap();
+    for (final @NotNull IntSet regions : this.discovered.values()) {
+      regions.forEach(region -> counts.mergeInt(region, 1, Integer::sum));
+    }
+    return counts;
   }
 
   public boolean has(final @NotNull UUID player, final int region) {

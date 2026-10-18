@@ -29,6 +29,7 @@ const GEM_OUTLINE = [[4, 0, 1, 1], [3, 1, 3, 1], [2, 2, 5, 1], [1, 3, 7, 1], [0,
 const GEM_BODY = [[4, 1, 1, 1], [3, 2, 3, 1], [2, 3, 5, 1], [1, 4, 7, 2], [2, 6, 5, 1], [3, 7, 3, 2], [4, 9, 1, 1]];
 const GEM_SHINE = [[3, 2, 1, 1], [2, 3, 2, 1]];
 const DASHES = '6 4';
+const MUTED = .7;
 
 export const GEM_SVG = `<svg class="waypoint__pin" viewBox="0 0 9 11" width="18" height="22" aria-hidden="true">
 <path d="${pixelPath(GEM_OUTLINE)}" fill="#111"/><path d="${pixelPath(GEM_BODY)}" fill="currentColor"/>
@@ -582,7 +583,8 @@ class MarkerManager {
                 interactive: false
             })] : []),
             L.polygon(groundLine, {
-                color, weight: 2 + this.look.weight, opacity: .9, fill: !marker.hollow, fillOpacity: this.look.ground,
+                color, weight: 2 + this.look.weight, opacity: .9 * (marker.muted ? MUTED : 1), fill: !marker.hollow,
+                fillOpacity: this.look.ground,
                 interactive: false, dashArray
             }),
             ...walls
@@ -593,7 +595,7 @@ class MarkerManager {
         const color = marker.color;
         const {halo, weight, fill, hoverFill} = this.look;
         const parts = [...below,
-            ...(this.far || !halo ? [] : [L.polygon(face, {
+            ...(this.far || !halo || marker.muted ? [] : [L.polygon(face, {
                 color: '#000',
                 opacity: .4,
                 weight: 5,
@@ -601,7 +603,7 @@ class MarkerManager {
                 interactive: false
             })])];
         const stroke = (this.far ? 1 : 2) + weight;
-        const outline = {color, weight: stroke, opacity: this.far ? .7 : 1, dashArray};
+        const outline = {color, weight: stroke, opacity: (this.far ? .7 : 1) * (marker.muted ? MUTED : 1), dashArray};
         const surface = marker.hollow
             ? hoverable(L.polyline([...face, face[0]], outline),
                 {weight: stroke + 2}, {weight: stroke})

@@ -106,6 +106,7 @@ public sealed interface WebMap permits WebMapImpl {
       String world,
       @Nullable Integer id,
       String name,
+      String color,
       String fog,
       boolean discoverable,
       Collection<Long> chunks,
