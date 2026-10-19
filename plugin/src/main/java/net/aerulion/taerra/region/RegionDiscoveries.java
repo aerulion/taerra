@@ -86,17 +86,21 @@ public final class RegionDiscoveries {
   }
 
   public void forget(final int region) {
-    boolean changed = false;
+    final boolean[] changed = {false};
     for (final @NotNull UUID player : this.discovered.keySet()) {
-      final @Nullable IntSet known = this.discovered.get(player);
-      if (known != null && known.contains(region)) {
-        final @NotNull IntSet next = new IntOpenHashSet(known);
-        next.remove(region);
-        this.discovered.put(player, IntSets.unmodifiable(next));
-        changed = true;
-      }
+      this.discovered.computeIfPresent(
+          player,
+          (_, known) -> {
+            if (!known.contains(region)) {
+              return known;
+            }
+            final @NotNull IntSet next = new IntOpenHashSet(known);
+            next.remove(region);
+            changed[0] = true;
+            return IntSets.unmodifiable(next);
+          });
     }
-    if (changed) {
+    if (changed[0]) {
       saveLater();
     }
   }
