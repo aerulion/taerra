@@ -117,12 +117,7 @@ public final class ActionRoutes implements Routes {
       ctx.status(400).result("Invalid area");
       return;
     }
-    final boolean tease = "tease".equals(request.action());
-    final @Nullable Boolean hide =
-        "hide".equals(request.action()) || tease
-            ? Boolean.TRUE
-            : "reveal".equals(request.action()) ? Boolean.FALSE : null;
-    if ((hide == null && !"render".equals(request.action()))
+    if (!"render".equals(request.action())
         || request.world() == null
         || request.chunks() == null
         || request.chunks().isEmpty()
@@ -132,7 +127,7 @@ public final class ActionRoutes implements Routes {
       ctx.status(400).result("Invalid area");
       return;
     }
-    if (hide == null ? !viewer.canRender() : !viewer.canHide()) {
+    if (!viewer.canRender()) {
       ctx.status(403).result("Not allowed");
       return;
     }
@@ -156,8 +151,8 @@ public final class ActionRoutes implements Routes {
                   this.renderFeedback.report(
                           player == null ? Audience.empty() : player,
                           WorldKeys.id(world),
-                          RenderFeedback.area(chunks.size(), hide, tease),
-                          this.renders.area(world, chunks, hide, tease))
+                          RenderFeedback.area(chunks.size()),
+                          this.renders.area(world, chunks))
                       ? 202
                       : 409);
             });

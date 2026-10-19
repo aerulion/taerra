@@ -100,11 +100,52 @@ class FogTest {
   }
 
   @Test
-  @DisplayName("a teaser lets the ground beneath show through")
-  void teaserShowsThrough() {
-    final int teaser = Fog.hidden(0, 0, FLAT, ALONE, true)[0];
-    assertTrue(Fog.teased(teaser));
+  @DisplayName("a veil lets the ground beneath show through")
+  void veilShowsThrough() {
+    final int veil = Fog.hidden(0, 0, FLAT, ALONE, true)[0];
+    assertTrue(Fog.veiled(veil));
     assertNotEquals(
-        Fog.veil(GROUND, teaser, 3.5f, 9.5f, 63), Fog.veil(0xFFC03020, teaser, 3.5f, 9.5f, 63));
+        Fog.veil(GROUND, veil, 3.5f, 9.5f, 63), Fog.veil(0xFFC03020, veil, 3.5f, 9.5f, 63));
+  }
+
+  @Test
+  @DisplayName("spill drawn as an overlay over the ground looks like spill baked into it")
+  void overlayMatchesVeil() {
+    final int[] mist = mistBeside(-1);
+    final Fog.Cell cell = new Fog.Cell();
+    for (int column = 0; column < ChunkColumns.COLUMN_COUNT; column++) {
+      final float x = 64 + (column >> 4) + 0.5f;
+      final float z = 112 + (column & 15) + 0.5f;
+      final int baked = Fog.veil(GROUND, mist[column], x, z, 63);
+      final int stacked = Fog.over(Fog.overlay(mist[column], x, z, 63, cell), GROUND);
+      for (int shift = 0; shift <= 16; shift += 8) {
+        assertTrue(
+            Math.abs(((baked >> shift) & 0xFF) - ((stacked >> shift) & 0xFF)) <= 2,
+            "column " + column);
+      }
+    }
+    assertEquals(0, Fog.overlay(Fog.NO_MIST, 0.5f, 0.5f, 63, cell));
+  }
+
+  @Test
+  @DisplayName("clouds split cleanly from the fog beneath them")
+  void skySplitsFromFog() {
+    final byte[] wide = new byte[Fog.AROUND * Fog.AROUND];
+    for (int x = -Fog.REACH_CHUNKS; x <= Fog.REACH_CHUNKS; x++) {
+      for (int z = -Fog.REACH_CHUNKS; z <= Fog.REACH_CHUNKS; z++) {
+        wide[Fog.around(x, z)] = Fog.HIDDEN;
+      }
+    }
+    int clouds = 0;
+    for (final int mist : Fog.hidden(0, 0, FLAT, wide, false)) {
+      assertTrue(!Fog.sky(Fog.withoutSky(mist)));
+      assertEquals(mist & 15, Fog.withoutSky(mist) & 15);
+      if (Fog.sky(mist)) {
+        clouds++;
+        assertTrue(Fog.sky(Fog.skyOnly(mist)));
+        assertEquals(0, Fog.skyOnly(mist) & 15);
+      }
+    }
+    assertTrue(clouds > 0);
   }
 }

@@ -84,6 +84,10 @@ public final class Messages {
     return warning("login.done", command("/taerra logout"));
   }
 
+  public static @NotNull Component discovered(final @NotNull String region) {
+    return line("✦", GOLD, "region.discovered", Component.text(region, GOLD));
+  }
+
   public static @NotNull Component joinHint(final @NotNull String mapUrl) {
     final @NotNull Component mod = link("https://download.taerra.dev", tr("join_hint.mod"));
     return mapUrl.isEmpty()

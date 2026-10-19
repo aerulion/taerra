@@ -142,7 +142,8 @@ final class ManualRenderCoordinator {
           renderedTiles.stream().map(RenderedTile::coordinate).filter(session::owns).toList();
       final @NotNull List<TileCoordinate> fresh =
           session.addIsometricCoverage(
-              measured, this.isoTileService.tilesCovering(world, covered, source));
+              measured,
+              this.isoTileService.tilesCovering(world, covered, source, session.chunks()));
       if (!fresh.isEmpty()) {
         this.renderQueue.enqueueAllAhead(fresh, RenderPriority.FULL_RENDER_ZOOM_0);
       }
@@ -157,7 +158,7 @@ final class ManualRenderCoordinator {
             .toList();
     if (!orphans.isEmpty()) {
       this.renderQueue.enqueueAll(
-          this.isoTileService.tilesCovering(world, orphans, source),
+          this.isoTileService.tilesCovering(world, orphans, source, null),
           RenderPriority.FULL_RENDER_ZOOM_0);
     }
   }

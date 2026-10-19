@@ -6,17 +6,22 @@ import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.model.WorldLimit;
+import net.aerulion.taerra.region.MapRegion;
+import net.aerulion.taerra.region.MapRegions;
+import net.aerulion.taerra.region.RegionFog;
 import net.aerulion.taerra.rendering.block.BlockShapeResolver;
 import net.aerulion.taerra.rendering.source.ChunkSourceProvider;
 import net.aerulion.taerra.rendering.source.ColumnSource;
@@ -36,7 +41,14 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
   private static final int CHECKS_PER_TICK = 4096;
 
   private final @NotNull Plugin plugin;
-  private final @NotNull Cache<ChunkKey, ChunkColumns> cache;
+  static final int PLAIN = 0;
+  static final int FOGGED = -1;
+  static final int BARE = -2;
+  static final int SKY = -3;
+  static final int FULL = -4;
+  private static final int SKY_CEILING = Fog.SKY_Y + Fog.SKY_THICKNESS - 1;
+
+  private final @NotNull Cache<ChunkKey, Variants> cache;
 
   private final @NotNull Set<ChunkKey> changed = ConcurrentHashMap.newKeySet();
   private final @NotNull Map<String, Object> refreshLocks = new ConcurrentHashMap<>();
@@ -46,12 +58,14 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
   private final @NotNull Map<String, Long2IntOpenHashMap> grounds = new ConcurrentHashMap<>();
   private final @NotNull BlockShapeResolver shapes;
   private final @NotNull WorldLimits limits;
+  private final @NotNull MapRegions regions;
 
   public ChunkColumnsCacheImpl(
       final @NotNull Plugin plugin,
       final int maximumChunks,
       final @NotNull BlockShapeResolver shapes,
-      final @NotNull WorldLimits limits) {
+      final @NotNull WorldLimits limits,
+      final @NotNull MapRegions regions) {
     super();
     this.plugin = plugin;
     this.cache =
@@ -61,6 +75,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
             .build();
     this.shapes = shapes;
     this.limits = limits;
+    this.regions = regions;
   }
 
   private static int takeSnapshots(
@@ -82,65 +97,193 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
     return index;
   }
 
+  int variant(
+      final @NotNull String worldName,
+      final int chunkX,
+      final int chunkZ,
+      final @NotNull FogView view) {
+    final @Nullable MapRegion owner = this.regions.foggedAt(worldName, chunkX, chunkZ);
+    final int base = owner == null ? PLAIN : FOGGED;
+    return switch (view.kind()) {
+      case BASE -> base;
+      case CLEAR -> PLAIN;
+      case BODY -> owner != null && owner.id().equals(view.region()) ? PLAIN : base;
+      case SPILL -> {
+        if (owner != null && owner.id().equals(view.region())) {
+          yield SKY;
+        }
+        for (final @NotNull UUID near : this.regions.foggedNear(worldName, chunkX, chunkZ)) {
+          if (near.equals(view.region())) {
+            yield this.regions.index(near);
+          }
+        }
+        yield owner == null ? PLAIN : BARE;
+      }
+    };
+  }
+
   @Nullable
   ChunkColumns get(
       final @NotNull World world,
       final @NotNull ChunkSourceProvider provider,
       final int chunkX,
-      final int chunkZ) {
-    final @NotNull ChunkKey key = new ChunkKey(WorldKeys.id(world), chunkX, chunkZ);
+      final int chunkZ,
+      final int variant) {
+    final @NotNull String worldName = WorldKeys.id(world);
+    final @NotNull ChunkKey key = new ChunkKey(worldName, chunkX, chunkZ);
     final long epoch = this.epoch.get();
-    final @Nullable ChunkColumns cached = this.cache.getIfPresent(key);
+    final @Nullable ChunkColumns cached = getIfPresent(key, variant);
     if (cached != null) {
       return cached;
     }
 
     final boolean current = !this.changed.contains(key);
-    final @Nullable WorldLimit limit = this.limits.get(WorldKeys.id(world));
-    final @Nullable ColumnSource source =
-        limit == null
-                || limit.intersects(
-                    chunkX << 4, chunkZ << 4, (chunkX << 4) + 15, (chunkZ << 4) + 15)
-            ? provider.sourceForChunk(chunkX, chunkZ)
-            : null;
-    if (source == null) {
-      if (current && epoch == this.epoch.get()) {
-        recordHeights(WorldKeys.id(world), chunkX, chunkZ, ChunkColumns.MISSING_HEIGHTS);
+    final @Nullable ChunkColumns columns;
+    if (variant == PLAIN || (variant == FULL && opaque(worldName, chunkX, chunkZ))) {
+      final @Nullable WorldLimit limit = this.limits.get(worldName);
+      final @Nullable ColumnSource source =
+          limit == null
+                  || limit.intersects(
+                      chunkX << 4, chunkZ << 4, (chunkX << 4) + 15, (chunkZ << 4) + 15)
+              ? provider.sourceForChunk(chunkX, chunkZ)
+              : null;
+      if (source == null) {
+        if (current && epoch == this.epoch.get()) {
+          recordHeights(worldName, chunkX, chunkZ, ChunkColumns.MISSING_HEIGHTS);
+        }
+        return null;
       }
-      return null;
+      columns =
+          variant == PLAIN
+              ? ColumnRunSampler.sampleChunk(
+                  source, ColumnRunSampler.ceilingY(world), this.shapes, chunkX, chunkZ, limit)
+              : ColumnRunSampler.blockedChunk(
+                  source,
+                  groundAround(world, provider, chunkX, chunkZ),
+                  fogAround(worldName, chunkX, chunkZ, null),
+                  chunkX,
+                  chunkZ);
+    } else {
+      columns = derive(world, provider, chunkX, chunkZ, variant);
+      if (columns == null) {
+        return null;
+      }
     }
-    final @NotNull ChunkColumns columns = sample(world, provider, source, chunkX, chunkZ);
     if (current) {
       this.cache
           .asMap()
           .compute(
               key,
               (ignored, existing) -> {
-                if (existing != null || epoch != this.epoch.get()) {
+                if (epoch != this.epoch.get()) {
                   return existing;
                 }
-                recordHeights(WorldKeys.id(world), chunkX, chunkZ, columns.heights());
-                return columns;
+                final @NotNull Variants variants =
+                    existing == null
+                        ? Variants.of(variant, columns)
+                        : existing.with(variant, columns);
+                if (variant == PLAIN || variant == FOGGED) {
+                  recordHeights(worldName, chunkX, chunkZ, variants.heights());
+                }
+                return variants;
               });
     }
     return columns;
   }
 
+  private @Nullable ChunkColumns derive(
+      final @NotNull World world,
+      final @NotNull ChunkSourceProvider provider,
+      final int chunkX,
+      final int chunkZ,
+      final int variant) {
+    final @NotNull String worldName = WorldKeys.id(world);
+    return switch (variant) {
+      case FULL -> {
+        final @Nullable ChunkColumns plain = get(world, provider, chunkX, chunkZ, PLAIN);
+        yield plain == null
+            ? null
+            : plain.withMist(
+                Fog.hidden(
+                    chunkX,
+                    chunkZ,
+                    groundAround(world, provider, chunkX, chunkZ),
+                    fogAround(worldName, chunkX, chunkZ, null),
+                    true));
+      }
+      case FOGGED -> {
+        final @Nullable ChunkColumns full = get(world, provider, chunkX, chunkZ, FULL);
+        yield full == null ? null : full.mapMist(Fog::withoutSky);
+      }
+      case SKY -> {
+        final @Nullable ChunkColumns full = get(world, provider, chunkX, chunkZ, FULL);
+        yield full == null ? null : full.mapMist(Fog::skyOnly);
+      }
+      case BARE -> {
+        final @Nullable ChunkColumns fogged = get(world, provider, chunkX, chunkZ, FOGGED);
+        yield fogged == null ? null : fogged.withoutMist();
+      }
+      default -> {
+        final @Nullable ChunkColumns geometry =
+            get(
+                world,
+                provider,
+                chunkX,
+                chunkZ,
+                this.regions.foggedAt(worldName, chunkX, chunkZ) == null ? PLAIN : FOGGED);
+        final @Nullable MapRegion spilling = this.regions.indexed(variant);
+        yield geometry == null
+            ? null
+            : spilling == null
+                ? geometry.withoutMist()
+                : geometry.withMist(
+                    Fog.mist(
+                        chunkX,
+                        chunkZ,
+                        geometry,
+                        groundAround(world, provider, chunkX, chunkZ),
+                        fogAround(worldName, chunkX, chunkZ, spilling)));
+      }
+    };
+  }
+
+  private @Nullable ChunkColumns getIfPresent(final @NotNull ChunkKey key, final int variant) {
+    final @Nullable Variants variants = this.cache.getIfPresent(key);
+    return variants == null ? null : variants.get(variant);
+  }
+
   @Nullable
-  ChunkColumns getIfPresent(final @NotNull String worldName, final int chunkX, final int chunkZ) {
-    return this.cache.getIfPresent(new ChunkKey(worldName, chunkX, chunkZ));
+  ChunkColumns getIfPresent(
+      final @NotNull String worldName, final int chunkX, final int chunkZ, final int variant) {
+    return getIfPresent(new ChunkKey(worldName, chunkX, chunkZ), variant);
   }
 
   @Override
   public long knownHeights(final @NotNull String worldName, final int chunkX, final int chunkZ) {
+    return knownHeights(worldName, chunkX, chunkZ, true);
+  }
+
+  @Override
+  public long knownHeights(
+      final @NotNull String worldName, final int chunkX, final int chunkZ, final boolean sky) {
     final @Nullable Long2LongOpenHashMap world = this.heights.get(worldName);
     if (world == null) {
       return ChunkColumns.UNKNOWN_HEIGHTS;
     }
 
+    final long known;
     synchronized (world) {
-      return world.get(ChunkCoordinate.key(chunkX, chunkZ));
+      known = world.get(ChunkCoordinate.key(chunkX, chunkZ));
     }
+    if (!sky
+        || known == ChunkColumns.UNKNOWN_HEIGHTS
+        || known == ChunkColumns.MISSING_HEIGHTS
+        || ChunkColumns.maxTopOf(known) == ChunkColumns.EMPTY_COLUMN
+        || ChunkColumns.maxTopOf(known) >= SKY_CEILING
+        || this.regions.foggedNear(worldName, chunkX, chunkZ).length == 0) {
+      return known;
+    }
+    return ((long) ChunkColumns.minTopOf(known) << 32) | (SKY_CEILING & 0xFFFFFFFFL);
   }
 
   @Override
@@ -192,8 +335,10 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
 
   @Override
   public @NotNull CachedChunkColumnsSource sourceFor(
-      final @NotNull World world, final @NotNull ChunkSourceProvider provider) {
-    return new CachedChunkColumnsSource(this, world, provider);
+      final @NotNull World world,
+      final @NotNull ChunkSourceProvider provider,
+      final @NotNull FogView view) {
+    return new CachedChunkColumnsSource(this, world, provider, view);
   }
 
   @Override
@@ -213,13 +358,15 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
         chunks.forEach(chunk -> grounds.remove((long) chunk));
       }
     }
-    this.cache.invalidateAll(
-        chunks.stream()
-            .map(
-                chunk ->
-                    new ChunkKey(
-                        worldName, ChunkCoordinate.keyX(chunk), ChunkCoordinate.keyZ(chunk)))
-            .toList());
+    for (final long chunk : chunks) {
+      final @NotNull ChunkKey key =
+          new ChunkKey(worldName, ChunkCoordinate.keyX(chunk), ChunkCoordinate.keyZ(chunk));
+      if (terrain) {
+        this.cache.invalidate(key);
+      } else {
+        this.cache.asMap().computeIfPresent(key, (_, variants) -> variants.only(PLAIN));
+      }
+    }
   }
 
   @Override
@@ -235,39 +382,12 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
     return this.cache.estimatedSize();
   }
 
-  private @NotNull ChunkColumns sample(
+  private int @NotNull [] groundAround(
       final @NotNull World world,
       final @NotNull ChunkSourceProvider provider,
-      final @NotNull ColumnSource source,
       final int chunkX,
       final int chunkZ) {
-    final @NotNull String worldName = WorldKeys.id(world);
     final int ceilingY = ColumnRunSampler.ceilingY(world);
-    final byte @NotNull [] hiddenAround = new byte[Fog.AROUND * Fog.AROUND];
-    boolean misted = false;
-    for (int offsetX = -Fog.REACH_CHUNKS; offsetX <= Fog.REACH_CHUNKS; offsetX++) {
-      for (int offsetZ = -Fog.REACH_CHUNKS; offsetZ <= Fog.REACH_CHUNKS; offsetZ++) {
-        final byte hidden =
-            this.limits.teased(worldName, chunkX + offsetX, chunkZ + offsetZ)
-                ? Fog.TEASED
-                : this.limits.hidden(worldName, chunkX + offsetX, chunkZ + offsetZ)
-                    ? Fog.HIDDEN
-                    : Fog.OPEN;
-        hiddenAround[Fog.around(offsetX, offsetZ)] = hidden;
-        misted |= hidden != Fog.OPEN;
-      }
-    }
-    if (!misted) {
-      return ColumnRunSampler.sampleChunk(
-          source, ceilingY, this.shapes, chunkX, chunkZ, this.limits.get(worldName));
-    }
-    if (!opaque(world, chunkX, chunkZ)) {
-      remember(
-          worldName,
-          chunkX,
-          chunkZ,
-          Fog.ground(ColumnRunSampler.columnTops(source, ceilingY, this.shapes)));
-    }
     final int @NotNull [] groundAround = new int[9];
     for (int offsetX = -1; offsetX <= 1; offsetX++) {
       for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
@@ -276,16 +396,26 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
             ground == ColumnSource.EMPTY_COLUMN ? world.getSeaLevel() : ground;
       }
     }
-    if (hiddenAround[Fog.around(0, 0)] == Fog.HIDDEN) {
-      return ColumnRunSampler.blockedChunk(source, groundAround, hiddenAround, chunkX, chunkZ);
+    return groundAround;
+  }
+
+  private byte @NotNull [] fogAround(
+      final @NotNull String worldName,
+      final int chunkX,
+      final int chunkZ,
+      final @Nullable MapRegion only) {
+    final byte @NotNull [] around = new byte[Fog.AROUND * Fog.AROUND];
+    for (int offsetX = -Fog.REACH_CHUNKS; offsetX <= Fog.REACH_CHUNKS; offsetX++) {
+      for (int offsetZ = -Fog.REACH_CHUNKS; offsetZ <= Fog.REACH_CHUNKS; offsetZ++) {
+        final @Nullable MapRegion region =
+            only == null
+                ? this.regions.foggedAt(worldName, chunkX + offsetX, chunkZ + offsetZ)
+                : only.contains(chunkX + offsetX, chunkZ + offsetZ) ? only : null;
+        around[Fog.around(offsetX, offsetZ)] =
+            region == null ? Fog.OPEN : region.fog() == RegionFog.VEIL ? Fog.VEILED : Fog.HIDDEN;
+      }
     }
-    final @NotNull ChunkColumns columns =
-        ColumnRunSampler.sampleChunk(
-            source, ceilingY, this.shapes, chunkX, chunkZ, this.limits.get(worldName));
-    return columns.withMist(
-        hiddenAround[Fog.around(0, 0)] == Fog.TEASED
-            ? Fog.hidden(chunkX, chunkZ, groundAround, hiddenAround, true)
-            : Fog.mist(chunkX, chunkZ, columns, groundAround, hiddenAround));
+    return around;
   }
 
   private int ground(
@@ -294,14 +424,14 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       final int ceilingY,
       final int chunkX,
       final int chunkZ) {
-    if (!opaque(world, chunkX, chunkZ)) {
+    if (!opaque(WorldKeys.id(world), chunkX, chunkZ)) {
       return visibleGround(world, provider, ceilingY, chunkX, chunkZ);
     }
     int sum = 0;
     int count = 0;
     for (int offsetX = -1; offsetX <= 1; offsetX++) {
       for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-        if (opaque(world, chunkX + offsetX, chunkZ + offsetZ)) {
+        if (opaque(WorldKeys.id(world), chunkX + offsetX, chunkZ + offsetZ)) {
           continue;
         }
         final int ground =
@@ -315,9 +445,9 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
     return count == 0 ? ColumnSource.EMPTY_COLUMN : Math.round((float) sum / count);
   }
 
-  private boolean opaque(final @NotNull World world, final int chunkX, final int chunkZ) {
-    return this.limits.hidden(WorldKeys.id(world), chunkX, chunkZ)
-        && !this.limits.teased(WorldKeys.id(world), chunkX, chunkZ);
+  private boolean opaque(final @NotNull String worldName, final int chunkX, final int chunkZ) {
+    final @Nullable MapRegion region = this.regions.foggedAt(worldName, chunkX, chunkZ);
+    return region != null && region.fog() == RegionFog.HIDE;
   }
 
   private int visibleGround(
@@ -372,13 +502,16 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       final @NotNull ChunkSourceProvider provider,
       final int chunkX,
       final int chunkZ) {
-    final @Nullable ColumnSource source = provider.sourceForChunk(chunkX, chunkZ);
-    if (source == null) {
+    if (provider.sourceForChunk(chunkX, chunkZ) == null) {
       return;
     }
-    final @NotNull ChunkColumns columns = sample(world, provider, source, chunkX, chunkZ);
-    recordHeights(WorldKeys.id(world), chunkX, chunkZ, columns.heights());
-    this.cache.put(new ChunkKey(WorldKeys.id(world), chunkX, chunkZ), columns);
+    this.cache.invalidate(new ChunkKey(WorldKeys.id(world), chunkX, chunkZ));
+    get(
+        world,
+        provider,
+        chunkX,
+        chunkZ,
+        variant(WorldKeys.id(world), chunkX, chunkZ, FogView.BASE));
   }
 
   @Override
@@ -387,5 +520,57 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
         .policy()
         .eviction()
         .ifPresent(eviction -> eviction.setMaximum(Math.max(256, maximumChunks)));
+  }
+
+  private record Variants(int @NotNull [] ids, ChunkColumns @NotNull [] columns) {
+
+    static @NotNull Variants of(final int id, final @NotNull ChunkColumns columns) {
+      return new Variants(new int[] {id}, new ChunkColumns[] {columns});
+    }
+
+    @Nullable
+    ChunkColumns get(final int id) {
+      for (int index = 0; index < this.ids.length; index++) {
+        if (this.ids[index] == id) {
+          return this.columns[index];
+        }
+      }
+      return null;
+    }
+
+    @Nullable
+    Variants only(final int id) {
+      final @Nullable ChunkColumns columns = get(id);
+      return columns == null ? null : of(id, columns);
+    }
+
+    @NotNull
+    Variants with(final int id, final @NotNull ChunkColumns columns) {
+      if (get(id) != null) {
+        return this;
+      }
+      final int @NotNull [] ids = Arrays.copyOf(this.ids, this.ids.length + 1);
+      final ChunkColumns @NotNull [] all = Arrays.copyOf(this.columns, this.columns.length + 1);
+      ids[this.ids.length] = id;
+      all[this.columns.length] = columns;
+      return new Variants(ids, all);
+    }
+
+    long heights() {
+      int min = Integer.MAX_VALUE;
+      int max = Integer.MIN_VALUE;
+      long heights = ChunkColumns.MISSING_HEIGHTS;
+      for (int index = 0; index < this.ids.length; index++) {
+        if (this.ids[index] != PLAIN && this.ids[index] != FOGGED) {
+          continue;
+        }
+        heights = this.columns[index].heights();
+        if (!this.columns[index].isEmpty()) {
+          min = Math.min(min, this.columns[index].minTopY());
+          max = Math.max(max, this.columns[index].maxTopY());
+        }
+      }
+      return max == Integer.MIN_VALUE ? heights : ((long) min << 32) | (max & 0xFFFFFFFFL);
+    }
   }
 }

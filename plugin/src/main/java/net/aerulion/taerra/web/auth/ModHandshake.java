@@ -1,6 +1,7 @@
 package net.aerulion.taerra.web.auth;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.HashMap;
@@ -26,7 +27,7 @@ public final class ModHandshake implements Listener, PluginMessageListener {
 
   public static final @NotNull String CHANNEL = "taerra:web";
 
-  public static final int PROTOCOL = 4;
+  public static final int PROTOCOL = 5;
 
   private static final int MAX_VERSION_LENGTH = 64;
 
@@ -37,6 +38,7 @@ public final class ModHandshake implements Listener, PluginMessageListener {
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private final @NotNull Map<UUID, String> tokens = new ConcurrentHashMap<>();
   private final @NotNull Map<UUID, String> versions = new ConcurrentHashMap<>();
+  private final @NotNull Map<UUID, Integer> protocols = new ConcurrentHashMap<>();
 
   public ModHandshake(
       final @NotNull Plugin plugin,
@@ -81,6 +83,7 @@ public final class ModHandshake implements Listener, PluginMessageListener {
   public void onQuit(final @NotNull PlayerQuitEvent event) {
     this.sessions.end(this.tokens.remove(event.getPlayer().getUniqueId()));
     this.versions.remove(event.getPlayer().getUniqueId());
+    this.protocols.remove(event.getPlayer().getUniqueId());
   }
 
   @Override
@@ -89,12 +92,14 @@ public final class ModHandshake implements Listener, PluginMessageListener {
     if (!CHANNEL.equals(channel)) {
       return;
     }
-    final @NotNull String version;
+    final @NotNull JsonNode answer;
     try {
-      version = this.mapper.readTree(message).path("version").asText("");
+      answer = this.mapper.readTree(message);
     } catch (final IOException e) {
       return;
     }
+    this.protocols.put(player.getUniqueId(), answer.path("protocol").asInt(0));
+    final @NotNull String version = answer.path("version").asText("");
     if (version.length() <= MAX_VERSION_LENGTH && version.matches("[\\w.+-]+")) {
       this.versions.put(player.getUniqueId(), version);
     }
@@ -108,6 +113,14 @@ public final class ModHandshake implements Listener, PluginMessageListener {
     return token != null && this.tokens.containsValue(token);
   }
 
+  public boolean discovered(final @NotNull Player player, final @NotNull String region) {
+    if (this.protocols.getOrDefault(player.getUniqueId(), 0) != PROTOCOL) {
+      return false;
+    }
+    send(player, Map.of("discovered", region));
+    return true;
+  }
+
   private void send(final @NotNull Player player) {
     final @NotNull Map<String, Object> hello = new HashMap<>();
     hello.put("protocol", PROTOCOL);
@@ -117,8 +130,12 @@ public final class ModHandshake implements Listener, PluginMessageListener {
     if (token != null) {
       hello.put("token", token);
     }
+    send(player, hello);
+  }
+
+  private void send(final @NotNull Player player, final @NotNull Map<String, Object> message) {
     try {
-      player.sendPluginMessage(this.plugin, CHANNEL, this.mapper.writeValueAsBytes(hello));
+      player.sendPluginMessage(this.plugin, CHANNEL, this.mapper.writeValueAsBytes(message));
     } catch (final JsonProcessingException e) {
       throw new IllegalStateException(e);
     }

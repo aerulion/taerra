@@ -16,12 +16,6 @@ public final class MarkerTexts {
 
   public static @NotNull Layer localize(final @NotNull Layer layer) {
     return switch (layer.id()) {
-      case "hidden" ->
-          withMarkers(
-              layer,
-              layer.markers().stream()
-                  .map(marker -> with(marker, I18n.get("taerra.marker.hidden"), marker.details()))
-                  .toList());
       case "chunks" ->
           withMarkers(layer, layer.markers().stream().map(MarkerTexts::chunk).toList());
       case "worldborder" ->
@@ -115,9 +109,7 @@ public final class MarkerTexts {
     row(rows, "view", count(facts.get("view")));
     row(rows, "simulation", count(facts.get("simulation")));
     return with(
-        marker,
-        I18n.get("taerra.chunks.level." + level) + " · " + count(facts.get("chunks")),
-        rows);
+        marker, I18n.get("taerra.chunks.level." + level) + ", " + count(facts.get("chunks")), rows);
   }
 
   private static void row(
@@ -151,6 +143,8 @@ public final class MarkerTexts {
         marker.maxY(),
         marker.hollow(),
         marker.fullHeight(),
-        marker.smooth());
+        marker.smooth(),
+        marker.muted(),
+        marker.discovered());
   }
 }

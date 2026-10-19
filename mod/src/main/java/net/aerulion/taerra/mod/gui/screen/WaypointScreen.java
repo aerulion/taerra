@@ -5,8 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
-import net.aerulion.taerra.mod.gui.widget.ColorPicker;
-import net.aerulion.taerra.mod.gui.widget.DyeSwatches;
+import net.aerulion.taerra.mod.gui.widget.ColorField;
 import net.aerulion.taerra.mod.gui.widget.FooterRows;
 import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.map.Place;
@@ -27,7 +26,6 @@ import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.DyeColor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,7 +43,7 @@ public final class WaypointScreen extends Screen {
   private final @NotNull WebMap map;
   private final @NotNull Waypoint target;
   private final @NotNull Runnable saved;
-  private final @NotNull ColorPicker picker;
+  private final @NotNull ColorField colors;
   private String name;
   private String color;
   private String description;
@@ -58,7 +56,6 @@ public final class WaypointScreen extends Screen {
   private @NotNull Component error = Component.empty();
   private boolean saving;
   private boolean armed;
-  private @Nullable EditBox hex;
 
   private static void cleanName(final @NotNull EditBox box, final @NotNull Consumer<String> then) {
     box.setResponder(
@@ -97,7 +94,7 @@ public final class WaypointScreen extends Screen {
     this.serverGroups = account != null && account.markers() && !target.personal();
     this.group = this.ownGroup && target.previous() == null ? Waypoint.PERSONAL : target.group();
     this.description = target.description();
-    this.picker = new ColorPicker(WIDTH, this.color, this::showColor);
+    this.colors = new ColorField(WIDTH, this.color, value -> this.color = value);
     if (this.serverGroups) {
       map.waypointGroups(
           loaded -> {
@@ -166,31 +163,7 @@ public final class WaypointScreen extends Screen {
     description.setValue(this.description);
     description.setValueListener(value -> this.description = value);
 
-    final @NotNull LinearLayout colors = contents.addChild(LinearLayout.horizontal().spacing(4));
-    colors.addChild(new DyeSwatches(() -> this.color, this::pickColor));
-    final @NotNull EditBox hex =
-        colors.addChild(
-            new EditBox(
-                this.font,
-                WIDTH - 4 - DyeColor.values().length * DyeSwatches.SWATCH / 2,
-                20,
-                Component.translatable("taerra.waypoint.hex")));
-    hex.setMaxLength(7);
-    hex.setValue(this.color);
-    hex.setTextColor(Colors.argb(this.color));
-    hex.setTooltip(Tooltip.create(Component.translatable("taerra.waypoint.hex")));
-    hex.setResponder(
-        value -> {
-          final @NotNull String digits = value.startsWith("#") ? value.substring(1) : value;
-          final @NotNull String typed = "#" + digits.toLowerCase(Locale.ROOT);
-          if (Colors.isHex(typed) && !typed.equals(this.color)) {
-            this.color = typed;
-            this.picker.setHex(typed);
-            hex.setTextColor(Colors.argb(typed));
-          }
-        });
-    this.hex = hex;
-    contents.addChild(this.picker);
+    this.colors.addTo(contents, this.font);
 
     final @NotNull List<String> values = new ArrayList<>();
     if (this.ownGroup) {
@@ -277,19 +250,6 @@ public final class WaypointScreen extends Screen {
       return;
     }
     this.layout.arrangeElements();
-  }
-
-  private void pickColor(final @NotNull String color) {
-    this.picker.setHex(color);
-    showColor(color);
-  }
-
-  private void showColor(final @NotNull String color) {
-    this.color = color;
-    if (this.hex != null) {
-      this.hex.setValue(color);
-      this.hex.setTextColor(Colors.argb(color));
-    }
   }
 
   private void fail(final @NotNull Component error) {

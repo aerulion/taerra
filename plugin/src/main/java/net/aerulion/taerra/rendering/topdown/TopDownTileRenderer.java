@@ -14,6 +14,14 @@ public sealed interface TopDownTileRenderer permits TopDownTileRendererImpl {
       @NotNull ChunkColumnsSource source, int startBlockX, int startBlockZ, int tileSize);
 
   @NotNull
+  RenderedImage render(
+      @NotNull ChunkColumnsSource source,
+      int startBlockX,
+      int startBlockZ,
+      int tileSize,
+      boolean overlay);
+
+  @NotNull
   List<RenderedTile> renderBatch(
       @NotNull ChunkColumnsSource source, @NotNull List<TileCoordinate> tileCoordinates);
 }

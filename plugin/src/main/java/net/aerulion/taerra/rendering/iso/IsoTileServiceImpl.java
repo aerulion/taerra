@@ -1,21 +1,36 @@
 package net.aerulion.taerra.rendering.iso;
 
+import it.unimi.dsi.fastutil.longs.LongCollection;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.LongPredicate;
+import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
 import net.aerulion.taerra.model.WorldKeys;
+import net.aerulion.taerra.region.MapRegion;
+import net.aerulion.taerra.region.MapRegions;
+import net.aerulion.taerra.region.RegionFog;
+import net.aerulion.taerra.rendering.pipeline.FogLayers;
 import net.aerulion.taerra.rendering.sample.CachedChunkColumnsSource;
 import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsCache;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
+import net.aerulion.taerra.rendering.sample.FogView;
 import net.aerulion.taerra.rendering.source.RegionFileChunkSourceProvider;
+import net.aerulion.taerra.rendering.style.Fog;
 import net.aerulion.taerra.rendering.style.MapStyle;
 import net.aerulion.taerra.rendering.style.SunShadow;
+import net.aerulion.taerra.rendering.tile.PickBuffer;
 import net.aerulion.taerra.rendering.tile.RenderedImage;
 import net.aerulion.taerra.rendering.tile.RenderedTile;
 import net.aerulion.taerra.util.ImageUtils;
@@ -27,6 +42,7 @@ public final class IsoTileServiceImpl implements IsoTileService {
 
   private final @NotNull ChunkColumnsCache columns;
   private final @NotNull IsoTileRenderer renderer;
+  private final @NotNull MapRegions regions;
   private final int shadowDistance = MapStyle.ISO_SHADOW_DISTANCE;
 
   private final @NotNull LongAdder renderedBaseTiles = new LongAdder();
@@ -37,10 +53,13 @@ public final class IsoTileServiceImpl implements IsoTileService {
   private final @NotNull LongAdder invalidatedTiles = new LongAdder();
 
   public IsoTileServiceImpl(
-      final @NotNull ChunkColumnsCache columns, final @NotNull IsoTileRenderer renderer) {
+      final @NotNull ChunkColumnsCache columns,
+      final @NotNull IsoTileRenderer renderer,
+      final @NotNull MapRegions regions) {
     super();
     this.columns = columns;
     this.renderer = renderer;
+    this.regions = regions;
   }
 
   @Override
@@ -108,7 +127,8 @@ public final class IsoTileServiceImpl implements IsoTileService {
   public @NotNull List<TileCoordinate> tilesCovering(
       final @NotNull World world,
       final @NotNull List<TileCoordinate> topDownTiles,
-      final @NotNull ChunkColumnsSource source) {
+      final @NotNull ChunkColumnsSource source,
+      final @Nullable LongPredicate chunks) {
     final int chunksPerTile = TileGeometry.TILE_SIZE / IsoTileGeometry.CHUNK_SIZE;
     final @NotNull Set<TileCoordinate> tiles = new LinkedHashSet<>();
     for (final @NotNull TileCoordinate tile : topDownTiles) {
@@ -116,18 +136,26 @@ public final class IsoTileServiceImpl implements IsoTileService {
         for (int offsetZ = 0; offsetZ < chunksPerTile; offsetZ++) {
           final int chunkX = tile.x() * chunksPerTile + offsetX;
           final int chunkZ = tile.z() * chunksPerTile + offsetZ;
+          if (chunks != null && !chunks.test(ChunkCoordinate.key(chunkX, chunkZ))) {
+            continue;
+          }
           final @Nullable ChunkColumns columns = source.columnsFor(chunkX, chunkZ);
           if (columns == null || columns.isEmpty()) {
             continue;
           }
+          final long known = this.columns.knownHeights(WorldKeys.id(world), chunkX, chunkZ);
+          final int maxTopY =
+              known == ChunkColumns.UNKNOWN_HEIGHTS || known == ChunkColumns.MISSING_HEIGHTS
+                  ? columns.maxTopY()
+                  : Math.max(columns.maxTopY(), ChunkColumns.maxTopOf(known));
 
           for (final @NotNull MapRotation rotation : MapRotation.values()) {
             IsoTileGeometry.forEachTileCovering(
                 (long) chunkX * IsoTileGeometry.CHUNK_SIZE,
                 (long) chunkZ * IsoTileGeometry.CHUNK_SIZE,
                 IsoTileGeometry.CHUNK_SIZE,
-                world.getMinHeight(),
-                columns.maxTopY() + 1,
+                chunks == null ? world.getMinHeight() : lowestVisibleY(world, chunkX, chunkZ),
+                maxTopY + 1,
                 rotation,
                 (tileX, tileY) ->
                     tiles.add(
@@ -146,30 +174,197 @@ public final class IsoTileServiceImpl implements IsoTileService {
     final @NotNull List<RenderedTile> rendered = new ArrayList<>(tileCoordinates.size());
     try (final @NotNull RegionFileChunkSourceProvider provider =
             new RegionFileChunkSourceProvider(world)) {
-      final @NotNull CachedChunkColumnsSource source = this.columns.sourceFor(world, provider);
+      final @NotNull Map<FogView, CachedChunkColumnsSource> sources = new HashMap<>();
+      final @NotNull CachedChunkColumnsSource source =
+          sources.computeIfAbsent(
+              FogView.BASE, view -> this.columns.sourceFor(world, provider, view));
+      final boolean fogged = this.regions.anyFogged(WorldKeys.id(world));
       for (final @NotNull TileCoordinate coordinate : tileCoordinates) {
+        final @NotNull Influence influence = fogged ? influence(world, coordinate) : Influence.NONE;
+        final @NotNull List<FogView> layers = new ArrayList<>();
+        for (final @NotNull UUID region : influence.spills()) {
+          layers.add(FogView.spill(region));
+        }
+        if (influence.veiled() && influence.bodies().size() > 1) {
+          for (final @NotNull UUID region : influence.bodies()) {
+            layers.add(FogView.body(region));
+          }
+        }
+        final @NotNull List<IsoTileRenderer.MistView> views = new ArrayList<>(layers.size());
+        for (final @NotNull FogView layer : layers) {
+          views.add(
+              new IsoTileRenderer.MistView(
+                  sources.computeIfAbsent(
+                      layer, view -> this.columns.sourceFor(world, provider, view)),
+                  layer.kind() == FogView.Kind.SPILL));
+        }
         final long startedAt = System.nanoTime();
-        final @NotNull RenderedImage result =
-            this.renderer.renderTile(
-                coordinate.rotation(),
-                coordinate.x(),
-                coordinate.z(),
-                world.getMinHeight(),
-                world.getMaxHeight(),
-                source,
-                true);
+        final @NotNull RenderedImage result = render(world, coordinate, source, views);
         this.renderNanos.add(System.nanoTime() - startedAt);
         this.renderedBaseTiles.increment();
 
-        if (ImageUtils.hasVisiblePixels(result.image())) {
-          rendered.add(new RenderedTile(coordinate, result));
+        if (!ImageUtils.hasVisiblePixels(result.image())) {
+          continue;
+        }
+        rendered.add(new RenderedTile(coordinate, result));
+        boolean bodied = false;
+        for (int index = 0; index < layers.size(); index++) {
+          final @NotNull FogView layer = layers.get(index);
+          final @NotNull BufferedImage image = result.views().get(index);
+          if (layer.kind() == FogView.Kind.SPILL) {
+            if (ImageUtils.hasVisiblePixels(image)) {
+              rendered.add(new RenderedTile(coordinate, layer, image, null));
+            }
+          } else {
+            bodied |= addBody(rendered, coordinate, layer, image, result.pick(), result.image());
+          }
+        }
+        if (influence.bodies().isEmpty()) {
+          continue;
+        }
+        if (influence.veiled()) {
+          if (influence.bodies().size() == 1 && result.unveiled() != null) {
+            bodied |=
+                addBody(
+                    rendered,
+                    coordinate,
+                    FogView.body(influence.bodies().iterator().next()),
+                    result.unveiled(),
+                    result.pick(),
+                    result.image());
+          }
+          if (bodied && result.unveiled() != null) {
+            rendered.add(new RenderedTile(coordinate, FogView.CLEAR, result.unveiled(), null));
+          }
+        } else if (influence.alone()) {
+          final @NotNull RenderedImage clear =
+              render(world, coordinate, source(sources, world, provider, FogView.CLEAR), List.of());
+          if (addBody(
+              rendered,
+              coordinate,
+              FogView.body(influence.bodies().iterator().next()),
+              clear.image(),
+              clear.pick(),
+              result.image())) {
+            rendered.add(new RenderedTile(coordinate, FogView.CLEAR, clear.image(), null));
+          }
+        } else {
+          for (final @NotNull UUID region : influence.bodies()) {
+            final @NotNull FogView body = FogView.body(region);
+            final @NotNull RenderedImage layer =
+                render(world, coordinate, source(sources, world, provider, body), List.of());
+            addBody(rendered, coordinate, body, layer.image(), layer.pick(), result.image());
+          }
         }
       }
-      this.sampleNanos.add(source.sampleNanos());
-      this.sampledChunks.add(source.sampledChunks());
-      this.reusedChunks.add(source.reusedChunks());
+      for (final @NotNull CachedChunkColumnsSource used : sources.values()) {
+        this.sampleNanos.add(used.sampleNanos());
+        this.sampledChunks.add(used.sampledChunks());
+        this.reusedChunks.add(used.reusedChunks());
+      }
     }
     return rendered;
+  }
+
+  private @NotNull CachedChunkColumnsSource source(
+      final @NotNull Map<FogView, CachedChunkColumnsSource> sources,
+      final @NotNull World world,
+      final @NotNull RegionFileChunkSourceProvider provider,
+      final @NotNull FogView layer) {
+    return sources.computeIfAbsent(layer, view -> this.columns.sourceFor(world, provider, view));
+  }
+
+  private static boolean addBody(
+      final @NotNull List<RenderedTile> rendered,
+      final @NotNull TileCoordinate coordinate,
+      final @NotNull FogView body,
+      final @NotNull BufferedImage image,
+      final @Nullable PickBuffer pick,
+      final @NotNull BufferedImage base) {
+    final @NotNull BufferedImage changed = FogLayers.changed(image, base);
+    if (!ImageUtils.hasVisiblePixels(changed)) {
+      return false;
+    }
+    rendered.add(
+        new RenderedTile(coordinate, body, changed, pick == null ? null : pick.masked(changed)));
+    return true;
+  }
+
+  private @NotNull RenderedImage render(
+      final @NotNull World world,
+      final @NotNull TileCoordinate coordinate,
+      final @NotNull ChunkColumnsSource source,
+      final @NotNull List<IsoTileRenderer.MistView> views) {
+    return this.renderer.renderTile(
+        coordinate.rotation(),
+        coordinate.x(),
+        coordinate.z(),
+        world.getMinHeight(),
+        world.getMaxHeight(),
+        source,
+        true,
+        views);
+  }
+
+  private @NotNull Influence influence(
+      final @NotNull World world, final @NotNull TileCoordinate coordinate) {
+    final @NotNull String worldName = WorldKeys.id(world);
+    final @NotNull ScreenBounds tileBounds =
+        IsoTileGeometry.tileBounds(coordinate.x(), coordinate.z(), 0);
+    final @NotNull Set<UUID> bodies = new LinkedHashSet<>();
+    final @NotNull Set<UUID> spills = new LinkedHashSet<>();
+    final @NotNull Set<UUID> close = new LinkedHashSet<>();
+    IsoTileGeometry.forEachCandidateChunk(
+        tileBounds,
+        world.getMinHeight(),
+        world.getMaxHeight(),
+        coordinate.rotation(),
+        (chunkX, chunkZ) -> {
+          final @NotNull UUID @NotNull [] near = this.regions.foggedNear(worldName, chunkX, chunkZ);
+          if (near.length == 0) {
+            return;
+          }
+          final long known = this.columns.knownHeights(worldName, chunkX, chunkZ, false);
+          if (known == ChunkColumns.MISSING_HEIGHTS
+              || (known != ChunkColumns.UNKNOWN_HEIGHTS
+                  && ChunkColumns.maxTopOf(known) == ChunkColumns.EMPTY_COLUMN)) {
+            return;
+          }
+          final int maxTopY =
+              known == ChunkColumns.UNKNOWN_HEIGHTS
+                  ? world.getMaxHeight() - 1
+                  : ChunkColumns.maxTopOf(known);
+          if (IsoTileGeometry.chunkScreenBounds(
+                  chunkX, chunkZ, world.getMinHeight(), maxTopY, coordinate.rotation())
+              .intersects(tileBounds)) {
+            final @Nullable MapRegion owner = this.regions.foggedAt(worldName, chunkX, chunkZ);
+            if (owner != null) {
+              bodies.add(owner.id());
+            }
+            Collections.addAll(close, this.regions.foggedClose(worldName, chunkX, chunkZ));
+          }
+          if (IsoTileGeometry.chunkScreenBounds(
+                  chunkX,
+                  chunkZ,
+                  world.getMinHeight(),
+                  Math.max(maxTopY, Fog.SKY_Y + Fog.SKY_THICKNESS),
+                  coordinate.rotation())
+              .intersects(tileBounds)) {
+            Collections.addAll(spills, near);
+          }
+        });
+    boolean veiled = true;
+    for (final @NotNull UUID region : close) {
+      final @Nullable MapRegion found = this.regions.get(region);
+      veiled &= found != null && found.fog() == RegionFog.VEIL;
+    }
+    return new Influence(bodies, spills, close.size() <= 1, veiled);
+  }
+
+  private record Influence(
+      @NotNull Set<UUID> bodies, @NotNull Set<UUID> spills, boolean alone, boolean veiled) {
+
+    private static final @NotNull Influence NONE = new Influence(Set.of(), Set.of(), true, true);
   }
 
   @Override
@@ -190,6 +385,57 @@ public final class IsoTileServiceImpl implements IsoTileService {
         Math.max(
             back * side > 0 ? 2 * IsoTileRendererImpl.SKY_REACH + 1 : 0,
             shadow * side > 0 ? this.shadowDistance : 0));
+  }
+
+  @Override
+  public @NotNull List<TileCoordinate> tilesShowing(
+      final @NotNull World world, final @NotNull LongCollection chunks, final boolean fromBottom) {
+    final @NotNull Set<TileCoordinate> tiles = new LinkedHashSet<>();
+    for (final long chunk : chunks) {
+      final int chunkX = ChunkCoordinate.keyX(chunk);
+      final int chunkZ = ChunkCoordinate.keyZ(chunk);
+      final long known = this.columns.knownHeights(WorldKeys.id(world), chunkX, chunkZ);
+      if (known == ChunkColumns.MISSING_HEIGHTS) {
+        continue;
+      }
+      for (final @NotNull MapRotation rotation : MapRotation.values()) {
+        IsoTileGeometry.forEachTileCovering(
+            (long) chunkX * IsoTileGeometry.CHUNK_SIZE,
+            (long) chunkZ * IsoTileGeometry.CHUNK_SIZE,
+            IsoTileGeometry.CHUNK_SIZE,
+            fromBottom ? world.getMinHeight() : lowestVisibleY(world, chunkX, chunkZ),
+            known == ChunkColumns.UNKNOWN_HEIGHTS
+                ? world.getMaxHeight()
+                : ChunkColumns.maxTopOf(known) + 1,
+            rotation,
+            (tileX, tileY) ->
+                tiles.add(
+                    TileCoordinate.isometric(WorldKeys.id(world), rotation, 0, tileX, tileY)));
+      }
+    }
+    return new ArrayList<>(tiles);
+  }
+
+  private int lowestVisibleY(final @NotNull World world, final int chunkX, final int chunkZ) {
+    final long known = this.columns.knownHeights(WorldKeys.id(world), chunkX, chunkZ);
+    if (known == ChunkColumns.UNKNOWN_HEIGHTS
+        || known == ChunkColumns.MISSING_HEIGHTS
+        || ChunkColumns.minTopOf(known) == ChunkColumns.EMPTY_COLUMN) {
+      return world.getMinHeight();
+    }
+    for (int offsetX = -1; offsetX <= 1; offsetX++) {
+      for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
+        if (this.columns.knownHeights(WorldKeys.id(world), chunkX + offsetX, chunkZ + offsetZ)
+            == ChunkColumns.MISSING_HEIGHTS) {
+          return world.getMinHeight();
+        }
+      }
+    }
+    return Math.max(
+        world.getMinHeight(),
+        lowestTopAround(world, chunkX, chunkZ, ChunkColumns.minTopOf(known))
+            - Math.max(SunShadow.isoDrop(this.shadowDistance), IsoTileRendererImpl.SKY_REACH)
+            - 1);
   }
 
   private int lowestTopAround(

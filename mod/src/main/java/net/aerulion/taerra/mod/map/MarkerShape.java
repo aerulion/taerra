@@ -1,13 +1,19 @@
 package net.aerulion.taerra.mod.map;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Stream;
 import net.aerulion.taerra.mod.util.Colors;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.Marker;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -83,7 +89,8 @@ final class MarkerShape {
         marker.maxY(), Math.max(marker.minY(), Double.isNaN(ground) ? fallback : ground));
   }
 
-  private static @Nullable Component facts(final @NotNull Marker marker, final double length) {
+  private static @Nullable Component facts(
+      final @NotNull Marker marker, final double length, final boolean flat) {
     return switch (marker.type()) {
       case "point" ->
           marker.position() == null || marker.position().size() < 3
@@ -108,6 +115,9 @@ final class MarkerShape {
           maxX = Math.max(maxX, point.get(0));
           minZ = Math.min(minZ, point.get(1));
           maxZ = Math.max(maxZ, point.get(1));
+        }
+        if (flat) {
+          yield Component.literal(Math.round(maxX - minX) + " × " + Math.round(maxZ - minZ));
         }
         final double top =
             marker.maxY() == Math.rint(marker.maxY())
@@ -163,11 +173,18 @@ final class MarkerShape {
     if (this.tooltip == null) {
       final @NotNull List<Component> lines = new ArrayList<>();
       lines.add(Component.literal(marker.label() == null ? marker.id() : marker.label()));
-      final @Nullable Component facts = facts(marker, this.length);
+      final @Nullable Component facts = facts(marker, this.length, "regions".equals(layer.id()));
       if (facts != null) {
         for (final @NotNull String line : facts.getString().split("\n")) {
           lines.add(Component.literal(line).withStyle(ChatFormatting.GRAY));
         }
+      }
+      if (marker.discovered() != null) {
+        lines.add(
+            Component.literal("\u2726 ")
+                .append(
+                    Component.translatable("taerra.region.discovered", date(marker.discovered())))
+                .withStyle(ChatFormatting.GOLD));
       }
       if (marker.description() != null) {
         for (final @NotNull String line : marker.description().split("\n")) {
@@ -191,6 +208,13 @@ final class MarkerShape {
       this.tooltip = lines;
     }
     return this.tooltip;
+  }
+
+  private static @NotNull String date(final long epochMillis) {
+    return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
+        .withLocale(
+            Locale.forLanguageTag(Minecraft.getInstance().options.languageCode.replace('_', '-')))
+        .format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()));
   }
 
   void stand(

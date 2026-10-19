@@ -14,7 +14,7 @@ public sealed interface TileGeneratorService permits TileGeneratorServiceImpl {
   @NotNull String LIMIT_RENDER = "limit_render";
   @NotNull String RADIUS_RENDER = "radius_render";
   @NotNull String AREA_RENDER = "area_render";
-  @NotNull String HIDE_RENDER = "hide_render";
+  @NotNull String REGION_RENDER = "region_render";
 
   void start();
 
@@ -49,4 +49,6 @@ public sealed interface TileGeneratorService permits TileGeneratorServiceImpl {
   int @Nullable [] renderedArea(@NotNull String worldName);
 
   void setThreads(int configuredThreads);
+
+  void dropUnusedLayers(@NotNull String worldName);
 }

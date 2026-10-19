@@ -7,11 +7,13 @@ import {navigationManager} from './navigation.js';
 import {setupOffline} from './offline.js';
 import {element, markerManager, privateIcon} from './markers.js';
 import {playerManager} from './players.js';
+import {regionManager} from './regions.js';
 import {searchPalette} from './search.js';
 import {settingsDialog} from './settings.js';
 import {skyManager} from './sky.js';
 import {chunkSelection} from './selection.js';
 import {waypointEditor} from './waypoints.js';
+import {regionEditor, regionList} from './regioneditor.js';
 import {wsManager} from './websocket.js';
 
 let serverName = document.getElementById('server-name').textContent;
@@ -129,6 +131,7 @@ async function selectWorld(name) {
     navigationManager.setWorld(world.name);
     wsManager.subscribe(world.name);
     void markerManager.load(world.name);
+    void regionManager.load(world.name);
 }
 
 async function loadPlayers() {
@@ -331,6 +334,7 @@ function syncViewControls() {
     $('rotation-readout').setAttribute('aria-label', t('view.facing', {direction}));
     playerManager.reposition();
     markerManager.redraw();
+    regionManager.redraw();
     navigationManager.redraw();
     chunkSelection.redraw();
 }
@@ -488,6 +492,7 @@ function placeLink(block) {
 function setupContextMenu() {
     const menu = $('context-menu');
     let block = null;
+    let regionTarget = null;
     let closeTimer = 0;
 
     const close = () => {
@@ -515,7 +520,13 @@ function setupContextMenu() {
         menu.querySelector('[data-action="teleport"]').hidden = !accountManager.canTeleport();
         const placing = accountManager.canEditMarkers() || accountManager.canKeepPersonal();
         menu.querySelector('[data-action="waypoint"]').hidden = !placing;
-        menu.querySelector('[data-action="select"]').hidden = !accountManager.canRender() && !accountManager.canHide();
+        menu.querySelector('[data-action="select"]').hidden = !accountManager.canRender();
+        const owner = regionManager.at(Math.floor(block.x / 16), Math.floor(block.z / 16));
+        const region = menu.querySelector('[data-action="region"]');
+        region.hidden = !accountManager.canEditRegions();
+        region.dataset.i18n = !owner ? 'menu.drawRegion' : owner.name ? 'menu.editRegion' : 'menu.editUnnamedRegion';
+        region.textContent = t(region.dataset.i18n, {name: owner?.name});
+        regionTarget = owner;
         const rendering = renderingWorld === currentWorld.name;
         menu.querySelector('[data-action="render-world"]').hidden = !accountManager.canRender() || rendering;
         menu.querySelector('[data-action="cancel-render"]').hidden = !accountManager.canRender() || !rendering;
@@ -564,6 +575,11 @@ function setupContextMenu() {
                 label: exact ? `${x}, ${y}, ${z}` : `${x}, ${z}`, world: currentWorld.name,
                 x: x + .5, y, z: z + .5, color: '#ffffff', player: null
             });
+            return;
+        }
+        if (action === 'region') {
+            close();
+            chunkSelection.start(currentWorld.name, 'region', regionTarget);
             return;
         }
         if (action === 'select' || action === 'area' || action === 'line') {
@@ -639,6 +655,40 @@ wsManager.on('markers', (message) => {
 
 wsManager.on('worlds', () => void refreshWorlds());
 
+const discovery = $('discovery');
+let discoveryTimer;
+discovery.addEventListener('click', () => discovery.hidden = true);
+
+function celebrate(region) {
+    $('discovery-name').textContent = region;
+    $('discovery-burst').replaceChildren(...Array.from({length: 28}, (_, index) => {
+        const spark = document.createElement('i');
+        const angle = index / 28 * 2 * Math.PI + Math.random() * .4;
+        const reach = 90 + Math.random() * 110;
+        spark.style.setProperty('--x', `${Math.round(Math.cos(angle) * reach)}px`);
+        spark.style.setProperty('--y', `${Math.round(Math.sin(angle) * reach * .55)}px`);
+        spark.style.setProperty('--delay', `${Math.round(Math.random() * 150)}ms`);
+        return spark;
+    }));
+    discovery.hidden = false;
+    discovery.classList.remove('is-shown');
+    void discovery.offsetWidth;
+    discovery.classList.add('is-shown');
+    clearTimeout(discoveryTimer);
+    discoveryTimer = setTimeout(() => discovery.hidden = true, 5000);
+}
+
+wsManager.on('regions', (message) => {
+    if (message.discovered) {
+        celebrate(message.discovered);
+    }
+    if (currentWorld) {
+        void regionManager.load(currentWorld.name).then(() => regionList.refresh());
+        void markerManager.load(currentWorld.name);
+    }
+    void loadPlayers();
+});
+
 let connectedBefore = false;
 wsManager.on('config', () => void refreshServerName());
 wsManager.on('connect', () => {
@@ -648,7 +698,9 @@ wsManager.on('connect', () => {
         mapManager.refreshAllTiles();
         if (currentWorld) {
             void markerManager.load(currentWorld.name);
+            void regionManager.load(currentWorld.name);
         }
+        void loadPlayers();
     }
     connectedBefore = true;
 });
@@ -657,6 +709,7 @@ translatePage();
 const accountReady = accountManager.initialize().catch(error => console.error('Failed to log in:', error));
 await mapManager.initialize();
 markerManager.initialize();
+regionManager.initialize();
 skyManager.initialize({
     worlds: () => worlds,
     worldName,
@@ -673,6 +726,11 @@ navigationManager.onShow = (target) => {
     }
 };
 waypointEditor.initialize();
+regionEditor.initialize();
+regionList.initialize({
+    create: () => currentWorld && chunkSelection.start(currentWorld.name, 'region'),
+    edit: (region) => currentWorld && chunkSelection.start(currentWorld.name, 'region', region)
+});
 settingsDialog.initialize();
 chunkSelection.initialize();
 searchPalette.initialize({
@@ -690,6 +748,7 @@ waypointManager.initialize({
 playerManager.worldLabel = worldName;
 playerManager.onWorld = selectWorld;
 markerManager.onPlayers = () => playerManager.showAll();
+markerManager.onLayers = () => regionManager.redraw();
 markerManager.onWaypoint = async (action, waypoint, button) => {
     if (action === 'navigate') {
         mapManager.getMap().closePopup();

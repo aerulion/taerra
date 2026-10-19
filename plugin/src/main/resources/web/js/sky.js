@@ -42,7 +42,7 @@ function clock(ticks) {
 
 function describe(sky, withClock = true) {
     return [t(`sky.${sky.phase}`), sky.weather === 'clear' ? null : t(`sky.${sky.weather}`), withClock ? clock(sky.time) : null,
-        t('sky.count', {day: sky.day}), sky.advancing ? null : t('sky.stopped')].filter(Boolean).join(' · ');
+        t('sky.count', {day: sky.day}), sky.advancing ? null : t('sky.stopped')].filter(Boolean).join(', ');
 }
 
 function showProgress(bar, sky) {

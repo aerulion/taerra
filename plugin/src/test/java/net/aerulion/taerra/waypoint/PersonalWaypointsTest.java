@@ -14,8 +14,10 @@ import net.aerulion.taerra.api.marker.PointMarker;
 import net.aerulion.taerra.marker.MarkerRegistryImpl;
 import net.aerulion.taerra.marker.PlayerMarkerLayerImpl;
 import net.aerulion.taerra.marker.TestPlugins;
+import net.aerulion.taerra.player.PlayerFiles;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,12 +39,17 @@ class PersonalWaypointsTest {
         .withColor(Color.fromRGB(0x3AB3DA));
   }
 
+  private static @NotNull PersonalWaypoints waypoints(
+      final @NotNull Path directory, final @NotNull MarkerRegistryImpl registry) {
+    final @NotNull Plugin plugin = TestPlugins.in(directory.toFile());
+    return new PersonalWaypoints(plugin, registry, new PlayerFiles(plugin));
+  }
+
   @Test
   @DisplayName("each player keeps their own waypoints, read back from one file each")
   void keepsWaypointsPerPlayer(final @TempDir Path directory) {
     final @NotNull MarkerRegistryImpl registry = new MarkerRegistryImpl();
-    final @NotNull PersonalWaypoints waypoints =
-        new PersonalWaypoints(TestPlugins.named("TAERRA"), registry, directory.toFile());
+    final @NotNull PersonalWaypoints waypoints = waypoints(directory, registry);
 
     assertEquals(PersonalWaypoints.Result.SAVED, waypoints.save(ALEX, point("Home", 1), null));
     assertEquals(PersonalWaypoints.Result.TAKEN, waypoints.save(ALEX, point("home", 2), null));
@@ -58,15 +65,15 @@ class PersonalWaypointsTest {
 
     assertTrue(waypoints.remove(ALEX, "HOME"));
     assertFalse(waypoints.remove(ALEX, "Home"));
-    assertFalse(new File(directory.toFile(), ALEX + ".yml").exists(), "an empty file is deleted");
+    assertFalse(
+        new File(directory.toFile(), "player-data/" + ALEX + ".yml").exists(),
+        "an empty file is deleted");
   }
 
   @Test
   @DisplayName("a player can keep only so many waypoints")
   void limitsWaypoints(final @TempDir Path directory) {
-    final @NotNull PersonalWaypoints waypoints =
-        new PersonalWaypoints(
-            TestPlugins.named("TAERRA"), new MarkerRegistryImpl(), directory.toFile());
+    final @NotNull PersonalWaypoints waypoints = waypoints(directory, new MarkerRegistryImpl());
     for (int i = 0; i < PersonalWaypoints.MAX; i++) {
       assertEquals(PersonalWaypoints.Result.SAVED, waypoints.save(ALEX, point("W" + i, i), null));
     }
@@ -79,9 +86,7 @@ class PersonalWaypointsTest {
   @DisplayName(
       "a hidden waypoint stays in the list but leaves the map, and keeps hiding when edited")
   void hidesWaypoints(final @TempDir Path directory) {
-    final @NotNull PersonalWaypoints waypoints =
-        new PersonalWaypoints(
-            TestPlugins.named("TAERRA"), new MarkerRegistryImpl(), directory.toFile());
+    final @NotNull PersonalWaypoints waypoints = waypoints(directory, new MarkerRegistryImpl());
     waypoints.save(ALEX, point("Home", 1), null);
     waypoints.save(ALEX, point("Mine", 2), null);
 
@@ -99,9 +104,7 @@ class PersonalWaypointsTest {
   @Test
   @DisplayName("importing adds new names, skips taken ones and stops at the limit, or replaces all")
   void importsWaypoints(final @TempDir Path directory) {
-    final @NotNull PersonalWaypoints waypoints =
-        new PersonalWaypoints(
-            TestPlugins.named("TAERRA"), new MarkerRegistryImpl(), directory.toFile());
+    final @NotNull PersonalWaypoints waypoints = waypoints(directory, new MarkerRegistryImpl());
     waypoints.save(ALEX, point("Home", 1), null);
 
     final PersonalWaypoints.@Nullable Imported added =
@@ -137,9 +140,7 @@ class PersonalWaypointsTest {
   @Test
   @DisplayName("a new death point replaces the last one, whatever language named it")
   void replacesTheLastDeath(final @TempDir Path directory) {
-    final @NotNull PersonalWaypoints waypoints =
-        new PersonalWaypoints(
-            TestPlugins.named("TAERRA"), new MarkerRegistryImpl(), directory.toFile());
+    final @NotNull PersonalWaypoints waypoints = waypoints(directory, new MarkerRegistryImpl());
     final @NotNull List<String> names = List.of("Last Death", "Letzter Tod");
     waypoints.save(ALEX, point("Home", 1), null);
     waypoints.save(ALEX, point("Letzter Tod", 2), null);
@@ -154,9 +155,7 @@ class PersonalWaypointsTest {
   @Test
   @DisplayName("a hidden death point stays hidden when the next death replaces it")
   void keepsTheDeathHidden(final @TempDir Path directory) {
-    final @NotNull PersonalWaypoints waypoints =
-        new PersonalWaypoints(
-            TestPlugins.named("TAERRA"), new MarkerRegistryImpl(), directory.toFile());
+    final @NotNull PersonalWaypoints waypoints = waypoints(directory, new MarkerRegistryImpl());
     final @NotNull List<String> names = List.of("Last Death", "Letzter Tod");
     waypoints.replace(ALEX, point("Letzter Tod", 1), names);
     waypoints.setHidden(ALEX, List.of("Letzter Tod"), true);

@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import net.aerulion.taerra.mod.tile.TileKey;
 import net.aerulion.taerra.mod.util.Urls;
@@ -30,6 +32,7 @@ public final class PickCacheImpl implements PickCache {
 
   private final WebClient client;
   private final Supplier<@Nullable MapConfig> config;
+  private final Function<String, Set<String>> revealed;
   private final Set<String> loading = new HashSet<>();
   private final Map<String, Ground> grounds = new HashMap<>();
 
@@ -41,9 +44,13 @@ public final class PickCacheImpl implements PickCache {
         }
       };
 
-  public PickCacheImpl(final WebClient client, final Supplier<@Nullable MapConfig> config) {
+  public PickCacheImpl(
+      final WebClient client,
+      final Supplier<@Nullable MapConfig> config,
+      final Function<String, Set<String>> revealed) {
     this.client = client;
     this.config = config;
+    this.revealed = revealed;
   }
 
   private static @NotNull String topKey(final String world, final int x, final int z) {
@@ -68,26 +75,80 @@ public final class PickCacheImpl implements PickCache {
     return smoothed;
   }
 
-  private @Nullable Optional<PickBuffer> buffer(final String key, final String path) {
+  private @Nullable Optional<PickBuffer> buffer(
+      final String world, final String key, final String path) {
     final Pick entry = this.buffers.get(key);
     final boolean wanted =
         entry == null || (entry.stale && System.currentTimeMillis() >= entry.retryAt);
     if (wanted && !this.loading.contains(key) && this.loading.size() < MAX_IN_FLIGHT) {
       this.loading.add(key);
+      final @NotNull Set<String> revealed = this.revealed.apply(world);
       this.client
           .get(path, entry == null ? null : entry.etag)
+          .thenCompose(
+              response -> {
+                final @Nullable PickBuffer base =
+                    response.statusCode() == 200 ? PickBuffer.decode(response.body()) : null;
+                final @NotNull List<String> bodies =
+                    base == null
+                        ? List.of()
+                        : bodies(
+                            response.headers().firstValue("X-Taerra-Layers").orElse(null),
+                            revealed);
+                final @NotNull List<CompletableFuture<@Nullable PickBuffer>> layers =
+                    bodies.stream()
+                        .map(
+                            id ->
+                                this.client
+                                    .get(path + "?layer=" + id, null)
+                                    .handle(
+                                        (layer, error) ->
+                                            error == null && layer.statusCode() == 200
+                                                ? PickBuffer.decode(layer.body())
+                                                : null))
+                        .toList();
+                return CompletableFuture.allOf(layers.toArray(CompletableFuture[]::new))
+                    .thenApply(
+                        _ -> {
+                          @Nullable PickBuffer merged = base;
+                          for (final @NotNull CompletableFuture<@Nullable PickBuffer> layer :
+                              layers) {
+                            merged = merged == null ? null : merged.under(layer.join());
+                          }
+                          return new Fetched(
+                              response.statusCode(),
+                              merged,
+                              response.statusCode() == 200
+                                  ? response.headers().firstValue("ETag").orElse(null)
+                                  : null);
+                        });
+              })
           .handle(
-              (response, error) -> {
-                final int status = error == null ? response.statusCode() : 0;
-                final @Nullable PickBuffer decoded =
-                    status == 200 ? PickBuffer.decode(response.body()) : null;
-                final @Nullable String etag =
-                    status == 200 ? response.headers().firstValue("ETag").orElse(null) : null;
-                Minecraft.getInstance().execute(() -> loaded(key, status, decoded, etag));
+              (fetched, error) -> {
+                final int status = error == null ? fetched.status() : 0;
+                Minecraft.getInstance()
+                    .execute(
+                        () ->
+                            loaded(
+                                key,
+                                status,
+                                error == null ? fetched.buffer() : null,
+                                error == null ? fetched.etag() : null));
                 return null;
               });
     }
     return entry == null ? null : entry.buffer;
+  }
+
+  private static @NotNull List<String> bodies(
+      final @Nullable String header, final @NotNull Set<String> revealed) {
+    final @NotNull List<String> bodies = new ArrayList<>();
+    for (final @NotNull String id : header == null ? new String[0] : header.split(",")) {
+      if (id.startsWith("b") && revealed.contains(id.substring(1))) {
+        bodies.add(id);
+      }
+    }
+    return bodies;
   }
 
   private void loaded(
@@ -117,6 +178,7 @@ public final class PickCacheImpl implements PickCache {
     final int tileZ = Math.floorDiv(z, size);
     final @Nullable Optional<PickBuffer> buffer =
         buffer(
+            world,
             topKey(world, tileX, tileZ),
             "/api/tiles/%s/%d/%d.pick".formatted(Urls.segment(world), tileX, tileZ));
     if (buffer == null) {
@@ -139,6 +201,7 @@ public final class PickCacheImpl implements PickCache {
     final int tileY = Math.floorDiv(screenY, size);
     final @Nullable Optional<PickBuffer> buffer =
         buffer(
+            world,
             isoKey(world, rotation, tileX, tileY),
             "/api/iso/%s/%d/%d/%d.pick".formatted(Urls.segment(world), rotation, tileX, tileY));
     final int @Nullable [] cell =
@@ -207,6 +270,14 @@ public final class PickCacheImpl implements PickCache {
         });
   }
 
+  @Override
+  public void forgetWorld(final String world) {
+    this.buffers
+        .keySet()
+        .removeIf(
+            key -> key.startsWith("top:" + world + ":") || key.startsWith("iso:" + world + ":"));
+  }
+
   private void stale(final String key) {
     final Pick entry = this.buffers.get(key);
     if (entry != null) {
@@ -229,15 +300,19 @@ public final class PickCacheImpl implements PickCache {
 
   private record Pending(String path, int originX, int originZ, List<int[]> samples) {}
 
+  private record Fetched(int status, @Nullable PickBuffer buffer, @Nullable String etag) {}
+
   private final class Ground {
 
     private final double @NotNull [][][] samples;
     private final double @NotNull [][] heights;
+    private final @NotNull String world;
     private final Map<String, Pending> pending = new LinkedHashMap<>();
     private @Nullable List<List<double[]>> result;
 
     private Ground(
         final @NotNull String world, final @NotNull List<List<Double>> outline, final int size) {
+      this.world = world;
       double centerX = 0;
       double centerZ = 0;
       for (final @NotNull List<Double> point : outline) {
@@ -286,7 +361,8 @@ public final class PickCacheImpl implements PickCache {
           this.pending.entrySet().iterator();
       while (tiles.hasNext()) {
         final Map.Entry<String, Pending> tile = tiles.next();
-        final @Nullable Optional<PickBuffer> buffer = buffer(tile.getKey(), tile.getValue().path());
+        final @Nullable Optional<PickBuffer> buffer =
+            buffer(this.world, tile.getKey(), tile.getValue().path());
         if (buffer == null) {
           continue;
         }

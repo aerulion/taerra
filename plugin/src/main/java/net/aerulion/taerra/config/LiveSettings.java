@@ -7,6 +7,7 @@ import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.integration.WorldBorders;
 import net.aerulion.taerra.integration.WorldGuardRegions;
 import net.aerulion.taerra.limit.WorldLimits;
+import net.aerulion.taerra.region.MapRegions;
 import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
 import net.aerulion.taerra.rendering.queue.ChangeBuffer;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsCache;
@@ -26,6 +27,7 @@ public final class LiveSettings {
   private final @NotNull MarkerRegistry markers;
   private final @NotNull TaerraConfig config;
   private final @NotNull WorldLimits limits;
+  private final @NotNull MapRegions regions;
   private final @NotNull TileGeneratorService generator;
   private final @NotNull TileCache tileCache;
   private final @NotNull TileStorage tileStorage;
@@ -41,6 +43,7 @@ public final class LiveSettings {
       final @NotNull MarkerRegistry markers,
       final @NotNull TaerraConfig config,
       final @NotNull WorldLimits limits,
+      final @NotNull MapRegions regions,
       final @NotNull TileGeneratorService generator,
       final @NotNull TileCache tileCache,
       final @NotNull TileStorage tileStorage,
@@ -54,6 +57,7 @@ public final class LiveSettings {
     this.markers = markers;
     this.config = config;
     this.limits = limits;
+    this.regions = regions;
     this.generator = generator;
     this.tileCache = tileCache;
     this.tileStorage = tileStorage;
@@ -126,7 +130,8 @@ public final class LiveSettings {
           }
           case WORLDBORDER -> WorldBorders.start(this.plugin, this.markers, this.config, shown);
           case LOADED_CHUNKS ->
-              LoadedChunkMarkers.start(this.plugin, this.markers, this.config, this.limits, shown);
+              LoadedChunkMarkers.start(
+                  this.plugin, this.markers, this.config, this.limits, this.regions, shown);
         };
     if (task != null) {
       this.layers.put(layer, task);

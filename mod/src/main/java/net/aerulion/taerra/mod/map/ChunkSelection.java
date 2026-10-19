@@ -3,13 +3,16 @@ package net.aerulion.taerra.mod.map;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.LongPredicate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,7 +24,139 @@ public final class ChunkSelection {
   private static final int[][] CORNERS = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
 
   private final Set<Long> chunks = new LinkedHashSet<>();
+  private final int limit;
+  private final LongPredicate taken;
   private @Nullable List<int[][]> rings;
+  private @Nullable List<Long> detached;
+  private @Nullable Stroke stroke;
+
+  public ChunkSelection() {
+    this(MAX_CHUNKS, _ -> false);
+  }
+
+  public ChunkSelection(final int limit, final @NotNull LongPredicate taken) {
+    this.limit = limit;
+    this.taken = taken;
+  }
+
+  public int limit() {
+    return this.limit;
+  }
+
+  public void addAll(final @NotNull Collection<Long> chunks) {
+    this.chunks.addAll(chunks);
+    changed();
+  }
+
+  private void changed() {
+    this.rings = null;
+    this.detached = null;
+  }
+
+  public boolean connected() {
+    return detached().isEmpty();
+  }
+
+  public @NotNull List<Long> detached() {
+    if (this.detached == null) {
+      final @NotNull Set<Long> left = new HashSet<>(this.chunks);
+      final @NotNull List<List<Long>> pieces = new ArrayList<>();
+      while (!left.isEmpty()) {
+        final long first = left.iterator().next();
+        left.remove(first);
+        final @NotNull List<Long> piece = new ArrayList<>(List.of(first));
+        for (int i = 0; i < piece.size(); i++) {
+          final long at = piece.get(i);
+          for (final int @NotNull [] side : SIDES) {
+            final long next = key(chunkX(at) + side[0], chunkZ(at) + side[1]);
+            if (left.remove(next)) {
+              piece.add(next);
+            }
+          }
+        }
+        pieces.add(piece);
+      }
+      pieces.sort((a, b) -> b.size() - a.size());
+      this.detached = List.copyOf(pieces.stream().skip(1).flatMap(List::stream).toList());
+    }
+    return this.detached;
+  }
+
+  public boolean taken(final int chunkX, final int chunkZ) {
+    return this.taken.test(key(chunkX, chunkZ));
+  }
+
+  public void begin(final boolean erase) {
+    this.stroke = new Stroke(erase, new LinkedHashSet<>(), new LinkedHashSet<>(), rings());
+  }
+
+  public boolean stroking() {
+    return this.stroke != null;
+  }
+
+  public @NotNull List<int[][]> settledRings() {
+    return this.stroke == null ? rings() : this.stroke.rings;
+  }
+
+  public @NotNull Set<Long> strokeAdded() {
+    return this.stroke == null ? Set.of() : Collections.unmodifiableSet(this.stroke.added);
+  }
+
+  public @NotNull Set<Long> strokeRemoved() {
+    return this.stroke == null ? Set.of() : Collections.unmodifiableSet(this.stroke.removed);
+  }
+
+  public boolean containsChunk(final long key) {
+    if (this.stroke != null) {
+      return this.stroke.removed.contains(key)
+          || !this.stroke.added.contains(key) && this.chunks.contains(key);
+    }
+    return this.chunks.contains(key);
+  }
+
+  public boolean erasing() {
+    return this.stroke != null && this.stroke.erase;
+  }
+
+  public @Nullable Change end() {
+    final @Nullable Stroke stroke = this.stroke;
+    this.stroke = null;
+    return stroke == null || stroke.added.isEmpty() && stroke.removed.isEmpty()
+        ? null
+        : new Change(Set.copyOf(stroke.added), Set.copyOf(stroke.removed));
+  }
+
+  public void cancel() {
+    final @Nullable Change change = end();
+    if (change != null) {
+      revert(change);
+    }
+  }
+
+  public void revert(final @NotNull Change change) {
+    this.chunks.removeAll(change.added());
+    this.chunks.addAll(change.removed());
+    changed();
+  }
+
+  public void replay(final @NotNull Change change) {
+    this.chunks.removeAll(change.removed());
+    this.chunks.addAll(change.added());
+    changed();
+  }
+
+  public static @NotNull List<Long> footprint(final int blockX, final int blockZ, final int size) {
+    final int chunkX = Math.floorDiv(blockX, CHUNK);
+    final int chunkZ = Math.floorDiv(blockZ, CHUNK);
+    final int from = -size / 2;
+    final @NotNull List<Long> chunks = new ArrayList<>(size * size);
+    for (int offsetX = from; offsetX < from + size; offsetX++) {
+      for (int offsetZ = from; offsetZ < from + size; offsetZ++) {
+        chunks.add(key(chunkX + offsetX, chunkZ + offsetZ));
+      }
+    }
+    return chunks;
+  }
 
   public static long key(final int chunkX, final int chunkZ) {
     return ((long) chunkX << 32) ^ (chunkZ & 0xFFFFFFFFL);
@@ -49,7 +184,7 @@ public final class ChunkSelection {
 
   public void clear() {
     this.chunks.clear();
-    this.rings = null;
+    changed();
   }
 
   public @NotNull List<int[][]> rings() {
@@ -63,21 +198,22 @@ public final class ChunkSelection {
     return this.chunks.contains(key(Math.floorDiv(blockX, CHUNK), Math.floorDiv(blockZ, CHUNK)));
   }
 
-  public void brush(final int blockX, final int blockZ, final boolean erase) {
-    apply(Math.floorDiv(blockX, CHUNK), Math.floorDiv(blockZ, CHUNK), erase);
+  public void brush(final int blockX, final int blockZ, final int size) {
+    for (final long chunk : footprint(blockX, blockZ, size)) {
+      apply(chunkX(chunk), chunkZ(chunk));
+    }
   }
 
-  public void box(
-      final int fromX, final int fromZ, final int toX, final int toZ, final boolean erase) {
+  public void box(final int fromX, final int fromZ, final int toX, final int toZ) {
     final int[] bounds = boxChunks(fromX, fromZ, toX, toZ);
     for (int chunkX = bounds[0]; chunkX <= bounds[2]; chunkX++) {
       for (int chunkZ = bounds[1]; chunkZ <= bounds[3]; chunkZ++) {
-        apply(chunkX, chunkZ, erase);
+        apply(chunkX, chunkZ);
       }
     }
   }
 
-  public void lasso(final double @NotNull [][] outline, final boolean erase) {
+  public void lasso(final double @NotNull [][] outline) {
     if (outline.length < 3) {
       return;
     }
@@ -95,7 +231,7 @@ public final class ChunkSelection {
       for (int chunkZ = (int) Math.floor(minZ / CHUNK); chunkZ <= maxZ / CHUNK; chunkZ++) {
         if (Geometry.contains(
             outline, chunkX * CHUNK + CHUNK / 2.0, chunkZ * CHUNK + CHUNK / 2.0)) {
-          apply(chunkX, chunkZ, erase);
+          apply(chunkX, chunkZ);
         }
       }
     }
@@ -136,14 +272,37 @@ public final class ChunkSelection {
     return kept;
   }
 
-  private void apply(final int chunkX, final int chunkZ, final boolean erase) {
-    final boolean changed =
-        erase
-            ? this.chunks.remove(key(chunkX, chunkZ))
-            : this.chunks.size() < MAX_CHUNKS && this.chunks.add(key(chunkX, chunkZ));
-    if (changed) {
-      this.rings = null;
+  private void apply(final int chunkX, final int chunkZ) {
+    final @Nullable Stroke stroke = this.stroke;
+    if (stroke == null) {
+      return;
     }
+    final long key = key(chunkX, chunkZ);
+    if (stroke.erase) {
+      if (this.chunks.remove(key)) {
+        if (!stroke.added.remove(key)) {
+          stroke.removed.add(key);
+        }
+        changed();
+      }
+    } else if (this.chunks.size() < this.limit && !this.taken.test(key) && this.chunks.add(key)) {
+      if (!stroke.removed.remove(key)) {
+        stroke.added.add(key);
+      }
+      changed();
+    }
+  }
+
+  public record Change(@NotNull Set<Long> added, @NotNull Set<Long> removed) {}
+
+  private record Stroke(
+      boolean erase,
+      @NotNull Set<Long> added,
+      @NotNull Set<Long> removed,
+      @NotNull List<int[][]> rings) {}
+
+  public static @NotNull List<int[][]> outline(final @NotNull Set<Long> chunks) {
+    return trace(chunks);
   }
 
   private static @NotNull List<int[][]> trace(final @NotNull Set<Long> chunks) {

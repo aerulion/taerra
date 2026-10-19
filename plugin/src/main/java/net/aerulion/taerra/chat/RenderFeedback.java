@@ -27,14 +27,14 @@ public final class RenderFeedback {
     return Messages.tr("render.what.full");
   }
 
-  public static @NotNull Component area(
-      final int chunks, final @Nullable Boolean hide, final boolean tease) {
-    final @NotNull Component amount = Messages.tr("unit.chunks", Messages.value(chunks));
-    return hide == null
-        ? amount
-        : Messages.tr(
-            !hide ? "render.what.reveal" : tease ? "render.what.tease" : "render.what.hide",
-            amount);
+  public static @NotNull Component area(final int chunks) {
+    return Messages.tr("unit.chunks", Messages.value(chunks));
+  }
+
+  public static @NotNull Component region(final @NotNull String name) {
+    return name.isEmpty()
+        ? Messages.tr("render.what.region_unnamed")
+        : Messages.tr("render.what.region", Messages.value(name));
   }
 
   public static @NotNull Component canceled(final RenderService.@NotNull Stop stop) {

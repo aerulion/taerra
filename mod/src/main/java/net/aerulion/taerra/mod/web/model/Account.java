@@ -8,5 +8,5 @@ public record Account(
     boolean privateGroups,
     boolean personal,
     boolean render,
-    boolean hide,
+    boolean regions,
     boolean config) {}

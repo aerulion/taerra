@@ -44,7 +44,7 @@ public final class WorldGuardRegions {
       final @NotNull TaerraConfig config,
       final boolean shownByDefault) {
     final @NotNull MarkerLayer layer =
-        registry.layer(plugin, "worldguard", "Regions", shownByDefault);
+        registry.layer(plugin, "worldguard", "WorldGuard Regions", shownByDefault);
     return Bukkit.getScheduler()
         .runTaskTimerAsynchronously(
             plugin, () -> layer.setAll(regions(config)), 20L, SYNC_INTERVAL_TICKS);

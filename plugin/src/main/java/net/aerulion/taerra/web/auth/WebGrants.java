@@ -31,7 +31,7 @@ public final class WebGrants {
                 TaerraPermission.WEB_TELEPORT.node(),
                 TaerraPermission.WEB_SEE_HIDDEN.node(),
                 TaerraPermission.WEB_RENDER.node(),
-                TaerraPermission.WEB_HIDE.node(),
+                TaerraPermission.WEB_REGIONS.node(),
                 TaerraPermission.WEB_MARKERS.node(),
                 TaerraPermission.WEB_MARKERS_PRIVATE.node(),
                 TaerraPermission.WEB_MARKERS_PERSONAL.node(),

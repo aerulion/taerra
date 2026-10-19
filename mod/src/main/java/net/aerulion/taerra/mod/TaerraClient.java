@@ -3,6 +3,7 @@ package net.aerulion.taerra.mod;
 import java.util.Objects;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.config.SettingsImpl;
+import net.aerulion.taerra.mod.gui.hud.DiscoveryToast;
 import net.aerulion.taerra.mod.gui.hud.Minimap;
 import net.aerulion.taerra.mod.gui.hud.NavigationBeam;
 import net.aerulion.taerra.mod.gui.hud.NavigationHud;
@@ -38,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class TaerraClient implements ClientModInitializer {
 
-  public static final int PROTOCOL = 4;
+  public static final int PROTOCOL = 5;
 
   private static @Nullable Settings settings;
   private static final Navigation NAVIGATION = new Navigation();
@@ -64,7 +65,15 @@ public final class TaerraClient implements ClientModInitializer {
     PayloadTypeRegistry.clientboundPlay().register(HandshakePayload.TYPE, HandshakePayload.CODEC);
     PayloadTypeRegistry.serverboundPlay().register(HandshakePayload.TYPE, HandshakePayload.CODEC);
     ClientPlayNetworking.registerGlobalReceiver(
-        HandshakePayload.TYPE, (payload, context) -> this.session.connect(payload));
+        HandshakePayload.TYPE,
+        (payload, context) -> {
+          final @Nullable String discovered = payload.discovered();
+          if (discovered != null) {
+            DiscoveryToast.show(discovered);
+          } else {
+            this.session.connect(payload);
+          }
+        });
     ServerboundPlayChannelEvents.REGISTER.register(
         (handler, sender, client, channels) -> {
           if (channels.contains(HandshakePayload.TYPE.id())) {

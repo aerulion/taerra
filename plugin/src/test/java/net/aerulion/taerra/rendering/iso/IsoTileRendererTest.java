@@ -7,7 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.rendering.color.BlockColors;
@@ -16,6 +18,7 @@ import net.aerulion.taerra.rendering.color.TintColors;
 import net.aerulion.taerra.rendering.sample.ChunkColumns;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsBuilder;
 import net.aerulion.taerra.rendering.sample.ChunkColumnsSource;
+import net.aerulion.taerra.rendering.style.Fog;
 import net.aerulion.taerra.rendering.style.Lighting;
 import net.aerulion.taerra.rendering.style.MapStyle;
 import org.bukkit.block.BlockType;
@@ -686,6 +689,64 @@ class IsoTileRendererTest {
   private interface Blocks {
 
     void column(ChunkColumnsBuilder builder, int dx, int dz);
+  }
+
+  @Test
+  @DisplayName("a mist view drawn alongside the base pass matches rendering that mist on its own")
+  void mistViewsMatchTheirOwnPass() {
+    final @NotNull TestWorld world = new TestWorld(true).raise(SUBJECT_X, SUBJECT_Z, 70, 65);
+    final int @NotNull [] ground = new int[9];
+    Arrays.fill(ground, GROUND_Y);
+    final byte @NotNull [] around = new byte[Fog.AROUND * Fog.AROUND];
+    around[Fog.around(0, 0)] = Fog.VEILED;
+    around[Fog.around(1, 0)] = Fog.HIDDEN;
+    final @NotNull ChunkColumnsSource misted =
+        (chunkX, chunkZ) -> {
+          final @Nullable ChunkColumns columns = world.columnsFor(chunkX, chunkZ);
+          return columns == null || Math.abs(chunkX) > 1 || Math.abs(chunkZ) > 1
+              ? columns
+              : columns.withMist(Fog.hidden(chunkX, chunkZ, ground, around, true));
+        };
+    final @NotNull IsoTileRenderer renderer = new IsoTileRendererImpl(COLORS);
+    final @NotNull IsoProjection projection = IsoTileGeometry.projection();
+    int fogged = 0;
+    for (final @NotNull MapRotation rotation : MapRotation.values()) {
+      for (final int surfaceY : new int[] {GROUND_Y, Fog.SKY_Y}) {
+        final int tileX = IsoTileGeometry.screenToTileX(projection.screenX(8, 8), 0);
+        final int tileY = IsoTileGeometry.screenToTileY(projection.screenY(8, surfaceY, 8), 0);
+        final @NotNull BufferedImage alone =
+            renderer
+                .renderTile(rotation, tileX, tileY, MIN_WORLD_Y, MAX_WORLD_Y, misted, false)
+                .image();
+        final @NotNull BufferedImage viewed =
+            renderer
+                .renderTile(
+                    rotation,
+                    tileX,
+                    tileY,
+                    MIN_WORLD_Y,
+                    MAX_WORLD_Y,
+                    world,
+                    false,
+                    List.of(new IsoTileRenderer.MistView(misted, false)))
+                .views()
+                .getFirst();
+        assertArrayEquals(pixels(alone), pixels(viewed), rotation + " at y " + surfaceY);
+        if (!Arrays.equals(
+            pixels(alone),
+            pixels(
+                renderer
+                    .renderTile(rotation, tileX, tileY, MIN_WORLD_Y, MAX_WORLD_Y, world, false)
+                    .image()))) {
+          fogged++;
+        }
+      }
+    }
+    assertTrue(fogged > MapRotation.values().length, "fog reaches the sky tiles too");
+  }
+
+  private static int @NotNull [] pixels(final @NotNull BufferedImage image) {
+    return image.getRGB(0, 0, image.getWidth(), image.getHeight(), null, 0, image.getWidth());
   }
 
   private static class TestWorld implements ChunkColumnsSource {

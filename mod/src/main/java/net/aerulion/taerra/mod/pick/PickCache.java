@@ -29,4 +29,6 @@ public sealed interface PickCache permits PickCacheImpl {
   void refreshAll();
 
   void refreshWorld(String world);
+
+  void forgetWorld(String world);
 }

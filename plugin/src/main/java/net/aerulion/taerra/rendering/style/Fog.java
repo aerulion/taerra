@@ -19,7 +19,7 @@ public final class Fog {
 
   public static final byte HIDDEN = 1;
 
-  public static final byte TEASED = 2;
+  public static final byte VEILED = 2;
 
   public static final int REACH_CHUNKS = 8;
 
@@ -47,8 +47,8 @@ public final class Fog {
   private static final float WARP_SCALE = 80.0f;
   private static final int DENSITY_BITS = 4;
   private static final int FULL = (1 << DENSITY_BITS) - 1;
-  private static final int TEASER = 1 << DENSITY_BITS;
-  private static final int SKY = TEASER << 1;
+  private static final int VEIL = 1 << DENSITY_BITS;
+  private static final int SKY = VEIL << 1;
   private static final int SHADE = SKY << 1;
   private static final int LAYER_SHIFT = DENSITY_BITS + 3;
   private static final int SKY_SHADOW_REACH = 16;
@@ -67,9 +67,10 @@ public final class Fog {
   private static final float THICK = 0.68f;
   private static final int TONES = 2;
   private static final int OPACITY_STEPS = 6;
-  private static final float TEASER_THIN = 0.45f;
-  private static final float TEASER_THICK = 0.88f;
-  private static final float TEASER_GREY = 0.65f;
+  private static final float VEIL_THIN = 0.45f;
+  private static final float VEIL_THICK = 0.88f;
+  private static final float WASH = 0.45f;
+  private static final int WASH_COLOR = 0xFF8E96A0;
   private static final float CLEAR = 1.15f;
   private static final float SOLID = -0.15f;
   private static final float EDGE = 0.3f;
@@ -122,14 +123,14 @@ public final class Fog {
       final int chunkZ,
       final int @NotNull [] groundAround,
       final byte @NotNull [] hiddenAround,
-      final boolean teased) {
+      final boolean veiled) {
     final int @NotNull [] mist = new int[CHUNK_SIZE * CHUNK_SIZE];
     final int @NotNull [] @NotNull [] masks = masks(hiddenAround);
     final @NotNull Map<Long, Boolean> skies = new HashMap<>();
     for (int localX = 0; localX < CHUNK_SIZE; localX++) {
       for (int localZ = 0; localZ < CHUNK_SIZE; localZ++) {
         mist[ChunkColumns.columnIndex(localX, localZ)] =
-            encode(groundAt(groundAround, localX, localZ), FULL, teased)
+            encode(groundAt(groundAround, localX, localZ), FULL, veiled)
                 | skyBits(chunkX, chunkZ, localX, localZ, masks, skies);
       }
     }
@@ -156,11 +157,11 @@ public final class Fog {
                     FULL * Math.clamp(thickness(chunkX, chunkZ, localX, localZ, masks), 0.0, 1.0));
         final int sky = skyBits(chunkX, chunkZ, localX, localZ, masks, skies);
         if (density > 0 || sky != 0) {
-          final boolean teased =
-              nearest(chunkX, chunkZ, localX, localZ, masks, TEASED)
+          final boolean veiled =
+              nearest(chunkX, chunkZ, localX, localZ, masks, VEILED)
                   < nearest(chunkX, chunkZ, localX, localZ, masks, HIDDEN);
           mist[ChunkColumns.columnIndex(localX, localZ)] =
-              encode(groundAt(groundAround, localX, localZ), density, teased) | sky;
+              encode(groundAt(groundAround, localX, localZ), density, veiled) | sky;
         }
       }
     }
@@ -171,8 +172,8 @@ public final class Fog {
     return mist >> LAYER_SHIFT;
   }
 
-  public static boolean teased(final int mist) {
-    return (mist & TEASER) != 0;
+  public static boolean veiled(final int mist) {
+    return (mist & VEIL) != 0;
   }
 
   public static int veil(
@@ -187,29 +188,58 @@ public final class Fog {
       final float z,
       final int blockY,
       final @NotNull Cell cell) {
+    final int overlay = overlay(mist, x, z, blockY, cell);
+    return overlay == 0 ? argb : over(overlay, argb);
+  }
+
+  public static int overlay(
+      final int mist, final float x, final float z, final int blockY, final @NotNull Cell cell) {
     if (mist == NO_MIST) {
-      return argb;
+      return 0;
     }
     final float cover = Math.clamp((float) (layerY(mist) - blockY) / COVER_FADE, 0.0f, 1.0f);
     if (cover <= 0.0f || (mist & FULL) == 0) {
-      return argb;
+      return 0;
     }
-    cell.at((float) Math.floor(x) + 0.5f, (float) Math.floor(z) + 0.5f, mist & (FULL | TEASER));
+    cell.at((float) Math.floor(x) + 0.5f, (float) Math.floor(z) + 0.5f, mist & (FULL | VEIL));
     final float body = cell.body * cover;
-    final float shadow = Math.max(0.0f, cell.shadow * cover - body) * cell.reach * SHADOW;
+    final float shadow =
+        step(Math.max(0.0f, cell.shadow * cover - body) * cell.reach * SHADOW, OPACITY_STEPS);
     final float opacity = step(body * cell.reach, OPACITY_STEPS);
-    final int ground =
-        teased(mist)
-            ? MapStyle.blend(argb, grey(argb), step(TEASER_GREY * body, OPACITY_STEPS))
-            : argb;
-    return MapStyle.blend(
-        MapStyle.blend(ground, SHADOW_COLOR, step(shadow, OPACITY_STEPS)),
-        step(body, OPACITY_STEPS) < 1.0f ? CLOUD_LIGHT : cell.tone,
-        opacity);
+    final int wash = veiled(mist) ? withAlpha(WASH_COLOR, step(WASH * body, OPACITY_STEPS)) : 0;
+    return over(
+        withAlpha(step(body, OPACITY_STEPS) < 1.0f ? CLOUD_LIGHT : cell.tone, opacity),
+        over(withAlpha(SHADOW_COLOR, shadow), wash));
   }
 
   public static int skyShadow(final int argb, final int mist) {
-    return (mist & SHADE) != 0 ? MapStyle.blend(argb, SHADOW_COLOR, SKY_SHADOW) : argb;
+    if ((mist & SHADE) == 0) {
+      return argb;
+    }
+    return (argb >>> 24) == 0xFF
+        ? MapStyle.blend(argb, SHADOW_COLOR, SKY_SHADOW)
+        : over(withAlpha(SHADOW_COLOR, SKY_SHADOW), argb);
+  }
+
+  public static int over(final int top, final int bottom) {
+    final float topAlpha = (top >>> 24) / 255.0f;
+    final float bottomAlpha = (bottom >>> 24) / 255.0f;
+    final float alpha = topAlpha + bottomAlpha * (1.0f - topAlpha);
+    if (alpha <= 0.0f) {
+      return 0;
+    }
+    final float bottomWeight = bottomAlpha * (1.0f - topAlpha);
+    int argb = Math.round(alpha * 255.0f) << 24;
+    for (int shift = 16; shift >= 0; shift -= 8) {
+      final float channel =
+          (((top >> shift) & 0xFF) * topAlpha + ((bottom >> shift) & 0xFF) * bottomWeight) / alpha;
+      argb |= Math.clamp(Math.round(channel), 0, 0xFF) << shift;
+    }
+    return argb;
+  }
+
+  private static int withAlpha(final int rgb, final float alpha) {
+    return Math.round(Math.clamp(alpha, 0.0f, 1.0f) * 255.0f) << 24 | (rgb & 0x00FFFFFF);
   }
 
   public static final class Cell {
@@ -232,9 +262,7 @@ public final class Fog {
       final float density = (float) (kind & FULL) / FULL;
       final float cloud = cloud(cellX, cellZ);
       this.reach =
-          (kind & TEASER) != 0
-              ? lerp(TEASER_THIN, TEASER_THICK, smoothstep(THIN, THICK, cloud))
-              : 1.0f;
+          (kind & VEIL) != 0 ? lerp(VEIL_THIN, VEIL_THICK, smoothstep(THIN, THICK, cloud)) : 1.0f;
       this.body = Fog.body(cloud, cellX, cellZ, density);
       final float shadowX = cellX - SHADOW_REACH;
       final float shadowZ = cellZ - SHADOW_REACH;
@@ -242,6 +270,14 @@ public final class Fog {
       this.tone =
           step(this.body, OPACITY_STEPS) < 1.0f ? CLOUD_LIGHT : Fog.tone(cloud, cellX, cellZ);
     }
+  }
+
+  public static int withoutSky(final int mist) {
+    return mist & ~(SKY | SHADE);
+  }
+
+  public static int skyOnly(final int mist) {
+    return (mist & (SKY | SHADE)) == 0 ? NO_MIST : mist & ~(FULL | VEIL);
   }
 
   public static boolean sky(final int mist) {
@@ -254,12 +290,6 @@ public final class Fog {
 
   public static int around(final int offsetX, final int offsetZ) {
     return (offsetX + REACH_CHUNKS) * AROUND + offsetZ + REACH_CHUNKS;
-  }
-
-  private static int grey(final int argb) {
-    final int luma =
-        (((argb >> 16) & 0xFF) * 77 + ((argb >> 8) & 0xFF) * 150 + (argb & 0xFF) * 29) >> 8;
-    return (argb & 0xFF000000) | luma << 16 | luma << 8 | luma;
   }
 
   private static int tone(final float cloud, final float cellX, final float cellZ) {
@@ -372,7 +402,7 @@ public final class Fog {
   }
 
   private static int @NotNull [] @NotNull [] masks(final byte @NotNull [] hiddenAround) {
-    final int @NotNull [] @NotNull [] masks = new int[TEASED + 1][AROUND];
+    final int @NotNull [] @NotNull [] masks = new int[VEILED + 1][AROUND];
     for (int offsetX = -REACH_CHUNKS; offsetX <= REACH_CHUNKS; offsetX++) {
       for (int offsetZ = -REACH_CHUNKS; offsetZ <= REACH_CHUNKS; offsetZ++) {
         final byte hidden = hiddenAround[around(offsetX, offsetZ)];
@@ -417,8 +447,8 @@ public final class Fog {
     return (float) Math.round(value * steps) / steps;
   }
 
-  private static int encode(final int groundY, final int density, final boolean teased) {
-    return (groundY + LAYER_HEIGHT) << LAYER_SHIFT | (teased ? TEASER : 0) | density;
+  private static int encode(final int groundY, final int density, final boolean veiled) {
+    return (groundY + LAYER_HEIGHT) << LAYER_SHIFT | (veiled ? VEIL : 0) | density;
   }
 
   private static float cloud(final float x, final float z) {

@@ -69,7 +69,7 @@ public final class WaypointListScreen extends Screen {
   private static final String[] HIDDEN = {
     "#.......", ".#......", "..#.##..", ".#.#..#.", "#...#..#", ".#...#..", "..###.#.", ".......#"
   };
-  private static final String[] ON_MAP = {
+  static final String[] ON_MAP = {
     "...##...", "...##...", "........", "##.##.##", "##.##.##", "........", "...##...", "...##..."
   };
   private static final String[] NAVIGATE = {
@@ -78,10 +78,10 @@ public final class WaypointListScreen extends Screen {
   private static final String[] TELEPORT = {
     "..####..", ".#....#.", "#..##..#", "#.#..#.#", "#.#..#.#", "#..##..#", ".#....#.", "..####.."
   };
-  private static final String[] EDIT = {
+  static final String[] EDIT = {
     "......##", ".....#.#", "....#.#.", "...#.#..", "..#.#...", ".#.#....", "###.....", "##......"
   };
-  private static final String[] DELETE = {
+  static final String[] DELETE = {
     "..####..", "########", ".#....#.", ".#.##.#.", ".#.##.#.", ".#.##.#.", ".#....#.", "..####.."
   };
 
@@ -672,11 +672,11 @@ public final class WaypointListScreen extends Screen {
         this.where =
             Component.empty()
                 .append(worldLabel(waypoint.world()))
-                .append(" · " + coordinates)
+                .append("   " + coordinates)
                 .append(
                     waypoint.description() == null || waypoint.description().isBlank()
                         ? ""
-                        : " · " + waypoint.description().replace('\n', ' '));
+                        : "   " + waypoint.description().replace('\n', ' '));
         final double distance = distance(waypoint);
         this.distance = Double.isNaN(distance) ? "" : Distances.format(distance);
         this.color = Colors.argb(waypoint.color() == null ? "#ffffff" : waypoint.color());

@@ -12,6 +12,7 @@ import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.WorldKeys;
+import net.aerulion.taerra.region.MapRegions;
 import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.socket.MapWebSocketHandler;
@@ -27,6 +28,7 @@ public final class WorldList {
   private final @NotNull TaerraConfig taerraConfig;
   private final @NotNull TileGeneratorService generatorService;
   private final @NotNull MapWebSocketHandler wsHandler;
+  private final @NotNull MapRegions regions;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private volatile @NotNull List<Map<String, Object>> publishedWorlds = List.of();
   private volatile @Nullable String publishedWorldsJson;
@@ -35,8 +37,10 @@ public final class WorldList {
       final @NotNull Plugin plugin,
       final @NotNull TaerraConfig taerraConfig,
       final @NotNull TileGeneratorService generatorService,
-      final @NotNull MapWebSocketHandler wsHandler) {
+      final @NotNull MapWebSocketHandler wsHandler,
+      final @NotNull MapRegions regions) {
     super();
+    this.regions = regions;
     this.plugin = plugin;
     this.taerraConfig = taerraConfig;
     this.generatorService = generatorService;
@@ -93,6 +97,7 @@ public final class WorldList {
                       .getOrDefault(WorldKeys.id(world), WorldKeys.displayName(world.getKey())));
               worldData.put("environment", world.getEnvironment().name());
               worldData.put("private", this.taerraConfig.worldPrivate(WorldKeys.id(world)));
+              worldData.put("layered", this.regions.anyFogged(WorldKeys.id(world)));
               worldData.put(
                   "depth",
                   Map.of(

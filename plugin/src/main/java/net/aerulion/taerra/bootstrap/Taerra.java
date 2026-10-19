@@ -2,6 +2,7 @@ package net.aerulion.taerra.bootstrap;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -25,13 +26,18 @@ import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.integration.ChunkyGeneration;
 import net.aerulion.taerra.integration.WorldEditChanges;
-import net.aerulion.taerra.limit.HiddenAreaMarkers;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.listener.JoinHint;
 import net.aerulion.taerra.listener.world.WorldChangeListener;
 import net.aerulion.taerra.marker.MarkerRegistryImpl;
 import net.aerulion.taerra.marker.MarkerRegistryInternal;
 import net.aerulion.taerra.permission.TaerraPermission;
+import net.aerulion.taerra.player.PlayerFiles;
+import net.aerulion.taerra.region.MapRegions;
+import net.aerulion.taerra.region.RegionDiscoveries;
+import net.aerulion.taerra.region.RegionDiscovery;
+import net.aerulion.taerra.region.RegionEditor;
+import net.aerulion.taerra.region.RegionVisibility;
 import net.aerulion.taerra.rendering.RenderService;
 import net.aerulion.taerra.rendering.block.Fluids;
 import net.aerulion.taerra.rendering.color.BiomeTintMapperImpl;
@@ -71,6 +77,7 @@ import net.aerulion.taerra.web.auth.WebGrants;
 import net.aerulion.taerra.web.auth.WebSessions;
 import net.aerulion.taerra.web.http.TaerraWebServer;
 import net.aerulion.taerra.web.http.TaerraWebServerImpl;
+import net.aerulion.taerra.web.marker.RegionMarkers;
 import net.aerulion.taerra.web.player.PlayerPositionBroadcaster;
 import net.aerulion.taerra.web.player.PlayerPositionBroadcasterImpl;
 import net.aerulion.taerra.web.socket.MapWebSocketHandler;
@@ -99,6 +106,7 @@ public final class Taerra extends JavaPlugin {
   private @Nullable PlayerPositionBroadcaster playerBroadcaster;
   private @Nullable ChangeBuffer changeBuffer;
   private @Nullable Translator translations;
+  private @Nullable PlayerFiles playerFiles;
 
   static @NotNull String trimVersion(final @NotNull String version) {
     return version.replaceFirst("(\\.0)+$", "");
@@ -114,6 +122,7 @@ public final class Taerra extends JavaPlugin {
     final @Nullable RenderQueue renderQueue = this.renderQueue;
     final @Nullable TileCache tileCache = this.tileCache;
     final @Nullable Translator translations = this.translations;
+    final @Nullable PlayerFiles playerFiles = this.playerFiles;
     if (playerBroadcaster != null) {
       shutdownStep("stop player updates", playerBroadcaster::stop);
     }
@@ -141,6 +150,9 @@ public final class Taerra extends JavaPlugin {
     }
     if (tileCache != null) {
       tileCache.clear();
+    }
+    if (playerFiles != null) {
+      shutdownStep("save player data", playerFiles::saveAll);
     }
     if (translations != null) {
       GlobalTranslator.translator().removeSource(translations);
@@ -179,10 +191,15 @@ public final class Taerra extends JavaPlugin {
       final @NotNull MapColorResolver colorResolver =
           new MapColorResolverImpl(getLogger(), blockDataStore, new BiomeTintMapperImpl());
 
+      final @NotNull MapRegions regions = new MapRegions(this);
+      final @NotNull PlayerFiles playerFiles = new PlayerFiles(this);
+      this.playerFiles = playerFiles;
+      final @NotNull RegionDiscoveries discoveries = new RegionDiscoveries(playerFiles, regions);
+      final @NotNull RegionVisibility regionVisibility = new RegionVisibility(regions, discoveries);
       final @NotNull WorldLimits worldLimits = new WorldLimits(this);
       final @NotNull ChunkColumnsCache chunkColumnsCache =
           new ChunkColumnsCacheImpl(
-              this, configuration.maxCacheChunks(), blockDataStore, worldLimits);
+              this, configuration.maxCacheChunks(), blockDataStore, worldLimits, regions);
       Fluids.reportUnhandled(this);
 
       final @NotNull TileStorage tileStorage =
@@ -200,7 +217,8 @@ public final class Taerra extends JavaPlugin {
           new IsoTileServiceImpl(
               chunkColumnsCache,
               new IsoTileRendererImpl(
-                  colorResolver, MapStyle.ISO_SHADOW_DISTANCE, MapStyle.TOP_FACE_WEIGHT));
+                  colorResolver, MapStyle.ISO_SHADOW_DISTANCE, MapStyle.TOP_FACE_WEIGHT),
+              regions);
 
       final @NotNull WebSessions webSessions =
           new WebSessions(new File(getDataFolder(), "sessions.yml"), getLogger());
@@ -230,13 +248,15 @@ public final class Taerra extends JavaPlugin {
               tileStorage,
               renderQueue,
               tileUpdateBroadcaster,
+              regions,
               configuration.renderThreads());
       this.generatorService = generatorService;
 
       final @NotNull MarkerRegistryInternal markers = new MarkerRegistryImpl();
       getServer().getPluginManager().registerEvents(markers, this);
       final @NotNull PlayerPositionBroadcaster playerBroadcaster =
-          new PlayerPositionBroadcasterImpl(this, configuration, webSocketHandler, worldLimits);
+          new PlayerPositionBroadcasterImpl(
+              this, configuration, webSocketHandler, worldLimits, regionVisibility);
       this.playerBroadcaster = playerBroadcaster;
       final @NotNull WaypointsImpl waypoints = new WaypointsImpl(this, markers, configuration);
       waypoints.load();
@@ -251,11 +271,12 @@ public final class Taerra extends JavaPlugin {
               renderQueue,
               changeBuffer,
               chunkColumnsCache,
+              isoTileService,
               worldLimits,
               configuration);
       final @NotNull RenderFeedback renderFeedback = new RenderFeedback(this);
       final @NotNull PersonalWaypoints personalWaypoints =
-          new PersonalWaypoints(this, markers, new File(getDataFolder(), "personal-waypoints"));
+          new PersonalWaypoints(this, markers, playerFiles);
       getServer().getPluginManager().registerEvents(personalWaypoints, this);
       final @NotNull LiveSettings liveSettings =
           new LiveSettings(
@@ -263,6 +284,7 @@ public final class Taerra extends JavaPlugin {
               markers,
               configuration,
               worldLimits,
+              regions,
               generatorService,
               tileCache,
               tileStorage,
@@ -289,6 +311,9 @@ public final class Taerra extends JavaPlugin {
                   webSocketHandler.broadcastToConfigurers(
                       "{\"type\":\"settings\",\"revision\":" + revision + "}"));
       configEditor.start();
+      final @NotNull RegionEditor regionEditor =
+          new RegionEditor(
+              this, regions, renders, () -> webSocketHandler.broadcast("{\"type\":\"regions\"}"));
       final @NotNull TaerraWebServer webServer =
           new TaerraWebServerImpl(
               this,
@@ -307,7 +332,9 @@ public final class Taerra extends JavaPlugin {
               renderFeedback,
               new Teleports(this),
               new WaypointEditor(this, configuration, waypoints, personalWaypoints),
-              configEditor);
+              configEditor,
+              regionVisibility,
+              regionEditor);
       this.webServer = webServer;
       webServer.start();
       tileUpdateBroadcaster.start();
@@ -346,7 +373,18 @@ public final class Taerra extends JavaPlugin {
               this,
               ServicePriority.Normal);
       liveSettings.startLayers();
-      HiddenAreaMarkers.start(this, markers, worldLimits);
+      markers.layer(this, RegionMarkers.LAYER, RegionMarkers.LABEL, true);
+      RegionDiscovery.start(
+          this,
+          regions,
+          discoveries,
+          modHandshake,
+          (uuid, name) ->
+              webSocketHandler.sendTo(
+                  uuid,
+                  name.isEmpty()
+                      ? Map.of("type", "regions")
+                      : Map.of("type", "regions", "discovered", name)));
 
       registerCommands(
           generatorService,

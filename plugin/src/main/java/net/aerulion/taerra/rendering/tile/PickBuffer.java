@@ -1,5 +1,6 @@
 package net.aerulion.taerra.rendering.tile;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
@@ -7,6 +8,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
+import net.aerulion.taerra.util.ImageUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -191,6 +193,17 @@ public final class PickBuffer {
       }
     }
     return -1;
+  }
+
+  public @NotNull PickBuffer masked(final @NotNull BufferedImage image) {
+    final int @NotNull [] depth = this.depth.clone();
+    final int @NotNull [] pixels = ImageUtils.pixels(image);
+    for (int index = 0; index < depth.length; index++) {
+      if ((pixels[index] >>> 24) == 0) {
+        depth[index] = UNPAINTED;
+      }
+    }
+    return new PickBuffer(this.size, depth, this.height, this.scale, this.depthPerHeight);
   }
 
   public int size() {

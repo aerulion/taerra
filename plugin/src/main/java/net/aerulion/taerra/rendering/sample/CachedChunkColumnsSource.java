@@ -14,6 +14,7 @@ public final class CachedChunkColumnsSource implements ChunkColumnsSource {
   private final @NotNull ChunkColumnsCacheImpl cache;
   private final @NotNull World world;
   private final @NotNull ChunkSourceProvider provider;
+  private final @NotNull FogView view;
 
   private final @NotNull Long2ObjectOpenHashMap<Optional<ChunkColumns>> resolved =
       new Long2ObjectOpenHashMap<>();
@@ -24,11 +25,13 @@ public final class CachedChunkColumnsSource implements ChunkColumnsSource {
   CachedChunkColumnsSource(
       final @NotNull ChunkColumnsCacheImpl cache,
       final @NotNull World world,
-      final @NotNull ChunkSourceProvider provider) {
+      final @NotNull ChunkSourceProvider provider,
+      final @NotNull FogView view) {
     super();
     this.cache = cache;
     this.world = world;
     this.provider = provider;
+    this.view = view;
   }
 
   @Override
@@ -47,19 +50,25 @@ public final class CachedChunkColumnsSource implements ChunkColumnsSource {
     if (resolved != null) {
       return resolved.map(ChunkColumns::heights).orElse(ChunkColumns.MISSING_HEIGHTS);
     }
-    return this.cache.knownHeights(WorldKeys.id(this.world), chunkX, chunkZ);
+    return this.cache.knownHeights(
+        WorldKeys.id(this.world), chunkX, chunkZ, this.view.kind() == FogView.Kind.SPILL);
+  }
+
+  public @NotNull FogView view() {
+    return this.view;
   }
 
   private @Nullable ChunkColumns resolve(final int chunkX, final int chunkZ) {
+    final int variant = this.cache.variant(WorldKeys.id(this.world), chunkX, chunkZ, this.view);
     final @Nullable ChunkColumns cached =
-        this.cache.getIfPresent(WorldKeys.id(this.world), chunkX, chunkZ);
+        this.cache.getIfPresent(WorldKeys.id(this.world), chunkX, chunkZ, variant);
     if (cached != null) {
       this.reusedChunks++;
       return cached;
     }
     final long startedAt = System.nanoTime();
     final @Nullable ChunkColumns columns =
-        this.cache.get(this.world, this.provider, chunkX, chunkZ);
+        this.cache.get(this.world, this.provider, chunkX, chunkZ, variant);
     this.sampleNanos += System.nanoTime() - startedAt;
     if (columns != null) {
       this.sampledChunks++;

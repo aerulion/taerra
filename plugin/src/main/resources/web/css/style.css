@@ -1890,14 +1890,15 @@ h2 .badge {
 }
 
 .waypoint__label,
-.leaflet-tooltip.marker-tooltip {
-    padding: 3px 5px;
+.leaflet-tooltip.marker-tooltip,
+.region-name {
+    padding: 3px calc(5px - .23em) 3px 5px;
     background: rgb(0 0 0 / .6);
     border: 0;
     border-radius: 0;
     box-shadow: none;
     color: var(--white);
-    font: 700 7.5px/1 var(--font-display);
+    font: 700 10px/1 var(--font-display);
     letter-spacing: .04em;
     white-space: nowrap;
 }
@@ -1934,15 +1935,29 @@ h2 .badge {
 .region-flag {
     display: block;
     translate: 0 -100%;
-    padding: 4px 6px;
+    padding: 4px calc(6px - .23em) 4px 6px;
     background: var(--marker);
     box-shadow: 0 0 0 2px rgb(0 0 0 / .5), inset 0 2px rgb(255 255 255 / .25), inset 0 -2px rgb(0 0 0 / .2);
     color: var(--white);
-    font: 700 7.5px/1 var(--font-display);
+    font: 700 10px/1 var(--font-display);
     letter-spacing: .04em;
     text-shadow: 1px 1px 0 rgb(0 0 0 / .55);
     white-space: nowrap;
     pointer-events: none;
+}
+
+@supports (font: -apple-system-body) {
+    .waypoint__label,
+    .leaflet-tooltip.marker-tooltip,
+    .region-name {
+        padding-top: 2px;
+        padding-bottom: 4px;
+    }
+
+    .region-flag {
+        padding-top: 3px;
+        padding-bottom: 5px;
+    }
 }
 
 .marker-popup-frame .leaflet-popup-content {
@@ -1987,6 +2002,15 @@ h2 .badge {
     color: var(--stone-100);
     font: 12px/1.4 var(--font-mono);
     white-space: pre-line;
+}
+
+.marker-popup__discovered {
+    color: var(--gold);
+    font: 12px/1.4 var(--font-body);
+}
+
+.marker-popup__discovered::before {
+    content: "✦ ";
 }
 
 .marker-popup__title {
@@ -2147,7 +2171,7 @@ h2 .badge {
     border: var(--edge);
     box-shadow: var(--slab-shadow);
     color: var(--stone-200);
-    font: 700 7.5px/1 var(--font-display);
+    font: 700 10px/1 var(--font-display);
     pointer-events: none;
 }
 
@@ -2350,6 +2374,14 @@ h2 .badge {
     background: var(--stone-900);
     box-shadow: inset 2px 2px rgb(0 0 0 / .4);
     color: var(--waypoint);
+}
+
+.editor__preview--region::before {
+    content: "";
+    width: 22px;
+    height: 22px;
+    background: color-mix(in srgb, var(--waypoint) 35%, transparent);
+    border: 2px solid var(--waypoint);
 }
 
 .editor__preview svg {
@@ -2592,6 +2624,112 @@ h2 .badge {
     color: var(--red);
 }
 
+.discovery {
+    position: absolute;
+    top: 72px;
+    left: 50%;
+    z-index: 1100;
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    min-width: 260px;
+    max-width: calc(100% - 2 * var(--gap));
+    padding: 18px 28px 16px;
+    translate: -50% 0;
+    background: var(--stone-700);
+    border: var(--edge);
+    border-bottom: 3px solid var(--accent);
+    box-shadow: var(--slab-shadow);
+    text-align: center;
+    cursor: pointer;
+}
+
+.discovery.is-shown {
+    animation: discovery-in .5s cubic-bezier(.2, .8, .3, 1.3) both, discovery-out .4s ease 4.6s forwards;
+}
+
+.discovery__title {
+    color: var(--gold);
+    font: 700 10px/1.2 var(--font-display);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.discovery__name {
+    overflow-wrap: anywhere;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.discovery__burst {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    pointer-events: none;
+}
+
+.discovery__burst i {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    margin: -3px;
+    background: var(--gold);
+    opacity: 0;
+}
+
+.discovery__burst i:nth-child(4n + 1) {
+    background: var(--accent-hi);
+}
+
+.discovery__burst i:nth-child(4n + 2) {
+    background: var(--white);
+}
+
+.discovery__burst i:nth-child(4n + 3) {
+    width: 4px;
+    height: 4px;
+    margin: -2px;
+    background: var(--green);
+}
+
+.discovery.is-shown .discovery__burst i {
+    animation: discovery-spark 1.1s cubic-bezier(.1, .7, .3, 1) var(--delay) both;
+}
+
+@keyframes discovery-in {
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(.85);
+    }
+}
+
+@keyframes discovery-out {
+    to {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}
+
+@keyframes discovery-spark {
+    15% {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+        transform: translate(var(--x), var(--y)) rotate(180deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .discovery.is-shown {
+        animation: discovery-out .4s ease 4.6s forwards;
+    }
+
+    .discovery__burst {
+        display: none;
+    }
+}
+
 .selection {
     position: absolute;
     top: var(--gap);
@@ -2621,6 +2759,63 @@ h2 .badge {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+}
+
+.selection__brush {
+    display: flex;
+    gap: 6px;
+}
+
+.selection__mode {
+    flex: 2 1 0;
+}
+
+.selection__size {
+    flex: 3 1 0;
+}
+
+.selection__history {
+    flex: none;
+    grid-auto-columns: 36px;
+}
+
+.selection__mode[hidden],
+.selection__size[hidden] {
+    display: none;
+}
+
+.selection__brush[hidden] {
+    display: none;
+}
+
+.selection__history .btn {
+    padding: 0;
+}
+
+.selection__icon::before {
+    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M2 0h1v1H2zM1 1h2v1H1zM0 2h6v1H0zM1 3h2v1H1zM6 3h1v1H6zM2 4h1v1H2zM7 4h1v1H7zM7 5h1v1H7zM6 6h1v1H6zM3 7h3v1H3z'/></svg>");
+    content: "";
+    display: block;
+    width: 16px;
+    height: 16px;
+    margin: auto;
+    background: currentColor;
+    mask: var(--icon) center / contain no-repeat;
+}
+
+#selection-redo::before {
+    scale: -1 1;
+}
+
+.region-name-icon {
+    background: none;
+    border: 0;
+}
+
+.region-name {
+    display: block;
+    translate: -50% -50%;
+    pointer-events: none;
 }
 
 .selection__actions .btn {
@@ -2757,6 +2952,10 @@ h2 .badge {
 .placing__cancel:focus-visible {
     background: var(--stone-500);
     outline: none;
+}
+
+.color-picker {
+    display: contents;
 }
 
 .swatches {
@@ -3009,6 +3208,10 @@ h2 .badge {
     background: var(--stone-800);
 }
 
+.manager__row--region {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
 .manager__row.is-hidden .search__icon,
 .manager__row.is-hidden .manager__text {
     opacity: .45;
@@ -3066,6 +3269,10 @@ h2 .badge {
     font: 12px var(--font-mono);
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.manager__part + .manager__part {
+    margin-left: 1.5ch;
 }
 
 .manager__distance {
@@ -3183,6 +3390,10 @@ footer.manager__buttons .btn--danger {
     --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M0 0h1v1H0zM1 1h1v1H1zM2 2h1v1H2zM4 2h2v1H4zM1 3h1v1H1zM3 3h1v1H3zM6 3h1v1H6zM0 4h1v1H0zM4 4h1v1H4zM7 4h1v1H7zM1 5h1v1H1zM5 5h1v1H5zM2 6h3v1H2zM6 6h1v1H6zM7 7h1v1H7z'/></svg>");
 }
 
+.manager__action[data-action="reset"] {
+    --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M3 1h2v1H3zM2 2h5v1H2zM1 3h7v1H1zM0 4h8v2H0zM1 6h6v1H1z'/></svg>");
+}
+
 .manager__action[data-action="delete"] {
     --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M2 0h4v1H2zM0 1h8v1H0zM1 2h1v1H1zM6 2h1v1H6zM1 3h1v1H1zM3 3h2v1H3zM6 3h1v1H6zM1 4h1v1H1zM3 4h2v1H3zM6 4h1v1H6zM1 5h1v1H1zM3 5h2v1H3zM6 5h1v1H6zM1 6h1v1H1zM6 6h1v1H6zM2 7h4v1H2z'/></svg>");
 }
@@ -3207,6 +3418,14 @@ footer.manager__buttons .btn--danger {
     .manager__actions {
         grid-column: 3 / -1;
         justify-content: flex-end;
+    }
+
+    .manager__row--region {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .manager__row--region .manager__actions {
+        grid-column: auto;
     }
 }
 
@@ -3872,7 +4091,8 @@ label.settings__row:hover {
     --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M0 0h3v1H0zM0 1h1v2H0zM5 0h3v1H5zM7 1h1v2H7zM0 5h1v2H0zM0 7h3v1H0zM7 5h1v2H7zM5 7h3v1H5zM3 3h2v2H3z'/></svg>");
 }
 
-[data-icon="map"] {
+[data-icon="map"],
+[data-action="region"] {
     --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M0 0h6v1H0zM0 1h7v1H0zM0 2h6v1H0zM0 3h1v5H0z'/></svg>");
 }
 

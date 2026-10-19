@@ -68,6 +68,11 @@ public final class ImageUtils {
     return image;
   }
 
+  public static int @NotNull [] pixels(final @NotNull BufferedImage image) {
+    final int @NotNull [] argb = argbOf(image);
+    return image.getType() == BufferedImage.TYPE_INT_ARGB ? argb.clone() : argb;
+  }
+
   private static int @NotNull [] argbPixels(final @NotNull BufferedImage image) {
     return ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
   }

@@ -1,9 +1,5 @@
 package net.aerulion.taerra.waypoint;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,18 +10,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.logging.Level;
 import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.api.marker.PlayerMarkerLayer;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.permission.TaerraPermission;
-import net.aerulion.taerra.util.AtomicFiles;
+import net.aerulion.taerra.player.PlayerFiles;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -45,16 +39,16 @@ public final class PersonalWaypoints implements Listener {
   private static final Color DEATH_COLOR = Color.fromRGB(0xE34A4A);
 
   private final @NotNull Plugin plugin;
-  private final @NotNull File directory;
+  private final @NotNull PlayerFiles files;
   private final @NotNull PlayerMarkerLayer layer;
 
   public PersonalWaypoints(
       final @NotNull Plugin plugin,
       final @NotNull MarkerRegistry registry,
-      final @NotNull File directory) {
+      final @NotNull PlayerFiles files) {
     super();
     this.plugin = plugin;
-    this.directory = directory;
+    this.files = files;
     this.layer = registry.playerLayer(plugin, LAYER, "My waypoints", true, this::markers);
   }
 
@@ -67,11 +61,11 @@ public final class PersonalWaypoints implements Listener {
   }
 
   public @NotNull List<Saved> all(final @NotNull UUID player) {
-    final @NotNull File file = file(player);
-    if (!file.isFile()) {
-      return List.of();
-    }
-    return YamlConfiguration.loadConfiguration(file).getMapList("waypoints").stream()
+    return this.files.get(player).waypoints();
+  }
+
+  public static @NotNull List<Saved> read(final @NotNull List<Map<?, ?>> entries) {
+    return entries.stream()
         .map(
             entry -> {
               final @Nullable Marker marker = WaypointsImpl.read(entry, PREFIX);
@@ -193,37 +187,24 @@ public final class PersonalWaypoints implements Listener {
   }
 
   private boolean write(final @NotNull UUID player, final @NotNull List<Saved> saved) {
-    final @NotNull File file = file(player);
-    try {
-      if (saved.isEmpty()) {
-        Files.deleteIfExists(file.toPath());
-      } else {
-        final @NotNull YamlConfiguration yaml = new YamlConfiguration();
-        yaml.set(
-            "waypoints",
-            saved.stream()
-                .map(
-                    entry -> {
-                      final @NotNull Map<String, Object> written =
-                          WaypointsImpl.entry(entry.marker());
-                      if (entry.hidden()) {
-                        written.put("hidden", true);
-                      }
-                      return written;
-                    })
-                .toList());
-        AtomicFiles.write(file, yaml.saveToString().getBytes(StandardCharsets.UTF_8));
-      }
-    } catch (final IOException e) {
-      this.plugin.getLogger().log(Level.SEVERE, "Failed to save " + file, e);
+    if (!this.files.updateNow(player, data -> data.withWaypoints(saved))) {
       return false;
     }
     this.layer.refresh(player);
     return true;
   }
 
-  private @NotNull File file(final @NotNull UUID player) {
-    return new File(this.directory, player + ".yml");
+  public static @NotNull List<Map<String, Object>> entries(final @NotNull List<Saved> saved) {
+    return saved.stream()
+        .map(
+            entry -> {
+              final @NotNull Map<String, Object> written = WaypointsImpl.entry(entry.marker());
+              if (entry.hidden()) {
+                written.put("hidden", true);
+              }
+              return written;
+            })
+        .toList();
   }
 
   public enum Result {
