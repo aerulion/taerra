@@ -1,9 +1,13 @@
 package net.aerulion.taerra.rendering.sample;
 
+import java.util.Comparator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public record FogView(@NotNull Kind kind, int region) {
+
+  public static final @NotNull Comparator<FogView> ORDER =
+      Comparator.comparingInt(FogView::region).thenComparing(FogView::kind);
 
   public static final @NotNull FogView BASE = new FogView(Kind.BASE, 0);
 

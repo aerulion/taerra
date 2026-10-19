@@ -716,7 +716,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     if (!this.regions.anyFogged(parent.world())) {
       return;
     }
-    final @NotNull Set<FogView> layers = new TreeSet<>(FogLayers.ORDER);
+    final @NotNull Set<FogView> layers = new TreeSet<>(FogView.ORDER);
     final @NotNull List<List<FogView>> stored = new ArrayList<>(children.length);
     for (final @NotNull TileCoordinate child : children) {
       final @NotNull List<FogView> childLayers = this.storage.layers(child);

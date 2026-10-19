@@ -4,7 +4,6 @@ import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -33,9 +32,6 @@ import org.jetbrains.annotations.Nullable;
 public final class FogLayers {
 
   public static final int ERASE = 0x01000000;
-
-  public static final @NotNull Comparator<FogView> ORDER =
-      Comparator.comparingInt(FogView::region).thenComparing(FogView::kind);
 
   private static final int CHUNKS_PER_TILE = TileGeometry.TILE_SIZE / 16;
 
