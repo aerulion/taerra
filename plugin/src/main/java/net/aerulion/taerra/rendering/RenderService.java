@@ -159,7 +159,7 @@ public final class RenderService {
         mode,
         world,
         apply,
-        terrain ? _ -> true : chunks::contains,
+        terrain ? null : chunks::contains,
         listener -> {
           if (!terrain) {
             this.generator.dropUnusedLayers(worldName);
@@ -228,14 +228,14 @@ public final class RenderService {
       final @NotNull World world,
       final @NotNull Runnable began,
       final @NotNull Function<RegionScanListener, RegionScanResult> scan) {
-    return start(mode, world, began, _ -> true, scan);
+    return start(mode, world, began, null, scan);
   }
 
   private @NotNull Start start(
       final @NotNull String mode,
       final @NotNull World world,
       final @NotNull Runnable began,
-      final @NotNull LongPredicate chunks,
+      final @Nullable LongPredicate chunks,
       final @NotNull Function<RegionScanListener, RegionScanResult> scan) {
     final @NotNull String worldName = WorldKeys.id(world);
     if (!this.config.worldEnabled(worldName)) {
