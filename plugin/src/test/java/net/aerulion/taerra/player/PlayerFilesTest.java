@@ -40,6 +40,7 @@ class PlayerFilesTest {
           color: '#3AB3DA'
           hidden: true
         """);
+    Files.writeString(legacy.resolve(ALEX + ".yml.42.tmp"), "half a save");
 
     final @NotNull PlayerFiles files = new PlayerFiles(TestPlugins.in(this.folder.toFile()));
 

@@ -63,6 +63,11 @@ public final class PlayerFiles {
         this.plugin.getLogger().log(Level.WARNING, "Failed to move " + file, e);
       }
     }
+    final @Nullable File @Nullable [] leftovers =
+        legacy.listFiles((_, name) -> name.matches(".+\\.yml\\.\\d+\\.tmp"));
+    for (final @Nullable File leftover : leftovers == null ? new File[0] : leftovers) {
+      leftover.delete();
+    }
     legacy.delete();
     if (moved > 0) {
       this.plugin
