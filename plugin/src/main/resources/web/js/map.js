@@ -9,6 +9,82 @@ const NEEDLE_SVG = `<svg class="compass__needle" viewBox="0 0 7 15" width="14" h
 <path d="${pixelPath([[4, 7, 2, 4], [4, 11, 1, 2]])}" fill="#8c8d90"/>
 <path d="${pixelPath([[3, 7, 1, 1]])}" fill="#1e1e1f"/></svg>`;
 
+const DOUBLE_TAP_MS = 300;
+const DOUBLE_TAP_SLOP = 30;
+const QUICK_ZOOM_PIXELS = 120;
+const QUICK_ZOOM_DEAD = 4;
+
+function quickZoom(map) {
+    const point = (touch) => map.mouseEventToContainerPoint(touch);
+    let tap = null;
+    let last = null;
+    let gesture = null;
+    const move = (event) => {
+        if (event.touches.length !== 1) {
+            return;
+        }
+        event.preventDefault();
+        const dy = point(event.touches[0]).y - gesture.anchor.y;
+        if (!gesture.moved) {
+            if (Math.abs(dy) < QUICK_ZOOM_DEAD) {
+                return;
+            }
+            gesture.moved = true;
+            map._moveStart(true, false);
+        }
+        gesture.zoom = Math.min(map.getMaxZoom(), Math.max(map.getMinZoom(), gesture.start + dy / QUICK_ZOOM_PIXELS));
+        const offset = gesture.anchor.subtract(map.getSize()._divideBy(2));
+        gesture.center = map.unproject(map.project(gesture.latLng, gesture.zoom).subtract(offset), gesture.zoom);
+        L.Util.cancelAnimFrame(gesture.frame);
+        gesture.frame = L.Util.requestAnimFrame(() =>
+            map._move(gesture.center, gesture.zoom, {pinch: true, round: false}));
+    };
+    const end = () => {
+        document.removeEventListener('touchmove', move);
+        document.removeEventListener('touchend', end);
+        document.removeEventListener('touchcancel', end);
+        L.Util.cancelAnimFrame(gesture.frame);
+        if (!gesture.moved) {
+            map.setZoomAround(gesture.anchor, map.getZoom() + 1);
+        } else if (map.options.zoomAnimation) {
+            map._animateZoom(gesture.center, map._limitZoom(gesture.zoom), true, map.options.zoomSnap);
+        } else {
+            map._resetView(gesture.center, map._limitZoom(gesture.zoom));
+        }
+        map.dragging.enable();
+        gesture = null;
+    };
+    const container = map.getContainer();
+    container.addEventListener('touchstart', (event) => {
+        if (event.touches.length !== 1 || gesture || map._animatingZoom || !map.dragging.enabled()) {
+            tap = null;
+            last = null;
+            return;
+        }
+        const at = point(event.touches[0]);
+        if (last && event.timeStamp - last.time < DOUBLE_TAP_MS && at.distanceTo(last.point) < DOUBLE_TAP_SLOP) {
+            last = null;
+            event.preventDefault();
+            event.stopPropagation();
+            map._stop();
+            map.dragging.disable();
+            const zoom = map.getZoom();
+            gesture = {anchor: at, latLng: map.containerPointToLatLng(at), start: zoom, zoom, moved: false, frame: 0};
+            document.addEventListener('touchmove', move, {passive: false});
+            document.addEventListener('touchend', end);
+            document.addEventListener('touchcancel', end);
+            return;
+        }
+        tap = {time: event.timeStamp, point: at};
+    }, {capture: true, passive: false});
+    container.addEventListener('touchend', (event) => {
+        last = tap && event.touches.length === 0 && event.timeStamp - tap.time < DOUBLE_TAP_MS
+            && point(event.changedTouches[0]).distanceTo(tap.point) < DOUBLE_TAP_SLOP
+            ? {time: event.timeStamp, point: tap.point} : null;
+        tap = null;
+    }, true);
+}
+
 class MapManager {
     static LEAFLET_TILE_SIZE = 256;
     static DEFAULT_TILE_BLOCK_SIZE = 64;
@@ -176,6 +252,7 @@ class MapManager {
             attributionControl: false,
             zoomSnap: 1
         });
+        quickZoom(this.map);
         L.control.zoom({
             position: 'topright',
             zoomInTitle: t('map.zoomIn'),
