@@ -14,6 +14,10 @@ const FACING_SVG = `<svg viewBox="0 0 24 24" width="48" height="48" aria-hidden=
 <g class="player-marker__corner"><path d="${pixelPath([[19, 0, 4, 1], [18, 1, 6, 1], [19, 2, 5, 1], [20, 3, 4, 1], [21, 4, 3, 1], [22, 5, 1, 1]])}" fill="#111"/>
 <path d="${pixelPath([[19, 1, 4, 1], [20, 2, 3, 1], [21, 3, 2, 1], [22, 4, 1, 1]])}" fill="currentColor"/></g></svg>`;
 
+export function located(player) {
+    return Number.isFinite(player.x) && Number.isFinite(player.z);
+}
+
 export function avatar(player, size) {
     const img = new Image(size, size);
     img.alt = '';
@@ -89,26 +93,33 @@ class PlayerManager {
             entry.player = player;
             const jump = Math.abs(player.x - previous.x) + Math.abs(player.y - previous.y) +
                 Math.abs(player.z - previous.z);
-            if (this.followed === player.uuid && player.world !== this.world) {
+            if (this.followed === player.uuid && !located(player)) {
+                this.unfollow();
+            } else if (this.followed === player.uuid && player.world !== this.world) {
                 this.onWorld(player.world);
                 if (player.world !== this.world) {
                     this.unfollow();
                 }
             }
             this.show(entry);
-            if (existing && player.world === previous.world && jump <= TELEPORT_BLOCKS && !document.hidden) {
+            if (!located(player)) {
+                entry.glide = null;
+            } else if (existing && located(previous) && player.world === previous.world && jump <= TELEPORT_BLOCKS
+                && !document.hidden) {
                 this.glide(entry);
             } else {
                 this.place(entry);
             }
-            this.aim(entry);
+            if (located(player)) {
+                this.aim(entry);
+            }
             entry.body.style.setProperty('--player-color', player.color);
             entry.button.style.setProperty('--player-color', player.color);
             entry.body.classList.toggle('is-hidden', player.hidden === true);
             entry.button.classList.toggle('is-hidden', player.hidden === true);
             entry.tag.hidden = player.hidden !== true;
             entry.mod.hidden = player.mod !== true;
-            entry.coords.textContent = `${player.x}, ${player.y}, ${player.z}`;
+            entry.coords.textContent = located(player) ? `${player.x}, ${player.y}, ${player.z}` : t('players.unlocated');
             if (entry.marker.isPopupOpen()) {
                 entry.marker.getPopup().update();
             }
@@ -131,18 +142,17 @@ class PlayerManager {
         const entries = [...this.entries.values()]
             .filter(entry => this.allWorlds || !elsewhere(entry))
             .sort((a, b) => elsewhere(a) - elsewhere(b) ||
-                this.worldLabel(a.player.world).localeCompare(this.worldLabel(b.player.world)) ||
+                this.label(a.player.world).localeCompare(this.label(b.player.world)) ||
                 a.player.name.localeCompare(b.player.name));
         for (const entry of entries) {
             const away = elsewhere(entry);
-            const world = this.worldLabel(entry.player.world);
+            const world = this.label(entry.player.world);
             entry.button.classList.toggle('is-elsewhere', away);
+            entry.button.disabled = !located(entry.player);
             entry.world.hidden = !away;
             entry.world.textContent = world;
-            entry.button.title = t(away ? 'players.followElsewhere' : 'players.follow', {
-                name: entry.player.name,
-                world
-            });
+            entry.button.title = !located(entry.player) ? t('players.unlocated')
+                : t(away ? 'players.followElsewhere' : 'players.follow', {name: entry.player.name, world});
         }
         const rows = entries.map(entry => entry.row);
         if (rows.length !== this.list.children.length || rows.some((row, i) => this.list.children[i] !== row)) {
@@ -152,9 +162,13 @@ class PlayerManager {
         this.empty.hidden = rows.length > 0;
     }
 
+    label(world) {
+        return world ? this.worldLabel(world) : t('players.unknownWorld');
+    }
+
     show(entry) {
         const map = mapManager.getMap();
-        if (entry.player.world !== this.world || !markerManager.isShown(PLAYER_LAYER)) {
+        if (!located(entry.player) || entry.player.world !== this.world || !markerManager.isShown(PLAYER_LAYER)) {
             entry.marker.remove();
         } else if (!map.hasLayer(entry.marker)) {
             entry.marker.addTo(map);
@@ -178,7 +192,7 @@ class PlayerManager {
             popupAnchor: [0, -18],
             html: entry.body
         });
-        entry.marker = L.marker(this.latLng(player), {icon, title: player.name})
+        entry.marker = L.marker(located(player) ? this.latLng(player) : [0, 0], {icon, title: player.name})
             .bindPopup(() => this.popup(entry.player), {className: 'marker-popup-frame'});
 
         entry.button = element('button', 'player');
@@ -244,6 +258,9 @@ class PlayerManager {
 
     place(entry) {
         entry.glide = null;
+        if (!located(entry.player)) {
+            return;
+        }
         const latLng = this.latLng(entry.player);
         entry.marker.setLatLng(latLng);
         if (this.followed === entry.player.uuid) {
@@ -286,7 +303,7 @@ class PlayerManager {
 
     follow(uuid) {
         const entry = this.entries.get(uuid);
-        if (!entry) {
+        if (!entry || !located(entry.player)) {
             return;
         }
         this.unfollow();
@@ -309,7 +326,9 @@ class PlayerManager {
     reposition() {
         for (const entry of this.entries.values()) {
             this.place(entry);
-            this.aim(entry);
+            if (located(entry.player)) {
+                this.aim(entry);
+            }
         }
     }
 }

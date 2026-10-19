@@ -1300,7 +1300,7 @@ public final class MapViewImpl implements MapView {
     final String selfId = self == null ? "" : self.getUUID().toString();
     final @NotNull TextureAtlasSprite arrow = MapIcons.decoration("player");
     for (final @NotNull Player player : map.players()) {
-      if (!player.world().equals(this.world) || player.uuid().equals(selfId)) {
+      if (!player.located() || !player.world().equals(this.world) || player.uuid().equals(selfId)) {
         continue;
       }
       final double[] position = map.position(player);

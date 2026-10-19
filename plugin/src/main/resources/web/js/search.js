@@ -1,7 +1,7 @@
 import {t} from './i18n.js';
 import {mapManager} from './map.js';
 import {element, markerIcon, markerManager} from './markers.js';
-import {avatar, playerManager} from './players.js';
+import {avatar, located, playerManager} from './players.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -107,7 +107,7 @@ class SearchPalette {
     candidates() {
         const players = [...playerManager.entries.values()]
             .map(entry => entry.player)
-            .filter(player => !player.anonymous)
+            .filter(player => !player.anonymous && located(player))
             .map(player => ({
                 kind: 'player',
                 label: player.name,

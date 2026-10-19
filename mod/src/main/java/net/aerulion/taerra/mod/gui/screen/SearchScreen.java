@@ -165,7 +165,7 @@ public final class SearchScreen extends Screen {
   private @NotNull List<Result> candidates() {
     final @NotNull List<Result> all = new ArrayList<>();
     for (final @NotNull Player player : this.map.players()) {
-      if (player.anonymous() || player.name() == null) {
+      if (player.anonymous() || player.name() == null || !player.located()) {
         continue;
       }
       all.add(

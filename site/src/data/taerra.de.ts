@@ -146,7 +146,7 @@ export const de: Copy = {
                     },
                     {
                         title: 'Private Welten und Ebenen',
-                        text: 'Zeige eine Welt oder Ebene nur denen, die angemeldet sind und die passende Berechtigung haben, und lege fest, wer von der Karte aus teleportieren, Marker zeichnen oder rendern darf. Dein Team sieht außerdem die geladenen Chunks, eingefärbt nach Ladestufe.'
+                        text: 'Zeige eine Welt oder Ebene nur denen, die angemeldet sind und die passende Berechtigung haben, oder verbirg nur, wo die Spieler:innen einer Welt sind, und lege fest, wer von der Karte aus teleportieren, Marker zeichnen oder rendern darf. Dein Team sieht außerdem die geladenen Chunks, eingefärbt nach Ladestufe.'
                     },
                     {
                         title: 'Rechtsklick auf jede Stelle',
@@ -322,7 +322,7 @@ export const de: Copy = {
     reference: {
         kicker: 'Referenz',
         title: 'Befehle und Berechtigungen',
-        lede: 'Alles läuft über /taerra. Die Berechtigungen funktionieren mit LuckPerms oder jedem anderen Berechtigungs-Plugin, und jede private Welt und Ebene bekommt ihre eigene.',
+        lede: 'Alles läuft über /taerra. Die Berechtigungen funktionieren mit LuckPerms oder jedem anderen Berechtigungs-Plugin, und jede private Welt, Ebene und Welt mit privaten Positionen bekommt ihre eigene.',
         commands: {
             title: 'Befehle',
             head: ['Befehl', 'Was er tut'],
@@ -440,6 +440,11 @@ export const de: Copy = {
                     permission: 'taerra.world.<welt>',
                     standard: 'OP',
                     text: 'Eine private Welt sehen, etwa `taerra.world.minecraft.the_end`'
+                },
+                {
+                    permission: 'taerra.players.<welt>',
+                    standard: 'OP',
+                    text: 'Sehen, wo Spieler:innen in einer Welt mit privaten Positionen sind, etwa `taerra.players.minecraft.overworld`'
                 },
                 {
                     permission: 'taerra.layer.<ebene>',

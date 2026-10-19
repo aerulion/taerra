@@ -941,7 +941,7 @@ public final class MapScreen extends Screen {
     setFollowed(null);
     final @Nullable Player player =
         target.player() == null ? null : this.map.player(target.player());
-    if (player != null) {
+    if (player != null && player.located()) {
       follow(player);
       return;
     }
@@ -963,6 +963,9 @@ public final class MapScreen extends Screen {
   }
 
   private void follow(final @NotNull Player player) {
+    if (!player.located()) {
+      return;
+    }
     if (player.uuid().equals(this.followed)) {
       setFollowed(null);
       return;
@@ -978,7 +981,8 @@ public final class MapScreen extends Screen {
       return;
     }
     final @Nullable Player player = this.map.player(this.followed);
-    final @Nullable World world = player == null ? null : this.map.world(player.world());
+    final @Nullable World world =
+        player == null || !player.located() ? null : this.map.world(player.world());
     if (world == null) {
       setFollowed(null);
       return;
@@ -1479,7 +1483,7 @@ public final class MapScreen extends Screen {
                     0xFFFFFFFF,
                     null)));
     final @Nullable Player followed = this.followed == null ? null : this.map.player(this.followed);
-    if (followed != null) {
+    if (followed != null && followed.located()) {
       menu.add(
           Component.translatable("taerra.menu.navigate_player", followed.displayName()),
           _ ->

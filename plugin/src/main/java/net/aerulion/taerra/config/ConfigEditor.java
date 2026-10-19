@@ -224,6 +224,12 @@ public final class ConfigEditor {
     track(who);
   }
 
+  public void setPlayersPrivate(
+      final @NotNull String worldName, final boolean hidden, final @NotNull String who) {
+    this.config.setPlayersPrivate(this.plugin, worldName, hidden);
+    track(who);
+  }
+
   public boolean setWorldName(
       final @NotNull String worldName, final @NotNull String given, final @NotNull String who) {
     final @Nullable String name = worldName(worldName, given);
@@ -244,7 +250,11 @@ public final class ConfigEditor {
     order.remove(worldName);
     order.add(Math.clamp(position - 1, 0, order.size()), worldName);
     this.config.setWorlds(
-        this.plugin, order, Set.copyOf(this.config.privateWorlds()), this.config.worldNames());
+        this.plugin,
+        order,
+        Set.copyOf(this.config.privateWorlds()),
+        Set.copyOf(this.config.privatePlayers()),
+        this.config.worldNames());
     track(who);
     return true;
   }
@@ -399,6 +409,7 @@ public final class ConfigEditor {
 
     final @NotNull List<String> enabled = new ArrayList<>(this.config.enabledWorlds());
     final @NotNull Set<String> hidden = new LinkedHashSet<>(this.config.privateWorlds());
+    final @NotNull Set<String> hiddenPlayers = new LinkedHashSet<>(this.config.privatePlayers());
     final @NotNull Map<String, String> names = new HashMap<>(this.config.worldNames());
     boolean worlds = false;
     for (final Map.@NotNull Entry<String, Object> change : next.entrySet()) {
@@ -421,6 +432,12 @@ public final class ConfigEditor {
             hidden.add(world);
           }
         }
+        case "players" -> {
+          hiddenPlayers.remove(world);
+          if (Boolean.TRUE.equals(change.getValue())) {
+            hiddenPlayers.add(world);
+          }
+        }
         default -> {
           if (change.getValue() instanceof final @NotNull String name && !name.isEmpty()) {
             names.put(world, name);
@@ -436,7 +453,7 @@ public final class ConfigEditor {
       order = order(wanted.stream().map(String::valueOf).toList(), enabled);
     }
     if (worlds) {
-      this.config.setWorlds(this.plugin, order, hidden, names);
+      this.config.setWorlds(this.plugin, order, hidden, hiddenPlayers, names);
     }
     for (final @NotNull String field : limitFields) {
       final @Nullable World world = WorldKeys.resolve(worldOf(field));
@@ -518,6 +535,7 @@ public final class ConfigEditor {
     for (final @NotNull String world : worldIds()) {
       values.put(worldField(world, "enabled"), this.config.worldEnabled(world));
       values.put(worldField(world, "private"), this.config.worldPrivate(world));
+      values.put(worldField(world, "players"), this.config.playersPrivate(world));
       values.put(worldField(world, "name"), this.config.worldNames().getOrDefault(world, ""));
       values.put(worldField(world, LIMIT), limitValue(this.limits.get(world)));
     }

@@ -660,7 +660,7 @@ class SettingsDialog {
         let position = 0;
         this.display.map(id => this.world(id)).filter(Boolean).forEach((world) => {
             const on = this.draft[worldField(world.id, 'enabled')] === true;
-            const fields = ['enabled', 'private', 'name'].map(part => worldField(world.id, part));
+            const fields = ['enabled', 'private', 'players', 'name'].map(part => worldField(world.id, part));
             const row = element('li', 'settings__world');
             row.dataset.env = world.environment ?? 'NONE';
             row.dataset.fields = fields.join(' ');
@@ -695,6 +695,13 @@ class SettingsDialog {
             naming.append(name, about);
 
             const privateField = worldField(world.id, 'private');
+            const playersField = worldField(world.id, 'players');
+            const players = flag(playersField, this.draft[playersField] === true,
+                [privateIcon(), element('span', '', t('settings.privatePlayers'))], checked => {
+                    this.set(playersField, checked);
+                    this.render();
+                });
+            players.title = t('settings.privatePlayersHint', {permission: `taerra.players.${world.id.replaceAll(':', '.')}`});
             const flags = element('div', 'settings__flags');
             flags.append(
                 flag(worldField(world.id, 'enabled'), on, [t('settings.onMap')], checked => {
@@ -706,7 +713,8 @@ class SettingsDialog {
                     [privateIcon(), element('span', '', t('settings.private'))], checked => {
                         this.set(privateField, checked);
                         this.render();
-                    }));
+                    }),
+                players);
 
             const moves = element('div', 'settings__moves');
             moves.append(this.move(world.id, -1, 'up'), this.move(world.id, 1, 'down'));

@@ -57,6 +57,11 @@ world-names: { }
 # Set in game with /taerra config world <world> private
 private-worlds: [ ]
 
+# Worlds whose players everyone sees listed, with their world, but only logged-in viewers with
+# taerra.players.<world> see where: minecraft:overworld needs taerra.players.minecraft.overworld.
+# Set in game with /taerra config world <world> players private
+private-players: [ ]
+
 # Markers other plugins draw on the map
 markers:
   # Layers only logged-in viewers with taerra.layer.<layer> see, like taerra.layer.worldguard.

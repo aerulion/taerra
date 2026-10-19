@@ -1066,7 +1066,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           final boolean on =
               on(ServerSettingsScreen.this.draft.get(worldField(world.id(), "enabled")));
           add(new WorldRow(world, index, display.size(), on ? ++rank : 0));
-          for (final @NotNull String part : List.of("enabled", "private", "name")) {
+          for (final @NotNull String part : List.of("enabled", "private", "players", "name")) {
             conflict(worldField(world.id(), part));
           }
         }
@@ -1515,6 +1515,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     private final @NotNull EditBox name;
     private final @NotNull CycleButton<Boolean> enabled;
     private final @NotNull CycleButton<Boolean> restricted;
+    private final @NotNull CycleButton<Boolean> players;
     private final @NotNull Button up;
     private final @NotNull Button down;
 
@@ -1531,7 +1532,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       this.name =
           new EditBox(
               font,
-              Math.clamp(rowWidth() - 214, 60, 130),
+              Math.clamp(rowWidth() - 238, 60, 130),
               18,
               Component.translatable("taerra.settings.world_name", world.defaultName()));
       this.name.setMaxLength(32);
@@ -1567,11 +1568,35 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
               .create(
                   0,
                   0,
-                  56,
+                  80,
                   20,
                   Component.translatable("taerra.settings.private"),
                   (_, on) -> {
                     set(privateField, new JsonPrimitive(on));
+                    refill();
+                  });
+      final @NotNull String playersField = worldField(world.id(), "players");
+      this.players =
+          CycleButton.booleanBuilder(
+                  Component.translatable("taerra.settings.players_private")
+                      .withStyle(ChatFormatting.GOLD),
+                  Component.translatable("taerra.settings.players_public"),
+                  on(ServerSettingsScreen.this.draft.get(playersField)))
+              .displayOnlyValue()
+              .withTooltip(
+                  _ ->
+                      Tooltip.create(
+                          Component.translatable(
+                              "taerra.settings.players_hint",
+                              "taerra.players." + world.id().replace(':', '.'))))
+              .create(
+                  0,
+                  0,
+                  80,
+                  20,
+                  Component.translatable("taerra.settings.players_private"),
+                  (_, on) -> {
+                    set(playersField, new JsonPrimitive(on));
                     refill();
                   });
       this.up =
@@ -1609,11 +1634,12 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       return List.of(
           worldField(this.world.id(), "enabled"),
           worldField(this.world.id(), "private"),
+          worldField(this.world.id(), "players"),
           worldField(this.world.id(), "name"));
     }
 
     private @NotNull List<AbstractWidget> widgets() {
-      return List.of(this.name, this.enabled, this.restricted, this.up, this.down);
+      return List.of(this.name, this.enabled, this.restricted, this.players, this.up, this.down);
     }
 
     @Override
@@ -1656,7 +1682,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
               .append(environment)
               .append(
                   Component.literal("  " + this.world.id()).withStyle(ChatFormatting.DARK_GRAY));
-      final int room = getX() + getWidth() - 6 - 176 - left - 4;
+      final int room = getX() + getWidth() - 6 - 200 - left - 4;
       graphics.text(
           font,
           font.width(about) <= room ? about : environment,
@@ -1668,7 +1694,13 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       for (final @NotNull AbstractWidget widget :
           List.<AbstractWidget>of(this.down, this.up, this.restricted, this.enabled)) {
         right -= widget.getWidth();
-        widget.setPosition(right, getY() + getHeight() / 2 - widget.getHeight() / 2);
+        if (widget == this.restricted) {
+          this.restricted.setPosition(right, getY() + 2);
+          this.players.setPosition(right, getY() + 24);
+          this.players.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        } else {
+          widget.setPosition(right, getY() + getHeight() / 2 - widget.getHeight() / 2);
+        }
         widget.extractRenderState(graphics, mouseX, mouseY, partialTick);
         right -= widget == this.up ? 6 : 2;
       }

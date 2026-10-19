@@ -51,13 +51,13 @@ public final class PlayerList extends PanelList<PlayerList.Entry> {
     final @Nullable String world = this.world.get();
     final boolean all = this.settings.allWorldPlayers();
     final @NotNull Comparator<Player> elsewhere =
-        Comparator.comparing(player -> !player.world().equals(world));
+        Comparator.comparing(player -> world == null || !world.equals(player.world()));
     replaceEntries(
         this.map.players().stream()
-            .filter(player -> all || player.world().equals(world))
+            .filter(player -> all || (world != null && world.equals(player.world())))
             .sorted(
                 elsewhere
-                    .thenComparing(player -> this.worldName.apply(player.world()).getString())
+                    .thenComparing(player -> where(player.world()).getString())
                     .thenComparing(
                         player -> player.displayName().getString(), String.CASE_INSENSITIVE_ORDER))
             .map(Entry::new)
@@ -72,6 +72,12 @@ public final class PlayerList extends PanelList<PlayerList.Entry> {
             .filter(entry -> entry.player.uuid().equals(uuid))
             .findFirst()
             .orElse(null));
+  }
+
+  private @NotNull Component where(final @Nullable String world) {
+    return world == null
+        ? Component.translatable("taerra.players.unknown_world")
+        : this.worldName.apply(world);
   }
 
   public int count() {
@@ -110,11 +116,12 @@ public final class PlayerList extends PanelList<PlayerList.Entry> {
           y,
           0xFFFFFFFF,
           true);
-      final boolean elsewhere = !this.player.world().equals(PlayerList.this.world.get());
+      final @Nullable String current = PlayerList.this.world.get();
+      final boolean elsewhere = current == null || !current.equals(this.player.world());
       final Component where =
           elsewhere
-              ? PlayerList.this.worldName.apply(this.player.world())
-              : this.player.hidden()
+              ? where(this.player.world())
+              : this.player.hidden() && this.player.located()
                   ? Component.translatable("taerra.players.hidden")
                   : this.player.coordinates();
       graphics.text(
@@ -122,10 +129,12 @@ public final class PlayerList extends PanelList<PlayerList.Entry> {
       if (hovered) {
         graphics.setTooltipForNextFrame(
             font,
-            Component.translatable(
-                elsewhere ? "taerra.players.follow_elsewhere" : "taerra.players.follow",
-                this.player.displayName(),
-                PlayerList.this.worldName.apply(this.player.world())),
+            this.player.located()
+                ? Component.translatable(
+                    elsewhere ? "taerra.players.follow_elsewhere" : "taerra.players.follow",
+                    this.player.displayName(),
+                    where(this.player.world()))
+                : Component.translatable("taerra.players.unlocated"),
             mouseX,
             mouseY);
       }
@@ -138,6 +147,9 @@ public final class PlayerList extends PanelList<PlayerList.Entry> {
 
     @Override
     public boolean mouseClicked(final MouseButtonEvent event, final boolean doubleClick) {
+      if (!this.player.located()) {
+        return false;
+      }
       AbstractWidget.playButtonClickSound(Minecraft.getInstance().getSoundManager());
       PlayerList.this.onPick.accept(this.player);
       return true;

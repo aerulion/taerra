@@ -278,7 +278,8 @@ class WebSessionsTest {
   }
 
   @Test
-  @DisplayName("a private world or layer shows only to viewers holding its permission")
+  @DisplayName(
+      "a private world, layer or world's players show only to viewers holding its permission")
   void privateWorldsAndLayers() {
     final @NotNull TaerraConfig config =
         new TaerraConfig(
@@ -288,10 +289,16 @@ class WebSessionsTest {
             256,
             new CopyOnWriteArrayList<>(List.of("minecraft:overworld", "minecraft:the_end")),
             new CopyOnWriteArrayList<>(List.of("minecraft:the_end")),
+            new CopyOnWriteArrayList<>(List.of("minecraft:overworld")),
             new CopyOnWriteArrayList<>(List.of("worldguard")),
             new ConcurrentHashMap<>());
     final @NotNull Viewer staff =
-        new Viewer(PLAYER, Set.of("taerra.world.minecraft.the_end", "taerra.layer.worldguard"));
+        new Viewer(
+            PLAYER,
+            Set.of(
+                "taerra.world.minecraft.the_end",
+                "taerra.players.minecraft.overworld",
+                "taerra.layer.worldguard"));
 
     assertTrue(Viewer.ANONYMOUS.canSee(config, "minecraft:overworld"));
     assertFalse(Viewer.ANONYMOUS.canSee(config, "minecraft:the_end"));
@@ -301,8 +308,14 @@ class WebSessionsTest {
     assertTrue(Viewer.ANONYMOUS.canSeeLayer(config, "waypoints"));
     assertFalse(Viewer.ANONYMOUS.canSeeLayer(config, "worldguard"));
     assertTrue(staff.canSeeLayer(config, "worldguard"));
+    assertFalse(Viewer.ANONYMOUS.canSeePlayers(config, "minecraft:overworld"));
+    assertTrue(Viewer.ANONYMOUS.canSeePlayers(config, "minecraft:the_end"));
+    assertTrue(staff.canSeePlayers(config, "minecraft:overworld"));
     assertEquals(
-        Set.of("taerra.world.minecraft.the_end", "taerra.layer.worldguard"),
+        Set.of(
+            "taerra.world.minecraft.the_end",
+            "taerra.players.minecraft.overworld",
+            "taerra.layer.worldguard"),
         config.webPermissions());
   }
 }

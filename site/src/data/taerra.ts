@@ -197,7 +197,7 @@ const en = {
                     },
                     {
                         title: 'Private worlds and layers',
-                        text: 'Hide a world or a layer from everyone except logged-in players with the right permission, and choose who may teleport, draw markers or render from the map. Staff can also see the loaded chunks, colored by load level.'
+                        text: 'Hide a world or a layer from everyone except logged-in players with the right permission, or only where the players in a world are, and choose who may teleport, draw markers or render from the map. Staff can also see the loaded chunks, colored by load level.'
                     },
                     {
                         title: 'Right-click anywhere',
@@ -367,7 +367,7 @@ const en = {
     reference: {
         kicker: 'Reference',
         title: 'Commands and permissions',
-        lede: 'Everything runs through /taerra. The permissions work with LuckPerms or any other permissions plugin, and every private world and layer gets one of its own.',
+        lede: 'Everything runs through /taerra. The permissions work with LuckPerms or any other permissions plugin, and every private world, layer and world’s players get one of their own.',
         commands: {
             title: 'Commands',
             head: ['Command', 'What it does'],
@@ -478,6 +478,11 @@ const en = {
                     permission: 'taerra.world.<world>',
                     standard: 'op',
                     text: 'Seeing a private world, such as `taerra.world.minecraft.the_end`'
+                },
+                {
+                    permission: 'taerra.players.<world>',
+                    standard: 'op',
+                    text: 'Seeing where players are in a world with private players, such as `taerra.players.minecraft.overworld`'
                 },
                 {
                     permission: 'taerra.layer.<layer>',

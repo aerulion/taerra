@@ -26,10 +26,12 @@ public record TaerraConfig(
     int maxCacheChunks,
     @NotNull CopyOnWriteArrayList<String> enabledWorlds,
     @NotNull CopyOnWriteArrayList<String> privateWorlds,
+    @NotNull CopyOnWriteArrayList<String> privatePlayers,
     @NotNull CopyOnWriteArrayList<String> privateLayers,
     @NotNull Map<String, String> worldNames) {
 
   private static final @NotNull String WORLD_PERMISSION = "taerra.world.";
+  private static final @NotNull String PLAYERS_PERMISSION = "taerra.players.";
   private static final @NotNull String LAYER_PERMISSION = "taerra.layer.";
 
   public static @NotNull TaerraConfig load(final @NotNull Plugin plugin) {
@@ -44,6 +46,7 @@ public record TaerraConfig(
         maxCacheChunks(file),
         new CopyOnWriteArrayList<>(file.getStringList("worlds")),
         new CopyOnWriteArrayList<>(file.getStringList("private-worlds")),
+        new CopyOnWriteArrayList<>(file.getStringList("private-players")),
         new CopyOnWriteArrayList<>(file.getStringList("markers.private-layers")),
         new ConcurrentHashMap<>(names(file.getConfigurationSection("world-names"))));
   }
@@ -88,6 +91,10 @@ public record TaerraConfig(
     return WORLD_PERMISSION + worldName.replace(':', '.');
   }
 
+  public static @NotNull String playersPermission(final @NotNull String worldName) {
+    return PLAYERS_PERMISSION + worldName.replace(':', '.');
+  }
+
   public static @NotNull String layerPermission(final @NotNull String layerId) {
     return LAYER_PERMISSION + layerId.replace(':', '.');
   }
@@ -111,13 +118,19 @@ public record TaerraConfig(
     return this.privateWorlds.contains(worldName);
   }
 
+  public boolean playersPrivate(final @NotNull String worldName) {
+    return this.privatePlayers.contains(worldName);
+  }
+
   public boolean layerPrivate(final @NotNull String layerId) {
     return this.privateLayers.contains(layerId);
   }
 
   public @NotNull Set<String> webPermissions() {
     return Stream.concat(
-            this.privateWorlds.stream().map(TaerraConfig::worldPermission),
+            Stream.concat(
+                this.privateWorlds.stream().map(TaerraConfig::worldPermission),
+                this.privatePlayers.stream().map(TaerraConfig::playersPermission)),
             this.privateLayers.stream().map(TaerraConfig::layerPermission))
         .collect(Collectors.toUnmodifiableSet());
   }
@@ -125,6 +138,12 @@ public record TaerraConfig(
   public synchronized void setWorldPrivate(
       final @NotNull Plugin plugin, final @NotNull String worldName, final boolean hidden) {
     setListed(plugin, "private-worlds", this.privateWorlds, worldName, hidden);
+    registerPermissions(plugin);
+  }
+
+  public synchronized void setPlayersPrivate(
+      final @NotNull Plugin plugin, final @NotNull String worldName, final boolean hidden) {
+    setListed(plugin, "private-players", this.privatePlayers, worldName, hidden);
     registerPermissions(plugin);
   }
 
@@ -139,7 +158,9 @@ public record TaerraConfig(
     final @NotNull Set<String> nodes = webPermissions();
     for (final @NotNull Permission permission : List.copyOf(manager.getPermissions())) {
       final @NotNull String node = permission.getName();
-      if ((node.startsWith(WORLD_PERMISSION) || node.startsWith(LAYER_PERMISSION))
+      if ((node.startsWith(WORLD_PERMISSION)
+              || node.startsWith(PLAYERS_PERMISSION)
+              || node.startsWith(LAYER_PERMISSION))
           && !nodes.contains(node)) {
         manager.removePermission(permission);
       }
@@ -149,6 +170,12 @@ public record TaerraConfig(
           manager,
           worldPermission(world),
           "Lets the user see the private world " + world + " on the web map while logged in.");
+    }
+    for (final @NotNull String world : this.privatePlayers) {
+      register(
+          manager,
+          playersPermission(world),
+          "Lets the user see where players are in " + world + " on the web map while logged in.");
     }
     for (final @NotNull String layer : this.privateLayers) {
       register(
@@ -186,16 +213,20 @@ public record TaerraConfig(
       final @NotNull Plugin plugin,
       final @NotNull List<String> enabled,
       final @NotNull Set<String> hidden,
+      final @NotNull Set<String> hiddenPlayers,
       final @NotNull Map<String, String> names) {
     this.enabledWorlds.addAllAbsent(enabled);
     this.enabledWorlds.retainAll(enabled);
     this.enabledWorlds.sort(Comparator.comparingInt(enabled::indexOf));
     this.privateWorlds.addAllAbsent(hidden);
     this.privateWorlds.retainAll(hidden);
+    this.privatePlayers.addAllAbsent(hiddenPlayers);
+    this.privatePlayers.retainAll(hiddenPlayers);
     this.worldNames.putAll(names);
     this.worldNames.keySet().retainAll(names.keySet());
     plugin.getConfig().set("worlds", List.copyOf(this.enabledWorlds));
     plugin.getConfig().set("private-worlds", List.copyOf(this.privateWorlds));
+    plugin.getConfig().set("private-players", List.copyOf(this.privatePlayers));
     plugin.getConfig().set("world-names", new TreeMap<>(this.worldNames));
     plugin.saveConfig();
     registerPermissions(plugin);

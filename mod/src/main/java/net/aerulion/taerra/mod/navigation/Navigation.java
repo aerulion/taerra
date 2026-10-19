@@ -73,7 +73,7 @@ public final class Navigation {
     }
     if (target.player() != null && map != null) {
       final @Nullable Player player = map.player(target.player());
-      if (player != null) {
+      if (player != null && player.located()) {
         this.target = target.at(player.world(), player.x(), player.y(), player.z());
       }
     }

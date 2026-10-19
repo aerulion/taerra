@@ -96,6 +96,15 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                                 Commands.literal("public")
                                     .executes(context -> setWorldPrivate(context, false)))
                             .then(
+                                Commands.literal("players")
+                                    .then(
+                                        Commands.literal("private")
+                                            .executes(context -> setPlayersPrivate(context, true)))
+                                    .then(
+                                        Commands.literal("public")
+                                            .executes(
+                                                context -> setPlayersPrivate(context, false))))
+                            .then(
                                 Commands.literal("name")
                                     .then(
                                         Commands.argument("name", StringArgumentType.greedyString())
@@ -152,6 +161,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                     JoinConfiguration.commas(true),
                     this.config.enabledWorlds().stream().map(Messages::world).toList())));
     lines.add(listRow("config.private_worlds", this.config.privateWorlds()));
+    lines.add(listRow("config.private_players", this.config.privatePlayers()));
     lines.add(listRow("config.private_layers", this.config.privateLayers()));
     ConfigEditor.SETTINGS.stream()
         .map(ConfigEditor.Setting::key)
@@ -213,6 +223,21 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                 Messages.world(worldName),
                 Messages.copyable(TaerraConfig.worldPermission(worldName)))
             : Messages.success("config.world_public", Messages.world(worldName)));
+    return SUCCESS;
+  }
+
+  private int setPlayersPrivate(
+      final @NotNull CommandContext<CommandSourceStack> context, final boolean hidden) {
+    final @NotNull String worldName = WorldKeys.id(context.getArgument("world", World.class));
+    this.editor.setPlayersPrivate(worldName, hidden, who(context));
+    feedback(
+        context,
+        hidden
+            ? Messages.success(
+                "config.players_private",
+                Messages.world(worldName),
+                Messages.copyable(TaerraConfig.playersPermission(worldName)))
+            : Messages.success("config.players_public", Messages.world(worldName)));
     return SUCCESS;
   }
 

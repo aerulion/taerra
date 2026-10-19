@@ -24,7 +24,6 @@ import net.aerulion.taerra.marker.MarkerRegistryInternal;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
-import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.region.RegionVisibility;
 import net.aerulion.taerra.rendering.iso.IsoTileGeometry;
 import net.aerulion.taerra.rendering.sample.FogView;
@@ -479,11 +478,8 @@ public final class MapRoutes implements Routes {
       ctx.status(400).result("Invalid UUID");
       return;
     }
-    final @Nullable Player player = this.players.shown(uuid, this.requests.viewer(ctx));
-    final byte @Nullable [] png =
-        player == null || !this.requests.visible(ctx, WorldKeys.id(player.getWorld()))
-            ? null
-            : this.avatars.png(player);
+    final @Nullable Player player = this.players.listed(uuid, this.requests.viewer(ctx));
+    final byte @Nullable [] png = player == null ? null : this.avatars.png(player);
     if (png == null) {
       ctx.header("Cache-Control", "no-store").status(404).result("Avatar not found");
       return;

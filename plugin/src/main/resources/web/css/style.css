@@ -1678,6 +1678,15 @@ h2 .badge {
     background: var(--stone-600);
 }
 
+.player:disabled {
+    color: inherit;
+    cursor: default;
+}
+
+.player:disabled:hover {
+    background: var(--stone-800);
+}
+
 .player img {
     grid-row: span 2;
     width: 32px;
@@ -3777,9 +3786,9 @@ label.settings__row:hover {
 .settings__world {
     --env: var(--stone-500);
     display: grid;
-    grid-template-columns: 28px minmax(0, 1fr) auto auto;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 14px;
+    gap: 10px 14px;
     padding: 10px 8px 10px 12px;
     background: var(--stone-800);
     box-shadow: inset 4px 0 var(--env), inset 0 2px rgb(255 255 255 / .03);
@@ -3807,6 +3816,7 @@ label.settings__row:hover {
 }
 
 .settings__rank {
+    grid-row: 1 / 3;
     color: var(--stone-100);
     font: 700 10px/1 var(--font-display);
     text-align: center;
@@ -3841,6 +3851,9 @@ label.settings__row:hover {
 
 .settings__flags {
     display: flex;
+    flex-wrap: wrap;
+    grid-column: 2;
+    grid-row: 2;
     gap: 6px;
 }
 
@@ -3873,6 +3886,8 @@ label.settings__row:hover {
 
 .settings__moves {
     display: grid;
+    grid-column: 3;
+    grid-row: 1 / 3;
 }
 
 .settings__limit .settings__hint {
@@ -4169,17 +4184,6 @@ label.settings__row:hover {
     .settings__world {
         grid-template-columns: 20px minmax(0, 1fr) auto;
         gap: 10px;
-    }
-
-    .settings__flags {
-        flex-wrap: wrap;
-        grid-column: 2 / -1;
-        grid-row: 2;
-    }
-
-    .settings__moves {
-        grid-column: 3;
-        grid-row: 1;
     }
 
     .settings__limit-line {

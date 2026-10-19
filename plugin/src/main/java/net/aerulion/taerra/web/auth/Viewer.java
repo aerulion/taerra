@@ -69,6 +69,12 @@ public record Viewer(@Nullable UUID uuid, @NotNull Set<String> grants) {
     return has(TaerraPermission.SEE_FOG);
   }
 
+  public boolean canSeePlayers(
+      final @NotNull TaerraConfig config, final @NotNull String worldName) {
+    return !config.playersPrivate(worldName)
+        || this.grants.contains(TaerraConfig.playersPermission(worldName));
+  }
+
   public boolean canSeeLayer(final @NotNull TaerraConfig config, final @NotNull String layerId) {
     return !config.layerPrivate(layerId)
         || this.grants.contains(TaerraConfig.layerPermission(layerId));
