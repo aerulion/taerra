@@ -2,6 +2,7 @@ package net.aerulion.taerra.rendering.pipeline;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -61,8 +62,8 @@ public final class FogLayers {
       final @NotNull Set<UUID> close = new LinkedHashSet<>();
       for (int chunkX = minChunkX; chunkX < minChunkX + CHUNKS_PER_TILE; chunkX++) {
         for (int chunkZ = minChunkZ; chunkZ < minChunkZ + CHUNKS_PER_TILE; chunkZ++) {
-          near.addAll(List.of(regions.foggedNear(worldName, chunkX, chunkZ)));
-          close.addAll(List.of(regions.foggedClose(worldName, chunkX, chunkZ)));
+          Collections.addAll(near, regions.foggedNear(worldName, chunkX, chunkZ));
+          Collections.addAll(close, regions.foggedClose(worldName, chunkX, chunkZ));
           final @Nullable MapRegion owner = regions.foggedAt(worldName, chunkX, chunkZ);
           if (owner != null) {
             bodies.add(owner.id());

@@ -3,6 +3,7 @@ package net.aerulion.taerra.rendering.iso;
 import it.unimi.dsi.fastutil.longs.LongCollection;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -340,7 +341,7 @@ public final class IsoTileServiceImpl implements IsoTileService {
             if (owner != null) {
               bodies.add(owner.id());
             }
-            close.addAll(List.of(this.regions.foggedClose(worldName, chunkX, chunkZ)));
+            Collections.addAll(close, this.regions.foggedClose(worldName, chunkX, chunkZ));
           }
           if (IsoTileGeometry.chunkScreenBounds(
                   chunkX,
@@ -349,7 +350,7 @@ public final class IsoTileServiceImpl implements IsoTileService {
                   Math.max(maxTopY, Fog.SKY_Y + Fog.SKY_THICKNESS),
                   coordinate.rotation())
               .intersects(tileBounds)) {
-            spills.addAll(List.of(near));
+            Collections.addAll(spills, near);
           }
         });
     boolean veiled = true;
