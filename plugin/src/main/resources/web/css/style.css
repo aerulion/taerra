@@ -1946,6 +1946,20 @@ h2 .badge {
     pointer-events: none;
 }
 
+@supports (font: -apple-system-body) {
+    .waypoint__label,
+    .leaflet-tooltip.marker-tooltip,
+    .region-name {
+        padding-top: 2px;
+        padding-bottom: 4px;
+    }
+
+    .region-flag {
+        padding-top: 3px;
+        padding-bottom: 5px;
+    }
+}
+
 .marker-popup-frame .leaflet-popup-content {
     margin: 0;
 }
