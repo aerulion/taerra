@@ -35,6 +35,7 @@ If something breaks or looks wrong, please report it on [GitHub](https://github.
 - **Colors from the Locator Bar.** Every player wears the color of their dot on the Locator Bar, so you know who is who at a glance, on the map and in game.
 - **The map updates itself.** Every change is recorded, built by players or grown by nature, and redrawn at an interval you choose, 15 minutes by default. A spot changed a hundred times is drawn once.
 - **Watch it render.** A render shows its progress right on the map, with the time it has left, in the browser and in game. Staff start a full render of a world, or cancel one, from the map's right-click menu.
+- **Discover the world.** Discoverable regions stay under fog on your map until you walk into them, then clear for you alone, with a sound and a burst of sparks on the web map, a toast in the mod, or a line in chat without it. Every region shows as an outline in its own color, and gets its name and fill once you've found it, so you always see what is left to explore.
 - **Installable as an app** on phones and desktops, when the map is served over HTTPS.
 
 ### Made for servers

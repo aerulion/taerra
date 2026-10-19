@@ -113,6 +113,14 @@ export const de: Copy = {
                     {
                         title: 'Zusehen beim Rendern',
                         text: 'Beim Rendern siehst du den Fortschritt direkt auf der Karte, mit der verbleibenden Zeit, im Browser und im Spiel. Dein Team rendert eine ganze Welt oder bricht das Rendern ab, mit einem Rechtsklick.'
+                    },
+                    {
+                        title: 'Entdecke die Welt',
+                        text: 'Entdeckbare Regionen bleiben im Nebel, bis du sie betrittst. Dann lichtet er sich nur für dich, mit einem Klang und einem Funkenregen auf der Webkarte, einer Benachrichtigung in der Mod oder einer Zeile im Chat.'
+                    },
+                    {
+                        title: 'Regionen auf der Karte',
+                        text: 'Jede Region zeigt sich als Umriss in ihrer eigenen Farbe und bekommt Namen und Füllung, sobald du sie gefunden hast. So siehst du immer, was noch zu erkunden ist.'
                     }
                 ]
             },

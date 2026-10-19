@@ -164,6 +164,14 @@ const en = {
                     {
                         title: 'Watch it render',
                         text: 'A render shows its progress right on the map, with the time it has left, in the browser and in game. Staff start a full render, or cancel one, with a right-click.'
+                    },
+                    {
+                        title: 'Discover the world',
+                        text: 'Discoverable regions stay under fog until you walk into them, then clear for you alone, with a sound and a burst of sparks on the web map, a toast in the mod or a line in chat.'
+                    },
+                    {
+                        title: 'Regions on the map',
+                        text: 'Every region shows as an outline in its own color, and gets its name and fill once you have found it, so you always see what is left to explore.'
                     }
                 ]
             },
