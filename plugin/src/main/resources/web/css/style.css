@@ -2148,7 +2148,7 @@ h2 .badge {
     border: var(--edge);
     box-shadow: var(--slab-shadow);
     color: var(--stone-200);
-    font: 700 7.5px/1 var(--font-display);
+    font: 700 10px/1 var(--font-display);
     pointer-events: none;
 }
 
@@ -2627,7 +2627,7 @@ h2 .badge {
 
 .discovery__title {
     color: var(--gold);
-    font: 700 11px/1.2 var(--font-display);
+    font: 700 10px/1.2 var(--font-display);
     letter-spacing: .06em;
     text-transform: uppercase;
 }
