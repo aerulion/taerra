@@ -133,10 +133,14 @@ public final class RenderService {
   private @NotNull Start area(
       final @NotNull String mode,
       final @NotNull World world,
-      final @NotNull Set<Long> affected,
+      final @NotNull Set<Long> changed,
       final @NotNull Runnable apply,
       final boolean terrain) {
     final @NotNull String worldName = WorldKeys.id(world);
+    final @NotNull Set<Long> affected = new HashSet<>(changed);
+    if (terrain) {
+      affected.addAll(this.columns.groundDependents(worldName, changed));
+    }
     final @Nullable WorldLimit limit = this.limits.get(worldName);
     final @NotNull Set<Long> regions = new HashSet<>();
     final @NotNull Set<Long> tiles = new HashSet<>();

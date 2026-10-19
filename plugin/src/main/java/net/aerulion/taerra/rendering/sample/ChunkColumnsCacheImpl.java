@@ -4,6 +4,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +41,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
 
   private static final long SNAPSHOT_BUDGET_NANOS = 2_000_000L;
   private static final int CHECKS_PER_TICK = 4096;
+  private static final int GROUND_REACH = 2;
 
   private final @NotNull Plugin plugin;
   static final int PLAIN = 0;
@@ -287,7 +290,8 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
   }
 
   @Override
-  public int refreshChanged(final @NotNull World world) throws Exception {
+  public int refreshChanged(final @NotNull World world, final @NotNull LongSet regrounded)
+      throws Exception {
     synchronized (this.refreshLocks.computeIfAbsent(WorldKeys.id(world), ignored -> new Object())) {
       final @NotNull List<ChunkCoordinate> changed = new ArrayList<>();
       for (final @NotNull ChunkKey key : this.changed) {
@@ -316,6 +320,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
                   snapshots, world.getMinHeight(), world.getMaxHeight(), disk);
           for (final @NotNull ChunkCoordinate chunk : changed.subList(from, next)) {
             if (snapshots.containsKey(chunk.toKey())) {
+              reground(world, disk, live, chunk.x(), chunk.z(), regrounded);
               sampleAndStore(world, live, chunk.x(), chunk.z());
             } else {
               this.epoch.incrementAndGet();
@@ -331,6 +336,62 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
       }
       return refreshed;
     }
+  }
+
+  @Override
+  public @NotNull LongSet groundDependents(
+      final @NotNull String worldName, final @NotNull Collection<Long> chunks) {
+    final @NotNull LongSet dependents = new LongOpenHashSet();
+    if (!this.regions.anyFogged(worldName)) {
+      return dependents;
+    }
+    for (final long chunk : chunks) {
+      for (int offsetX = -GROUND_REACH; offsetX <= GROUND_REACH; offsetX++) {
+        for (int offsetZ = -GROUND_REACH; offsetZ <= GROUND_REACH; offsetZ++) {
+          final int chunkX = ChunkCoordinate.keyX(chunk) + offsetX;
+          final int chunkZ = ChunkCoordinate.keyZ(chunk) + offsetZ;
+          if (this.regions.foggedNear(worldName, chunkX, chunkZ).length > 0) {
+            dependents.add(ChunkCoordinate.key(chunkX, chunkZ));
+          }
+        }
+      }
+    }
+    return dependents;
+  }
+
+  private void reground(
+      final @NotNull World world,
+      final @NotNull ChunkSourceProvider before,
+      final @NotNull ChunkSourceProvider after,
+      final int chunkX,
+      final int chunkZ,
+      final @NotNull LongSet regrounded) {
+    final @NotNull String worldName = WorldKeys.id(world);
+    final @NotNull LongSet dependents =
+        groundDependents(worldName, List.of(ChunkCoordinate.key(chunkX, chunkZ)));
+    if (dependents.isEmpty()) {
+      return;
+    }
+    final int ceilingY = ColumnRunSampler.ceilingY(world);
+    final int was = visibleGround(world, before, ceilingY, chunkX, chunkZ);
+    final @Nullable ColumnSource source = after.sourceForChunk(chunkX, chunkZ);
+    if (source == null) {
+      return;
+    }
+    final int ground = Fog.ground(ColumnRunSampler.columnTops(source, ceilingY, this.shapes));
+    if (ground == was) {
+      return;
+    }
+    remember(worldName, chunkX, chunkZ, ground);
+    this.epoch.incrementAndGet();
+    for (final long chunk : dependents) {
+      this.cache
+          .asMap()
+          .computeIfPresent(
+              new ChunkKey(worldName, ChunkCoordinate.keyX(chunk), ChunkCoordinate.keyZ(chunk)),
+              (_, variants) -> variants.only(PLAIN));
+    }
+    regrounded.addAll(dependents);
   }
 
   @Override

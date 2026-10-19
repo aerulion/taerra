@@ -1,5 +1,7 @@
 package net.aerulion.taerra.rendering.pipeline;
 
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,9 +23,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.MapView;
 import net.aerulion.taerra.model.TileCoordinate;
+import net.aerulion.taerra.model.TileGeometry;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.region.MapRegions;
 import net.aerulion.taerra.rendering.iso.IsoTileService;
@@ -373,7 +377,22 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       int chunksRead = 0;
 
       final long refreshStartedAt = System.nanoTime();
-      final int refreshedChunks = this.columnsCache.refreshChanged(world);
+      final @NotNull LongSet regrounded = new LongOpenHashSet();
+      final int refreshedChunks = this.columnsCache.refreshChanged(world, regrounded);
+      if (!regrounded.isEmpty()) {
+        final @NotNull Set<TileCoordinate> fogged =
+            new HashSet<>(this.isoTileService.tilesShowing(world, regrounded, false));
+        for (final long chunk : regrounded) {
+          fogged.add(
+              TileCoordinate.topDown(
+                  WorldKeys.id(world),
+                  0,
+                  Math.floorDiv(ChunkCoordinate.keyX(chunk) << 4, TileGeometry.TILE_SIZE),
+                  Math.floorDiv(ChunkCoordinate.keyZ(chunk) << 4, TileGeometry.TILE_SIZE)));
+        }
+        tileCoordinates.forEach(fogged::remove);
+        this.renderQueue.enqueueAll(fogged, RenderPriority.LIVE_ZOOM_0);
+      }
       final long refreshNanos = System.nanoTime() - refreshStartedAt;
 
       if (tileCoordinates.getFirst().view() == MapView.ISOMETRIC) {

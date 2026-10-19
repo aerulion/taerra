@@ -1,5 +1,6 @@
 package net.aerulion.taerra.rendering.sample;
 
+import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.Collection;
 import net.aerulion.taerra.rendering.source.ChunkSourceProvider;
 import org.bukkit.World;
@@ -11,7 +12,10 @@ public sealed interface ChunkColumnsCache permits ChunkColumnsCacheImpl {
 
   long knownHeights(@NotNull String worldName, int chunkX, int chunkZ, boolean sky);
 
-  int refreshChanged(@NotNull World world) throws Exception;
+  int refreshChanged(@NotNull World world, @NotNull LongSet regrounded) throws Exception;
+
+  @NotNull
+  LongSet groundDependents(@NotNull String worldName, @NotNull Collection<Long> chunks);
 
   @NotNull
   CachedChunkColumnsSource sourceFor(
