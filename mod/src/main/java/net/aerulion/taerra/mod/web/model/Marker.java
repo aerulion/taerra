@@ -17,4 +17,5 @@ public record Marker(
     boolean hollow,
     boolean fullHeight,
     boolean smooth,
-    boolean muted) {}
+    boolean muted,
+    @Nullable Long discovered) {}

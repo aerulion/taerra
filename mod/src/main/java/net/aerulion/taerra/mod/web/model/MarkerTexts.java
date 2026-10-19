@@ -144,6 +144,7 @@ public final class MarkerTexts {
         marker.hollow(),
         marker.fullHeight(),
         marker.smooth(),
-        marker.muted());
+        marker.muted(),
+        marker.discovered());
   }
 }

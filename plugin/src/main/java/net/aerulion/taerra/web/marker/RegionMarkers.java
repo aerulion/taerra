@@ -1,10 +1,9 @@
 package net.aerulion.taerra.web.marker;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 import net.aerulion.taerra.api.marker.AreaMarker;
 import net.aerulion.taerra.api.marker.Marker;
@@ -39,14 +38,17 @@ public final class RegionMarkers {
       return List.of();
     }
     final @NotNull List<Marker> markers = new ArrayList<>();
-    final @NotNull Set<String> unrevealed = new HashSet<>();
+    final @NotNull Map<String, Map<String, Object>> extras = new HashMap<>();
     for (final @NotNull MapRegion region : visibility.regions().in(worldName)) {
       final boolean revealed = visibility.revealed(viewer.uuid(), viewer.canSeeHidden(), region);
+      final long discovered = visibility.discoveredAt(viewer.uuid(), region);
       final @NotNull List<List<long[]>> rings = RegionShapes.rings(region.chunks());
       for (int i = 0; i < rings.size(); i++) {
         final @NotNull String id = "region:" + region.id() + "/" + i;
         if (!revealed) {
-          unrevealed.add(id);
+          extras.put(id, Map.of("muted", true));
+        } else if (discovered > 0L) {
+          extras.put(id, Map.of("discovered", discovered));
         }
         final @NotNull AreaMarker marker =
             Marker.polygon(
@@ -63,6 +65,11 @@ public final class RegionMarkers {
       }
     }
     return MarkerPayloadSerializer.layer(
-        LAYER, label, shown, markers, layerPrivate, marker -> unrevealed.contains(marker.id()));
+        LAYER,
+        label,
+        shown,
+        markers,
+        layerPrivate,
+        (marker, data) -> data.putAll(extras.getOrDefault(marker.id(), Map.of())));
   }
 }

@@ -148,7 +148,7 @@ public final class MapScreen extends Screen {
   private @Nullable IconButton redoButton;
   private @Nullable String editingId;
   private boolean deleteArmed;
-  private @Nullable Integer regionId;
+  private @Nullable String regionId;
   private @NotNull String regionName = "";
   private @NotNull String regionFog = "hide";
   private boolean regionDiscoverable = true;
@@ -161,7 +161,7 @@ public final class MapScreen extends Screen {
   private @NotNull List<Long> hover = List.of();
   private boolean hoverErase;
   private @Nullable Regions othersOf;
-  private @Nullable Integer othersWithout;
+  private @Nullable String othersWithout;
   private @NotNull List<Drawing.Area> others = List.of();
   private @NotNull String color = Waypoint.DEFAULT_COLOR;
   private int vertex = -1;
@@ -1669,7 +1669,7 @@ public final class MapScreen extends Screen {
         world == null
             ? null
             : regionAt(world, ChunkSelection.chunkX(chunk), ChunkSelection.chunkZ(chunk));
-    return owner != null && !Integer.valueOf(owner.id()).equals(this.regionId);
+    return owner != null && !owner.id().equals(this.regionId);
   }
 
   private void startDrawing(
@@ -1783,8 +1783,7 @@ public final class MapScreen extends Screen {
                 this.regionName,
                 this.color,
                 this.regionFog,
-                this.regionDiscoverable,
-                region == null || region.discoveries() == null ? 0 : region.discoveries()),
+                this.regionDiscoverable),
             Set.copyOf(selection.chunks()),
             color -> {
               this.color = color;
@@ -1793,7 +1792,9 @@ public final class MapScreen extends Screen {
             new RegionScreen.Listener() {
               @Override
               public void saved(
-                  final int id, final RegionScreen.@NotNull Draft draft, final boolean rendering) {
+                  final @NotNull String id,
+                  final RegionScreen.@NotNull Draft draft,
+                  final boolean rendering) {
                 if (selection != MapScreen.this.selection) {
                   return;
                 }
@@ -1824,7 +1825,7 @@ public final class MapScreen extends Screen {
   }
 
   private void deleteRegion() {
-    final @Nullable Integer id = this.regionId;
+    final @Nullable String id = this.regionId;
     if (id == null) {
       return;
     }
@@ -2045,7 +2046,7 @@ public final class MapScreen extends Screen {
       final @NotNull List<Drawing.Area> areas = new ArrayList<>();
       for (final Regions.@NotNull Region other :
           regions.regions() == null ? List.<Regions.Region>of() : regions.regions()) {
-        if (other.chunks() == null || Integer.valueOf(other.id()).equals(this.regionId)) {
+        if (other.chunks() == null || other.id().equals(this.regionId)) {
           continue;
         }
         final @NotNull Set<Long> chunks = new HashSet<>();

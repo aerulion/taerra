@@ -110,7 +110,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
   }
 
   private boolean visible(final @NotNull Entry entry, final @NotNull Viewer viewer) {
-    return entry.region() == 0 || this.visibility.revealed(viewer.uuid(), false, entry.region());
+    return entry.region() == null || this.visibility.revealed(viewer.uuid(), false, entry.region());
   }
 
   private @NotNull Map<String, Object> anonymize(
@@ -168,7 +168,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
           final @NotNull Entry entry =
               new Entry(
                   player,
-                  region == null ? 0 : region.id(),
+                  region == null ? null : region.id(),
                   included && player.isAllowingServerListings(),
                   listed,
                   withHidden);
@@ -192,7 +192,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
 
   private record Entry(
       @NotNull Player player,
-      int region,
+      @Nullable UUID region,
       boolean named,
       @Nullable String listed,
       @NotNull String withHidden) {
@@ -200,7 +200,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
     @Override
     public boolean equals(final @Nullable Object other) {
       return other instanceof Entry entry
-          && entry.region == this.region
+          && Objects.equals(entry.region, this.region)
           && entry.withHidden.equals(this.withHidden)
           && Objects.equals(entry.listed, this.listed);
     }

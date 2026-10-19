@@ -45,7 +45,8 @@ class OverlayRasterTest {
         false,
         false,
         false,
-        false);
+        false,
+        null);
   }
 
   @Test

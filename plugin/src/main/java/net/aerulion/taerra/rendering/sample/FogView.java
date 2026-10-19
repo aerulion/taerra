@@ -1,23 +1,25 @@
 package net.aerulion.taerra.rendering.sample;
 
 import java.util.Comparator;
+import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record FogView(@NotNull Kind kind, int region) {
+public record FogView(@NotNull Kind kind, @Nullable UUID region) {
 
   public static final @NotNull Comparator<FogView> ORDER =
-      Comparator.comparingInt(FogView::region).thenComparing(FogView::kind);
+      Comparator.comparing(FogView::region, Comparator.nullsFirst(Comparator.naturalOrder()))
+          .thenComparing(FogView::kind);
 
-  public static final @NotNull FogView BASE = new FogView(Kind.BASE, 0);
+  public static final @NotNull FogView BASE = new FogView(Kind.BASE, null);
 
-  public static final @NotNull FogView CLEAR = new FogView(Kind.CLEAR, 0);
+  public static final @NotNull FogView CLEAR = new FogView(Kind.CLEAR, null);
 
-  public static @NotNull FogView body(final int region) {
+  public static @NotNull FogView body(final @NotNull UUID region) {
     return new FogView(Kind.BODY, region);
   }
 
-  public static @NotNull FogView spill(final int region) {
+  public static @NotNull FogView spill(final @NotNull UUID region) {
     return new FogView(Kind.SPILL, region);
   }
 
@@ -38,9 +40,9 @@ public record FogView(@NotNull Kind kind, int region) {
       return null;
     }
     try {
-      final int region = Integer.parseInt(id.substring(1));
-      return region > 0 ? new FogView(kind, region) : null;
-    } catch (final NumberFormatException e) {
+      final @NotNull UUID region = UUID.fromString(id.substring(1));
+      return region.toString().equals(id.substring(1)) ? new FogView(kind, region) : null;
+    } catch (final IllegalArgumentException e) {
       return null;
     }
   }

@@ -1,129 +1,53 @@
 package net.aerulion.taerra.region;
 
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.ints.IntSets;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-import net.aerulion.taerra.util.AtomicFiles;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.Plugin;
+import net.aerulion.taerra.player.PlayerFiles;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class RegionDiscoveries {
 
-  private final @NotNull Plugin plugin;
-  private final @NotNull File file;
-  private final @NotNull Map<UUID, IntSet> discovered = new ConcurrentHashMap<>();
-  private final @NotNull AtomicBoolean saving = new AtomicBoolean();
+  private final @NotNull PlayerFiles files;
+  private final @NotNull MapRegions regions;
 
-  public RegionDiscoveries(final @NotNull Plugin plugin) {
+  public RegionDiscoveries(final @NotNull PlayerFiles files, final @NotNull MapRegions regions) {
     super();
-    this.plugin = plugin;
-    this.file = new File(plugin.getDataFolder(), "discoveries.yml");
-    final @Nullable ConfigurationSection players =
-        YamlConfiguration.loadConfiguration(this.file).getConfigurationSection("players");
-    if (players == null) {
-      return;
+    this.files = files;
+    this.regions = regions;
+  }
+
+  public long discoveredAt(final @NotNull UUID player, final @NotNull MapRegion region) {
+    final @Nullable Long at = this.files.get(player).discoveries().get(region.id());
+    return at != null && at > region.reset() ? at : 0L;
+  }
+
+  public boolean discover(final @NotNull UUID player, final @NotNull MapRegion region) {
+    if (discoveredAt(player, region) > 0L) {
+      return false;
     }
-    for (final @NotNull String key : players.getKeys(false)) {
-      try {
-        final @NotNull IntSet regions = new IntOpenHashSet();
-        for (final int region : players.getIntegerList(key)) {
-          regions.add(region);
-        }
-        this.discovered.put(UUID.fromString(key), IntSets.unmodifiable(regions));
-      } catch (final IllegalArgumentException e) {
-        plugin.getLogger().warning("Skipping malformed discoveries for " + key);
-      }
-    }
-  }
-
-  public @NotNull IntSet of(final @NotNull UUID player) {
-    return this.discovered.getOrDefault(player, IntSets.EMPTY_SET);
-  }
-
-  public @NotNull Int2IntMap counts() {
-    final @NotNull Int2IntMap counts = new Int2IntOpenHashMap();
-    for (final @NotNull IntSet regions : this.discovered.values()) {
-      regions.forEach(region -> counts.mergeInt(region, 1, Integer::sum));
-    }
-    return counts;
-  }
-
-  public boolean has(final @NotNull UUID player, final int region) {
-    return of(player).contains(region);
-  }
-
-  public boolean discover(final @NotNull UUID player, final int region) {
     final boolean[] added = {false};
-    this.discovered.compute(
+    this.files.update(
         player,
-        (_, known) -> {
-          if (known != null && known.contains(region)) {
-            return known;
+        data -> {
+          final @Nullable Long at = data.discoveries().get(region.id());
+          if (at != null && at > region.reset()) {
+            return data;
           }
-          final @NotNull IntSet next =
-              known == null ? new IntOpenHashSet() : new IntOpenHashSet(known);
-          next.add(region);
+          final @NotNull Map<UUID, Long> kept = new HashMap<>();
+          data.discoveries()
+              .forEach(
+                  (id, when) -> {
+                    final @Nullable MapRegion known = this.regions.get(id);
+                    if (known != null && when > known.reset()) {
+                      kept.put(id, when);
+                    }
+                  });
+          kept.put(region.id(), Math.max(System.currentTimeMillis(), region.reset() + 1L));
           added[0] = true;
-          return IntSets.unmodifiable(next);
+          return data.withDiscoveries(kept);
         });
-    if (added[0]) {
-      saveLater();
-    }
     return added[0];
-  }
-
-  public void forget(final int region) {
-    final boolean[] changed = {false};
-    for (final @NotNull UUID player : this.discovered.keySet()) {
-      this.discovered.computeIfPresent(
-          player,
-          (_, known) -> {
-            if (!known.contains(region)) {
-              return known;
-            }
-            final @NotNull IntSet next = new IntOpenHashSet(known);
-            next.remove(region);
-            changed[0] = true;
-            return IntSets.unmodifiable(next);
-          });
-    }
-    if (changed[0]) {
-      saveLater();
-    }
-  }
-
-  private void saveLater() {
-    if (this.saving.compareAndSet(false, true)) {
-      this.plugin.getServer().getScheduler().runTaskAsynchronously(this.plugin, this::save);
-    }
-  }
-
-  public void save() {
-    this.saving.set(false);
-    final @NotNull YamlConfiguration yaml = new YamlConfiguration();
-    this.discovered.forEach(
-        (player, regions) -> {
-          if (!regions.isEmpty()) {
-            yaml.set("players." + player, regions.intStream().sorted().boxed().toList());
-          }
-        });
-    try {
-      AtomicFiles.write(this.file, yaml.saveToString().getBytes(StandardCharsets.UTF_8));
-    } catch (final IOException e) {
-      this.plugin.getLogger().log(Level.WARNING, "Failed to save discoveries.yml", e);
-    }
   }
 }

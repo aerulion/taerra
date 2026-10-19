@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import net.aerulion.taerra.model.WorldKeys;
@@ -22,27 +23,24 @@ public final class RegionEditor {
 
   private final @NotNull Plugin plugin;
   private final @NotNull MapRegions regions;
-  private final @NotNull RegionDiscoveries discoveries;
   private final @NotNull RenderService renders;
   private final @NotNull Runnable changed;
 
   public RegionEditor(
       final @NotNull Plugin plugin,
       final @NotNull MapRegions regions,
-      final @NotNull RegionDiscoveries discoveries,
       final @NotNull RenderService renders,
       final @NotNull Runnable changed) {
     super();
     this.plugin = plugin;
     this.regions = regions;
-    this.discoveries = discoveries;
     this.renders = renders;
     this.changed = changed;
   }
 
   public @NotNull CompletableFuture<Result> save(
       final @NotNull String worldName,
-      final @Nullable Integer id,
+      final @Nullable UUID id,
       final @NotNull String name,
       final @Nullable Integer color,
       final @NotNull RegionFog fog,
@@ -74,7 +72,7 @@ public final class RegionEditor {
               return Problem.NAME_TAKEN;
             }
             for (final @NotNull MapRegion other : this.regions.in(worldName)) {
-              if (other.id() != (id == null ? 0 : id)
+              if (!other.id().equals(id)
                   && painted.longStream().anyMatch(chunk -> other.chunks().contains(chunk))) {
                 return Problem.OVERLAP;
               }
@@ -82,12 +80,13 @@ public final class RegionEditor {
             final @NotNull MapRegion region =
                 previous == null
                     ? MapRegion.of(
-                        this.regions.reserveId(),
+                        UUID.randomUUID(),
                         worldName,
                         trimmed,
                         color == null ? this.regions.freshColor(worldName) : color,
                         fog,
                         discoverable,
+                        0L,
                         painted)
                     : previous.with(
                         trimmed,
@@ -100,7 +99,7 @@ public final class RegionEditor {
         });
   }
 
-  public @NotNull CompletableFuture<Result> delete(final int id) {
+  public @NotNull CompletableFuture<Result> delete(final @NotNull UUID id) {
     return onMainThread(
         () -> {
           synchronized (this) {
@@ -113,19 +112,17 @@ public final class RegionEditor {
                 world,
                 region,
                 region.fog().fogged() ? region.chunks() : Set.of(),
-                () -> {
-                  this.regions.remove(id);
-                  this.discoveries.forget(id);
-                });
+                () -> this.regions.remove(id));
           }
         });
   }
 
-  public boolean resetDiscoveries(final int id) {
-    if (this.regions.get(id) == null) {
+  public synchronized boolean resetDiscoveries(final @NotNull UUID id) {
+    final @Nullable MapRegion region = this.regions.get(id);
+    if (region == null) {
       return false;
     }
-    this.discoveries.forget(id);
+    this.regions.put(region.withReset(System.currentTimeMillis()));
     this.changed.run();
     return true;
   }
@@ -153,13 +150,11 @@ public final class RegionEditor {
 
   static boolean nameTaken(
       final @NotNull Collection<MapRegion> regions,
-      final @Nullable Integer id,
+      final @Nullable UUID id,
       final @NotNull String name) {
     return !name.isEmpty()
         && regions.stream()
-            .anyMatch(
-                other ->
-                    other.id() != (id == null ? 0 : id) && other.name().equalsIgnoreCase(name));
+            .anyMatch(other -> !other.id().equals(id) && other.name().equalsIgnoreCase(name));
   }
 
   static @NotNull Set<Long> rendered(

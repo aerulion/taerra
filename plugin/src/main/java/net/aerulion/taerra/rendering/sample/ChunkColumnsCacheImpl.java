@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import net.aerulion.taerra.limit.WorldLimits;
@@ -106,14 +107,14 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
     return switch (view.kind()) {
       case BASE -> base;
       case CLEAR -> PLAIN;
-      case BODY -> owner != null && owner.id() == view.region() ? PLAIN : base;
+      case BODY -> owner != null && owner.id().equals(view.region()) ? PLAIN : base;
       case SPILL -> {
-        if (owner != null && owner.id() == view.region()) {
+        if (owner != null && owner.id().equals(view.region())) {
           yield SKY;
         }
-        for (final int near : this.regions.foggedNear(worldName, chunkX, chunkZ)) {
-          if (near == view.region()) {
-            yield view.region();
+        for (final @NotNull UUID near : this.regions.foggedNear(worldName, chunkX, chunkZ)) {
+          if (near.equals(view.region())) {
+            yield this.regions.index(near);
           }
         }
         yield owner == null ? PLAIN : BARE;
@@ -230,7 +231,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
                 chunkX,
                 chunkZ,
                 this.regions.foggedAt(worldName, chunkX, chunkZ) == null ? PLAIN : FOGGED);
-        final @Nullable MapRegion spilling = this.regions.get(variant);
+        final @Nullable MapRegion spilling = this.regions.indexed(variant);
         yield geometry == null
             ? null
             : spilling == null

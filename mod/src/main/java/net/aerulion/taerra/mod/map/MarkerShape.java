@@ -1,13 +1,19 @@
 package net.aerulion.taerra.mod.map;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Stream;
 import net.aerulion.taerra.mod.util.Colors;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.Marker;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -169,6 +175,13 @@ final class MarkerShape {
           lines.add(Component.literal(line).withStyle(ChatFormatting.GRAY));
         }
       }
+      if (marker.discovered() != null) {
+        lines.add(
+            Component.literal("\u2726 ")
+                .append(
+                    Component.translatable("taerra.region.discovered", date(marker.discovered())))
+                .withStyle(ChatFormatting.GOLD));
+      }
       if (marker.description() != null) {
         for (final @NotNull String line : marker.description().split("\n")) {
           lines.add(Component.literal(line));
@@ -191,6 +204,13 @@ final class MarkerShape {
       this.tooltip = lines;
     }
     return this.tooltip;
+  }
+
+  private static @NotNull String date(final long epochMillis) {
+    return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
+        .withLocale(
+            Locale.forLanguageTag(Minecraft.getInstance().options.languageCode.replace('_', '-')))
+        .format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()));
   }
 
   void stand(

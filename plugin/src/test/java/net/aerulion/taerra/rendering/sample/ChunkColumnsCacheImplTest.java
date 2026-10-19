@@ -7,6 +7,7 @@ import java.io.File;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Logger;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.ChunkCoordinate;
@@ -41,11 +42,10 @@ class ChunkColumnsCacheImplTest {
                       default -> throw new UnsupportedOperationException(method.getName());
                     });
     final @NotNull MapRegions regions = new MapRegions(plugin);
-    regions.put(region(regions.reserveId(), 0, 0));
-    final int far = regions.reserveId();
-    regions.put(region(far, 100, 0));
-    final int near = regions.reserveId();
-    regions.put(region(near, 3, 0));
+    final @NotNull UUID own = UUID.randomUUID();
+    regions.put(region(own, 0, 0));
+    regions.put(region(UUID.randomUUID(), 100, 0));
+    regions.put(region(UUID.randomUUID(), 3, 0));
     final @NotNull ChunkColumnsCacheImpl cache =
         new ChunkColumnsCacheImpl(
             plugin,
@@ -55,23 +55,26 @@ class ChunkColumnsCacheImplTest {
             },
             new WorldLimits(plugin),
             regions);
-    final @NotNull FogView spill = FogView.spill(1);
+    final @NotNull FogView spill = FogView.spill(own);
 
     assertEquals(ChunkColumnsCacheImpl.SKY, cache.variant(WORLD, 0, 0, spill));
     assertEquals(ChunkColumnsCacheImpl.BARE, cache.variant(WORLD, 100, 0, spill));
     assertEquals(ChunkColumnsCacheImpl.PLAIN, cache.variant(WORLD, 50, 0, spill));
-    assertEquals(1, cache.variant(WORLD, 2, 0, spill));
-    assertEquals(1, cache.variant(WORLD, 3, 0, spill));
+    assertEquals(regions.index(own), cache.variant(WORLD, 2, 0, spill));
+    assertEquals(regions.index(own), cache.variant(WORLD, 3, 0, spill));
     assertEquals(ChunkColumnsCacheImpl.FOGGED, cache.variant(WORLD, 100, 0, FogView.BASE));
   }
 
-  private static @NotNull MapRegion region(final int id, final int chunkX, final int chunkZ) {
+  private static @NotNull MapRegion region(
+      final @NotNull UUID id, final int chunkX, final int chunkZ) {
     return MapRegion.of(
         id,
         WORLD,
         "",
+        0,
         RegionFog.VEIL,
         true,
+        0L,
         new LongOpenHashSet(Set.of(ChunkCoordinate.key(chunkX, chunkZ))));
   }
 }

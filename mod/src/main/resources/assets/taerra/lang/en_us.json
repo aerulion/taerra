@@ -118,6 +118,7 @@
   "taerra.options.waypoints": "Waypoints in World",
   "taerra.options.waypoints.tooltip": "Shows waypoints as labels where they are in the world.",
   "taerra.options.zoom": "Minimap Zoom",
+  "taerra.region.discovered": "Discovered on %s",
   "taerra.discovered": "Region Discovered!",
   "taerra.outdated": "TAERRA Map Unavailable",
   "taerra.outdated.mod": "This server needs a newer TAERRA mod. Update the mod.",
@@ -481,7 +482,6 @@
   "taerra.regions.new": "New Region",
   "taerra.regions.unnamed": "Unnamed region",
   "taerra.regions.size": "%s chunks",
-  "taerra.regions.found": "found by %s",
   "taerra.regions.none": "No regions in this world yet",
   "taerra.region.problem.name_taken": "Another region already has that name"
 }

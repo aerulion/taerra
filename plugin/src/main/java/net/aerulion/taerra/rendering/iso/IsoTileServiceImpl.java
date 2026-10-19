@@ -1,8 +1,5 @@
 package net.aerulion.taerra.rendering.iso;
 
-import it.unimi.dsi.fastutil.ints.IntArraySet;
-import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.ints.IntSets;
 import it.unimi.dsi.fastutil.longs.LongCollection;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -11,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.LongPredicate;
 import net.aerulion.taerra.model.ChunkCoordinate;
@@ -183,11 +181,11 @@ public final class IsoTileServiceImpl implements IsoTileService {
       for (final @NotNull TileCoordinate coordinate : tileCoordinates) {
         final @NotNull Influence influence = fogged ? influence(world, coordinate) : Influence.NONE;
         final @NotNull List<FogView> layers = new ArrayList<>();
-        for (final int region : influence.spills()) {
+        for (final @NotNull UUID region : influence.spills()) {
           layers.add(FogView.spill(region));
         }
         if (influence.veiled() && influence.bodies().size() > 1) {
-          for (final int region : influence.bodies()) {
+          for (final @NotNull UUID region : influence.bodies()) {
             layers.add(FogView.body(region));
           }
         }
@@ -229,7 +227,7 @@ public final class IsoTileServiceImpl implements IsoTileService {
                 addBody(
                     rendered,
                     coordinate,
-                    FogView.body(influence.bodies().iterator().nextInt()),
+                    FogView.body(influence.bodies().iterator().next()),
                     result.unveiled(),
                     result.pick(),
                     result.image());
@@ -243,14 +241,14 @@ public final class IsoTileServiceImpl implements IsoTileService {
           if (addBody(
               rendered,
               coordinate,
-              FogView.body(influence.bodies().iterator().nextInt()),
+              FogView.body(influence.bodies().iterator().next()),
               clear.image(),
               clear.pick(),
               result.image())) {
             rendered.add(new RenderedTile(coordinate, FogView.CLEAR, clear.image(), null));
           }
         } else {
-          for (final int region : influence.bodies()) {
+          for (final @NotNull UUID region : influence.bodies()) {
             final @NotNull FogView body = FogView.body(region);
             final @NotNull RenderedImage layer =
                 render(world, coordinate, source(sources, world, provider, body), List.of());
@@ -312,16 +310,16 @@ public final class IsoTileServiceImpl implements IsoTileService {
     final @NotNull String worldName = WorldKeys.id(world);
     final @NotNull ScreenBounds tileBounds =
         IsoTileGeometry.tileBounds(coordinate.x(), coordinate.z(), 0);
-    final @NotNull IntSet bodies = new IntArraySet();
-    final @NotNull IntSet spills = new IntArraySet();
-    final @NotNull IntSet close = new IntArraySet();
+    final @NotNull Set<UUID> bodies = new LinkedHashSet<>();
+    final @NotNull Set<UUID> spills = new LinkedHashSet<>();
+    final @NotNull Set<UUID> close = new LinkedHashSet<>();
     IsoTileGeometry.forEachCandidateChunk(
         tileBounds,
         world.getMinHeight(),
         world.getMaxHeight(),
         coordinate.rotation(),
         (chunkX, chunkZ) -> {
-          final int @NotNull [] near = this.regions.foggedNear(worldName, chunkX, chunkZ);
+          final @NotNull UUID @NotNull [] near = this.regions.foggedNear(worldName, chunkX, chunkZ);
           if (near.length == 0) {
             return;
           }
@@ -342,9 +340,7 @@ public final class IsoTileServiceImpl implements IsoTileService {
             if (owner != null) {
               bodies.add(owner.id());
             }
-            for (final int region : this.regions.foggedClose(worldName, chunkX, chunkZ)) {
-              close.add(region);
-            }
+            close.addAll(List.of(this.regions.foggedClose(worldName, chunkX, chunkZ)));
           }
           if (IsoTileGeometry.chunkScreenBounds(
                   chunkX,
@@ -353,13 +349,11 @@ public final class IsoTileServiceImpl implements IsoTileService {
                   Math.max(maxTopY, Fog.SKY_Y + Fog.SKY_THICKNESS),
                   coordinate.rotation())
               .intersects(tileBounds)) {
-            for (final int region : near) {
-              spills.add(region);
-            }
+            spills.addAll(List.of(near));
           }
         });
     boolean veiled = true;
-    for (final int region : close) {
+    for (final @NotNull UUID region : close) {
       final @Nullable MapRegion found = this.regions.get(region);
       veiled &= found != null && found.fog() == RegionFog.VEIL;
     }
@@ -367,10 +361,9 @@ public final class IsoTileServiceImpl implements IsoTileService {
   }
 
   private record Influence(
-      @NotNull IntSet bodies, @NotNull IntSet spills, boolean alone, boolean veiled) {
+      @NotNull Set<UUID> bodies, @NotNull Set<UUID> spills, boolean alone, boolean veiled) {
 
-    private static final @NotNull Influence NONE =
-        new Influence(IntSets.EMPTY_SET, IntSets.EMPTY_SET, true, true);
+    private static final @NotNull Influence NONE = new Influence(Set.of(), Set.of(), true, true);
   }
 
   @Override

@@ -412,7 +412,7 @@ class MapManager {
 
     wantedLayers(header) {
         return (header ?? '').split(',').filter(id => {
-            const region = Number(id.slice(1));
+            const region = id.slice(1);
             return id[0] === 'b' ? this.revealed.has(region) : id[0] === 's' && !this.revealed.has(region);
         }).sort((a, b) => a[0] === b[0] ? 0 : a[0] === 'b' ? -1 : 1);
     }

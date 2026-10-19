@@ -14,7 +14,7 @@ import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Logger;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import org.bukkit.plugin.Plugin;
@@ -70,35 +70,23 @@ class MapRegionsTest {
   }
 
   @Test
-  @DisplayName("regions survive a restart with their ids, and ids are never handed out twice")
+  @DisplayName("regions survive a restart with their ids and the time of their last reset")
   void roundTrips() {
     final @NotNull MapRegions regions = new MapRegions(plugin());
-    final int first = regions.reserveId();
-    regions.put(
-        MapRegion.of(
-            first,
-            WORLD,
-            "Town",
-            RegionFog.HIDE,
-            true,
-            new LongOpenHashSet(Set.of(ChunkCoordinate.key(2, 3)))));
-    final int second = regions.reserveId();
-    regions.put(
-        MapRegion.of(
-            second,
-            WORLD,
-            "Gone",
-            RegionFog.VEIL,
-            false,
-            new LongOpenHashSet(Set.of(ChunkCoordinate.key(3, 3)))));
-    regions.remove(second);
+    final @NotNull UUID town = UUID.randomUUID();
+    final @NotNull UUID gone = UUID.randomUUID();
+    regions.put(region(town, "Town", RegionFog.HIDE, ChunkCoordinate.key(2, 3)).withReset(1234L));
+    regions.put(region(gone, "Gone", RegionFog.VEIL, ChunkCoordinate.key(3, 3)));
+    regions.remove(gone);
 
     final @NotNull MapRegions reloaded = new MapRegions(plugin());
 
+    assertEquals(town, reloaded.at(WORLD, 2, 3).id());
     assertEquals("Town", reloaded.at(WORLD, 2, 3).name());
+    assertEquals(1234L, reloaded.at(WORLD, 2, 3).reset());
     assertTrue(reloaded.at(WORLD, 2, 3).discoverable());
     assertNull(reloaded.at(WORLD, 3, 3));
-    assertTrue(reloaded.reserveId() > second);
+    assertNull(reloaded.get(gone));
     assertEquals(List.of(), reloaded.in("minecraft:the_nether"));
   }
 
@@ -111,24 +99,26 @@ class MapRegionsTest {
       chunks.add(ChunkCoordinate.key(step, 0));
       chunks.add(ChunkCoordinate.key(0, step));
     }
-    final int id = regions.reserveId();
-    regions.put(MapRegion.of(id, WORLD, "", RegionFog.VEIL, true, chunks));
-    regions.put(
-        MapRegion.of(
-            regions.reserveId(),
-            WORLD,
-            "",
-            RegionFog.NONE,
-            true,
-            new LongOpenHashSet(Set.of(ChunkCoordinate.key(100, 100)))));
+    final @NotNull UUID id = UUID.randomUUID();
+    regions.put(MapRegion.of(id, WORLD, "", 0, RegionFog.VEIL, true, 0L, chunks));
+    regions.put(region(UUID.randomUUID(), "", RegionFog.NONE, ChunkCoordinate.key(100, 100)));
 
-    assertArrayEquals(new int[] {id}, regions.foggedNear(WORLD, 20, 20 - 12));
-    assertArrayEquals(new int[] {id}, regions.foggedNear(WORLD, 47, -8));
-    assertArrayEquals(new int[0], regions.foggedNear(WORLD, 20, 20));
-    assertArrayEquals(new int[0], regions.foggedNear(WORLD, 48, 0));
-    assertArrayEquals(new int[0], regions.foggedClose(WORLD, 20, 20 - 12));
-    assertArrayEquals(new int[] {id}, regions.foggedClose(WORLD, 5, 5));
+    assertArrayEquals(new UUID[] {id}, regions.foggedNear(WORLD, 20, 20 - 12));
+    assertArrayEquals(new UUID[] {id}, regions.foggedNear(WORLD, 47, -8));
+    assertArrayEquals(new UUID[0], regions.foggedNear(WORLD, 20, 20));
+    assertArrayEquals(new UUID[0], regions.foggedNear(WORLD, 48, 0));
+    assertArrayEquals(new UUID[0], regions.foggedClose(WORLD, 20, 20 - 12));
+    assertArrayEquals(new UUID[] {id}, regions.foggedClose(WORLD, 5, 5));
     assertTrue(regions.anyFogged(WORLD));
     assertFalse(regions.anyFogged("minecraft:the_nether"));
+    assertEquals(id, regions.indexed(regions.index(id)).id());
+  }
+
+  static @NotNull MapRegion region(
+      final @NotNull UUID id,
+      final @NotNull String name,
+      final @NotNull RegionFog fog,
+      final long... chunks) {
+    return MapRegion.of(id, WORLD, name, 0, fog, true, 0L, new LongOpenHashSet(chunks));
   }
 }

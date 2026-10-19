@@ -37,8 +37,8 @@ public final class RegionListScreen extends Screen {
   private final @NotNull WebMap map;
   private final @NotNull String world;
   private @NotNull String query = "";
-  private @Nullable Integer armed;
-  private @Nullable Integer forgetting;
+  private @Nullable String armed;
+  private @Nullable String forgetting;
   private @Nullable RegionList list;
 
   public RegionListScreen(
@@ -140,7 +140,7 @@ public final class RegionListScreen extends Screen {
                 .filter(region -> query.isEmpty() || fold(name(region).getString()).contains(query))
                 .sorted(
                     Comparator.comparing((Regions.Region region) -> fold(name(region).getString()))
-                        .thenComparingInt(Regions.Region::id))
+                        .thenComparing(Regions.Region::id))
                 .toList());
   }
 
@@ -158,7 +158,7 @@ public final class RegionListScreen extends Screen {
   }
 
   private void delete(final Regions.@NotNull Region region) {
-    if (!Integer.valueOf(region.id()).equals(this.armed)) {
+    if (!region.id().equals(this.armed)) {
       this.armed = region.id();
       refresh();
       return;
@@ -168,7 +168,7 @@ public final class RegionListScreen extends Screen {
   }
 
   private void forget(final Regions.@NotNull Region region) {
-    if (!Integer.valueOf(region.id()).equals(this.forgetting)) {
+    if (!region.id().equals(this.forgetting)) {
       this.forgetting = region.id();
       refresh();
       return;
@@ -204,26 +204,21 @@ public final class RegionListScreen extends Screen {
         this.meta =
             RegionScreen.meta(
                 region.fog() == null ? "hide" : region.fog(),
-                region.size() == null ? 0 : region.size(),
-                !Boolean.FALSE.equals(region.discoverable()),
-                region.discoveries() == null ? 0 : region.discoveries());
+                region.size() == null ? 0 : region.size());
         this.color = Colors.argb(region.color() == null ? "#ffffff" : region.color());
         button(WaypointListScreen.ON_MAP, "taerra.waypoints.show_on_map", () -> showOnMap(region));
         button(WaypointListScreen.EDIT, "taerra.waypoint.edit_short", () -> edit(region));
-        if (!"none".equals(region.fog())
-            && !Boolean.FALSE.equals(region.discoverable())
-            && region.discoveries() != null
-            && region.discoveries() > 0) {
+        if (!"none".equals(region.fog()) && !Boolean.FALSE.equals(region.discoverable())) {
           button(
               FORGET,
-              Integer.valueOf(region.id()).equals(RegionListScreen.this.forgetting)
+              region.id().equals(RegionListScreen.this.forgetting)
                   ? "taerra.region.reset_confirm"
                   : "taerra.region.reset",
               () -> forget(region));
         }
         button(
             WaypointListScreen.DELETE,
-            Integer.valueOf(region.id()).equals(RegionListScreen.this.armed)
+            region.id().equals(RegionListScreen.this.armed)
                 ? "taerra.waypoint.confirm_delete"
                 : "taerra.waypoint.delete",
             () -> delete(region));

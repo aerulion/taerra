@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
@@ -14,8 +15,10 @@ import org.junit.jupiter.api.Test;
 
 class RegionEditorTest {
 
+  private static final UUID TOWN = UUID.randomUUID();
+
   private static @NotNull MapRegion region(final @NotNull RegionFog fog, final long... chunks) {
-    return MapRegion.of(1, "w", "Town", fog, true, new LongOpenHashSet(chunks));
+    return MapRegion.of(TOWN, "w", "Town", 0, fog, true, 0L, new LongOpenHashSet(chunks));
   }
 
   @Test
@@ -51,8 +54,8 @@ class RegionEditorTest {
     final @NotNull List<MapRegion> regions = List.of(region(RegionFog.HIDE, 0L));
 
     assertTrue(RegionEditor.nameTaken(regions, null, "town"));
-    assertTrue(RegionEditor.nameTaken(regions, 2, "TOWN"));
-    assertFalse(RegionEditor.nameTaken(regions, 1, "Town"));
+    assertTrue(RegionEditor.nameTaken(regions, UUID.randomUUID(), "TOWN"));
+    assertFalse(RegionEditor.nameTaken(regions, TOWN, "Town"));
     assertFalse(RegionEditor.nameTaken(regions, null, "Harbour"));
     assertFalse(
         RegionEditor.nameTaken(

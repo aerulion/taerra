@@ -2,8 +2,6 @@ package net.aerulion.taerra.web.http.route;
 
 import io.javalin.config.RoutesConfig;
 import io.javalin.http.Context;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntMaps;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -89,26 +87,23 @@ public final class RegionRoutes implements Routes {
       return;
     }
     final boolean editing = viewer.canEditRegions();
-    final @NotNull Int2IntMap discoveries =
-        editing ? this.visibility.discoveries().counts() : Int2IntMaps.EMPTY_MAP;
-    final @NotNull List<Integer> revealed = new ArrayList<>();
+    final @NotNull List<String> revealed = new ArrayList<>();
     final @NotNull List<Map<String, Object>> regions = new ArrayList<>();
     for (final @NotNull MapRegion region : this.visibility.regions().in(worldName)) {
       final boolean shown = this.visibility.revealed(viewer.uuid(), viewer.canSeeHidden(), region);
       if (shown && region.fog().fogged()) {
-        revealed.add(region.id());
+        revealed.add(region.id().toString());
       }
       if (!editing && (!shown || region.name().isEmpty())) {
         continue;
       }
       final @NotNull Map<String, Object> entry = new LinkedHashMap<>();
-      entry.put("id", region.id());
+      entry.put("id", region.id().toString());
       entry.put("name", region.name());
       entry.put("label", label(region));
       entry.put("color", HexColors.format(region.color()));
       if (editing) {
         entry.put("size", region.chunks().size());
-        entry.put("discoveries", discoveries.get(region.id()));
         entry.put("fog", region.fog().id());
         entry.put("discoverable", region.discoverable());
         entry.put(
@@ -169,13 +164,18 @@ public final class RegionRoutes implements Routes {
       ctx.status(400).result("Invalid region");
       return;
     }
+    final @Nullable UUID id = request.id() == null ? null : uuid(request.id());
+    if (request.id() != null && id == null) {
+      ctx.status(400).result("Invalid region");
+      return;
+    }
     final @NotNull String name = request.name() == null ? "" : request.name();
     respond(
         ctx,
         viewer,
         this.editor.save(
             request.world(),
-            request.id(),
+            id,
             name,
             HexColors.parseRgb(request.color()).stream().boxed().findFirst().orElse(null),
             fog,
@@ -189,28 +189,35 @@ public final class RegionRoutes implements Routes {
     if (!mayEdit(ctx)) {
       return;
     }
-    final @Nullable Integer id = id(ctx);
-    if (id == null) {
-      return;
+    final @Nullable UUID id = id(ctx);
+    if (id != null) {
+      respond(ctx, this.requests.viewer(ctx), this.editor.delete(id));
     }
-    respond(ctx, this.requests.viewer(ctx), this.editor.delete(id));
   }
 
   private void handleResetRequest(final @NotNull Context ctx) {
     if (!mayEdit(ctx)) {
       return;
     }
-    final @Nullable Integer id = id(ctx);
+    final @Nullable UUID id = id(ctx);
     if (id != null) {
       ctx.status(this.editor.resetDiscoveries(id) ? 204 : 404);
     }
   }
 
-  private static @Nullable Integer id(final @NotNull Context ctx) {
-    try {
-      return Integer.parseInt(ctx.pathParam("id"));
-    } catch (final NumberFormatException e) {
+  private static @Nullable UUID id(final @NotNull Context ctx) {
+    final @Nullable UUID id = uuid(ctx.pathParam("id"));
+    if (id == null) {
       ctx.status(400).result("Invalid region");
+    }
+    return id;
+  }
+
+  private static @Nullable UUID uuid(final @NotNull String text) {
+    try {
+      final @NotNull UUID id = UUID.fromString(text);
+      return id.toString().equals(text) ? id : null;
+    } catch (final IllegalArgumentException e) {
       return null;
     }
   }
@@ -237,7 +244,8 @@ public final class RegionRoutes implements Routes {
                             RenderFeedback.region(region.name()),
                             start);
                       }
-                      ctx.status(start == null ? 200 : 202).json(Map.of("id", region.id()));
+                      ctx.status(start == null ? 200 : 202)
+                          .json(Map.of("id", region.id().toString()));
                     }
                     case RegionEditor.Problem problem ->
                         ctx.status(
@@ -253,7 +261,7 @@ public final class RegionRoutes implements Routes {
 
   private record SaveRequest(
       @Nullable String world,
-      @Nullable Integer id,
+      @Nullable String id,
       @Nullable String name,
       @Nullable String color,
       @Nullable String fog,

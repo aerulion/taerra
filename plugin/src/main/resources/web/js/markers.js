@@ -1,4 +1,4 @@
-import {numbers, plurals, t} from './i18n.js';
+import {dates, numbers, plurals, t} from './i18n.js';
 import {accountManager} from './account.js';
 import {mapManager, pixelPath} from './map.js';
 
@@ -684,6 +684,10 @@ class MarkerManager {
         content.append(layerLabel,
             element('strong', 'marker-popup__title', marker.label ?? marker.id),
             element('span', 'marker-popup__facts', facts(marker)));
+        if (marker.discovered) {
+            content.append(element('span', 'marker-popup__discovered',
+                t('region.discovered', {date: dates.format(new Date(marker.discovered))})));
+        }
         if (marker.description) {
             content.append(element('p', 'marker-popup__description', marker.description));
         }

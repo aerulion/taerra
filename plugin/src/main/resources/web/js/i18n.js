@@ -30,6 +30,7 @@ export const language = hashLanguage(new URLSearchParams(location.hash.slice(1))
 const [strings, fallback] = await Promise.all([load(language), language === 'en' ? {} : load('en')]);
 
 export const numbers = new Intl.NumberFormat(language);
+export const dates = new Intl.DateTimeFormat(language, {dateStyle: 'long'});
 export const plurals = new Intl.PluralRules(language);
 
 export function t(key, params = {}) {

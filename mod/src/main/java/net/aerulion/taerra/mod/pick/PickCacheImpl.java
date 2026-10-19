@@ -32,7 +32,7 @@ public final class PickCacheImpl implements PickCache {
 
   private final WebClient client;
   private final Supplier<@Nullable MapConfig> config;
-  private final Function<String, Set<Integer>> revealed;
+  private final Function<String, Set<String>> revealed;
   private final Set<String> loading = new HashSet<>();
   private final Map<String, Ground> grounds = new HashMap<>();
 
@@ -47,7 +47,7 @@ public final class PickCacheImpl implements PickCache {
   public PickCacheImpl(
       final WebClient client,
       final Supplier<@Nullable MapConfig> config,
-      final Function<String, Set<Integer>> revealed) {
+      final Function<String, Set<String>> revealed) {
     this.client = client;
     this.config = config;
     this.revealed = revealed;
@@ -82,7 +82,7 @@ public final class PickCacheImpl implements PickCache {
         entry == null || (entry.stale && System.currentTimeMillis() >= entry.retryAt);
     if (wanted && !this.loading.contains(key) && this.loading.size() < MAX_IN_FLIGHT) {
       this.loading.add(key);
-      final @NotNull Set<Integer> revealed = this.revealed.apply(world);
+      final @NotNull Set<String> revealed = this.revealed.apply(world);
       this.client
           .get(path, entry == null ? null : entry.etag)
           .thenCompose(
@@ -141,14 +141,11 @@ public final class PickCacheImpl implements PickCache {
   }
 
   private static @NotNull List<String> bodies(
-      final @Nullable String header, final @NotNull Set<Integer> revealed) {
+      final @Nullable String header, final @NotNull Set<String> revealed) {
     final @NotNull List<String> bodies = new ArrayList<>();
     for (final @NotNull String id : header == null ? new String[0] : header.split(",")) {
-      try {
-        if (id.startsWith("b") && revealed.contains(Integer.parseInt(id.substring(1)))) {
-          bodies.add(id);
-        }
-      } catch (final NumberFormatException ignored) {
+      if (id.startsWith("b") && revealed.contains(id.substring(1))) {
+        bodies.add(id);
       }
     }
     return bodies;

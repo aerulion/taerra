@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.MapView;
@@ -23,6 +24,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class TileStorageImplTest {
+
+  private static final UUID SEVEN = UUID.fromString("00000000-0000-0000-0000-000000000007");
+  private static final UUID TWO = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
   @Test
   @DisplayName("stored tile paths parse back to their coordinates, anything else is ignored")
@@ -65,17 +69,18 @@ class TileStorageImplTest {
 
     storage.saveTile(tile, image);
     assertEquals(List.of(), storage.layers(tile));
-    storage.saveTile(tile, FogView.spill(7), image);
-    storage.saveTile(tile, FogView.body(7), image);
+    storage.saveTile(tile, FogView.spill(SEVEN), image);
+    storage.saveTile(tile, FogView.body(SEVEN), image);
     storage.saveTile(
-        TileCoordinate.topDown("minecraft:overworld", 0, 3, 1), FogView.body(2), image);
+        TileCoordinate.topDown("minecraft:overworld", 0, 3, 1), FogView.body(TWO), image);
 
-    assertEquals(List.of(FogView.body(7), FogView.spill(7)), storage.layers(tile));
+    assertEquals(List.of(FogView.body(SEVEN), FogView.spill(SEVEN)), storage.layers(tile));
     assertEquals(
-        List.of(FogView.body(7), FogView.spill(7)), new TileStorageImpl(plugin, 64).layers(tile));
+        List.of(FogView.body(SEVEN), FogView.spill(SEVEN)),
+        new TileStorageImpl(plugin, 64).layers(tile));
     assertTrue(storage.deleteTile(tile));
     assertEquals(List.of(), storage.layers(tile));
-    assertFalse(storage.tileFile(tile, FogView.body(7)).exists());
+    assertFalse(storage.tileFile(tile, FogView.body(SEVEN)).exists());
     assertEquals(
         List.of(), storage.tilesAt(tile).stream().filter(found -> found.z() == 12).toList());
   }

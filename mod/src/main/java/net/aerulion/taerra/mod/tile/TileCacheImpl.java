@@ -36,7 +36,7 @@ public final class TileCacheImpl implements TileCache {
 
   private final WebClient client;
   private final Settings settings;
-  private final Function<String, Set<Integer>> revealed;
+  private final Function<String, Set<String>> revealed;
   private final LinkedHashMap<TileKey, Tile> cache = new LinkedHashMap<>(256, 0.75f, true);
   private int inFlight;
   private int textures;
@@ -47,26 +47,21 @@ public final class TileCacheImpl implements TileCache {
   public TileCacheImpl(
       final WebClient client,
       final Settings settings,
-      final Function<String, Set<Integer>> revealed) {
+      final Function<String, Set<String>> revealed) {
     this.client = client;
     this.settings = settings;
     this.revealed = revealed;
   }
 
   static @NotNull List<String> wanted(
-      final @Nullable String header, final @NotNull Set<Integer> revealed) {
+      final @Nullable String header, final @NotNull Set<String> revealed) {
     final @NotNull List<String> bodies = new ArrayList<>();
     final @NotNull List<String> spills = new ArrayList<>();
     for (final @NotNull String id : header == null ? new String[0] : header.split(",")) {
       if (id.length() < 2) {
         continue;
       }
-      final int region;
-      try {
-        region = Integer.parseInt(id.substring(1));
-      } catch (final NumberFormatException e) {
-        continue;
-      }
+      final @NotNull String region = id.substring(1);
       if (id.charAt(0) == 'b' && revealed.contains(region)) {
         bodies.add(id);
       } else if (id.charAt(0) == 's' && !revealed.contains(region)) {
@@ -200,7 +195,7 @@ public final class TileCacheImpl implements TileCache {
 
   private void load(final @NotNull TileKey key, final @NotNull Tile tile) {
     final boolean gray = this.settings.grayMap();
-    final @NotNull Set<Integer> revealed = this.revealed.apply(key.world());
+    final @NotNull Set<String> revealed = this.revealed.apply(key.world());
     final byte @Nullable [] cached = tile.png;
     tile.loading = true;
     tile.stale = false;

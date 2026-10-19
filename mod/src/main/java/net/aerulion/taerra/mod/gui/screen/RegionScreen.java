@@ -73,16 +73,15 @@ public final class RegionScreen extends Screen {
 
   public record Draft(
       @NotNull String world,
-      @Nullable Integer id,
+      @Nullable String id,
       @NotNull String name,
       @NotNull String color,
       @NotNull String fog,
-      boolean discoverable,
-      int discoveries) {}
+      boolean discoverable) {}
 
   public interface Listener {
 
-    void saved(int id, @NotNull Draft draft, boolean rendering);
+    void saved(@NotNull String id, @NotNull Draft draft, boolean rendering);
 
     void deleted();
   }
@@ -105,9 +104,7 @@ public final class RegionScreen extends Screen {
         new StringWidget(
             WIDTH,
             9,
-            meta(this.fog, this.chunks.size(), this.discoverable, this.draft.discoveries())
-                .copy()
-                .withStyle(ChatFormatting.GRAY),
+            meta(this.fog, this.chunks.size()).copy().withStyle(ChatFormatting.GRAY),
             this.font));
     final @NotNull EditBox name =
         contents.addChild(
@@ -187,16 +184,10 @@ public final class RegionScreen extends Screen {
     this.layout.arrangeElements();
   }
 
-  public static @NotNull Component meta(
-      final @NotNull String fog, final int size, final boolean discoverable, final int found) {
-    Component meta =
-        Component.translatable("taerra.region.fog." + fog)
-            .append(", ")
-            .append(Component.translatable("taerra.regions.size", size));
-    if (!fog.equals("none") && discoverable) {
-      meta = meta.copy().append(", ").append(Component.translatable("taerra.regions.found", found));
-    }
-    return meta;
+  public static @NotNull Component meta(final @NotNull String fog, final int size) {
+    return Component.translatable("taerra.region.fog." + fog)
+        .append(", ")
+        .append(Component.translatable("taerra.regions.size", size));
   }
 
   public static @NotNull String problem(final int status, final @Nullable String body) {
@@ -227,8 +218,7 @@ public final class RegionScreen extends Screen {
             this.name.strip(),
             this.colors.color(),
             this.fog,
-            !this.fog.equals("none") && this.discoverable,
-            this.draft.discoveries());
+            !this.fog.equals("none") && this.discoverable);
     this.map.saveRegion(
         draft.world(),
         draft.id(),
@@ -239,29 +229,30 @@ public final class RegionScreen extends Screen {
         this.chunks,
         (status, body) -> {
           if (status == 200 || status == 202) {
-            final @Nullable Integer id = id(body);
+            final @Nullable String id = id(body) == null ? draft.id() : id(body);
             this.saved = true;
             onClose();
-            this.listener.saved(
-                id == null ? draft.id() == null ? 0 : draft.id() : id, draft, status == 202);
+            if (id != null) {
+              this.listener.saved(id, draft, status == 202);
+            }
           } else {
             fail(Component.translatable(problem(status, body)));
           }
         });
   }
 
-  private static @Nullable Integer id(final @Nullable String body) {
+  private static @Nullable String id(final @Nullable String body) {
     try {
       return body == null
           ? null
-          : JsonParser.parseString(body).getAsJsonObject().get("id").getAsInt();
+          : JsonParser.parseString(body).getAsJsonObject().get("id").getAsString();
     } catch (final RuntimeException e) {
       return null;
     }
   }
 
   private void delete() {
-    final @Nullable Integer id = this.draft.id();
+    final @Nullable String id = this.draft.id();
     if (id == null) {
       return;
     }

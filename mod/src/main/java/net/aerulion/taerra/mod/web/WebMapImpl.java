@@ -78,7 +78,7 @@ public final class WebMapImpl implements WebMap {
   private final List<WebMapListener> listeners = new ArrayList<>();
   private final Set<String> staleMarkers = new HashSet<>();
   private final Map<String, Regions> regions = new HashMap<>();
-  private final Map<String, Set<Integer>> revealed = new HashMap<>();
+  private final Map<String, Set<String>> revealed = new HashMap<>();
   private final Set<String> staleRegions = new HashSet<>();
   private @Nullable MapConfig config;
   private @NotNull List<World> worlds = List.of();
@@ -437,14 +437,14 @@ public final class WebMapImpl implements WebMap {
   }
 
   @Override
-  public @NotNull Set<Integer> revealed(final @NotNull String world) {
+  public @NotNull Set<String> revealed(final @NotNull String world) {
     return this.revealed.getOrDefault(world, Set.of());
   }
 
   @Override
   public void saveRegion(
       final @NotNull String world,
-      final @Nullable Integer id,
+      final @Nullable String id,
       final @NotNull String name,
       final @NotNull String color,
       final @NotNull String fog,
@@ -468,12 +468,12 @@ public final class WebMapImpl implements WebMap {
 
   @Override
   public void deleteRegion(
-      final int id, final @NotNull BiConsumer<Integer, @Nullable String> then) {
+      final @NotNull String id, final @NotNull BiConsumer<Integer, @Nullable String> then) {
     this.client.request("DELETE", "/api/regions/" + id, null, then);
   }
 
   @Override
-  public void resetRegion(final int id, final @NotNull IntConsumer then) {
+  public void resetRegion(final @NotNull String id, final @NotNull IntConsumer then) {
     this.client.send("POST", "/api/regions/" + id + "/reset", null, then);
   }
 
@@ -484,7 +484,7 @@ public final class WebMapImpl implements WebMap {
         loaded -> {
           final @NotNull Regions regions = loaded == null ? Regions.NONE : loaded;
           this.regions.put(world, regions);
-          final @NotNull Set<Integer> revealed =
+          final @NotNull Set<String> revealed =
               Set.copyOf(regions.revealed() == null ? List.of() : regions.revealed());
           if (!revealed.equals(this.revealed.getOrDefault(world, Set.of()))) {
             this.revealed.put(world, revealed);

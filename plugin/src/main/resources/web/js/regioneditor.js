@@ -13,10 +13,8 @@ const regionName = (region) => region.name || t('regions.unnamed');
 function meta(region) {
     return [
         t(`region.fog.${region.fog ?? 'hide'}`),
-        t('regions.size', {count: numbers.format(region.size ?? region.chunks?.length ?? 0)}),
-        region.fog !== 'none' && region.discoverable
-            ? t('regions.found', {count: numbers.format(region.discoveries ?? 0)}) : null
-    ].filter(Boolean).join(', ');
+        t('regions.size', {count: numbers.format(region.size ?? region.chunks?.length ?? 0)})
+    ].join(', ');
 }
 
 function arm(button, key, confirmKey) {
@@ -179,7 +177,7 @@ class RegionList {
         const filter = fold($('regions-filter').value.trim());
         const regions = regionManager.regions
             .filter(region => !filter || fold(regionName(region)).includes(filter))
-            .sort((a, b) => regionName(a).localeCompare(regionName(b)) || a.id - b.id);
+            .sort((a, b) => regionName(a).localeCompare(regionName(b)) || a.id.localeCompare(b.id));
         $('regions-count').textContent = numbers.format(regionManager.regions.length);
         $('regions-list').replaceChildren(...regions.map(region => this.row(region)));
         $('regions-empty').hidden = regions.length > 0;
@@ -231,7 +229,7 @@ class RegionList {
                 button.title = t('region.problem.failed');
             }
         };
-        if (region.fog !== 'none' && region.discoverable && region.discoveries > 0) {
+        if (region.fog !== 'none' && region.discoverable) {
             action('reset', 'region.reset', confirmed('region.resetConfirm', '/reset', 'POST'));
         }
         action('delete', 'waypoint.delete', confirmed('waypoint.confirmDelete', '', 'DELETE'));

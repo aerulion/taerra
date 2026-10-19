@@ -2,16 +2,18 @@ package net.aerulion.taerra.region;
 
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
+import java.util.UUID;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import org.jetbrains.annotations.NotNull;
 
 public record MapRegion(
-    int id,
+    @NotNull UUID id,
     @NotNull String world,
     @NotNull String name,
     int color,
     @NotNull RegionFog fog,
     boolean discoverable,
+    long reset,
     @NotNull LongSet chunks) {
 
   public static final int @NotNull [] PALETTE = {
@@ -20,26 +22,16 @@ public record MapRegion(
   };
 
   public static @NotNull MapRegion of(
-      final int id,
-      final @NotNull String world,
-      final @NotNull String name,
-      final @NotNull RegionFog fog,
-      final boolean discoverable,
-      final @NotNull LongSet chunks) {
-    return of(
-        id, world, name, PALETTE[Math.floorMod(id - 1, PALETTE.length)], fog, discoverable, chunks);
-  }
-
-  public static @NotNull MapRegion of(
-      final int id,
+      final @NotNull UUID id,
       final @NotNull String world,
       final @NotNull String name,
       final int color,
       final @NotNull RegionFog fog,
       final boolean discoverable,
+      final long reset,
       final @NotNull LongSet chunks) {
     return new MapRegion(
-        id, world, name, color & 0xFFFFFF, fog, discoverable, LongSets.unmodifiable(chunks));
+        id, world, name, color & 0xFFFFFF, fog, discoverable, reset, LongSets.unmodifiable(chunks));
   }
 
   public boolean contains(final int chunkX, final int chunkZ) {
@@ -52,6 +44,18 @@ public record MapRegion(
       final @NotNull RegionFog fog,
       final boolean discoverable,
       final @NotNull LongSet chunks) {
-    return of(this.id, this.world, name, color, fog, discoverable, chunks);
+    return of(this.id, this.world, name, color, fog, discoverable, this.reset, chunks);
+  }
+
+  public @NotNull MapRegion withReset(final long reset) {
+    return new MapRegion(
+        this.id,
+        this.world,
+        this.name,
+        this.color,
+        this.fog,
+        this.discoverable,
+        reset,
+        this.chunks);
   }
 }

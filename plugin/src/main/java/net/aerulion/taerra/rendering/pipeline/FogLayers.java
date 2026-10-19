@@ -1,14 +1,14 @@
 package net.aerulion.taerra.rendering.pipeline;
 
-import it.unimi.dsi.fastutil.ints.IntArraySet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
 import net.aerulion.taerra.model.WorldKeys;
@@ -56,17 +56,13 @@ public final class FogLayers {
       final @NotNull TileCoordinate tile = base.coordinate();
       final int minChunkX = tile.x() * CHUNKS_PER_TILE;
       final int minChunkZ = tile.z() * CHUNKS_PER_TILE;
-      final @NotNull IntSet near = new IntArraySet();
-      final @NotNull IntSet bodies = new IntArraySet();
-      final @NotNull IntSet close = new IntArraySet();
+      final @NotNull Set<UUID> near = new LinkedHashSet<>();
+      final @NotNull Set<UUID> bodies = new LinkedHashSet<>();
+      final @NotNull Set<UUID> close = new LinkedHashSet<>();
       for (int chunkX = minChunkX; chunkX < minChunkX + CHUNKS_PER_TILE; chunkX++) {
         for (int chunkZ = minChunkZ; chunkZ < minChunkZ + CHUNKS_PER_TILE; chunkZ++) {
-          for (final int region : regions.foggedNear(worldName, chunkX, chunkZ)) {
-            near.add(region);
-          }
-          for (final int region : regions.foggedClose(worldName, chunkX, chunkZ)) {
-            close.add(region);
-          }
+          near.addAll(List.of(regions.foggedNear(worldName, chunkX, chunkZ)));
+          close.addAll(List.of(regions.foggedClose(worldName, chunkX, chunkZ)));
           final @Nullable MapRegion owner = regions.foggedAt(worldName, chunkX, chunkZ);
           if (owner != null) {
             bodies.add(owner.id());
@@ -74,7 +70,7 @@ public final class FogLayers {
         }
       }
       if (close.size() <= 1 && !bodies.isEmpty()) {
-        final int region = bodies.iterator().nextInt();
+        final @NotNull UUID region = bodies.iterator().next();
         final @Nullable MapRegion owner = regions.get(region);
         final @Nullable RenderedImage clear =
             owner != null && owner.fog() == RegionFog.VEIL
@@ -92,7 +88,7 @@ public final class FogLayers {
           layers.add(new RenderedTile(tile, FogView.CLEAR, clear.image(), null));
         }
       } else {
-        for (final int region : bodies) {
+        for (final @NotNull UUID region : bodies) {
           final @NotNull FogView body = FogView.body(region);
           final @NotNull RenderedImage rendered =
               render(renderer, sources, world, provider, columns, body, tile, false);
@@ -105,7 +101,7 @@ public final class FogLayers {
           }
         }
       }
-      for (final int region : near) {
+      for (final @NotNull UUID region : near) {
         final @NotNull FogView spill = FogView.spill(region);
         final @NotNull RenderedImage overlay =
             render(renderer, sources, world, provider, columns, spill, tile, true);
@@ -140,7 +136,7 @@ public final class FogLayers {
       final @NotNull TileCoordinate tile,
       final @NotNull String worldName,
       final @NotNull MapRegions regions,
-      final int region) {
+      final @NotNull UUID region) {
     final int size = layer.getWidth();
     final int @NotNull [] pixels = ImageUtils.pixels(layer);
     final int @NotNull [] under = ImageUtils.pixels(base);
@@ -151,7 +147,7 @@ public final class FogLayers {
       for (int chunkZ = 0; chunkZ < CHUNKS_PER_TILE; chunkZ++) {
         final @Nullable MapRegion owner =
             regions.foggedAt(worldName, (startX >> 4) + chunkX, (startZ >> 4) + chunkZ);
-        inside[chunkZ * CHUNKS_PER_TILE + chunkX] = owner != null && owner.id() == region;
+        inside[chunkZ * CHUNKS_PER_TILE + chunkX] = owner != null && owner.id().equals(region);
       }
     }
     for (int z = 0; z < size; z++) {

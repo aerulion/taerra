@@ -1,5 +1,7 @@
 package net.aerulion.taerra.region;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import net.aerulion.taerra.chat.Messages;
@@ -32,6 +34,7 @@ public final class RegionDiscovery {
         .runTaskTimer(
             plugin,
             () -> {
+              final @NotNull Map<UUID, MapRegion> visits = new HashMap<>();
               for (final @NotNull Player player : Bukkit.getOnlinePlayers()) {
                 final @NotNull Location location = player.getLocation();
                 final @Nullable MapRegion region =
@@ -39,22 +42,45 @@ public final class RegionDiscovery {
                         WorldKeys.id(player.getWorld()),
                         location.getBlockX() >> 4,
                         location.getBlockZ() >> 4);
-                if (region == null
-                    || !region.discoverable()
-                    || !discoveries.discover(player.getUniqueId(), region.id())) {
-                  continue;
+                if (region != null && region.discoverable()) {
+                  visits.put(player.getUniqueId(), region);
                 }
-                if (!region.name().isEmpty()) {
-                  player.playSound(
-                      player, Sound.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.UI, 1.0f, 1.0f);
-                  if (!mods.discovered(player, region.name())) {
-                    player.sendMessage(Messages.discovered(region.name()));
-                  }
-                }
-                discovered.accept(player.getUniqueId(), region.name());
+              }
+              if (!visits.isEmpty()) {
+                Bukkit.getScheduler()
+                    .runTaskAsynchronously(
+                        plugin, () -> discover(plugin, discoveries, mods, discovered, visits));
               }
             },
             INTERVAL_TICKS,
             INTERVAL_TICKS);
+  }
+
+  private static void discover(
+      final @NotNull Plugin plugin,
+      final @NotNull RegionDiscoveries discoveries,
+      final @NotNull ModHandshake mods,
+      final @NotNull BiConsumer<UUID, String> discovered,
+      final @NotNull Map<UUID, MapRegion> visits) {
+    visits.forEach(
+        (uuid, region) -> {
+          if (!discoveries.discover(uuid, region)) {
+            return;
+          }
+          Bukkit.getScheduler()
+              .runTask(
+                  plugin,
+                  () -> {
+                    final @Nullable Player player = Bukkit.getPlayer(uuid);
+                    if (player != null && !region.name().isEmpty()) {
+                      player.playSound(
+                          player, Sound.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.UI, 1.0f, 1.0f);
+                      if (!mods.discovered(player, region.name())) {
+                        player.sendMessage(Messages.discovered(region.name()));
+                      }
+                    }
+                    discovered.accept(uuid, region.name());
+                  });
+        });
   }
 }

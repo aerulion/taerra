@@ -20,21 +20,20 @@ public final class RegionVisibility {
     return this.regions;
   }
 
-  public @NotNull RegionDiscoveries discoveries() {
-    return this.discoveries;
+  public boolean revealed(
+      final @Nullable UUID viewer, final boolean seesAll, final @NotNull MapRegion region) {
+    return seesAll || !region.fog().fogged() || discoveredAt(viewer, region) > 0L;
   }
 
   public boolean revealed(
-      final @Nullable UUID viewer, final boolean seesAll, final @NotNull MapRegion region) {
-    return seesAll || !region.fog().fogged() || (viewer != null && discovered(viewer, region));
-  }
-
-  public boolean revealed(final @Nullable UUID viewer, final boolean seesAll, final int region) {
+      final @Nullable UUID viewer, final boolean seesAll, final @NotNull UUID region) {
     final @Nullable MapRegion found = this.regions.get(region);
     return found != null && revealed(viewer, seesAll, found);
   }
 
-  public boolean discovered(final @NotNull UUID viewer, final @NotNull MapRegion region) {
-    return region.discoverable() && this.discoveries.has(viewer, region.id());
+  public long discoveredAt(final @Nullable UUID viewer, final @NotNull MapRegion region) {
+    return viewer != null && region.discoverable() && region.fog().fogged()
+        ? this.discoveries.discoveredAt(viewer, region)
+        : 0L;
   }
 }

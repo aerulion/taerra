@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import net.aerulion.taerra.api.marker.AreaMarker;
 import net.aerulion.taerra.api.marker.LineMarker;
@@ -79,17 +80,8 @@ public final class MarkerPayloadSerializer {
       final @NotNull String label,
       final boolean shown,
       final @NotNull Collection<? extends Marker> markers,
-      final @NotNull Predicate<String> layerPrivate) {
-    return layer(id, label, shown, markers, layerPrivate, _ -> false);
-  }
-
-  public static @NotNull List<Map<String, Object>> layer(
-      final @NotNull String id,
-      final @NotNull String label,
-      final boolean shown,
-      final @NotNull Collection<? extends Marker> markers,
       final @NotNull Predicate<String> layerPrivate,
-      final @NotNull Predicate<Marker> muted) {
+      final @NotNull BiConsumer<Marker, Map<String, Object>> extend) {
     return markers.isEmpty()
         ? List.of()
         : List.of(
@@ -103,9 +95,7 @@ public final class MarkerPayloadSerializer {
                     .map(
                         marker -> {
                           final @NotNull Map<String, Object> data = marker(marker);
-                          if (muted.test(marker)) {
-                            data.put("muted", true);
-                          }
+                          extend.accept(marker, data);
                           return data;
                         })
                     .toList()));

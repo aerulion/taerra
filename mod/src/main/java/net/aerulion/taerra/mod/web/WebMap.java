@@ -100,11 +100,11 @@ public sealed interface WebMap permits WebMapImpl {
 
   Regions regions(String world);
 
-  Set<Integer> revealed(String world);
+  Set<String> revealed(String world);
 
   void saveRegion(
       String world,
-      @Nullable Integer id,
+      @Nullable String id,
       String name,
       String color,
       String fog,
@@ -112,9 +112,9 @@ public sealed interface WebMap permits WebMapImpl {
       Collection<Long> chunks,
       BiConsumer<Integer, @Nullable String> then);
 
-  void deleteRegion(int id, BiConsumer<Integer, @Nullable String> then);
+  void deleteRegion(String id, BiConsumer<Integer, @Nullable String> then);
 
-  void resetRegion(int id, IntConsumer then);
+  void resetRegion(String id, IntConsumer then);
 
   void render(String action, String world, IntConsumer then);
 
