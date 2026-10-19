@@ -2800,12 +2800,7 @@ h2 .badge {
 
 .region-name {
     display: block;
-    padding-right: calc(5px - .27em);
     translate: -50% -50%;
-    font: 700 10px/1 var(--font-display);
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    white-space: nowrap;
     pointer-events: none;
 }
 

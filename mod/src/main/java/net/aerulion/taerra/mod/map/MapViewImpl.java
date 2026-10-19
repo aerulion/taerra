@@ -11,7 +11,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.LongPredicate;
@@ -1184,7 +1183,7 @@ public final class MapViewImpl implements MapView {
           || ("region:" + region.id()).equals(hidden)) {
         continue;
       }
-      final @NotNull String name = region.name().toUpperCase(Locale.ROOT);
+      final @NotNull String name = region.name();
       final double @NotNull [] at =
           toScreen(projection.toMap(region.label()[0], REGION_LABEL_Y, region.label()[1]));
       final int width = font.width(name);
