@@ -50,10 +50,8 @@ public final class TaerraClient implements ClientModInitializer {
   public static @NotNull String version() {
     return FabricLoader.getInstance()
         .getModContainer("taerra")
-        .orElseThrow()
-        .getMetadata()
-        .getVersion()
-        .getFriendlyString();
+        .map(mod -> mod.getMetadata().getVersion().getFriendlyString())
+        .orElse("unknown");
   }
 
   public static @NotNull Settings settings() {
