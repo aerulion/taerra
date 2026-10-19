@@ -6,6 +6,7 @@ import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.web.auth.ModHandshake;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
@@ -32,11 +33,12 @@ public final class RegionDiscovery {
             plugin,
             () -> {
               for (final @NotNull Player player : Bukkit.getOnlinePlayers()) {
+                final @NotNull Location location = player.getLocation();
                 final @Nullable MapRegion region =
                     regions.at(
                         WorldKeys.id(player.getWorld()),
-                        player.getLocation().getBlockX() >> 4,
-                        player.getLocation().getBlockZ() >> 4);
+                        location.getBlockX() >> 4,
+                        location.getBlockZ() >> 4);
                 if (region == null
                     || !region.discoverable()
                     || !discoveries.discover(player.getUniqueId(), region.id())) {
