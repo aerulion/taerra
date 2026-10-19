@@ -1401,7 +1401,7 @@ public final class MapScreen extends Screen {
             startDrawing(Kind.LINE, null, null);
           });
     }
-    if (account != null && account.render()) {
+    if (account != null && account.renderArea()) {
       menu.add(
           Component.translatable("taerra.menu.select"),
           _ -> {
@@ -1425,10 +1425,10 @@ public final class MapScreen extends Screen {
             startRegion(owner);
           });
     }
-    if (account != null && account.render()) {
-      final @Nullable Progress progress = this.map.progress();
-      final boolean cancel =
-          progress != null && progress.render() != null && world.equals(progress.render().world());
+    final @Nullable Progress progress = this.map.progress();
+    final boolean cancel =
+        progress != null && progress.render() != null && world.equals(progress.render().world());
+    if (account != null && (cancel ? account.cancelRender() : account.renderWorld())) {
       final @NotNull AtomicBoolean armed = new AtomicBoolean();
       menu.add(
           Component.translatable(cancel ? "taerra.menu.cancel_render" : "taerra.menu.render_world"),
@@ -2169,7 +2169,7 @@ public final class MapScreen extends Screen {
     }
     final @NotNull List<AbstractWidget> actions = new ArrayList<>();
     if (this.kind == Kind.CHUNKS) {
-      if (account != null && account.render()) {
+      if (account != null && account.renderArea()) {
         actions.add(actionButton("render"));
       }
       actions.add(

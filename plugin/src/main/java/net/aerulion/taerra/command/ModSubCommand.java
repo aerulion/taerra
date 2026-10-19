@@ -34,8 +34,8 @@ public final class ModSubCommand implements TaerraSubCommand {
   }
 
   @Override
-  public @NotNull TaerraPermission permission() {
-    return TaerraPermission.COMMAND_MOD;
+  public @NotNull List<TaerraPermission> permissions() {
+    return List.of(TaerraPermission.MODS);
   }
 
   @Override

@@ -7,6 +7,9 @@ public record Account(
     boolean markers,
     boolean privateGroups,
     boolean personal,
-    boolean render,
+    boolean renderWorld,
+    boolean renderArea,
+    boolean cancelRender,
     boolean regions,
+    boolean resetRegions,
     boolean config) {}

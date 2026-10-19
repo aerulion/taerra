@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -32,8 +33,8 @@ public final class LogoutSubCommand implements TaerraSubCommand {
   }
 
   @Override
-  public @NotNull TaerraPermission permission() {
-    return TaerraPermission.COMMAND_LOGIN;
+  public @NotNull List<TaerraPermission> permissions() {
+    return List.of(TaerraPermission.LOGIN);
   }
 
   @Override
@@ -42,7 +43,7 @@ public final class LogoutSubCommand implements TaerraSubCommand {
         .executes(this::logout)
         .then(
             Commands.argument("player", StringArgumentType.word())
-                .requires(TaerraPermission.COMMAND_LOGOUT_OTHERS.commandRequirement())
+                .requires(TaerraPermission.LOGOUT_OTHERS.commandRequirement())
                 .suggests(
                     (context, suggestions) -> {
                       this.sessions.accountNames().keySet().stream()

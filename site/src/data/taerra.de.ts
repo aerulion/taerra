@@ -360,66 +360,91 @@ export const de: Copy = {
             head: ['Berechtigung', 'Standard', 'Erlaubt'],
             rows: [
                 {
-                    permission: 'taerra.command.login',
+                    permission: 'taerra.login',
                     standard: 'alle',
-                    text: '`/taerra login`, `/taerra logout` und `/taerra devices`'
+                    text: '`/taerra login`, `/taerra logout` und `/taerra devices`, und von der Mod angemeldet werden'
                 },
-                {permission: 'taerra.command.status', standard: 'OP', text: '`/taerra status`'},
-                {permission: 'taerra.command.render', standard: 'OP', text: '`/taerra render`'},
-                {permission: 'taerra.command.limit', standard: 'OP', text: '`/taerra limit`'},
-                {permission: 'taerra.command.waypoint', standard: 'OP', text: '`/taerra waypoint`'},
-                {permission: 'taerra.command.config', standard: 'OP', text: '`/taerra config` und `/taerra import`'},
-                {permission: 'taerra.command.logout.others', standard: 'OP', text: 'Andere abmelden'},
-                {permission: 'taerra.command.mod', standard: 'OP', text: '`/taerra mod`'},
                 {
-                    permission: 'taerra.web.teleport',
+                    permission: 'taerra.logout.others',
                     standard: 'OP',
-                    text: 'Von der Karte teleportieren, wenn angemeldet'
+                    text: 'Andere mit `/taerra logout <spieler>` abmelden'
                 },
+                {permission: 'taerra.status', standard: 'OP', text: '`/taerra status`'},
+                {permission: 'taerra.mods', standard: 'OP', text: '`/taerra mod`'},
                 {
-                    permission: 'taerra.web.see-hidden',
+                    permission: 'taerra.teleport',
                     standard: 'OP',
-                    text: 'Versteckte Personen und durch den Nebel jeder Region sehen, wenn angemeldet'
+                    text: 'Von der Karte und aus der Wegpunktliste teleportieren'
                 },
                 {
-                    permission: 'taerra.web.render',
+                    permission: 'taerra.render.world',
                     standard: 'OP',
-                    text: 'Eine ganze Welt oder ausgewählte Chunks neu rendern und das Rendern abbrechen, wenn angemeldet'
+                    text: 'Eine ganze Welt neu rendern, mit `/taerra render full` oder auf der Karte'
                 },
                 {
-                    permission: 'taerra.web.regions',
+                    permission: 'taerra.render.area',
                     standard: 'OP',
-                    text: 'Regionen zeichnen, benennen, vernebeln und entfernen, wenn angemeldet'
+                    text: 'Einen Bereich neu rendern, mit `/taerra render radius` oder ausgewählten Chunks auf der Karte'
                 },
                 {
-                    permission: 'taerra.web.markers',
+                    permission: 'taerra.render.cancel',
                     standard: 'OP',
-                    text: 'Marker hinzufügen, bearbeiten, verschieben und entfernen, wenn angemeldet'
+                    text: 'Das laufende Rendern abbrechen, mit `/taerra render cancel` oder auf der Karte'
                 },
+                {permission: 'taerra.render.flush', standard: 'OP', text: '`/taerra render flush`'},
+                {permission: 'taerra.render.image', standard: 'OP', text: '`/taerra render image`'},
+                {permission: 'taerra.limit', standard: 'OP', text: '`/taerra limit`'},
                 {
-                    permission: 'taerra.web.markers.private',
+                    permission: 'taerra.config',
                     standard: 'OP',
-                    text: 'Private Markergruppen anlegen, wenn angemeldet'
+                    text: '`/taerra config` und die Einstellungen auf der Karte und in der Mod'
                 },
+                {permission: 'taerra.import', standard: 'OP', text: '`/taerra import`'},
                 {
-                    permission: 'taerra.web.markers.personal',
+                    permission: 'taerra.waypoint.edit',
+                    standard: 'OP',
+                    text: 'Die Wegpunkte des Servers hinzufügen, bearbeiten, verschieben und entfernen, mit `/taerra waypoint` oder auf der Karte'
+                },
+                {permission: 'taerra.waypoint.private-groups', standard: 'OP', text: 'Private Wegpunktgruppen anlegen'},
+                {
+                    permission: 'taerra.waypoint.personal',
                     standard: 'alle',
-                    text: 'Wegpunkte anlegen, die nur du siehst, wenn angemeldet'
+                    text: 'Wegpunkte anlegen, die nur du siehst'
                 },
                 {
-                    permission: 'taerra.web.config',
-                    standard: 'OP',
-                    text: 'Die Einstellungen auf der Karte und in der Mod ändern, wenn angemeldet'
+                    permission: 'taerra.waypoint.death',
+                    standard: 'alle',
+                    text: 'Einen eigenen Wegpunkt da bekommen, wo du zuletzt gestorben bist'
                 },
                 {
-                    permission: 'taerra.web.world.<welt>',
+                    permission: 'taerra.region.edit',
                     standard: 'OP',
-                    text: 'Eine private Welt sehen, etwa `taerra.web.world.minecraft.the_end`'
+                    text: 'Regionen zeichnen, benennen, vernebeln und entfernen'
                 },
                 {
-                    permission: 'taerra.web.layer.<ebene>',
+                    permission: 'taerra.region.reset',
                     standard: 'OP',
-                    text: 'Eine private Ebene sehen, etwa `taerra.web.layer.worldguard`'
+                    text: 'Zurücksetzen, wer eine Region entdeckt hat, zusammen mit `taerra.region.edit`'
+                },
+                {
+                    permission: 'taerra.see.hidden-players',
+                    standard: 'OP',
+                    text: 'Versteckte und anonyme Personen auf der Karte sehen'
+                },
+                {
+                    permission: 'taerra.see.fog',
+                    standard: 'OP',
+                    text: 'Durch den Nebel jeder Region sehen, samt den Personen darin'
+                },
+                {
+                    permission: 'taerra.world.<welt>',
+                    standard: 'OP',
+                    text: 'Eine private Welt sehen, etwa `taerra.world.minecraft.the_end`'
+                },
+                {
+                    permission: 'taerra.layer.<ebene>',
+                    standard: 'OP',
+                    text: 'Eine private Ebene sehen, etwa `taerra.layer.worldguard`'
                 },
                 {permission: 'taerra.hide', standard: 'niemand', text: 'Nicht auf der Karte erscheinen'}
             ]

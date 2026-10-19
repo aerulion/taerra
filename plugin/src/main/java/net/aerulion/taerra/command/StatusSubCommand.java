@@ -185,8 +185,8 @@ public final class StatusSubCommand implements TaerraSubCommand {
   }
 
   @Override
-  public @NotNull TaerraPermission permission() {
-    return TaerraPermission.COMMAND_STATUS;
+  public @NotNull List<TaerraPermission> permissions() {
+    return List.of(TaerraPermission.STATUS);
   }
 
   @Override

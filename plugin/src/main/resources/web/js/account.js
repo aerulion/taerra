@@ -391,12 +391,24 @@ function canCreatePrivateGroups() {
     return current?.privateGroups === true;
 }
 
-function canRender() {
-    return current?.render === true;
+function canRenderWorld() {
+    return current?.renderWorld === true;
+}
+
+function canRenderArea() {
+    return current?.renderArea === true;
+}
+
+function canCancelRender() {
+    return current?.cancelRender === true;
 }
 
 function canEditRegions() {
     return current?.regions === true;
+}
+
+function canResetRegions() {
+    return current?.resetRegions === true;
 }
 
 function canConfigure() {
@@ -404,6 +416,6 @@ function canConfigure() {
 }
 
 export const accountManager = {
-    initialize, loggedIn, usesMod, ownUuid, canTeleport, canEditMarkers, canKeepPersonal, canCreatePrivateGroups, canRender,
-    canEditRegions, canConfigure
+    initialize, loggedIn, usesMod, ownUuid, canTeleport, canEditMarkers, canKeepPersonal, canCreatePrivateGroups,
+    canRenderWorld, canRenderArea, canCancelRender, canEditRegions, canResetRegions, canConfigure
 };

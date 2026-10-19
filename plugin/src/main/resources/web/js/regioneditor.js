@@ -3,6 +3,7 @@ import {mapManager} from './map.js';
 import {ColorPicker} from './colors.js';
 import {element} from './markers.js';
 import {regionManager} from './regions.js';
+import {accountManager} from './account.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -229,7 +230,7 @@ class RegionList {
                 button.title = t('region.problem.failed');
             }
         };
-        if (region.fog !== 'none' && region.discoverable) {
+        if (region.fog !== 'none' && region.discoverable && accountManager.canResetRegions()) {
             action('reset', 'region.reset', confirmed('region.resetConfirm', '/reset', 'POST'));
         }
         action('delete', 'waypoint.delete', confirmed('waypoint.confirmDelete', '', 'DELETE'));

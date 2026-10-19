@@ -285,7 +285,7 @@ class ChunkSelection {
         $('selection-delete').classList.remove('is-armed');
         $('selection-delete').hidden = !editing;
         markerManager.hide(region ? null : editing?.id ?? null);
-        $('selection-render').hidden = !chunks || !accountManager.canRender();
+        $('selection-render').hidden = !chunks || !accountManager.canRenderArea();
         $('selection-smooth').hidden = kind !== 'line';
         $('selection-save').hidden = chunks;
         this.label($('selection-save'), 'selection.save');

@@ -9,6 +9,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.position.ColumnBlockPosition;
 import io.papermc.paper.command.brigadier.argument.resolvers.ColumnBlockPositionResolver;
+import java.util.List;
 import java.util.Locale;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.chat.RenderFeedback;
@@ -73,8 +74,8 @@ public final class LimitSubCommand implements TaerraSubCommand {
   }
 
   @Override
-  public @NotNull TaerraPermission permission() {
-    return TaerraPermission.COMMAND_LIMIT;
+  public @NotNull List<TaerraPermission> permissions() {
+    return List.of(TaerraPermission.LIMIT);
   }
 
   @Override

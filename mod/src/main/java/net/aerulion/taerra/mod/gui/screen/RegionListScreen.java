@@ -8,6 +8,7 @@ import java.util.Locale;
 import net.aerulion.taerra.mod.gui.widget.IconButton;
 import net.aerulion.taerra.mod.util.Colors;
 import net.aerulion.taerra.mod.web.WebMap;
+import net.aerulion.taerra.mod.web.model.Account;
 import net.aerulion.taerra.mod.web.model.Regions;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -208,7 +209,11 @@ public final class RegionListScreen extends Screen {
         this.color = Colors.argb(region.color() == null ? "#ffffff" : region.color());
         button(WaypointListScreen.ON_MAP, "taerra.waypoints.show_on_map", () -> showOnMap(region));
         button(WaypointListScreen.EDIT, "taerra.waypoint.edit_short", () -> edit(region));
-        if (!"none".equals(region.fog()) && !Boolean.FALSE.equals(region.discoverable())) {
+        final @Nullable Account account = RegionListScreen.this.map.account();
+        if (account != null
+            && account.resetRegions()
+            && !"none".equals(region.fog())
+            && !Boolean.FALSE.equals(region.discoverable())) {
           button(
               FORGET,
               region.id().equals(RegionListScreen.this.forgetting)

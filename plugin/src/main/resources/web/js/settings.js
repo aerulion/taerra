@@ -820,7 +820,7 @@ class SettingsDialog {
         const text = element('span', 'settings__text');
         const title = element('span', 'settings__label', this.label(field));
         text.append(title, element('span', 'settings__hint', layer.present ? t('settings.layerPermission', {
-            permission: `taerra.web.layer.${layer.id.replaceAll(':', '.')}`
+            permission: `taerra.layer.${layer.id.replaceAll(':', '.')}`
         }) : t('settings.layerGone')));
         const {wrap} = toggle(field, this.draft[field] === true,
             t('settings.privateLayer', {layer: title.textContent}), checked => {

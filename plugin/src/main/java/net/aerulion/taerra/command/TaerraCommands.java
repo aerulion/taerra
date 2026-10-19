@@ -57,7 +57,7 @@ public final class TaerraCommands {
     final @NotNull List<Component> lines = new ArrayList<>();
     lines.add(Messages.header(Messages.value(Formats.build(plugin.getPluginMeta().getVersion()))));
     for (final @NotNull TaerraSubCommand subCommand : subCommands) {
-      if (subCommand.permission().check(sender)) {
+      if (subCommand.allowed(sender)) {
         final @NotNull Component description = Messages.tr("command." + subCommand.name());
         lines.add(
             Messages.indent(

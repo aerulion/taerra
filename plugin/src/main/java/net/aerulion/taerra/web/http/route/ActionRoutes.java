@@ -127,7 +127,7 @@ public final class ActionRoutes implements Routes {
       ctx.status(400).result("Invalid area");
       return;
     }
-    if (!viewer.canRender()) {
+    if (!viewer.canRenderArea()) {
       ctx.status(403).result("Not allowed");
       return;
     }
@@ -179,7 +179,7 @@ public final class ActionRoutes implements Routes {
       ctx.status(400).result("Invalid render");
       return;
     }
-    if (viewer.uuid() == null || !viewer.canRender()) {
+    if (viewer.uuid() == null || !(cancel ? viewer.canCancelRender() : viewer.canRenderWorld())) {
       ctx.status(403).result("Not allowed");
       return;
     }

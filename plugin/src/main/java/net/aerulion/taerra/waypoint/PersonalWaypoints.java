@@ -118,7 +118,8 @@ public final class PersonalWaypoints implements Listener {
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void onDeath(final @NotNull PlayerDeathEvent event) {
     final @NotNull Player player = event.getPlayer();
-    if (!TaerraPermission.WEB_MARKERS_PERSONAL.check(player)) {
+    if (!TaerraPermission.WAYPOINT_PERSONAL.check(player)
+        || !TaerraPermission.WAYPOINT_DEATH.check(player)) {
       return;
     }
     final @NotNull Location at = player.getLocation();

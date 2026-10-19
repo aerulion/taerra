@@ -39,14 +39,18 @@ public sealed interface TaerraSubCommand
   }
 
   @NotNull
-  TaerraPermission permission();
+  List<TaerraPermission> permissions();
+
+  default boolean allowed(final @NotNull CommandSender sender) {
+    return permissions().stream().anyMatch(permission -> permission.check(sender));
+  }
 
   default boolean register() {
     return false;
   }
 
   default @NotNull LiteralArgumentBuilder<CommandSourceStack> builder() {
-    return Commands.literal(name()).requires(permission().commandRequirement());
+    return Commands.literal(name()).requires(source -> allowed(source.getSender()));
   }
 
   @NotNull

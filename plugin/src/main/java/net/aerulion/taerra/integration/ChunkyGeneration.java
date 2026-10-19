@@ -62,7 +62,7 @@ public final class ChunkyGeneration implements Predicate<World> {
               final @NotNull Component message =
                   Messages.renderSuggestion(WorldKeys.id(entry.getKey()), entry.getValue());
               for (final @NotNull Player player : this.plugin.getServer().getOnlinePlayers()) {
-                if (TaerraPermission.COMMAND_RENDER.check(player)) {
+                if (TaerraPermission.RENDER_WORLD.check(player)) {
                   player.sendMessage(message);
                 }
               }

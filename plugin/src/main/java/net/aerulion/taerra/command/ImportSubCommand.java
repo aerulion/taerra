@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import java.util.List;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.waypoint.DynmapImport;
@@ -30,8 +31,8 @@ public final class ImportSubCommand implements TaerraSubCommand {
   }
 
   @Override
-  public @NotNull TaerraPermission permission() {
-    return TaerraPermission.COMMAND_CONFIG;
+  public @NotNull List<TaerraPermission> permissions() {
+    return List.of(TaerraPermission.IMPORT);
   }
 
   @Override

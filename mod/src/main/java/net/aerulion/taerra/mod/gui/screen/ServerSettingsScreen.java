@@ -1859,7 +1859,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                   layer.present()
                       ? Component.translatable(
                           "taerra.settings.layer_permission",
-                          "taerra.web.layer." + layer.id().replace(':', '.'))
+                          "taerra.layer." + layer.id().replace(':', '.'))
                       : Component.translatable("taerra.settings.layer_gone"),
                   rowWidth() - 90);
       this.toggle =

@@ -70,8 +70,8 @@ public final class ConfigSubCommand implements TaerraSubCommand {
   }
 
   @Override
-  public @NotNull TaerraPermission permission() {
-    return TaerraPermission.COMMAND_CONFIG;
+  public @NotNull List<TaerraPermission> permissions() {
+    return List.of(TaerraPermission.CONFIG);
   }
 
   @Override

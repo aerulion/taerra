@@ -29,8 +29,8 @@ public record TaerraConfig(
     @NotNull CopyOnWriteArrayList<String> privateLayers,
     @NotNull Map<String, String> worldNames) {
 
-  private static final @NotNull String WORLD_PERMISSION = "taerra.web.world.";
-  private static final @NotNull String LAYER_PERMISSION = "taerra.web.layer.";
+  private static final @NotNull String WORLD_PERMISSION = "taerra.world.";
+  private static final @NotNull String LAYER_PERMISSION = "taerra.layer.";
 
   public static @NotNull TaerraConfig load(final @NotNull Plugin plugin) {
     plugin.saveDefaultConfig();

@@ -47,8 +47,8 @@ public final class WaypointSubCommand implements TaerraSubCommand {
   }
 
   @Override
-  public @NotNull TaerraPermission permission() {
-    return TaerraPermission.COMMAND_WAYPOINT;
+  public @NotNull List<TaerraPermission> permissions() {
+    return List.of(TaerraPermission.WAYPOINT_EDIT);
   }
 
   @Override

@@ -62,8 +62,8 @@ public final class DevicesSubCommand implements TaerraSubCommand {
   }
 
   @Override
-  public @NotNull TaerraPermission permission() {
-    return TaerraPermission.COMMAND_LOGIN;
+  public @NotNull List<TaerraPermission> permissions() {
+    return List.of(TaerraPermission.LOGIN);
   }
 
   @Override

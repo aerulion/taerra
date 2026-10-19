@@ -22,39 +22,59 @@ public record Viewer(@Nullable UUID uuid, @NotNull Set<String> grants) {
   }
 
   public boolean canTeleport() {
-    return this.grants.contains(TaerraPermission.WEB_TELEPORT.node());
+    return has(TaerraPermission.TELEPORT);
   }
 
   public boolean canEditMarkers() {
-    return this.grants.contains(TaerraPermission.WEB_MARKERS.node());
+    return has(TaerraPermission.WAYPOINT_EDIT);
   }
 
   public boolean canCreatePrivateGroups() {
-    return this.grants.contains(TaerraPermission.WEB_MARKERS_PRIVATE.node());
+    return has(TaerraPermission.WAYPOINT_PRIVATE_GROUPS);
   }
 
   public boolean canKeepPersonalMarkers() {
-    return this.uuid != null && this.grants.contains(TaerraPermission.WEB_MARKERS_PERSONAL.node());
+    return this.uuid != null && has(TaerraPermission.WAYPOINT_PERSONAL);
   }
 
-  public boolean canRender() {
-    return this.grants.contains(TaerraPermission.WEB_RENDER.node());
+  public boolean canRenderWorld() {
+    return has(TaerraPermission.RENDER_WORLD);
+  }
+
+  public boolean canRenderArea() {
+    return has(TaerraPermission.RENDER_AREA);
+  }
+
+  public boolean canCancelRender() {
+    return has(TaerraPermission.RENDER_CANCEL);
   }
 
   public boolean canEditRegions() {
-    return this.grants.contains(TaerraPermission.WEB_REGIONS.node());
+    return has(TaerraPermission.REGION_EDIT);
+  }
+
+  public boolean canResetRegions() {
+    return has(TaerraPermission.REGION_RESET);
   }
 
   public boolean canConfigure() {
-    return this.uuid != null && this.grants.contains(TaerraPermission.WEB_CONFIG.node());
+    return this.uuid != null && has(TaerraPermission.CONFIG);
   }
 
-  public boolean canSeeHidden() {
-    return this.grants.contains(TaerraPermission.WEB_SEE_HIDDEN.node());
+  public boolean canSeeHiddenPlayers() {
+    return has(TaerraPermission.SEE_HIDDEN_PLAYERS);
+  }
+
+  public boolean canSeeThroughFog() {
+    return has(TaerraPermission.SEE_FOG);
   }
 
   public boolean canSeeLayer(final @NotNull TaerraConfig config, final @NotNull String layerId) {
     return !config.layerPrivate(layerId)
         || this.grants.contains(TaerraConfig.layerPermission(layerId));
+  }
+
+  private boolean has(final @NotNull TaerraPermission permission) {
+    return this.grants.contains(permission.node());
   }
 }

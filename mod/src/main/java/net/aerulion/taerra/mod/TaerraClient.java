@@ -39,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class TaerraClient implements ClientModInitializer {
 
-  public static final int PROTOCOL = 5;
+  public static final int PROTOCOL = 6;
 
   private static @Nullable Settings settings;
   private static final Navigation NAVIGATION = new Navigation();

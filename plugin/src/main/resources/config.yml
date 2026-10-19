@@ -1,6 +1,6 @@
 # TAERRA Configuration
 # Every setting can be changed in game with /taerra config <setting> <value>, or on the settings page
-# of the web map and the mod by players with taerra.web.config. Changes apply right away.
+# of the web map and the mod by players with taerra.config. Changes apply right away.
 
 # Web server settings
 web:
@@ -52,20 +52,20 @@ worlds: [ ]
 # order on the map, set with /taerra config world <world> position <number>
 world-names: { }
 
-# Worlds only logged-in viewers with taerra.web.world.<world> see, the colon swapped for a dot:
-# minecraft:the_end needs taerra.web.world.minecraft.the_end. Players log in with /taerra login.
+# Worlds only logged-in viewers with taerra.world.<world> see, the colon swapped for a dot:
+# minecraft:the_end needs taerra.world.minecraft.the_end. Players log in with /taerra login.
 # Set in game with /taerra config world <world> private
 private-worlds: [ ]
 
 # Markers other plugins draw on the map
 markers:
-  # Layers only logged-in viewers with taerra.web.layer.<layer> see, like taerra.web.layer.worldguard.
+  # Layers only logged-in viewers with taerra.layer.<layer> see, like taerra.layer.worldguard.
   # Set in game with /taerra config layer <layer> private
   private-layers: [ chunks, worldguard ]
   worldguard:
     # Show WorldGuard regions as a layer viewers can switch on (needs WorldGuard installed). It names
     # each region's owners and members, so it shows who owns and builds on which land. It is in
-    # private-layers: only viewers with taerra.web.layer.worldguard see it
+    # private-layers: only viewers with taerra.layer.worldguard see it
     enabled: false
     # Whether the layer is on for viewers who have not toggled it themselves
     shown-by-default: false
@@ -77,7 +77,7 @@ markers:
   loaded-chunks:
     # Show loaded chunks as a layer, outlined by load level: magenta entity ticking, orange ticking,
     # cyan loaded. It shows where players are, so it is in private-layers: only viewers with
-    # taerra.web.layer.chunks see it
+    # taerra.layer.chunks see it
     enabled: false
     # Whether the layer is on for viewers who have not toggled it themselves
     shown-by-default: false

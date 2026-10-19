@@ -90,7 +90,8 @@ public final class RegionRoutes implements Routes {
     final @NotNull List<String> revealed = new ArrayList<>();
     final @NotNull List<Map<String, Object>> regions = new ArrayList<>();
     for (final @NotNull MapRegion region : this.visibility.regions().in(worldName)) {
-      final boolean shown = this.visibility.revealed(viewer.uuid(), viewer.canSeeHidden(), region);
+      final boolean shown =
+          this.visibility.revealed(viewer.uuid(), viewer.canSeeThroughFog(), region);
       if (shown && region.fog().fogged()) {
         revealed.add(region.id().toString());
       }
@@ -197,6 +198,10 @@ public final class RegionRoutes implements Routes {
 
   private void handleResetRequest(final @NotNull Context ctx) {
     if (!mayEdit(ctx)) {
+      return;
+    }
+    if (!this.requests.viewer(ctx).canResetRegions()) {
+      ctx.status(403).result("Not allowed");
       return;
     }
     final @Nullable UUID id = id(ctx);

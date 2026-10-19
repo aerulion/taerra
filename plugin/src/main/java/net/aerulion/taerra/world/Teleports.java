@@ -42,7 +42,7 @@ public final class Teleports {
                 result.complete(Outcome.OFFLINE);
                 return;
               }
-              if (!TaerraPermission.WEB_TELEPORT.check(player) || world == null) {
+              if (!TaerraPermission.TELEPORT.check(player) || world == null) {
                 result.complete(Outcome.FORBIDDEN);
                 return;
               }

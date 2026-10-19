@@ -254,8 +254,8 @@ class WebSessionsTest {
     final @NotNull AtomicInteger changes = new AtomicInteger();
     sessions.onChange(changes::incrementAndGet);
     final @NotNull String code = sessions.createCode(PLAYER, "Steve", SKIN);
-    sessions.grant(PLAYER, Set.of("taerra.web.world.minecraft.the_end"));
-    sessions.grant(PLAYER, Set.of("taerra.web.world.minecraft.the_end"));
+    sessions.grant(PLAYER, Set.of("taerra.world.minecraft.the_end"));
+    sessions.grant(PLAYER, Set.of("taerra.world.minecraft.the_end"));
     assertEquals(1, changes.get());
 
     final WebSessions.@Nullable Login login = sessions.redeem(code, PHONE);
@@ -266,11 +266,11 @@ class WebSessionsTest {
     final @NotNull WebSessions restarted = sessions();
     restarted.load();
     assertEquals(
-        new Viewer(PLAYER, Set.of("taerra.web.world.minecraft.the_end")),
+        new Viewer(PLAYER, Set.of("taerra.world.minecraft.the_end")),
         restarted.viewer(login.token()));
 
     restarted.endAll(PLAYER);
-    restarted.grant(UUID.randomUUID(), Set.of("taerra.web.layer.worldguard"));
+    restarted.grant(UUID.randomUUID(), Set.of("taerra.layer.worldguard"));
     assertEquals(Set.of(), restarted.accounts());
     assertFalse(
         Files.readString(this.folder.resolve("sessions.yml")).contains("taerra.web"),
@@ -291,8 +291,7 @@ class WebSessionsTest {
             new CopyOnWriteArrayList<>(List.of("worldguard")),
             new ConcurrentHashMap<>());
     final @NotNull Viewer staff =
-        new Viewer(
-            PLAYER, Set.of("taerra.web.world.minecraft.the_end", "taerra.web.layer.worldguard"));
+        new Viewer(PLAYER, Set.of("taerra.world.minecraft.the_end", "taerra.layer.worldguard"));
 
     assertTrue(Viewer.ANONYMOUS.canSee(config, "minecraft:overworld"));
     assertFalse(Viewer.ANONYMOUS.canSee(config, "minecraft:the_end"));
@@ -303,7 +302,7 @@ class WebSessionsTest {
     assertFalse(Viewer.ANONYMOUS.canSeeLayer(config, "worldguard"));
     assertTrue(staff.canSeeLayer(config, "worldguard"));
     assertEquals(
-        Set.of("taerra.web.world.minecraft.the_end", "taerra.web.layer.worldguard"),
+        Set.of("taerra.world.minecraft.the_end", "taerra.layer.worldguard"),
         config.webPermissions());
   }
 }

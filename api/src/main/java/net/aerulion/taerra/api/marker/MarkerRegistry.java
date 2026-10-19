@@ -24,7 +24,7 @@ public interface MarkerRegistry {
    * myplugin.claims}. TAERRA's own layers are {@code worldguard}, {@code worldborder}, {@code
    * chunks}, {@code waypoints} and {@code waypoints.*}. Server owners can make a layer private with
    * {@code /taerra config layer <id> private}; only logged-in viewers with {@code
-   * taerra.web.layer.<id>} see it then, any colon in the id replaced by a dot.
+   * taerra.layer.<id>} see it then, any colon in the id replaced by a dot.
    *
    * @param owner the plugin that owns the layer
    * @param id the layer's id

@@ -27,7 +27,7 @@ public final class ModHandshake implements Listener, PluginMessageListener {
 
   public static final @NotNull String CHANNEL = "taerra:web";
 
-  public static final int PROTOCOL = 5;
+  public static final int PROTOCOL = 6;
 
   private static final int MAX_VERSION_LENGTH = 64;
 
@@ -142,7 +142,7 @@ public final class ModHandshake implements Listener, PluginMessageListener {
   }
 
   private @Nullable String token(final @NotNull Player player) {
-    if (!TaerraPermission.COMMAND_LOGIN.check(player)) {
+    if (!TaerraPermission.LOGIN.check(player)) {
       return null;
     }
     return this.tokens.computeIfAbsent(

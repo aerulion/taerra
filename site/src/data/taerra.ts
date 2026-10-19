@@ -402,62 +402,87 @@ const en = {
             head: ['Permission', 'Default', 'Allows'],
             rows: [
                 {
-                    permission: 'taerra.command.login',
+                    permission: 'taerra.login',
                     standard: 'everyone',
-                    text: '`/taerra login`, `/taerra logout` and `/taerra devices`'
+                    text: '`/taerra login`, `/taerra logout` and `/taerra devices`, and being logged in by the mod'
                 },
-                {permission: 'taerra.command.status', standard: 'op', text: '`/taerra status`'},
-                {permission: 'taerra.command.render', standard: 'op', text: '`/taerra render`'},
-                {permission: 'taerra.command.limit', standard: 'op', text: '`/taerra limit`'},
-                {permission: 'taerra.command.waypoint', standard: 'op', text: '`/taerra waypoint`'},
-                {permission: 'taerra.command.config', standard: 'op', text: '`/taerra config` and `/taerra import`'},
-                {permission: 'taerra.command.logout.others', standard: 'op', text: 'Logging other players out'},
-                {permission: 'taerra.command.mod', standard: 'op', text: '`/taerra mod`'},
-                {permission: 'taerra.web.teleport', standard: 'op', text: 'Teleporting from the map while logged in'},
                 {
-                    permission: 'taerra.web.see-hidden',
+                    permission: 'taerra.logout.others',
                     standard: 'op',
-                    text: 'Seeing hidden players and through every region’s fog while logged in'
+                    text: 'Logging other players out with `/taerra logout <player>`'
                 },
+                {permission: 'taerra.status', standard: 'op', text: '`/taerra status`'},
+                {permission: 'taerra.mods', standard: 'op', text: '`/taerra mod`'},
+                {permission: 'taerra.teleport', standard: 'op', text: 'Teleporting from the map and the waypoint list'},
                 {
-                    permission: 'taerra.web.render',
+                    permission: 'taerra.render.world',
                     standard: 'op',
-                    text: 'Rendering a whole world or selected chunks again, and canceling renders, while logged in'
+                    text: 'Rendering a whole world again, with `/taerra render full` or from the map'
                 },
                 {
-                    permission: 'taerra.web.regions',
+                    permission: 'taerra.render.area',
                     standard: 'op',
-                    text: 'Drawing, naming, fogging and removing regions while logged in'
+                    text: 'Rendering an area again, with `/taerra render radius` or by selecting chunks on the map'
                 },
                 {
-                    permission: 'taerra.web.markers',
+                    permission: 'taerra.render.cancel',
                     standard: 'op',
-                    text: 'Adding, editing, moving and removing markers while logged in'
+                    text: 'Canceling the running render, with `/taerra render cancel` or from the map'
                 },
+                {permission: 'taerra.render.flush', standard: 'op', text: '`/taerra render flush`'},
+                {permission: 'taerra.render.image', standard: 'op', text: '`/taerra render image`'},
+                {permission: 'taerra.limit', standard: 'op', text: '`/taerra limit`'},
                 {
-                    permission: 'taerra.web.markers.private',
+                    permission: 'taerra.config',
                     standard: 'op',
-                    text: 'Creating private marker groups while logged in'
+                    text: '`/taerra config` and the settings on the map and in the mod'
+                },
+                {permission: 'taerra.import', standard: 'op', text: '`/taerra import`'},
+                {
+                    permission: 'taerra.waypoint.edit',
+                    standard: 'op',
+                    text: 'Adding, editing, moving and removing the server’s waypoints, with `/taerra waypoint` or on the map'
                 },
                 {
-                    permission: 'taerra.web.markers.personal',
+                    permission: 'taerra.waypoint.private-groups',
+                    standard: 'op',
+                    text: 'Creating private waypoint groups'
+                },
+                {permission: 'taerra.waypoint.personal', standard: 'everyone', text: 'Keeping waypoints only you see'},
+                {
+                    permission: 'taerra.waypoint.death',
                     standard: 'everyone',
-                    text: 'Keeping waypoints only you see while logged in'
+                    text: 'Getting a personal waypoint where you last died'
                 },
                 {
-                    permission: 'taerra.web.config',
+                    permission: 'taerra.region.edit',
                     standard: 'op',
-                    text: 'Changing the settings on the map and in the mod while logged in'
+                    text: 'Drawing, naming, fogging and removing regions'
                 },
                 {
-                    permission: 'taerra.web.world.<world>',
+                    permission: 'taerra.region.reset',
                     standard: 'op',
-                    text: 'Seeing a private world, such as `taerra.web.world.minecraft.the_end`'
+                    text: 'Resetting who discovered a region, with `taerra.region.edit`'
                 },
                 {
-                    permission: 'taerra.web.layer.<layer>',
+                    permission: 'taerra.see.hidden-players',
                     standard: 'op',
-                    text: 'Seeing a private layer, such as `taerra.web.layer.worldguard`'
+                    text: 'Seeing hidden and anonymous players on the map'
+                },
+                {
+                    permission: 'taerra.see.fog',
+                    standard: 'op',
+                    text: 'Seeing through every region’s fog, and the players in it'
+                },
+                {
+                    permission: 'taerra.world.<world>',
+                    standard: 'op',
+                    text: 'Seeing a private world, such as `taerra.world.minecraft.the_end`'
+                },
+                {
+                    permission: 'taerra.layer.<layer>',
+                    standard: 'op',
+                    text: 'Seeing a private layer, such as `taerra.layer.worldguard`'
                 },
                 {permission: 'taerra.hide', standard: 'nobody', text: 'Being hidden from the map'}
             ] satisfies Permission[]

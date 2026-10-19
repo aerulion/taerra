@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import java.util.List;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
@@ -40,8 +41,8 @@ public final class LoginSubCommand implements TaerraSubCommand {
   }
 
   @Override
-  public @NotNull TaerraPermission permission() {
-    return TaerraPermission.COMMAND_LOGIN;
+  public @NotNull List<TaerraPermission> permissions() {
+    return List.of(TaerraPermission.LOGIN);
   }
 
   @Override
@@ -88,7 +89,7 @@ public final class LoginSubCommand implements TaerraSubCommand {
         Messages.info(
             "login.link",
             Messages.link(this.web.baseUrl() + "/#login=" + code, Messages.tr("login.open"))));
-    if (this.web.publicUrl().isEmpty() && TaerraPermission.COMMAND_CONFIG.check(player)) {
+    if (this.web.publicUrl().isEmpty() && TaerraPermission.CONFIG.check(player)) {
       feedback(
           context,
           Messages.warning(

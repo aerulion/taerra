@@ -520,7 +520,7 @@ function setupContextMenu() {
         menu.querySelector('[data-action="teleport"]').hidden = !accountManager.canTeleport();
         const placing = accountManager.canEditMarkers() || accountManager.canKeepPersonal();
         menu.querySelector('[data-action="waypoint"]').hidden = !placing;
-        menu.querySelector('[data-action="select"]').hidden = !accountManager.canRender();
+        menu.querySelector('[data-action="select"]').hidden = !accountManager.canRenderArea();
         const owner = regionManager.at(Math.floor(block.x / 16), Math.floor(block.z / 16));
         const region = menu.querySelector('[data-action="region"]');
         region.hidden = !accountManager.canEditRegions();
@@ -528,8 +528,8 @@ function setupContextMenu() {
         region.textContent = t(region.dataset.i18n, {name: owner?.name});
         regionTarget = owner;
         const rendering = renderingWorld === currentWorld.name;
-        menu.querySelector('[data-action="render-world"]').hidden = !accountManager.canRender() || rendering;
-        menu.querySelector('[data-action="cancel-render"]').hidden = !accountManager.canRender() || !rendering;
+        menu.querySelector('[data-action="render-world"]').hidden = !accountManager.canRenderWorld() || rendering;
+        menu.querySelector('[data-action="cancel-render"]').hidden = !accountManager.canCancelRender() || !rendering;
         menu.querySelector('[data-action="area"]').hidden = !placing;
         menu.querySelector('[data-action="line"]').hidden = !placing;
         menu.hidden = false;

@@ -1,5 +1,6 @@
 package net.aerulion.taerra.web.auth;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -27,15 +28,7 @@ public final class WebGrants {
             Stream.concat(
                 config.webPermissions().stream(),
                 ModHandshake.uses(player) ? Stream.of(MOD) : Stream.empty()),
-            Stream.of(
-                TaerraPermission.WEB_TELEPORT.node(),
-                TaerraPermission.WEB_SEE_HIDDEN.node(),
-                TaerraPermission.WEB_RENDER.node(),
-                TaerraPermission.WEB_REGIONS.node(),
-                TaerraPermission.WEB_MARKERS.node(),
-                TaerraPermission.WEB_MARKERS_PRIVATE.node(),
-                TaerraPermission.WEB_MARKERS_PERSONAL.node(),
-                TaerraPermission.WEB_CONFIG.node()))
+            Arrays.stream(TaerraPermission.values()).map(TaerraPermission::node))
         .filter(node -> node.equals(MOD) || player.hasPermission(node))
         .collect(Collectors.toUnmodifiableSet());
   }

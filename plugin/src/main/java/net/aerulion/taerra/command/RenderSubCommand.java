@@ -6,6 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import net.aerulion.taerra.chat.Formats;
 import net.aerulion.taerra.chat.Messages;
@@ -81,8 +82,13 @@ public final class RenderSubCommand implements TaerraSubCommand {
   }
 
   @Override
-  public @NotNull TaerraPermission permission() {
-    return TaerraPermission.COMMAND_RENDER;
+  public @NotNull List<TaerraPermission> permissions() {
+    return List.of(
+        TaerraPermission.RENDER_WORLD,
+        TaerraPermission.RENDER_AREA,
+        TaerraPermission.RENDER_CANCEL,
+        TaerraPermission.RENDER_FLUSH,
+        TaerraPermission.RENDER_IMAGE);
   }
 
   @Override
@@ -93,13 +99,21 @@ public final class RenderSubCommand implements TaerraSubCommand {
   @Override
   public @NotNull LiteralArgumentBuilder<CommandSourceStack> command() {
     return builder()
-        .then(Commands.literal("cancel").executes(this::cancel))
-        .then(Commands.literal("flush").executes(this::flush))
+        .then(
+            Commands.literal("cancel")
+                .requires(TaerraPermission.RENDER_CANCEL.commandRequirement())
+                .executes(this::cancel))
+        .then(
+            Commands.literal("flush")
+                .requires(TaerraPermission.RENDER_FLUSH.commandRequirement())
+                .executes(this::flush))
         .then(
             Commands.literal("full")
+                .requires(TaerraPermission.RENDER_WORLD.commandRequirement())
                 .then(Commands.argument("world", ArgumentTypes.world()).executes(this::full)))
         .then(
             Commands.literal("radius")
+                .requires(TaerraPermission.RENDER_AREA.commandRequirement())
                 .then(
                     Commands.argument("world", ArgumentTypes.world())
                         .then(
@@ -128,6 +142,7 @@ public final class RenderSubCommand implements TaerraSubCommand {
                                                                 context, "center_z"))))))))
         .then(
             Commands.literal("image")
+                .requires(TaerraPermission.RENDER_IMAGE.commandRequirement())
                 .then(
                     Commands.argument("world", ArgumentTypes.world())
                         .executes(context -> image(context, 0))

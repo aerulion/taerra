@@ -129,7 +129,7 @@ public final class MapRoutes implements Routes {
                 .allMatch(
                     found ->
                         this.visibility.revealed(
-                            viewer.uuid(), viewer.canSeeHidden(), found.region()));
+                            viewer.uuid(), viewer.canSeeThroughFog(), found.region()));
     if (clear) {
       ctx.header(LAYERS_HEADER, "");
       respondWithTile(
@@ -158,7 +158,7 @@ public final class MapRoutes implements Routes {
       return layer;
     }
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
-    return this.visibility.revealed(viewer.uuid(), viewer.canSeeHidden(), layer.region())
+    return this.visibility.revealed(viewer.uuid(), viewer.canSeeThroughFog(), layer.region())
         ? layer
         : null;
   }

@@ -91,10 +91,9 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
             return;
           }
           for (final @NotNull Entry entry : entries) {
-            if (viewer.canSeeHidden()) {
-              players.add(entry.withHidden());
-            } else if (entry.listed() != null && visible(entry, viewer)) {
-              players.add(entry.listed());
+            final @Nullable String json = json(entry, viewer);
+            if (json != null) {
+              players.add(json);
             }
           }
         });
@@ -104,9 +103,24 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
   @Override
   public @Nullable Player shown(final @NotNull UUID uuid, final @NotNull Viewer viewer) {
     final @Nullable Entry entry = this.shown.get(uuid);
-    return entry == null || (!viewer.canSeeHidden() && (!entry.named() || !visible(entry, viewer)))
+    return entry == null
+            || (!viewer.canSeeThroughFog() && !visible(entry, viewer))
+            || (!viewer.canSeeHiddenPlayers() && !entry.named())
         ? null
         : entry.player();
+  }
+
+  private @Nullable String json(final @NotNull Entry entry, final @NotNull Viewer viewer) {
+    final boolean seesHidden = viewer.canSeeHiddenPlayers();
+    final boolean seesFog = viewer.canSeeThroughFog();
+    if ((!seesFog && !visible(entry, viewer)) || (!seesHidden && entry.listed() == null)) {
+      return null;
+    }
+    final boolean marked = entry.listed() == null || (seesFog && entry.region() != null);
+    if (seesHidden) {
+      return marked ? entry.withHidden() : entry.unmasked();
+    }
+    return marked ? entry.listedHidden() : entry.listed();
   }
 
   private boolean visible(final @NotNull Entry entry, final @NotNull Viewer viewer) {
@@ -157,21 +171,26 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
         final boolean included = PlayerMapPayloadSerializer.shouldIncludePlayer(player);
         final @NotNull Map<String, Object> data = PlayerMapPayloadSerializer.serialize(player);
         try {
-          data.put("hidden", !included || region != null);
+          data.put("hidden", true);
           final @NotNull String withHidden = this.mapper.writeValueAsString(data);
           data.put("hidden", false);
+          final @NotNull String unmasked = this.mapper.writeValueAsString(data);
+          final @NotNull Map<String, Object> listedData =
+              player.isAllowingServerListings() ? data : anonymize(data, player);
           final @Nullable String listed =
-              !included
-                  ? null
-                  : this.mapper.writeValueAsString(
-                      player.isAllowingServerListings() ? data : anonymize(data, player));
+              included ? this.mapper.writeValueAsString(listedData) : null;
+          listedData.put("hidden", true);
+          final @Nullable String listedHidden =
+              included ? this.mapper.writeValueAsString(listedData) : null;
           final @NotNull Entry entry =
               new Entry(
                   player,
                   region == null ? null : region.id(),
                   included && player.isAllowingServerListings(),
                   listed,
-                  withHidden);
+                  listedHidden,
+                  withHidden,
+                  unmasked);
           entries.add(entry);
           shown.put(player.getUniqueId(), entry);
         } catch (final Exception e) {
@@ -195,7 +214,9 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
       @Nullable UUID region,
       boolean named,
       @Nullable String listed,
-      @NotNull String withHidden) {
+      @Nullable String listedHidden,
+      @NotNull String withHidden,
+      @NotNull String unmasked) {
 
     @Override
     public boolean equals(final @Nullable Object other) {

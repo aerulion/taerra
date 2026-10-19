@@ -40,7 +40,8 @@ public final class RegionMarkers {
     final @NotNull List<Marker> markers = new ArrayList<>();
     final @NotNull Map<String, Map<String, Object>> extras = new HashMap<>();
     for (final @NotNull MapRegion region : visibility.regions().in(worldName)) {
-      final boolean revealed = visibility.revealed(viewer.uuid(), viewer.canSeeHidden(), region);
+      final boolean revealed =
+          visibility.revealed(viewer.uuid(), viewer.canSeeThroughFog(), region);
       final long discovered = visibility.discoveredAt(viewer.uuid(), region);
       final @NotNull List<List<long[]>> rings = RegionShapes.rings(region.chunks());
       for (int i = 0; i < rings.size(); i++) {

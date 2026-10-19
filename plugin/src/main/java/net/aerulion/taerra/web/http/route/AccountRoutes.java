@@ -56,17 +56,20 @@ public final class AccountRoutes implements Routes {
 
   private static @NotNull Map<String, Object> account(
       final WebSessions.@NotNull Session session, final @NotNull Viewer viewer) {
-    return Map.of(
-        "uuid", session.uuid().toString(),
-        "name", session.name(),
-        "teleport", viewer.canTeleport(),
-        "mod", viewer.usesMod(),
-        "markers", viewer.canEditMarkers(),
-        "privateGroups", viewer.canCreatePrivateGroups(),
-        "personal", viewer.canKeepPersonalMarkers(),
-        "render", viewer.canRender(),
-        "regions", viewer.canEditRegions(),
-        "config", viewer.canConfigure());
+    return Map.ofEntries(
+        Map.entry("uuid", session.uuid().toString()),
+        Map.entry("name", session.name()),
+        Map.entry("teleport", viewer.canTeleport()),
+        Map.entry("mod", viewer.usesMod()),
+        Map.entry("markers", viewer.canEditMarkers()),
+        Map.entry("privateGroups", viewer.canCreatePrivateGroups()),
+        Map.entry("personal", viewer.canKeepPersonalMarkers()),
+        Map.entry("renderWorld", viewer.canRenderWorld()),
+        Map.entry("renderArea", viewer.canRenderArea()),
+        Map.entry("cancelRender", viewer.canCancelRender()),
+        Map.entry("regions", viewer.canEditRegions()),
+        Map.entry("resetRegions", viewer.canResetRegions()),
+        Map.entry("config", viewer.canConfigure()));
   }
 
   private void handleAccountRequest(final @NotNull Context ctx) {
