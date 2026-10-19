@@ -47,6 +47,15 @@ public final class TaerraClient implements ClientModInitializer {
   private MapSession session;
   private MapView screenView;
 
+  public static @NotNull String version() {
+    return FabricLoader.getInstance()
+        .getModContainer("taerra")
+        .orElseThrow()
+        .getMetadata()
+        .getVersion()
+        .getFriendlyString();
+  }
+
   public static @NotNull Settings settings() {
     return Objects.requireNonNull(settings, "TAERRA is not initialized");
   }

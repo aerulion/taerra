@@ -18,6 +18,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.zip.GZIPInputStream;
+import net.aerulion.taerra.mod.TaerraClient;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +36,8 @@ public final class WebClientImpl implements WebClient {
               ? HttpResponse.BodySubscribers.mapping(
                   HttpResponse.BodySubscribers.ofByteArray(), WebClientImpl::gunzip)
               : HttpResponse.BodySubscribers.ofByteArray();
+
+  private static final String USER_AGENT = "TAERRA/" + TaerraClient.version() + " (Fabric)";
 
   private final String base;
   private final @Nullable String token;
@@ -143,7 +146,8 @@ public final class WebClientImpl implements WebClient {
 
   @Override
   public CompletableFuture<WebSocket> socket(final WebSocket.Listener listener) {
-    final WebSocket.Builder builder = this.http.newWebSocketBuilder();
+    final WebSocket.Builder builder =
+        this.http.newWebSocketBuilder().header("User-Agent", USER_AGENT);
     if (this.token != null) {
       builder.header("Cookie", COOKIE + this.token);
     }
@@ -171,7 +175,8 @@ public final class WebClientImpl implements WebClient {
     final HttpRequest.Builder request =
         HttpRequest.newBuilder(URI.create(this.base + path))
             .timeout(TIMEOUT)
-            .header("Accept-Encoding", "gzip");
+            .header("Accept-Encoding", "gzip")
+            .header("User-Agent", USER_AGENT);
     if (this.token != null) {
       request.header("Cookie", COOKIE + this.token);
     }

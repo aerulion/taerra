@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.nio.charset.StandardCharsets;
 import net.aerulion.taerra.mod.TaerraClient;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -28,14 +27,7 @@ public record HandshakePayload(String json) implements CustomPacketPayload {
   public static @NotNull HandshakePayload version() {
     final @NotNull JsonObject json = new JsonObject();
     json.addProperty("protocol", TaerraClient.PROTOCOL);
-    json.addProperty(
-        "version",
-        FabricLoader.getInstance()
-            .getModContainer("taerra")
-            .orElseThrow()
-            .getMetadata()
-            .getVersion()
-            .getFriendlyString());
+    json.addProperty("version", TaerraClient.version());
     return new HandshakePayload(json.toString());
   }
 
