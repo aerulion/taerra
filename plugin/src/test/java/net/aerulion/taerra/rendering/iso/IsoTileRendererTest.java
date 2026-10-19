@@ -698,7 +698,7 @@ class IsoTileRendererTest {
     final int @NotNull [] ground = new int[9];
     Arrays.fill(ground, GROUND_Y);
     final byte @NotNull [] around = new byte[Fog.AROUND * Fog.AROUND];
-    around[Fog.around(0, 0)] = Fog.TEASED;
+    around[Fog.around(0, 0)] = Fog.VEILED;
     around[Fog.around(1, 0)] = Fog.HIDDEN;
     final @NotNull ChunkColumnsSource misted =
         (chunkX, chunkZ) -> {

@@ -411,7 +411,7 @@ public final class ChunkColumnsCacheImpl implements ChunkColumnsCache {
                 ? this.regions.foggedAt(worldName, chunkX + offsetX, chunkZ + offsetZ)
                 : only.contains(chunkX + offsetX, chunkZ + offsetZ) ? only : null;
         around[Fog.around(offsetX, offsetZ)] =
-            region == null ? Fog.OPEN : region.fog() == RegionFog.VEIL ? Fog.TEASED : Fog.HIDDEN;
+            region == null ? Fog.OPEN : region.fog() == RegionFog.VEIL ? Fog.VEILED : Fog.HIDDEN;
       }
     }
     return around;

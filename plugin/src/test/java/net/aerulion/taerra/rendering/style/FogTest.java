@@ -100,12 +100,12 @@ class FogTest {
   }
 
   @Test
-  @DisplayName("a teaser lets the ground beneath show through")
-  void teaserShowsThrough() {
-    final int teaser = Fog.hidden(0, 0, FLAT, ALONE, true)[0];
-    assertTrue(Fog.teased(teaser));
+  @DisplayName("a veil lets the ground beneath show through")
+  void veilShowsThrough() {
+    final int veil = Fog.hidden(0, 0, FLAT, ALONE, true)[0];
+    assertTrue(Fog.veiled(veil));
     assertNotEquals(
-        Fog.veil(GROUND, teaser, 3.5f, 9.5f, 63), Fog.veil(0xFFC03020, teaser, 3.5f, 9.5f, 63));
+        Fog.veil(GROUND, veil, 3.5f, 9.5f, 63), Fog.veil(0xFFC03020, veil, 3.5f, 9.5f, 63));
   }
 
   @Test

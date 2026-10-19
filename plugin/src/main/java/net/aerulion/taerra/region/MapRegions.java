@@ -90,12 +90,12 @@ public final class MapRegions {
     }
     final @NotNull YamlConfiguration yaml = YamlConfiguration.loadConfiguration(limits);
     final @NotNull Map<String, LongSet> hidden = legacy(yaml, "hidden");
-    final @NotNull Map<String, LongSet> teased = legacy(yaml, "teased");
+    final @NotNull Map<String, LongSet> veils = legacy(yaml, "teased");
     final @NotNull List<MapRegion> migrated = new ArrayList<>();
     hidden.forEach(
         (world, chunks) -> {
           final @NotNull LongSet veiled = new LongOpenHashSet(chunks);
-          veiled.retainAll(teased.getOrDefault(world, new LongOpenHashSet()));
+          veiled.retainAll(veils.getOrDefault(world, new LongOpenHashSet()));
           final @NotNull LongSet blocked = new LongOpenHashSet(chunks);
           blocked.removeAll(veiled);
           for (final @NotNull Set<Long> area : RegionShapes.areas(blocked)) {
