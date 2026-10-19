@@ -6,8 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import net.aerulion.taerra.config.TaerraConfig;
+import net.aerulion.taerra.player.Navigation;
+import net.aerulion.taerra.player.Preferences;
 import net.aerulion.taerra.util.HexColors;
 import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.web.auth.Viewer;
@@ -21,16 +22,18 @@ public final class NavigationRoutes implements Routes {
   private final @NotNull Requests requests;
   private final @NotNull TaerraConfig taerraConfig;
   private final @NotNull MapWebSocketHandler wsHandler;
-  private final @NotNull Map<UUID, NavigationTarget> navigations = new ConcurrentHashMap<>();
+  private final @NotNull Preferences preferences;
 
   public NavigationRoutes(
       final @NotNull Requests requests,
       final @NotNull TaerraConfig taerraConfig,
-      final @NotNull MapWebSocketHandler wsHandler) {
+      final @NotNull MapWebSocketHandler wsHandler,
+      final @NotNull Preferences preferences) {
     super();
     this.requests = requests;
     this.taerraConfig = taerraConfig;
     this.wsHandler = wsHandler;
+    this.preferences = preferences;
   }
 
   @Override
@@ -51,8 +54,8 @@ public final class NavigationRoutes implements Routes {
 
   private void handleNavigationRequest(final @NotNull Context ctx) {
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
-    final @Nullable NavigationTarget target =
-        viewer.uuid() == null ? null : this.navigations.get(viewer.uuid());
+    final @Nullable Navigation target =
+        viewer.uuid() == null ? null : this.preferences.navigation(viewer.uuid());
     ctx.header("Cache-Control", "no-store");
     if (target == null || !viewer.canSee(this.taerraConfig, target.world())) {
       ctx.status(204);
@@ -92,8 +95,8 @@ public final class NavigationRoutes implements Routes {
       ctx.status(400).result("Invalid target");
       return;
     }
-    final @NotNull NavigationTarget target =
-        new NavigationTarget(
+    final @NotNull Navigation target =
+        new Navigation(
             label,
             request.world(),
             request.x(),
@@ -101,7 +104,7 @@ public final class NavigationRoutes implements Routes {
             request.z(),
             HexColors.format(color.getAsInt()),
             request.player());
-    this.navigations.put(viewer.uuid(), target);
+    this.preferences.navigate(viewer.uuid(), target);
     publishNavigation(viewer.uuid(), target);
     ctx.status(204);
   }
@@ -112,13 +115,12 @@ public final class NavigationRoutes implements Routes {
       ctx.status(403).result("Not allowed");
       return;
     }
-    this.navigations.remove(viewer.uuid());
+    this.preferences.navigate(viewer.uuid(), null);
     publishNavigation(viewer.uuid(), null);
     ctx.status(204);
   }
 
-  private void publishNavigation(
-      final @NotNull UUID player, final @Nullable NavigationTarget target) {
+  private void publishNavigation(final @NotNull UUID player, final @Nullable Navigation target) {
     final @NotNull Map<String, Object> message = new HashMap<>();
     message.put("type", "navigation");
     message.put("target", target);

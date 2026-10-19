@@ -59,6 +59,7 @@ public final class WebMapImpl implements WebMap {
   private static final Type PLAYERS = new TypeToken<List<Player>>() {}.getType();
   private static final Type SKIES = new TypeToken<Map<String, Sky>>() {}.getType();
   private static final Type LAYERS = new TypeToken<List<Layer>>() {}.getType();
+  private static final Type SHOWN = new TypeToken<Map<String, Boolean>>() {}.getType();
   private static final Type EDITORS = new TypeToken<List<ServerSettings.Editor>>() {}.getType();
   private static final Type GROUPS = new TypeToken<List<WaypointGroup>>() {}.getType();
   private static final Type DEVICES = new TypeToken<List<Device>>() {}.getType();
@@ -228,7 +229,29 @@ public final class WebMapImpl implements WebMap {
 
   @Override
   public void setShown(final @NotNull Layer layer, final boolean shown) {
-    this.layers.put(layer.id(), shown);
+    if (shown == layer.shown()) {
+      this.layers.remove(layer.id());
+    } else {
+      this.layers.put(layer.id(), shown);
+    }
+    this.client.send(
+        "PATCH",
+        "/api/layers",
+        Map.of(shown == layer.shown() ? "reset" : shown ? "show" : "hide", List.of(layer.id())),
+        _ -> {});
+  }
+
+  private void refreshLayers() {
+    this.client.json("/api/layers", SHOWN, this::setLayers);
+  }
+
+  private void setLayers(final @Nullable Map<String, Boolean> layers) {
+    if (layers == null) {
+      return;
+    }
+    this.layers.clear();
+    this.layers.putAll(layers);
+    List.copyOf(this.listeners).forEach(WebMapListener::layersChanged);
   }
 
   @Override
@@ -652,6 +675,7 @@ public final class WebMapImpl implements WebMap {
     this.client.<Account>json("/api/account", Account.class, account -> this.account = account);
     this.client.<NavigationTarget>json(
         "/api/navigation", NavigationTarget.class, this::setNavigation);
+    refreshLayers();
   }
 
   private void refreshWorlds() {
@@ -708,6 +732,7 @@ public final class WebMapImpl implements WebMap {
                             this.staleMarkers.addAll(this.markers.keySet());
                             this.staleRegions.addAll(this.regions.keySet());
                             refreshPlayers();
+                            refreshLayers();
                             if (this.settingsOpen) {
                               send(Map.of("type", "settings", "open", true, "client", "mod"));
                               List.copyOf(this.listeners)
@@ -755,6 +780,7 @@ public final class WebMapImpl implements WebMap {
       case "sky" -> setSkies(GSON.fromJson(message.get("data"), SKIES));
       case "navigation" ->
           setNavigation(GSON.fromJson(message.get("target"), NavigationTarget.class));
+      case "layers" -> setLayers(GSON.fromJson(message.get("layers"), SHOWN));
       case "markers" -> {
         final String world = message.get("world").getAsString();
         if (this.markers.containsKey(world)) {

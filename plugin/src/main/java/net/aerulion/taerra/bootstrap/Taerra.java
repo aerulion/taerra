@@ -33,6 +33,7 @@ import net.aerulion.taerra.marker.MarkerRegistryImpl;
 import net.aerulion.taerra.marker.MarkerRegistryInternal;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.player.PlayerFiles;
+import net.aerulion.taerra.player.Preferences;
 import net.aerulion.taerra.region.MapRegions;
 import net.aerulion.taerra.region.RegionDiscoveries;
 import net.aerulion.taerra.region.RegionDiscovery;
@@ -334,7 +335,8 @@ public final class Taerra extends JavaPlugin {
               new WaypointEditor(this, configuration, waypoints, personalWaypoints),
               configEditor,
               regionVisibility,
-              regionEditor);
+              regionEditor,
+              new Preferences(playerFiles));
       this.webServer = webServer;
       webServer.start();
       tileUpdateBroadcaster.start();

@@ -11,6 +11,8 @@ public interface WebMapListener {
 
   default void markersChanged(final String world) {}
 
+  default void layersChanged() {}
+
   default void regionsChanged(final String world) {}
 
   default void settingsChanged(final long revision) {}

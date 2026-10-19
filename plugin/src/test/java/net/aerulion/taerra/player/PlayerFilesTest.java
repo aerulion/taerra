@@ -2,11 +2,13 @@ package net.aerulion.taerra.player;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.aerulion.taerra.marker.TestPlugins;
@@ -58,5 +60,25 @@ class PlayerFilesTest {
     new PlayerFiles(plugin).update(ALEX, data -> data.withDiscoveries(Map.of(TOWN, 1234L)));
 
     assertEquals(Map.of(TOWN, 1234L), new PlayerFiles(plugin).get(ALEX).discoveries());
+  }
+
+  @Test
+  @DisplayName("navigation and layer choices are read back after a restart")
+  void keepsPreferences() {
+    final @NotNull Plugin plugin = TestPlugins.in(this.folder.toFile());
+    final @NotNull Preferences preferences = new Preferences(new PlayerFiles(plugin));
+    final @NotNull Navigation home =
+        new Navigation("Home", "minecraft:overworld", 1.5, null, -3.5, "#3AB3DA", null);
+    preferences.navigate(ALEX, home);
+    preferences.changeLayers(
+        ALEX, List.of("chunks", "waypoints.Shops"), List.of("players"), List.of());
+    final @NotNull Map<String, Boolean> layers = Map.of("players", false, "waypoints.Shops", true);
+
+    assertEquals(layers, preferences.changeLayers(ALEX, List.of(), List.of(), List.of("chunks")));
+    assertNull(preferences.changeLayers(ALEX, List.of(""), List.of(), List.of()));
+
+    final @NotNull PlayerData data = new PlayerFiles(plugin).get(ALEX);
+    assertEquals(home, data.navigation());
+    assertEquals(layers, data.layers());
   }
 }

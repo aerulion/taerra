@@ -1,6 +1,7 @@
 import {dates, numbers, plurals, t} from './i18n.js';
 import {accountManager} from './account.js';
 import {mapManager, pixelPath} from './map.js';
+import {wsManager} from './websocket.js';
 
 
 const SPLINE_BLOCKS_PER_STEP = 2;
@@ -275,6 +276,7 @@ class MarkerManager {
         this.sampling = new Set();
         this.cullTimer = 0;
         this.visibility = {};
+        this.synced = false;
         this.onWaypoint = null;
         this.hidden = null;
         this.pending = null;
@@ -294,6 +296,42 @@ class MarkerManager {
             }
         });
         map.on('moveend', () => this.cull());
+        wsManager.on('layers', (message) => this.applySaved(message.layers ?? {}));
+        wsManager.on('connect', () => void this.loadSaved());
+    }
+
+    async loadSaved() {
+        if (!accountManager.loggedIn()) {
+            this.synced = false;
+            return;
+        }
+        try {
+            const response = await fetch('/api/layers');
+            if (response.status === 200) {
+                this.applySaved(await response.json());
+            }
+        } catch (error) {
+            console.error('Failed to load the layers:', error);
+        }
+    }
+
+    applySaved(visibility) {
+        this.synced = true;
+        this.replaceVisibility({...visibility});
+    }
+
+    async save(layer, shown) {
+        if (!this.synced) {
+            return;
+        }
+        const change = {[shown === layer.shown ? 'reset' : shown ? 'show' : 'hide']: [layer.id]};
+        try {
+            await fetch('/api/layers', {
+                method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(change)
+            });
+        } catch (error) {
+            console.error('Failed to save the layers:', error);
+        }
     }
 
     placeLabels() {
@@ -352,15 +390,26 @@ class MarkerManager {
     }
 
     writeVisibility(params) {
+        if (this.synced) {
+            return;
+        }
         for (const [id, shown] of Object.entries(this.visibility)) {
             params.append(shown ? 'show' : 'hide', id);
         }
     }
 
     readVisibility(params) {
-        this.visibility = {};
-        params.getAll('show').forEach(id => this.visibility[id] = true);
-        params.getAll('hide').forEach(id => this.visibility[id] = false);
+        if (this.synced) {
+            return;
+        }
+        const visibility = {};
+        params.getAll('show').forEach(id => visibility[id] = true);
+        params.getAll('hide').forEach(id => visibility[id] = false);
+        this.replaceVisibility(visibility);
+    }
+
+    replaceVisibility(visibility) {
+        this.visibility = visibility;
         this.onPlayers?.();
         this.onLayers?.();
         this.redraw();
@@ -757,7 +806,10 @@ class MarkerManager {
             const toggle = document.createElement('input');
             toggle.type = 'checkbox';
             toggle.checked = this.isShown(layer);
-            toggle.addEventListener('change', () => this.setShown(layer, toggle.checked));
+            toggle.addEventListener('change', () => {
+                this.setShown(layer, toggle.checked);
+                void this.save(layer, toggle.checked);
+            });
             const row = element('label', 'layer');
             const name = element('span', 'layer__name', this.layerLabel(layer));
             if (layer.private) {

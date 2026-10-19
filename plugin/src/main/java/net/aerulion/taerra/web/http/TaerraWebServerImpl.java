@@ -16,6 +16,7 @@ import net.aerulion.taerra.config.ConfigEditor;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.marker.MarkerRegistryInternal;
+import net.aerulion.taerra.player.Preferences;
 import net.aerulion.taerra.region.RegionEditor;
 import net.aerulion.taerra.region.RegionVisibility;
 import net.aerulion.taerra.rendering.RenderService;
@@ -28,6 +29,7 @@ import net.aerulion.taerra.web.auth.ModHandshake;
 import net.aerulion.taerra.web.auth.WebSessions;
 import net.aerulion.taerra.web.http.route.AccountRoutes;
 import net.aerulion.taerra.web.http.route.ActionRoutes;
+import net.aerulion.taerra.web.http.route.LayerRoutes;
 import net.aerulion.taerra.web.http.route.MapRoutes;
 import net.aerulion.taerra.web.http.route.NavigationRoutes;
 import net.aerulion.taerra.web.http.route.RegionRoutes;
@@ -83,7 +85,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       final @NotNull WaypointEditor waypointEditor,
       final @NotNull ConfigEditor configEditor,
       final @NotNull RegionVisibility regionVisibility,
-      final @NotNull RegionEditor regionEditor) {
+      final @NotNull RegionEditor regionEditor,
+      final @NotNull Preferences preferences) {
     super();
     this.plugin = plugin;
     this.taerraConfig = taerraConfig;
@@ -114,7 +117,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
             new AccountRoutes(plugin, requests, sessions, web, avatars),
             new WaypointRoutes(
                 plugin, requests, taerraConfig, waypoints, personalWaypoints, waypointEditor),
-            new NavigationRoutes(requests, taerraConfig, wsHandler),
+            new NavigationRoutes(requests, taerraConfig, wsHandler, preferences),
+            new LayerRoutes(requests, wsHandler, preferences),
             new ActionRoutes(
                 plugin, requests, taerraConfig, modHandshake, teleports, renders, renderFeedback),
             new SettingsRoutes(requests, configEditor, wsHandler),

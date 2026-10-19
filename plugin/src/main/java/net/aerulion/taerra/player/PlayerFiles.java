@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -139,6 +140,20 @@ public final class PlayerFiles {
               .forEach(entry -> discoveries.put(entry.getKey().toString(), entry.getValue()));
           yaml.set("discoveries", discoveries);
         }
+        if (data.navigation() != null) {
+          yaml.set("navigation", data.navigation().entry());
+        }
+        for (final boolean shown : new boolean[] {true, false}) {
+          final @NotNull List<String> ids =
+              data.layers().entrySet().stream()
+                  .filter(entry -> entry.getValue() == shown)
+                  .map(Map.Entry::getKey)
+                  .sorted()
+                  .toList();
+          if (!ids.isEmpty()) {
+            yaml.set(shown ? "layers.shown" : "layers.hidden", ids);
+          }
+        }
         AtomicFiles.write(file, yaml.saveToString().getBytes(StandardCharsets.UTF_8));
       }
     } catch (final IOException e) {
@@ -170,7 +185,14 @@ public final class PlayerFiles {
         }
       }
     }
-    return new PlayerData(PersonalWaypoints.read(yaml.getMapList("waypoints")), discoveries);
+    final @NotNull Map<String, Boolean> layers = new HashMap<>();
+    yaml.getStringList("layers.hidden").forEach(id -> layers.put(id, false));
+    yaml.getStringList("layers.shown").forEach(id -> layers.put(id, true));
+    return new PlayerData(
+        PersonalWaypoints.read(yaml.getMapList("waypoints")),
+        discoveries,
+        Navigation.read(yaml.getConfigurationSection("navigation")),
+        layers);
   }
 
   private @NotNull File file(final @NotNull UUID player) {

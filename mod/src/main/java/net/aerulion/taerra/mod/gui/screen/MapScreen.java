@@ -119,6 +119,11 @@ public final class MapScreen extends Screen {
             MapScreen.this.layers.refresh(world);
           }
         }
+
+        @Override
+        public void layersChanged() {
+          MapScreen.this.layers.refresh(MapScreen.this.view.world());
+        }
       };
   private @Nullable Button worldButton;
   private @Nullable Button playersButton;
