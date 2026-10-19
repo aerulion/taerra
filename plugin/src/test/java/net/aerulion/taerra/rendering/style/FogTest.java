@@ -109,6 +109,25 @@ class FogTest {
   }
 
   @Test
+  @DisplayName("a veil is mostly dense, with only some thin patches")
+  void veilLeansDense() {
+    final int veil = Fog.hidden(0, 0, FLAT, ALONE, true)[0];
+    final Fog.Cell cell = new Fog.Cell();
+    int thin = 0;
+    int total = 0;
+    for (int x = 0; x < 2048; x += 4) {
+      for (int z = 0; z < 2048; z += 4) {
+        if ((Fog.overlay(veil, x + 0.5f, z + 0.5f, 63, cell) >>> 24) <= 0xC0) {
+          thin++;
+        }
+        total++;
+      }
+    }
+    final float share = (float) thin / total;
+    assertTrue(share > 0.1f && share < 0.3f, "thin share " + share);
+  }
+
+  @Test
   @DisplayName("spill drawn as an overlay over the ground looks like spill baked into it")
   void overlayMatchesVeil() {
     final int[] mist = mistBeside(-1);

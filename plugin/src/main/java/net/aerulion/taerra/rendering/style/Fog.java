@@ -67,6 +67,8 @@ public final class Fog {
   private static final float THICK = 0.68f;
   private static final int TONES = 2;
   private static final int OPACITY_STEPS = 6;
+  private static final float VEIL_GAPS = 0.33f;
+  private static final float VEIL_BANKS = 0.53f;
   private static final float VEIL_THIN = 0.45f;
   private static final float VEIL_THICK = 0.88f;
   private static final float WASH = 0.45f;
@@ -262,7 +264,9 @@ public final class Fog {
       final float density = (float) (kind & FULL) / FULL;
       final float cloud = cloud(cellX, cellZ);
       this.reach =
-          (kind & VEIL) != 0 ? lerp(VEIL_THIN, VEIL_THICK, smoothstep(THIN, THICK, cloud)) : 1.0f;
+          (kind & VEIL) != 0
+              ? lerp(VEIL_THIN, VEIL_THICK, smoothstep(VEIL_GAPS, VEIL_BANKS, cloud))
+              : 1.0f;
       this.body = Fog.body(cloud, cellX, cellZ, density);
       final float shadowX = cellX - SHADOW_REACH;
       final float shadowZ = cellZ - SHADOW_REACH;
