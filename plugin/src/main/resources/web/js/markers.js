@@ -171,7 +171,7 @@ function isWaypointLayer(layer) {
 
 const CHUNK_LEVELS = ['entity_ticking', 'ticking', 'border'];
 
-function chunkCount(count) {
+export function chunkCount(count) {
     return t(`chunks.count.${plurals.select(Number(count))}`, {count: numbers.format(count)});
 }
 

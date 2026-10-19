@@ -1422,7 +1422,7 @@ public final class MapScreen extends Screen {
               : Component.translatable(
                   "taerra.menu.edit_region",
                   owner.name().isEmpty()
-                      ? Component.translatable("taerra.region.unnamed")
+                      ? Component.translatable("taerra.regions.unnamed")
                       : Component.literal(owner.name())),
           _ -> {
             closeMenu();

@@ -187,7 +187,9 @@ public final class RegionScreen extends Screen {
   public static @NotNull Component meta(final @NotNull String fog, final int size) {
     return Component.translatable("taerra.region.fog." + fog)
         .append(", ")
-        .append(Component.translatable("taerra.regions.size", size));
+        .append(
+            Component.translatable(
+                size == 1 ? "taerra.chunks.count.one" : "taerra.chunks.count.other", size));
   }
 
   public static @NotNull String problem(final int status, final @Nullable String body) {

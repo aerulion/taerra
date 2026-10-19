@@ -1,7 +1,7 @@
 import {numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
 import {ColorPicker} from './colors.js';
-import {element} from './markers.js';
+import {chunkCount, element} from './markers.js';
 import {regionManager} from './regions.js';
 import {accountManager} from './account.js';
 
@@ -14,7 +14,7 @@ const regionName = (region) => region.name || t('regions.unnamed');
 function meta(region) {
     return [
         t(`region.fog.${region.fog ?? 'hide'}`),
-        t('regions.size', {count: numbers.format(region.size ?? region.chunks?.length ?? 0)})
+        chunkCount(region.size ?? region.chunks?.length ?? 0)
     ].join(', ');
 }
 
