@@ -22,6 +22,9 @@ public record Layer(
   }
 
   public boolean waypoints() {
-    return this.personal || this.id.equals("waypoints") || this.id.startsWith("waypoints.");
+    return this.personal
+        || this.id.equals("waypoints")
+        || this.id.equals("spawn")
+        || this.id.startsWith("waypoints.");
   }
 }

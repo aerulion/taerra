@@ -167,7 +167,7 @@ function shade(hex, factor) {
 }
 
 function isWaypointLayer(layer) {
-    return layer.personal || layer.id === 'waypoints' || layer.id.startsWith('waypoints.');
+    return layer.personal || layer.id === 'waypoints' || layer.id === 'spawn' || layer.id.startsWith('waypoints.');
 }
 
 const CHUNK_LEVELS = ['entity_ticking', 'ticking', 'border'];
@@ -191,6 +191,8 @@ function localize(layer) {
             }))};
         case 'worldguard':
             return {...layer, markers: layer.markers.map(marker => ({...marker, details: localizedDetails(marker)}))};
+        case 'spawn':
+            return {...layer, markers: layer.markers.map(marker => ({...marker, label: t('marker.spawn')}))};
         default:
             return layer;
     }

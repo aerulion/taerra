@@ -14,6 +14,7 @@ import net.aerulion.taerra.rendering.sample.ChunkColumnsCache;
 import net.aerulion.taerra.storage.TileCache;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.world.LoadedChunkMarkers;
+import net.aerulion.taerra.world.SpawnMarkers;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.Plugin;
@@ -128,6 +129,7 @@ public final class LiveSettings {
             this.plugin.getLogger().info("Hooked into WorldGuard, regions show up on the map");
             yield WorldGuardRegions.start(this.plugin, this.markers, this.config, shown);
           }
+          case SPAWN -> SpawnMarkers.start(this.plugin, this.markers, this.config, shown);
           case WORLDBORDER -> WorldBorders.start(this.plugin, this.markers, this.config, shown);
           case LOADED_CHUNKS ->
               LoadedChunkMarkers.start(
@@ -139,6 +141,7 @@ public final class LiveSettings {
   }
 
   private enum Layer {
+    SPAWN("spawn", "spawn", true, true),
     WORLDGUARD("worldguard", "worldguard", false, false),
     WORLDBORDER("worldborder", "worldborder", true, true),
     LOADED_CHUNKS("loaded-chunks", "chunks", false, false);

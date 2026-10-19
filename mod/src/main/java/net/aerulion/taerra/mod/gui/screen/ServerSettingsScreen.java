@@ -87,6 +87,8 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           new Section(
               "layers",
               List.of(
+                  "markers.spawn.enabled",
+                  "markers.spawn.shown-by-default",
                   "markers.worldborder.enabled",
                   "markers.worldborder.shown-by-default",
                   "markers.worldguard.enabled",

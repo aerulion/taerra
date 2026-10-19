@@ -46,6 +46,8 @@ public final class ConfigEditor {
           Setting.number("rendering.update-interval", 0, Integer.MAX_VALUE, true),
           Setting.number("cache.max-tiles", 1, 50_000, true),
           Setting.number("cache.max-chunks", 256, 131_072, true),
+          Setting.toggle("markers.spawn.enabled"),
+          Setting.toggle("markers.spawn.shown-by-default"),
           Setting.toggle("markers.worldguard.enabled"),
           Setting.toggle("markers.worldguard.shown-by-default"),
           Setting.toggle("markers.worldborder.enabled"),

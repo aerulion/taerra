@@ -20,30 +20,20 @@ import net.aerulion.taerra.api.marker.MarkerLayer;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.api.marker.PointMarker;
 import net.aerulion.taerra.config.TaerraConfig;
-import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.util.AtomicFiles;
 import net.aerulion.taerra.util.HexColors;
-import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.world.SpawnChangeEvent;
-import org.bukkit.event.world.WorldLoadEvent;
-import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class WaypointsImpl implements Waypoints, Listener {
+public final class WaypointsImpl implements Waypoints {
 
   private static final @NotNull Color DEFAULT_COLOR = Color.fromRGB(0x4FA3E0);
-  private static final @NotNull Color SPAWN_COLOR = Color.fromRGB(0xFFCF3F);
-  private static final @NotNull String SPAWN = "spawn:";
 
   private final @NotNull Plugin plugin;
   private final @NotNull MarkerRegistry registry;
@@ -194,7 +184,6 @@ public final class WaypointsImpl implements Waypoints, Listener {
       }
       layer(entry.get("group") instanceof final @NotNull String group ? group : null).set(marker);
     }
-    Bukkit.getWorlds().forEach(this::placeSpawn);
     List.copyOf(this.config.privateLayers()).stream()
         .filter(id -> id.startsWith(GROUP_LAYER) && this.registry.existingLayer(id) == null)
         .forEach(id -> this.config.setLayerPrivate(this.plugin, id, false));
@@ -358,31 +347,5 @@ public final class WaypointsImpl implements Waypoints, Listener {
     } catch (final IOException e) {
       this.plugin.getLogger().log(Level.SEVERE, "Failed to save waypoints.yml", e);
     }
-  }
-
-  private void placeSpawn(final @NotNull World world) {
-    final @NotNull Location spawn = world.getSpawnLocation();
-    this.layer.set(
-        Marker.point(
-                SPAWN + WorldKeys.id(world),
-                world.getKey(),
-                new Vector(spawn.getBlockX() + .5, spawn.getBlockY(), spawn.getBlockZ() + .5),
-                "Spawn")
-            .withColor(SPAWN_COLOR));
-  }
-
-  @EventHandler
-  public void onSpawnChange(final @NotNull SpawnChangeEvent event) {
-    placeSpawn(event.getWorld());
-  }
-
-  @EventHandler
-  public void onWorldLoad(final @NotNull WorldLoadEvent event) {
-    placeSpawn(event.getWorld());
-  }
-
-  @EventHandler
-  public void onWorldUnload(final @NotNull WorldUnloadEvent event) {
-    this.layer.remove(SPAWN + WorldKeys.id(event.getWorld()));
   }
 }

@@ -67,6 +67,11 @@ markers:
   # Layers only logged-in viewers with taerra.layer.<layer> see, like taerra.layer.worldguard.
   # Set in game with /taerra config layer <layer> private
   private-layers: [ chunks, worldguard ]
+  spawn:
+    # Mark each world's spawn point on a layer of its own, moved along when the spawn moves
+    enabled: true
+    # Whether the layer is on for viewers who have not toggled it themselves
+    shown-by-default: true
   worldguard:
     # Show WorldGuard regions as a layer viewers can switch on (needs WorldGuard installed). It names
     # each region's owners and members, so it shows who owns and builds on which land. It is in

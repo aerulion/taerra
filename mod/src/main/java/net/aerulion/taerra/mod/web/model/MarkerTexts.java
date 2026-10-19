@@ -26,6 +26,12 @@ public final class MarkerTexts {
                       marker ->
                           with(marker, I18n.get("taerra.marker.worldborder"), details(marker)))
                   .toList());
+      case "spawn" ->
+          withMarkers(
+              layer,
+              layer.markers().stream()
+                  .map(marker -> with(marker, I18n.get("taerra.marker.spawn"), marker.details()))
+                  .toList());
       case "worldguard" ->
           withMarkers(
               layer,
