@@ -89,7 +89,8 @@ final class MarkerShape {
         marker.maxY(), Math.max(marker.minY(), Double.isNaN(ground) ? fallback : ground));
   }
 
-  private static @Nullable Component facts(final @NotNull Marker marker, final double length) {
+  private static @Nullable Component facts(
+      final @NotNull Marker marker, final double length, final boolean flat) {
     return switch (marker.type()) {
       case "point" ->
           marker.position() == null || marker.position().size() < 3
@@ -114,6 +115,9 @@ final class MarkerShape {
           maxX = Math.max(maxX, point.get(0));
           minZ = Math.min(minZ, point.get(1));
           maxZ = Math.max(maxZ, point.get(1));
+        }
+        if (flat) {
+          yield Component.literal(Math.round(maxX - minX) + " × " + Math.round(maxZ - minZ));
         }
         final double top =
             marker.maxY() == Math.rint(marker.maxY())
@@ -169,7 +173,7 @@ final class MarkerShape {
     if (this.tooltip == null) {
       final @NotNull List<Component> lines = new ArrayList<>();
       lines.add(Component.literal(marker.label() == null ? marker.id() : marker.label()));
-      final @Nullable Component facts = facts(marker, this.length);
+      final @Nullable Component facts = facts(marker, this.length, "regions".equals(layer.id()));
       if (facts != null) {
         for (final @NotNull String line : facts.getString().split("\n")) {
           lines.add(Component.literal(line).withStyle(ChatFormatting.GRAY));

@@ -232,7 +232,7 @@ export function markerIcon(layer) {
     return layer.personal ? GEM_SVG : PIN_SVG;
 }
 
-function facts(marker) {
+function facts(marker, flat = false) {
     const round = (value) => numbers.format(Math.round(value));
     switch (marker.type) {
         case 'point':
@@ -248,6 +248,9 @@ function facts(marker) {
         case 'area': {
             const xs = marker.points.map(([x]) => x);
             const zs = marker.points.map(([, z]) => z);
+            if (flat) {
+                return [Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs)].map(round).join(' × ');
+            }
             return [Math.max(...xs) - Math.min(...xs), marker.maxY - marker.minY, Math.max(...zs) - Math.min(...zs)]
                 .map(round).join(' × ') + `\nY ${round(marker.minY)} – ${round(topBlock(marker.maxY))}`;
         }
@@ -683,7 +686,7 @@ class MarkerManager {
         }
         content.append(layerLabel,
             element('strong', 'marker-popup__title', marker.label ?? marker.id),
-            element('span', 'marker-popup__facts', facts(marker)));
+            element('span', 'marker-popup__facts', facts(marker, layer.id === 'regions')));
         if (marker.discovered) {
             content.append(element('span', 'marker-popup__discovered',
                 t('region.discovered', {date: dates.format(new Date(marker.discovered))})));
