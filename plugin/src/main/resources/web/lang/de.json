@@ -430,6 +430,7 @@
   "settings.world.private": "privat",
   "settings.world.name": "Name",
   "settings.world.limit": "Grenze",
+  "settings.limit.shape": "Form",
   "settings.limit.none": "Keine",
   "settings.limit.circle": "Kreis",
   "settings.limit.square": "Quadrat",

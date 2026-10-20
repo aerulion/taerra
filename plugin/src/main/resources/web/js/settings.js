@@ -453,7 +453,15 @@ class SettingsDialog {
             const top = body.getBoundingClientRect().top + 32;
             const current = atEnd ? sections.at(-1)
                 : sections.findLast(section => section.getBoundingClientRect().top <= top) ?? sections[0];
-            links.forEach((link, index) => link.setAttribute('aria-current', String(sections[index] === current)));
+            links.forEach((link, index) => {
+                const now = sections[index] === current;
+                if (now && link.getAttribute('aria-current') !== 'true') {
+                    const box = link.getBoundingClientRect();
+                    const left = nav.scrollLeft + box.left - nav.getBoundingClientRect().left;
+                    nav.scrollTo({left: left - (nav.clientWidth - box.width) / 2, behavior: 'smooth'});
+                }
+                link.setAttribute('aria-current', String(now));
+            });
         };
         this.highlight();
     }
@@ -708,15 +716,17 @@ class SettingsDialog {
         row.classList.toggle('is-conflict', this.conflicts.has(field));
         row.classList.toggle('is-changed', changed());
         row.classList.toggle('is-invalid', changed() && badLimit(value));
-        const id = `limit-${world.id.replace(/\W/g, '-')}`;
+        const name = this.draft[worldField(world.id, 'name')] || world.defaultName;
         const text = element('span', 'row__text');
-        const title = element('label', 'settings__label', this.draft[worldField(world.id, 'name')] || world.defaultName);
-        title.htmlFor = id;
-        text.append(title, element('code', 'hint', world.id));
-        const shape = document.createElement('select');
-        shape.id = id;
-        shape.className = 'input settings__shape';
+        text.append(element('span', 'settings__label', name), element('code', 'hint', world.id));
+        const labelled = (label, control) => {
+            const box = element('label', 'field');
+            box.append(element('span', 'label', label), control);
+            return box;
+        };
+        const shape = element('select', 'input input--small settings__shape');
         shape.dataset.field = `${field}:shape`;
+        shape.setAttribute('aria-label', `${name}: ${t('settings.limit.shape')}`);
         for (const option of SHAPES) {
             const item = element('option', '', t(`settings.limit.${option}`));
             item.value = option;
@@ -727,24 +737,22 @@ class SettingsDialog {
             this.set(field, reshape(this.draft[field] ?? value, shape.value));
             this.render();
         });
-        row.append(text, shape);
+        const line = element('div', 'settings__limit-line');
+        line.append(labelled(t('settings.limit.shape'), shape));
+        row.append(text, line);
         if (value.shape !== 'none') {
             const round = value.shape !== 'rectangle';
             const parts = round
                 ? [['x', Math.floor((value.minX + value.maxX) / 2)], ['z', Math.floor((value.minZ + value.maxZ) / 2)],
                     ['radius', (value.maxX - value.minX) / 2]]
                 : [['fromX', value.minX], ['fromZ', value.minZ], ['toX', value.maxX], ['toZ', value.maxZ]];
-            const line = element('div', 'settings__limit-line');
             const inputs = parts.map(([part, number]) => {
-                const label = element('label', 'settings__coordinate');
-                const input = document.createElement('input');
-                input.className = 'input';
+                const input = element('input', 'input input--small');
                 input.inputMode = 'numeric';
                 input.autocomplete = 'off';
                 input.dataset.field = `${field}:${part}`;
                 input.value = Number.isFinite(number) ? String(number) : '';
-                label.append(element('span', '', t(`settings.limit.${part}`)), input);
-                line.append(label);
+                line.append(labelled(t(`settings.limit.${part}`), input));
                 return input;
             });
             const pick = (a, b, op) => a === null || b === null ? null : op(a, b);
@@ -759,7 +767,6 @@ class SettingsDialog {
                 row.classList.toggle('is-changed', changed());
                 row.classList.toggle('is-invalid', changed() && badLimit(next));
             }));
-            row.append(line);
         }
         const conflict = this.conflict(field);
         return conflict ? [row, conflict] : [row];

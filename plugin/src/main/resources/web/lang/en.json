@@ -430,6 +430,7 @@
   "settings.world.private": "private",
   "settings.world.name": "name",
   "settings.world.limit": "limit",
+  "settings.limit.shape": "Shape",
   "settings.limit.none": "None",
   "settings.limit.circle": "Circle",
   "settings.limit.square": "Square",

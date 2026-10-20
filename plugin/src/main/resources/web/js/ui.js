@@ -31,10 +31,10 @@ export function menuItem(icon, text, onClick) {
     return node;
 }
 
-function setLabel(node, text) {
+function setLabel(node, text, label = text) {
     if (node.classList.contains('icon-btn')) {
         node.title = text;
-        node.setAttribute('aria-label', text);
+        node.setAttribute('aria-label', label);
     } else {
         node.textContent = text;
     }
@@ -45,6 +45,7 @@ export function armed(node, confirm) {
         return true;
     }
     node.dataset.idle = node.classList.contains('icon-btn') ? node.title : node.textContent;
+    node.dataset.idleLabel = node.getAttribute('aria-label') ?? '';
     node.classList.add('is-armed');
     setLabel(node, confirm);
     return false;
@@ -53,7 +54,7 @@ export function armed(node, confirm) {
 export function disarm(node) {
     if (node.classList.contains('is-armed')) {
         node.classList.remove('is-armed');
-        setLabel(node, node.dataset.idle);
+        setLabel(node, node.dataset.idle, node.dataset.idleLabel);
     }
 }
 

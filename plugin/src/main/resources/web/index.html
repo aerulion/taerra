@@ -53,6 +53,11 @@
     <span class="server-name" hidden id="server-name"></span>
     <nav aria-label="Worlds" class="worlds" data-i18n-label="worlds" id="world-list"></nav>
     <div aria-label="Worlds" class="menu world-menu" data-i18n-label="worlds" id="world-menu" popover></div>
+    <div class="status" id="connection-status">
+        <span class="status__dot" data-state="connecting"></span>
+        <span id="status-text" role="status"></span>
+        <span aria-hidden="true" id="status-retry"></span>
+    </div>
     <button class="topbar__control search-button" id="search-button" type="button">
         <svg aria-hidden="true" class="search-button__icon" shape-rendering="crispEdges" viewBox="0 0 8 8">
             <path d="M1 0h4v1H1zM0 1h1v4H0zM5 1h1v4H5zM1 5h4v1H1zM5 5h1v1H5zM6 6h1v1H6zM7 7h1v1H7z" fill="currentColor"/>
@@ -60,11 +65,6 @@
         <span class="search-button__text" data-i18n="search.button">Search</span>
         <kbd class="search-button__key needs-hover">/</kbd>
     </button>
-    <div class="status" id="connection-status">
-        <span class="status__dot" data-state="connecting"></span>
-        <span id="status-text" role="status"></span>
-        <span aria-hidden="true" id="status-retry"></span>
-    </div>
     <button aria-label="Account" class="topbar__control account-button" data-i18n-label="account.title"
             id="account-button" popovertarget="account-menu" type="button">
         <svg aria-hidden="true" class="account-button__icon" shape-rendering="crispEdges" viewBox="0 0 8 8">

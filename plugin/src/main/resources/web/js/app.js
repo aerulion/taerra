@@ -340,7 +340,9 @@ function setupLanguage() {
 function setupDialogs() {
     document.querySelectorAll('dialog').forEach(modal);
     $('shortcuts-open').addEventListener('click', () => {
-        $('account-menu').hidePopover();
+        if ($('account-menu').matches(':popover-open')) {
+            $('account-menu').hidePopover();
+        }
         $('shortcuts').showModal();
     });
 }
