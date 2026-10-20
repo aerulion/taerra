@@ -1455,6 +1455,7 @@
         color: var(--stone-200);
         font-size: var(--text-m);
         cursor: pointer;
+        box-shadow: var(--well);
     }
 
     .topbar__control:hover {
@@ -1514,6 +1515,7 @@
         color: var(--stone-200);
         font: 500 var(--text-m)/1 var(--font-mono);
         cursor: pointer;
+        box-shadow: var(--well);
     }
 
     .account-pair:is(:hover, :focus-visible):not(:disabled) {
@@ -1653,6 +1655,7 @@
         border-left: 0;
         color: var(--stone-100);
         cursor: pointer;
+        box-shadow: inset 2px 2px rgb(255 255 255 / .1);
         transition: transform .2s ease;
     }
 
