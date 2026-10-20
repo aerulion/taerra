@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import net.aerulion.taerra.chat.Messages;
+import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.web.auth.ModHandshake;
 import org.bukkit.Bukkit;
@@ -26,6 +27,7 @@ public final class RegionDiscovery {
 
   public static void start(
       final @NotNull Plugin plugin,
+      final @NotNull TaerraConfig config,
       final @NotNull MapRegions regions,
       final @NotNull RegionDiscoveries discoveries,
       final @NotNull ModHandshake mods,
@@ -36,12 +38,13 @@ public final class RegionDiscovery {
             () -> {
               final @NotNull Map<UUID, MapRegion> visits = new HashMap<>();
               for (final @NotNull Player player : Bukkit.getOnlinePlayers()) {
+                final @NotNull String world = WorldKeys.id(player.getWorld());
+                if (!config.worldVisible(world, player::hasPermission)) {
+                  continue;
+                }
                 final @NotNull Location location = player.getLocation();
                 final @Nullable MapRegion region =
-                    regions.at(
-                        WorldKeys.id(player.getWorld()),
-                        location.getBlockX() >> 4,
-                        location.getBlockZ() >> 4);
+                    regions.at(world, location.getBlockX() >> 4, location.getBlockZ() >> 4);
                 if (region != null && region.discoverable()) {
                   visits.put(player.getUniqueId(), region);
                 }

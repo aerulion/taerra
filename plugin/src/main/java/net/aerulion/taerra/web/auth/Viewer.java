@@ -12,9 +12,7 @@ public record Viewer(@Nullable UUID uuid, @NotNull Set<String> grants) {
   public static final @NotNull Viewer ANONYMOUS = new Viewer(null, Set.of());
 
   public boolean canSee(final @NotNull TaerraConfig config, final @NotNull String worldName) {
-    return config.worldEnabled(worldName)
-        && (!config.worldPrivate(worldName)
-            || this.grants.contains(TaerraConfig.worldPermission(worldName)));
+    return config.worldVisible(worldName, this.grants::contains);
   }
 
   public boolean usesMod() {

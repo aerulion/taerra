@@ -377,6 +377,7 @@ public final class Taerra extends JavaPlugin {
       markers.layer(this, RegionMarkers.LAYER, RegionMarkers.LABEL, true);
       RegionDiscovery.start(
           this,
+          configuration,
           regions,
           discoveries,
           modHandshake,

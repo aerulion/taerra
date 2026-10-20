@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bukkit.configuration.ConfigurationSection;
@@ -112,6 +113,12 @@ public record TaerraConfig(
     }
     plugin.getConfig().set(path, List.copyOf(list));
     plugin.saveConfig();
+  }
+
+  public boolean worldVisible(
+      final @NotNull String worldName, final @NotNull Predicate<String> hasPermission) {
+    return worldEnabled(worldName)
+        && (!worldPrivate(worldName) || hasPermission.test(worldPermission(worldName)));
   }
 
   public boolean worldPrivate(final @NotNull String worldName) {
