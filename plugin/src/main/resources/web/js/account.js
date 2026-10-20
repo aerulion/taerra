@@ -2,7 +2,7 @@ import qrcode from '../vendor/qrcode/qrcode.js';
 import {copyText} from './clipboard.js';
 import {language, t} from './i18n.js';
 import {pixelPath} from './map.js';
-import {element, iconButton} from './ui.js';
+import {armed, disarm, element, iconButton} from './ui.js';
 import {wsManager} from './websocket.js';
 
 const $ = (id) => document.getElementById(id);
@@ -329,6 +329,7 @@ async function initialize() {
     $('account-menu').addEventListener('toggle', (event) => {
         if (event.newState === 'closed') {
             $('login-error').hidden = true;
+            disarm($('logout-button'));
         } else if (!current && !pairing) {
             void startPairing();
         }
@@ -348,6 +349,10 @@ async function initialize() {
     });
     $('device-button').addEventListener('click', () => void showDeviceLink());
     $('logout-button').addEventListener('click', async () => {
+        if (!armed($('logout-button'), t('account.logoutConfirm'))) {
+            return;
+        }
+        disarm($('logout-button'));
         await fetch('/api/logout', {method: 'POST'});
         $('account-menu').hidePopover();
         show(null);

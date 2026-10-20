@@ -118,6 +118,7 @@
   "account.invalid": "That login link was already used or has expired. Log in with the code below instead.",
   "account.as": "Logged in as",
   "account.logout": "Log out",
+  "account.logoutConfirm": "Really log out?",
   "account.pair": "Type this in game:",
   "account.pairTime": "Valid for {time} more. This page logs in on its own.",
   "account.expired": "This code has expired.",

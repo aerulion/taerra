@@ -118,6 +118,7 @@
   "account.invalid": "Der Anmeldelink wurde schon benutzt oder ist abgelaufen. Melde dich stattdessen mit dem Code unten an.",
   "account.as": "Angemeldet als",
   "account.logout": "Abmelden",
+  "account.logoutConfirm": "Wirklich abmelden?",
   "account.pair": "Gib das im Spiel ein:",
   "account.pairTime": "Gilt noch {time}. Diese Seite meldet sich dann von selbst an.",
   "account.expired": "Dieser Code ist abgelaufen.",
