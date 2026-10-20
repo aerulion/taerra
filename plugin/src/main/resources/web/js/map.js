@@ -258,7 +258,7 @@ class MapManager {
             zoomInTitle: t('map.zoomIn'),
             zoomOutTitle: t('map.zoomOut')
         }).addTo(this.map);
-        const compass = L.DomUtil.create('button', 'compass');
+        const compass = L.DomUtil.create('button', 'map-btn compass');
         compass.type = 'button';
         compass.id = 'compass';
         compass.innerHTML = NEEDLE_SVG;

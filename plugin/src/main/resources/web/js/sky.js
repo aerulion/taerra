@@ -1,6 +1,6 @@
 import {t} from './i18n.js';
 import {mapManager, pixelPath} from './map.js';
-import {element} from './markers.js';
+import {element} from './ui.js';
 
 const PALETTE = {
     s: '#ffcf3f', r: '#e0a82e', o: '#ff8a3d', p: '#ffb15c', h: '#b35a1f', w: '#8a4518', m: '#e3e4e7', d: '#8c8d90',
@@ -59,12 +59,12 @@ class SkyManager {
         this.worlds = worlds;
         this.worldName = worldName;
         this.selectWorld = selectWorld;
-        this.menu = element('div', 'sky-menu');
+        this.menu = element('div', 'menu sky-menu');
         this.menu.id = 'sky-menu';
         this.menu.popover = 'auto';
         this.menu.setAttribute('aria-label', t('sky.title'));
         document.body.append(this.menu);
-        this.button = L.DomUtil.create('button', 'sky');
+        this.button = L.DomUtil.create('button', 'map-btn sky');
         this.button.type = 'button';
         this.button.hidden = true;
         this.button.setAttribute('popovertarget', 'sky-menu');
@@ -127,7 +127,7 @@ class SkyManager {
 
     renderMenu() {
         this.rows = new Map(this.worlds().filter(world => this.skies[world.name]).map(world => {
-            const row = element('button', 'sky-menu__item');
+            const row = element('button', 'menu__item sky-menu__item');
             row.type = 'button';
             row.setAttribute('aria-current', String(world.name === this.world));
             const icon = element('span', 'sky-menu__glyph');
@@ -143,7 +143,7 @@ class SkyManager {
             });
             return [world.name, {row, icon, detail, time, bar}];
         }));
-        this.menu.replaceChildren(element('p', 'sky-menu__title', t('sky.title')),
+        this.menu.replaceChildren(element('p', 'label menu__label', t('sky.title')),
             ...[...this.rows.values()].map(({row}) => row));
         this.updateMenu();
     }

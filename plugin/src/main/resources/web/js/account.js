@@ -2,6 +2,7 @@ import qrcode from '../vendor/qrcode/qrcode.js';
 import {copyText} from './clipboard.js';
 import {language, t} from './i18n.js';
 import {pixelPath} from './map.js';
+import {element, iconButton} from './ui.js';
 import {wsManager} from './websocket.js';
 
 const $ = (id) => document.getElementById(id);
@@ -26,16 +27,18 @@ let copiedTimer = 0;
 
 function show(account) {
     current = account;
-    const open = $('account-menu').matches(':popover-open');
     if (account) {
         stopPairing();
-        if (open) {
+        if ($('devices').open) {
             void loadDevices();
         }
-    } else if (!pairing) {
-        showPairing('', '');
-        if (open) {
-            void startPairing();
+    } else {
+        $('devices').close();
+        if (!pairing) {
+            showPairing('', '');
+            if ($('account-menu').matches(':popover-open')) {
+                void startPairing();
+            }
         }
     }
     $('account-in').hidden = !account;
@@ -98,7 +101,7 @@ function showPairing(code, status, expired = false) {
     $('pair-command').disabled = expired;
     $('pair-command').classList.toggle('is-expired', expired);
     $('pair-status').textContent = status;
-    $('pair-status').classList.toggle('is-expired', expired);
+    $('pair-status').classList.toggle('is-failed', expired);
     $('pair-new').hidden = !expired;
 }
 
@@ -210,14 +213,14 @@ async function showDeviceLink() {
         panel.classList.add('is-expired');
         $('device-qr-code').replaceChildren();
         $('device-qr-status').textContent = t('account.linkFailed');
-        $('device-qr-status').classList.add('is-expired');
+        $('device-qr-status').classList.add('is-failed');
         return;
     }
     const {code, base, seconds} = await response.json();
     const page = base || `${location.origin}${location.pathname.replace(/\/$/, '')}`;
     $('device-qr-code').innerHTML = qrSvg(`${page}/#login=${code}`);
     panel.classList.remove('is-expired');
-    $('device-qr-status').classList.remove('is-expired');
+    $('device-qr-status').classList.remove('is-failed');
     $('device-button').textContent = t('account.newCode');
     const until = Date.now() + seconds * 1000;
     const tick = () => {
@@ -229,7 +232,7 @@ async function showDeviceLink() {
         clearInterval(linkTimer);
         panel.classList.add('is-expired');
         $('device-qr-status').textContent = t('account.expired');
-        $('device-qr-status').classList.add('is-expired');
+        $('device-qr-status').classList.add('is-failed');
     };
     tick();
     linkTimer = setInterval(tick, 1000);
@@ -274,28 +277,15 @@ async function loadDevices() {
     } catch {
     }
     $('device-list').replaceChildren(...devices.map(device => {
-        const row = document.createElement('li');
-        row.className = 'device';
+        const row = element('li', 'row device');
         row.dataset.icon = deviceIcon(device);
-        row.classList.toggle('is-current', device.current || device.game);
-        const text = document.createElement('span');
-        text.className = 'device__text';
-        const name = document.createElement('span');
-        name.className = 'device__name';
-        name.textContent = deviceName(device);
-        const meta = document.createElement('span');
-        meta.className = 'device__meta';
-        meta.textContent = device.current ? t('account.thisDevice')
-            : device.game ? t('account.inGame') : ago(device.seen);
-        text.append(name, meta);
+        row.classList.toggle('is-current', Boolean(device.current || device.game));
+        const text = element('span', 'row__text');
+        text.append(element('span', 'row__name', deviceName(device)), element('span', 'row__meta',
+            device.current ? t('account.thisDevice') : device.game ? t('account.inGame') : ago(device.seen)));
         row.append(text);
         if (!device.current && !device.game) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'device__logout';
-            button.setAttribute('aria-label', t('account.endDeviceLabel', {device: name.textContent}));
-            button.title = button.getAttribute('aria-label');
-            button.addEventListener('click', async () => {
+            const button = iconButton('logout', t('account.endDeviceLabel', {device: deviceName(device)}), async () => {
                 button.disabled = true;
                 try {
                     await fetch(`/api/account/sessions/${encodeURIComponent(device.id)}`, {method: 'DELETE'});
@@ -303,6 +293,7 @@ async function loadDevices() {
                 }
                 await loadDevices();
             });
+            button.classList.add('icon-btn--danger');
             row.append(button);
         }
         return row;
@@ -338,13 +329,16 @@ async function initialize() {
     $('account-menu').addEventListener('toggle', (event) => {
         if (event.newState === 'closed') {
             $('login-error').hidden = true;
-            hideDeviceLink();
         } else if (!current && !pairing) {
             void startPairing();
-        } else if (current) {
-            void loadDevices();
         }
     });
+    $('devices-open').addEventListener('click', () => {
+        $('account-menu').hidePopover();
+        $('devices').showModal();
+        void loadDevices();
+    });
+    $('devices').addEventListener('close', hideDeviceLink);
     $('pair-new').addEventListener('click', () => void startPairing());
     $('pair-command').addEventListener('click', async () => {
         await copyText(`/taerra login ${$('pair-code').textContent}`);

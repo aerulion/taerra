@@ -5,7 +5,7 @@ import {defaultLanguage, hashLanguage, language, LANGUAGES, numbers, setLanguage
 import {mapManager} from './map.js';
 import {navigationManager} from './navigation.js';
 import {setupOffline} from './offline.js';
-import {element, markerManager, privateIcon} from './markers.js';
+import {markerManager, privateIcon} from './markers.js';
 import {playerManager} from './players.js';
 import {regionManager} from './regions.js';
 import {searchPalette} from './search.js';
@@ -14,6 +14,7 @@ import {skyManager} from './sky.js';
 import {chunkSelection} from './selection.js';
 import {waypointEditor} from './waypoints.js';
 import {regionEditor, regionList} from './regioneditor.js';
+import {armed, element, modal} from './ui.js';
 import {wsManager} from './websocket.js';
 
 let serverName = document.getElementById('server-name').textContent;
@@ -44,7 +45,7 @@ function worldTitle(world) {
 }
 
 function worldEnv(world) {
-    return element('span', 'world-tab__env', t(`env.${world.environment}`));
+    return element('span', 'label', t(`env.${world.environment}`));
 }
 
 function worldButton(world, className, ...content) {
@@ -73,19 +74,13 @@ function renderWorlds() {
     const nav = $('world-list');
     nav.replaceChildren(toggle, ...worlds.map(world => worldButton(world, 'world-tab', worldEnv(world), worldTitle(world))));
     $('world-menu').replaceChildren(...Object.values(Object.groupBy(worlds, world => world.environment)).map(group => {
-        const section = element('div', 'world-menu__group');
-        section.append(element('p', 'world-menu__env', t(`env.${group[0].environment}`)),
-            ...group.map(world => worldButton(world, 'world-menu__item', worldTitle(world))));
+        const section = element('div', 'menu__group');
+        section.append(element('p', 'label menu__label', t(`env.${group[0].environment}`)),
+            ...group.map(world => worldButton(world, 'menu__item', worldTitle(world))));
         return section;
     }));
     fitWorlds();
     $('player-scope').hidden = worlds.length < 2;
-}
-
-function shortLanguages(short) {
-    for (const option of $('language-select').options) {
-        option.textContent = short ? option.value.toUpperCase() : LANGUAGES[option.value];
-    }
 }
 
 function fitWorlds() {
@@ -93,15 +88,11 @@ function fitWorlds() {
     const crowded = () => nav.scrollWidth > nav.clientWidth;
     nav.classList.remove('is-compact');
     $('server-name').classList.remove('is-crowded');
-    shortLanguages(false);
     if (crowded()) {
         nav.classList.add('is-compact');
     }
     if (crowded()) {
         $('server-name').classList.add('is-crowded');
-    }
-    if (crowded()) {
-        shortLanguages(true);
     }
 }
 
@@ -346,6 +337,14 @@ function setupLanguage() {
     select.addEventListener('change', () => setLanguage(select.value));
 }
 
+function setupDialogs() {
+    document.querySelectorAll('dialog').forEach(modal);
+    $('shortcuts-open').addEventListener('click', () => {
+        $('account-menu').hidePopover();
+        $('shortcuts').showModal();
+    });
+}
+
 function setupLayers() {
     $('layer-list').addEventListener('change', writeHash);
 }
@@ -557,10 +556,8 @@ function setupContextMenu() {
             return;
         }
         if (action === 'render-world' || action === 'cancel-render') {
-            if (!button.classList.contains('is-armed')) {
-                button.classList.add('is-armed');
-                button.textContent = t(action === 'render-world' ? 'menu.renderConfirm' : 'menu.cancelConfirm',
-                    {world: worldLabel(currentWorld)});
+            if (!armed(button, t(action === 'render-world' ? 'menu.renderConfirm' : 'menu.cancelConfirm',
+                {world: worldLabel(currentWorld)}))) {
                 return;
             }
             const done = await renderButton(button, action === 'render-world' ? 'full' : 'cancel');
@@ -780,6 +777,7 @@ markerManager.onWaypoint = async (action, waypoint, button) => {
     }
 };
 setupLanguage();
+setupDialogs();
 setupPanel();
 setupOffline();
 setupViewControls();

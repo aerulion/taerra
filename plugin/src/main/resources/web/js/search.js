@@ -1,6 +1,7 @@
 import {t} from './i18n.js';
 import {mapManager} from './map.js';
-import {element, markerIcon, markerManager} from './markers.js';
+import {markerIcon, markerManager} from './markers.js';
+import {element} from './ui.js';
 import {avatar, located, playerManager} from './players.js';
 
 const $ = (id) => document.getElementById(id);
@@ -67,11 +68,6 @@ class SearchPalette {
                 this.run(this.results[this.active]);
             }
         });
-        this.dialog.addEventListener('click', (event) => {
-            if (event.target === this.dialog) {
-                this.dialog.close();
-            }
-        });
     }
 
     async open() {
@@ -128,8 +124,8 @@ class SearchPalette {
             tag: this.elsewhere(world.name),
             description: marker.description,
             icon: () => {
-                const icon = element('span', `search__icon search__icon--${marker.type}`);
-                icon.classList.toggle('search__icon--personal', Boolean(layer.personal));
+                const icon = element('span', `marker-icon marker-icon--${marker.type}`);
+                icon.classList.toggle('marker-icon--personal', Boolean(layer.personal));
                 icon.style.setProperty('--marker', marker.color);
                 if (marker.type === 'point') {
                     icon.innerHTML = markerIcon(layer);
@@ -147,7 +143,7 @@ class SearchPalette {
         const worlds = this.app.worlds().map(world => ({
             kind: 'world',
             label: this.app.worldName(world.name),
-            icon: () => element('span', 'search__icon search__icon--world'),
+            icon: () => element('span', 'marker-icon marker-icon--world'),
             run: () => this.app.selectWorld(world.name)
         }));
         return [...players, ...markers, ...worlds];
@@ -181,22 +177,22 @@ class SearchPalette {
         const rows = [];
         results.forEach((result, index) => {
             if (result.kind !== results[index - 1]?.kind) {
-                const heading = element('li', 'search__group', t(`search.group.${result.kind}`));
+                const heading = element('li', 'label search__group', t(`search.group.${result.kind}`));
                 heading.setAttribute('role', 'presentation');
                 rows.push(heading);
             }
             const row = element('li', 'search__result');
             row.id = `search-result-${index}`;
             row.setAttribute('role', 'option');
-            row.append(result.icon?.() ?? element('span', 'search__icon search__icon--place'));
-            const text = element('span', 'search__text');
-            text.append(element('span', 'search__label', result.label));
+            row.append(result.icon?.() ?? element('span', 'marker-icon marker-icon--place'));
+            const text = element('span', 'row__text');
+            text.append(element('span', 'row__name', result.label));
             if (result.detail) {
-                text.append(element('span', 'search__detail', result.detail));
+                text.append(element('span', 'row__meta', result.detail));
             }
             row.append(text);
             if (result.tag) {
-                row.append(element('span', 'search__tag', result.tag));
+                row.append(element('span', 'tag', result.tag));
             }
             row.addEventListener('pointermove', () => this.select(index, false));
             row.addEventListener('click', () => this.run(result));

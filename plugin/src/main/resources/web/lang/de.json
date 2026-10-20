@@ -124,6 +124,7 @@
   "account.copy": "Zum Kopieren klicken",
   "account.newCode": "Neuer Code",
   "account.pairFailed": "Gerade lässt sich kein Code abrufen. Hol dir im Spiel mit /taerra login einen Anmeldelink.",
+  "account.sessions": "Geräte",
   "account.devices": "Angemeldet auf",
   "account.thisDevice": "Dieses Gerät",
   "account.justNow": "Gerade eben",

@@ -1,8 +1,9 @@
 import {accountManager} from './account.js';
 import {language, numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
-import {element, markerIcon, markerManager, PERSONAL_LAYER} from './markers.js';
+import {markerIcon, markerManager, PERSONAL_LAYER} from './markers.js';
 import {playerManager} from './players.js';
+import {armed, element, iconButton} from './ui.js';
 import {waypointUrl} from './waypoints.js';
 
 const $ = (id) => document.getElementById(id);
@@ -49,12 +50,6 @@ class WaypointManager {
         this.app = app;
         $('manager-filter').placeholder = t('manager.filter');
         $('manager-open').addEventListener('click', () => void this.open());
-        $('manager-close').addEventListener('click', () => this.dialog.close());
-        this.dialog.addEventListener('click', (event) => {
-            if (event.target === this.dialog) {
-                this.dialog.close();
-            }
-        });
         for (const id of ['manager-filter', 'manager-world', 'manager-sort']) {
             $(id).addEventListener('input', () => this.render());
         }
@@ -179,42 +174,39 @@ class WaypointManager {
 
     row(waypoint) {
         const name = key(waypoint.name);
-        const row = element('li', 'manager__row');
+        const row = element('li', 'row manager__row');
         row.classList.toggle('is-hidden', Boolean(waypoint.hidden));
         const check = document.createElement('input');
         check.type = 'checkbox';
-        check.className = 'manager__check';
+        check.className = 'checkbox';
         check.checked = this.selected.has(name);
         check.setAttribute('aria-label', t('manager.select', {name: waypoint.name}));
         check.addEventListener('change', () => {
             check.checked ? this.selected.add(name) : this.selected.delete(name);
             this.render();
         });
-        const icon = element('span', `search__icon search__icon--${waypoint.type} search__icon--personal`);
+        const icon = element('span', `marker-icon marker-icon--${waypoint.type} marker-icon--personal`);
         icon.style.setProperty('--marker', waypoint.color);
         if (waypoint.type === 'point') {
             icon.innerHTML = markerIcon({personal: true});
         }
-        const text = element('button', 'manager__text');
+        const text = element('button', 'row__text manager__text');
         text.type = 'button';
         text.title = t('manager.showOnMap');
         const where = waypoint.type === 'point' ? `${waypoint.x}, ${waypoint.y}, ${waypoint.z}`
             : t(`manager.type.${waypoint.type}`);
-        const meta = element('span', 'manager__meta');
+        const meta = element('span', 'row__meta');
         meta.append(...[this.app.worldName(waypoint.world), where, waypoint.description]
             .filter(Boolean).map(part => element('span', 'manager__part', part)));
-        text.append(element('span', 'manager__name', waypoint.name), meta);
+        text.append(element('span', 'row__name', waypoint.name), meta);
         text.addEventListener('click', () => this.showOnMap(waypoint));
-        const distance = element('span', 'manager__distance',
+        const distance = element('span', 'mono manager__distance',
             waypoint.distance === null ? '' : distanceText(waypoint.distance));
         const actions = element('span', 'manager__actions');
         const action = (name, label, run) => {
-            const button = element('button', 'manager__action');
-            button.type = 'button';
-            button.dataset.action = name;
-            button.title = t(label);
+            const button = iconButton(name, t(label), (button) => void run(button));
             button.setAttribute('aria-label', `${t(label)}: ${waypoint.name}`);
-            button.addEventListener('click', () => void run(button));
+            button.classList.toggle('icon-btn--danger', name === 'delete');
             actions.append(button);
         };
         action(waypoint.hidden ? 'hide' : 'show', waypoint.hidden ? 'manager.hidden' : 'manager.shown',
@@ -300,19 +292,13 @@ class WaypointManager {
     }
 
     async delete(waypoint, button) {
-        if (!button.classList.contains('is-armed')) {
-            button.classList.add('is-armed');
-            button.title = t('waypoint.confirmDelete');
-            return;
+        if (armed(button, t('waypoint.confirmDelete'))) {
+            await this.remove([waypoint]);
         }
-        await this.remove([waypoint]);
     }
 
     async deleteSelected() {
-        const button = $('manager-delete');
-        if (!button.classList.contains('is-armed')) {
-            button.classList.add('is-armed');
-            button.textContent = t('waypoint.confirmDelete');
+        if (!armed($('manager-delete'), t('waypoint.confirmDelete'))) {
             return;
         }
         await this.remove(this.waypoints.filter(waypoint => this.selected.has(key(waypoint.name))));

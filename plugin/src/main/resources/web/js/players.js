@@ -1,7 +1,8 @@
 import {accountManager, FALLBACK_AVATAR} from './account.js';
 import {numbers, t} from './i18n.js';
 import {mapManager, pixelPath} from './map.js';
-import {element, markerManager, PLAYER_LAYER} from './markers.js';
+import {markerManager, PLAYER_LAYER} from './markers.js';
+import {element, menuItem} from './ui.js';
 import {navigationManager} from './navigation.js';
 
 const GLIDE_MILLIS = 1000;
@@ -195,18 +196,18 @@ class PlayerManager {
         entry.marker = L.marker(located(player) ? this.latLng(player) : [0, 0], {icon, title: player.name})
             .bindPopup(() => this.popup(entry.player), {className: 'marker-popup-frame'});
 
-        entry.button = element('button', 'player');
+        entry.button = element('button', 'row row--action player');
         entry.button.type = 'button';
         entry.button.setAttribute('aria-pressed', 'false');
         entry.button.dataset.followingLabel = t('players.following');
-        entry.coords = element('span', 'player__coords');
-        entry.tag = element('span', 'player__tag', t('players.hidden'));
-        entry.mod = element('span', 'player__tag player__tag--mod', t('players.mod'));
+        entry.coords = element('span', 'row__meta');
+        entry.tag = element('span', 'tag', t('players.hidden'));
+        entry.mod = element('span', 'tag tag--accent', t('players.mod'));
         entry.mod.title = t('players.modHint');
-        entry.world = element('span', 'player__world');
+        entry.world = element('span', 'tag player__world');
         const details = element('span', 'player__details');
         details.append(entry.coords, entry.tag, entry.mod);
-        entry.button.append(avatar(player, 32), element('span', 'player__name', player.name), details, entry.world);
+        entry.button.append(avatar(player, 32), element('span', 'row__name', player.name), details, entry.world);
         entry.button.addEventListener('click', () => {
             if (this.followed === player.uuid) {
                 this.unfollow();
@@ -229,22 +230,18 @@ class PlayerManager {
     popup(player) {
         const content = element('div', 'marker-popup marker-popup--player');
         content.style.setProperty('--marker', player.color);
-        content.append(element('span', 'marker-popup__layer', t(player.hidden ? 'players.hiddenPlayer' : 'players.title')),
-            element('strong', 'marker-popup__title', player.name),
-            element('span', 'marker-popup__facts', `${player.x}, ${player.y}, ${player.z}`));
+        content.append(element('span', 'label marker-popup__layer', t(player.hidden ? 'players.hiddenPlayer' : 'players.title')),
+            element('strong', 'title marker-popup__title', player.name),
+            element('span', 'mono marker-popup__facts', `${player.x}, ${player.y}, ${player.z}`));
         if (accountManager.usesMod() && !player.anonymous && player.uuid !== accountManager.ownUuid()) {
-            const actions = element('div', 'marker-popup__actions');
-            const navigate = element('button', 'marker-popup__action', t('waypoint.navigate'));
-            navigate.type = 'button';
-            navigate.dataset.action = 'navigate';
-            navigate.addEventListener('click', () => {
+            const actions = element('div', 'menu__group');
+            actions.append(menuItem('navigate', t('waypoint.navigate'), () => {
                 mapManager.getMap().closePopup();
                 void navigationManager.navigate({
                     label: player.name, world: player.world, x: player.x, y: player.y, z: player.z,
                     color: player.color, player: player.uuid
                 });
-            });
-            actions.append(navigate);
+            }));
             content.append(actions);
         }
         return content;

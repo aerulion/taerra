@@ -1,4 +1,5 @@
-import {element, markerManager} from './markers.js';
+import {markerManager} from './markers.js';
+import {element} from './ui.js';
 import {mapManager} from './map.js';
 
 const LABEL_Y = 64;

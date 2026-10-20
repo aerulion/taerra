@@ -2,7 +2,8 @@ import {accountManager} from './account.js';
 import {numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
 import {ColorPicker, DEFAULT_COLOR, HEX} from './colors.js';
-import {element, GEM_SVG, markerManager, personalIcon, PIN_SVG, privateIcon} from './markers.js';
+import {GEM_SVG, markerManager, personalIcon, PIN_SVG, privateIcon} from './markers.js';
+import {armed, disarm, element} from './ui.js';
 
 export {DEFAULT_COLOR};
 
@@ -61,17 +62,11 @@ class WaypointEditor {
                 }
             });
         }
-        $('waypoint-cancel').addEventListener('click', () => this.dialog.close());
         $('waypoint-delete').addEventListener('click', () => this.remove());
         $('waypoint-form').addEventListener('input', () => this.showError(null));
         $('waypoint-form').addEventListener('submit', (event) => {
             event.preventDefault();
             void this.save();
-        });
-        this.dialog.addEventListener('click', (event) => {
-            if (event.target === this.dialog) {
-                this.dialog.close();
-            }
         });
     }
 
@@ -136,7 +131,7 @@ class WaypointEditor {
         $('waypoint-name').value = cleanName(name);
         $('waypoint-description').value = description;
         $('waypoint-delete').hidden = !previous;
-        this.disarm();
+        disarm($('waypoint-delete'));
         this.showError(null);
         this.picker.set(HEX.test(color) ? color : DEFAULT_COLOR);
         const current = personal || (!previous && accountManager.canKeepPersonal()) ? PERSONAL : group;
@@ -192,10 +187,7 @@ class WaypointEditor {
     }
 
     async remove() {
-        const button = $('waypoint-delete');
-        if (!button.classList.contains('is-armed')) {
-            button.classList.add('is-armed');
-            button.textContent = t('waypoint.confirmDelete');
+        if (!armed($('waypoint-delete'), t('waypoint.confirmDelete'))) {
             return;
         }
         const {world, previous, personal, onSaved} = this.target;
@@ -205,7 +197,7 @@ class WaypointEditor {
             onSaved?.();
             void markerManager.load(world);
         } else {
-            this.disarm();
+            disarm($('waypoint-delete'));
             this.showError(t('waypoint.failed', {name: previous}));
         }
     }
@@ -248,11 +240,6 @@ class WaypointEditor {
         $('placing-text').textContent = t('waypoint.failed', {name: waypoint.name});
         $('placing').hidden = false;
         this.placingTimer = setTimeout(() => $('placing').hidden = true, 3000);
-    }
-
-    disarm() {
-        $('waypoint-delete').classList.remove('is-armed');
-        $('waypoint-delete').textContent = t('waypoint.delete');
     }
 
     async send(url, options) {

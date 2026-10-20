@@ -1,5 +1,5 @@
 import {t} from './i18n.js';
-import {element} from './markers.js';
+import {element} from './ui.js';
 
 export const DYES = [
     ['white', '#f9fffe'], ['light_gray', '#9d9d97'], ['gray', '#474f52'], ['black', '#1d1d21'],
@@ -79,7 +79,7 @@ export class ColorPicker {
             this.set(hsvToHex(this.hsv.h, this.hsv.s, this.hsv.v), false);
         });
 
-        const hexField = element('label', 'hex');
+        const hexField = element('label', 'input hex');
         hexField.append(element('span', '', '#'));
         hexField.firstChild.setAttribute('aria-hidden', 'true');
         this.hexInput = labelled(document.createElement('input'), 'waypoint.hex');

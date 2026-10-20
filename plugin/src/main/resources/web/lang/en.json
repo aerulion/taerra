@@ -124,6 +124,7 @@
   "account.copy": "Click to copy",
   "account.newCode": "New code",
   "account.pairFailed": "Couldn't get a code right now. Run /taerra login in game for a login link instead.",
+  "account.sessions": "Devices",
   "account.devices": "Logged in on",
   "account.thisDevice": "This device",
   "account.justNow": "Just now",

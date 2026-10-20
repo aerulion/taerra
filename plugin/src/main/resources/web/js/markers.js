@@ -1,8 +1,8 @@
 import {dates, numbers, plurals, t} from './i18n.js';
 import {accountManager} from './account.js';
 import {mapManager, pixelPath} from './map.js';
+import {element, menuItem} from './ui.js';
 import {wsManager} from './websocket.js';
-
 
 const SPLINE_BLOCKS_PER_STEP = 2;
 const DETAIL_ZOOM_RANGE = 2;
@@ -57,15 +57,6 @@ export function privateIcon() {
     icon.innerHTML = `<svg viewBox="0 0 5 6" width="10" height="12" aria-hidden="true" shape-rendering="crispEdges">
 <path d="${pixelPath([[1, 0, 3, 1], [0, 1, 1, 2], [4, 1, 1, 2], [0, 3, 5, 1], [0, 4, 2, 1], [3, 4, 2, 1], [0, 5, 5, 1]])}" fill="currentColor"/></svg>`;
     return icon;
-}
-
-export function element(tag, className, text) {
-    const node = document.createElement(tag);
-    node.className = className;
-    if (text !== undefined) {
-        node.textContent = text;
-    }
-    return node;
 }
 
 export function spline(points) {
@@ -731,13 +722,13 @@ class MarkerManager {
     popup(layer, marker) {
         const content = element('div', 'marker-popup');
         content.style.setProperty('--marker', marker.color);
-        const layerLabel = element('span', 'marker-popup__layer', this.layerLabel(layer));
+        const layerLabel = element('span', 'label marker-popup__layer', this.layerLabel(layer));
         if (layer.personal) {
             layerLabel.prepend(personalIcon());
         }
         content.append(layerLabel,
-            element('strong', 'marker-popup__title', marker.label ?? marker.id),
-            element('span', 'marker-popup__facts', facts(marker, layer.id === 'regions')));
+            element('strong', 'title marker-popup__title', marker.label ?? marker.id),
+            element('span', 'mono marker-popup__facts', facts(marker, layer.id === 'regions')));
         if (marker.discovered) {
             content.append(element('span', 'marker-popup__discovered',
                 t('region.discovered', {date: dates.format(new Date(marker.discovered))})));
@@ -760,7 +751,7 @@ class MarkerManager {
     }
 
     waypointActions(layer, marker) {
-        const actions = element('div', 'marker-popup__actions');
+        const actions = element('div', 'menu__group');
         const point = marker.type === 'point';
         const [x, y, z] = point ? marker.position.map(Math.floor) : [];
         const personal = layer.id === PERSONAL_LAYER;
@@ -774,11 +765,7 @@ class MarkerManager {
             })
         };
         const action = (name, label) => {
-            const button = element('button', 'marker-popup__action', t(label));
-            button.type = 'button';
-            button.dataset.action = name;
-            button.addEventListener('click', () => this.onWaypoint?.(name, waypoint, button));
-            actions.append(button);
+            actions.append(menuItem(name, t(label), (button) => this.onWaypoint?.(name, waypoint, button)));
         };
         if (point && accountManager.usesMod()) {
             action('navigate', 'waypoint.navigate');
@@ -807,12 +794,13 @@ class MarkerManager {
         this.list.replaceChildren(...[PLAYER_LAYER, ...this.layers].map(layer => {
             const toggle = document.createElement('input');
             toggle.type = 'checkbox';
+            toggle.className = 'checkbox';
             toggle.checked = this.isShown(layer);
             toggle.addEventListener('change', () => {
                 this.setShown(layer, toggle.checked);
                 void this.save(layer, toggle.checked);
             });
-            const row = element('label', 'layer');
+            const row = element('label', 'row row--action');
             const name = element('span', 'layer__name', this.layerLabel(layer));
             if (layer.private) {
                 name.append(privateIcon());

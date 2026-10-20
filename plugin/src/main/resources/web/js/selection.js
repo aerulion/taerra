@@ -3,7 +3,8 @@ import {numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
 import {cell, freshColor, regionManager} from './regions.js';
 import {regionEditor} from './regioneditor.js';
-import {element, groundNow, markerManager, spline} from './markers.js';
+import {groundNow, markerManager, spline} from './markers.js';
+import {armed, disarm, element} from './ui.js';
 import {DEFAULT_COLOR, waypointEditor, waypointUrl} from './waypoints.js';
 
 const $ = (id) => document.getElementById(id);
@@ -281,8 +282,8 @@ class ChunkSelection {
         this.label($('selection-title'), chunks ? 'selection.title'
             : region && editing ? 'selection.title.regionEdit' : `selection.title.${kind}`);
         this.label($('selection-done'), chunks ? 'selection.done' : 'selection.cancel');
+        disarm($('selection-delete'));
         this.label($('selection-delete'), 'waypoint.delete');
-        $('selection-delete').classList.remove('is-armed');
         $('selection-delete').hidden = !editing;
         markerManager.hide(region ? null : editing?.id ?? null);
         $('selection-render').hidden = !chunks || !accountManager.canRenderArea();
@@ -1125,17 +1126,14 @@ class ChunkSelection {
 
     async remove() {
         const button = $('selection-delete');
-        if (!button.classList.contains('is-armed')) {
-            button.classList.add('is-armed');
-            this.label(button, 'waypoint.confirmDelete');
+        if (!armed(button, t('waypoint.confirmDelete'))) {
             return;
         }
         const world = this.world;
         if (this.kind === 'region') {
             const problem = await this.deleteRegion();
             if (problem) {
-                button.classList.remove('is-armed');
-                this.label(button, 'waypoint.delete');
+                disarm(button);
                 this.show(t(`region.problem.${problem}`), true);
             }
             return;
@@ -1151,8 +1149,7 @@ class ChunkSelection {
             void markerManager.load(world);
             return;
         }
-        button.classList.remove('is-armed');
-        this.label(button, 'waypoint.delete');
+        disarm(button);
         this.show(t('waypoint.failed', {name: previous}), true);
     }
 

@@ -1,6 +1,7 @@
 import {accountManager, FALLBACK_AVATAR} from './account.js';
 import {language, numbers, plurals, t} from './i18n.js';
-import {element, privateIcon} from './markers.js';
+import {privateIcon} from './markers.js';
+import {armed, disarm, element, iconButton, switchInput} from './ui.js';
 import {wsManager} from './websocket.js';
 
 const $ = (id) => document.getElementById(id);
@@ -81,25 +82,11 @@ function since(at) {
     return Math.abs(hours) < 24 ? ago.format(hours, 'hour') : ago.format(Math.round(hours / 24), 'day');
 }
 
-function toggle(field, checked, label, onChange) {
-    const wrap = element('span', 'switch');
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.role = 'switch';
-    input.className = 'switch__input';
-    input.checked = checked;
-    input.dataset.field = field;
-    input.setAttribute('aria-label', label);
-    input.addEventListener('change', () => onChange(input.checked));
-    wrap.append(input, element('span', 'switch__track'));
-    return {wrap, input};
-}
-
 function flag(field, checked, content, onChange) {
     const label = element('label', 'settings__flag');
     const text = element('span', 'settings__flag-text');
     text.append(...content);
-    const {wrap} = toggle(field, checked, text.textContent, onChange);
+    const {wrap} = switchInput(field, checked, text.textContent, onChange);
     label.append(wrap, text);
     return label;
 }
@@ -123,13 +110,6 @@ class SettingsDialog {
 
     initialize() {
         $('settings-open').addEventListener('click', () => void this.open());
-        $('settings-close').addEventListener('click', () => this.requestClose());
-        $('settings-cancel').addEventListener('click', () => this.requestClose());
-        this.dialog.addEventListener('click', (event) => {
-            if (event.target === this.dialog) {
-                this.requestClose();
-            }
-        });
         this.dialog.addEventListener('cancel', (event) => {
             if (this.mustConfirm()) {
                 event.preventDefault();
@@ -166,26 +146,15 @@ class SettingsDialog {
     }
 
     mustConfirm() {
-        if (!this.draft || !Object.keys(this.changes()).length || $('settings-cancel').classList.contains('is-armed')) {
+        if (!this.draft || !Object.keys(this.changes()).length || armed($('settings-cancel'), t('settings.discard'))) {
             return false;
         }
-        const cancel = $('settings-cancel');
-        cancel.classList.add('btn--danger', 'is-armed');
-        cancel.textContent = t('settings.discard');
-        cancel.focus();
+        $('settings-cancel').focus();
         return true;
     }
 
-    requestClose() {
-        if (!this.mustConfirm()) {
-            this.dialog.close();
-        }
-    }
-
     disarm() {
-        const cancel = $('settings-cancel');
-        cancel.classList.remove('btn--danger', 'is-armed');
-        cancel.textContent = t('waypoint.cancel');
+        disarm($('settings-cancel'));
     }
 
     announce() {
@@ -200,7 +169,7 @@ class SettingsDialog {
         this.showStatus(null);
         $('settings-nav').replaceChildren();
         $('settings-editors').replaceChildren();
-        $('settings-body').replaceChildren(element('p', 'settings__empty', t('settings.loading')));
+        $('settings-body').replaceChildren(element('p', 'empty', t('settings.loading')));
         $('settings-save').disabled = true;
         if (!this.dialog.open) {
             this.dialog.showModal();
@@ -208,7 +177,7 @@ class SettingsDialog {
         this.announce();
         const next = await this.fetchView();
         if (!next) {
-            $('settings-body').replaceChildren(element('p', 'settings__empty', t('settings.unavailable')));
+            $('settings-body').replaceChildren(element('p', 'empty', t('settings.unavailable')));
             return;
         }
         this.accept(next);
@@ -494,7 +463,7 @@ class SettingsDialog {
         section.dataset.section = name;
         section.dataset.title = t(`settings.section.${name}`);
         const header = element('header', 'settings__section-header');
-        header.append(element('h3', 'settings__heading', section.dataset.title));
+        header.append(element('h3', 'title settings__heading', section.dataset.title));
         const hint = translated(`settings.section.${name}.hint`, null);
         if (hint) {
             header.append(element('p', 'settings__intro', hint));
@@ -515,7 +484,7 @@ class SettingsDialog {
         if (!found.length) {
             return null;
         }
-        const box = element('div', 'settings__conflict');
+        const box = element('div', 'callout');
         box.setAttribute('role', 'alert');
         for (const field of found) {
             const {theirs, by} = this.conflicts.get(field);
@@ -526,7 +495,7 @@ class SettingsDialog {
                 what: this.label(field),
                 value: this.format(field, theirs)
             }));
-            const theirsButton = element('button', 'btn settings__conflict-button', t('settings.useTheirs'));
+            const theirsButton = element('button', 'btn btn--small', t('settings.useTheirs'));
             theirsButton.type = 'button';
             theirsButton.addEventListener('click', () => {
                 this.draft[field] = structuredClone(theirs);
@@ -540,7 +509,7 @@ class SettingsDialog {
                 this.render();
                 this.updateStatus();
             });
-            const mineButton = element('button', 'btn btn--primary settings__conflict-button', t('settings.keepMine'));
+            const mineButton = element('button', 'btn btn--small btn--primary', t('settings.keepMine'));
             mineButton.type = 'button';
             mineButton.addEventListener('click', () => {
                 this.conflicts.delete(field);
@@ -558,7 +527,8 @@ class SettingsDialog {
     field(setting) {
         const field = settingField(setting.key);
         const value = this.draft[field];
-        const row = element(setting.kind === 'toggle' ? 'label' : 'div', 'settings__row');
+        const row = element(setting.kind === 'toggle' ? 'label' : 'div',
+            setting.kind === 'toggle' ? 'row row--action settings__row' : 'row settings__row');
         row.dataset.fields = field;
         row.title = this.changedBy(field);
         row.classList.toggle('is-locked', !setting.editable);
@@ -567,7 +537,7 @@ class SettingsDialog {
         row.classList.toggle('is-invalid',
             setting.editable && !same(value, this.base[field]) && outOfRange(setting, value));
         const id = `setting-${setting.key.replace(/\W/g, '-')}`;
-        const text = element('span', 'settings__text');
+        const text = element('span', 'row__text');
         const title = element(setting.kind === 'toggle' ? 'span' : 'label', 'settings__label', this.label(field));
         if (setting.kind !== 'toggle') {
             title.htmlFor = id;
@@ -578,7 +548,7 @@ class SettingsDialog {
             : translated(`settings.${setting.key}.locked`, null)?.replace('{command}', `/taerra config ${setting.key}`)
             ?? t('settings.readOnly', {command: `/taerra config ${setting.key}`});
         if (hint) {
-            text.append(element('span', 'settings__hint', hint));
+            text.append(element('span', 'hint', hint));
         }
         row.append(text);
         const rows = [row];
@@ -586,7 +556,7 @@ class SettingsDialog {
         if (setting.kind === 'toggle') {
             const parent = setting.key.endsWith('.shown-by-default')
                 ? settingField(setting.key.replace(/shown-by-default$/, 'enabled')) : null;
-            const {wrap, input} = toggle(field, value === true, this.label(field), checked => {
+            const {wrap, input} = switchInput(field, value === true, this.label(field), checked => {
                 this.set(field, checked);
                 this.render();
             });
@@ -608,7 +578,7 @@ class SettingsDialog {
             const input = document.createElement('input');
             input.id = id;
             input.dataset.field = field;
-            input.className = 'editor__input settings__input';
+            input.className = 'input settings__input';
             input.autocomplete = 'off';
             input.spellcheck = false;
             if (setting.kind === 'number') {
@@ -661,7 +631,7 @@ class SettingsDialog {
         this.display.map(id => this.world(id)).filter(Boolean).forEach((world) => {
             const on = this.draft[worldField(world.id, 'enabled')] === true;
             const fields = ['enabled', 'private', 'players', 'name'].map(part => worldField(world.id, part));
-            const row = element('li', 'settings__world');
+            const row = element('li', 'row settings__world');
             row.dataset.env = world.environment ?? 'NONE';
             row.dataset.fields = fields.join(' ');
             row.title = fields.map(field => this.changedBy(field)).filter(Boolean)[0] ?? '';
@@ -674,7 +644,7 @@ class SettingsDialog {
 
             const nameField = worldField(world.id, 'name');
             const name = document.createElement('input');
-            name.className = 'editor__input settings__world-input';
+            name.className = 'input settings__world-input';
             name.maxLength = 32;
             name.autocomplete = 'off';
             name.spellcheck = false;
@@ -732,20 +702,20 @@ class SettingsDialog {
         const field = worldField(world.id, 'limit');
         const value = this.draft[field] ?? {shape: 'none'};
         const changed = () => !same(this.draft[field], this.base[field]);
-        const row = element('div', 'settings__row settings__limit');
+        const row = element('div', 'row settings__row settings__limit');
         row.dataset.fields = field;
         row.title = this.changedBy(field);
         row.classList.toggle('is-conflict', this.conflicts.has(field));
         row.classList.toggle('is-changed', changed());
         row.classList.toggle('is-invalid', changed() && badLimit(value));
         const id = `limit-${world.id.replace(/\W/g, '-')}`;
-        const text = element('span', 'settings__text');
+        const text = element('span', 'row__text');
         const title = element('label', 'settings__label', this.draft[worldField(world.id, 'name')] || world.defaultName);
         title.htmlFor = id;
-        text.append(title, element('code', 'settings__hint', world.id));
+        text.append(title, element('code', 'hint', world.id));
         const shape = document.createElement('select');
         shape.id = id;
-        shape.className = 'editor__input settings__shape';
+        shape.className = 'input settings__shape';
         shape.dataset.field = `${field}:shape`;
         for (const option of SHAPES) {
             const item = element('option', '', t(`settings.limit.${option}`));
@@ -768,7 +738,7 @@ class SettingsDialog {
             const inputs = parts.map(([part, number]) => {
                 const label = element('label', 'settings__coordinate');
                 const input = document.createElement('input');
-                input.className = 'editor__input';
+                input.className = 'input';
                 input.inputMode = 'numeric';
                 input.autocomplete = 'off';
                 input.dataset.field = `${field}:${part}`;
@@ -798,14 +768,7 @@ class SettingsDialog {
     move(id, by, direction) {
         const index = this.display.indexOf(id);
         const target = index + by;
-        const button = element('button', 'manager__action');
-        button.type = 'button';
-        button.dataset.action = direction;
-        button.dataset.field = `${ORDER}:${id}:${direction}`;
-        button.title = t(`settings.move.${direction}`);
-        button.setAttribute('aria-label', button.title);
-        button.disabled = target < 0 || target >= this.display.length;
-        button.addEventListener('click', () => {
+        const button = iconButton(direction, t(`settings.move.${direction}`), () => {
             [this.display[index], this.display[target]] = [this.display[target], this.display[index]];
             this.fixOrder();
             this.conflicts.delete(ORDER);
@@ -815,22 +778,24 @@ class SettingsDialog {
             (again && !again.disabled ? again
                 : this.dialog.querySelector(`[data-field^="${CSS.escape(`${ORDER}:${id}:`)}"]:not(:disabled)`))?.focus();
         });
+        button.dataset.field = `${ORDER}:${id}:${direction}`;
+        button.disabled = target < 0 || target >= this.display.length;
         return button;
     }
 
     layerRow(layer) {
         const field = layerField(layer.id);
-        const row = element('label', 'settings__row');
+        const row = element('label', 'row row--action settings__row');
         row.dataset.fields = field;
         row.title = this.changedBy(field);
         row.classList.toggle('is-conflict', this.conflicts.has(field));
         row.classList.toggle('is-changed', !same(this.draft[field], this.base[field]));
-        const text = element('span', 'settings__text');
+        const text = element('span', 'row__text');
         const title = element('span', 'settings__label', this.label(field));
-        text.append(title, element('span', 'settings__hint', layer.present ? t('settings.layerPermission', {
+        text.append(title, element('span', 'hint', layer.present ? t('settings.layerPermission', {
             permission: `taerra.layer.${layer.id.replaceAll(':', '.')}`
         }) : t('settings.layerGone')));
-        const {wrap} = toggle(field, this.draft[field] === true,
+        const {wrap} = switchInput(field, this.draft[field] === true,
             t('settings.privateLayer', {layer: title.textContent}), checked => {
                 this.set(field, checked);
                 this.render();
@@ -952,11 +917,11 @@ class SettingsDialog {
     showStatus(message, state) {
         clearTimeout(this.statusTimer);
         const status = $('settings-status');
-        status.className = `settings__status${state ? ` ${state}` : ''}`;
+        status.className = `note${state ? ` ${state}` : ''}`;
         status.textContent = message ?? '';
         if (message && (state === 'is-done' || state === 'is-live')) {
             this.statusTimer = setTimeout(() => {
-                status.className = 'settings__status';
+                status.className = 'note';
                 status.textContent = '';
                 this.updateStatus();
             }, STATUS_MILLIS);

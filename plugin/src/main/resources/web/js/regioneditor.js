@@ -1,7 +1,8 @@
 import {numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
 import {ColorPicker} from './colors.js';
-import {chunkCount, element} from './markers.js';
+import {chunkCount} from './markers.js';
+import {armed, disarm, element, iconButton} from './ui.js';
 import {regionManager} from './regions.js';
 import {accountManager} from './account.js';
 
@@ -16,25 +17,6 @@ function meta(region) {
         t(`region.fog.${region.fog ?? 'hide'}`),
         chunkCount(region.size ?? region.chunks?.length ?? 0)
     ].join(', ');
-}
-
-function arm(button, key, confirmKey) {
-    if (button.classList.contains('is-armed')) {
-        return true;
-    }
-    button.classList.add('is-armed');
-    button.textContent = t(confirmKey);
-    button.dataset.i18n = confirmKey;
-    button.dataset.idle = key;
-    return false;
-}
-
-function disarm(button) {
-    if (button.dataset.idle) {
-        button.classList.remove('is-armed');
-        button.textContent = t(button.dataset.idle);
-        button.dataset.i18n = button.dataset.idle;
-    }
 }
 
 class RegionEditor {
@@ -55,17 +37,11 @@ class RegionEditor {
         for (const button of $('region-fog').querySelectorAll('[data-fog]')) {
             button.addEventListener('click', () => this.setFog(button.dataset.fog));
         }
-        $('region-cancel').addEventListener('click', () => this.dialog.close());
         $('region-delete').addEventListener('click', () => void this.remove());
         $('region-form').addEventListener('input', () => this.showError(null));
         $('region-form').addEventListener('submit', (event) => {
             event.preventDefault();
             void this.save();
-        });
-        this.dialog.addEventListener('click', (event) => {
-            if (event.target === this.dialog) {
-                this.dialog.close();
-            }
         });
         this.dialog.addEventListener('close', () => {
             if (!this.saved && this.target) {
@@ -124,7 +100,7 @@ class RegionEditor {
 
     async remove() {
         const button = $('region-delete');
-        if (!arm(button, 'waypoint.delete', 'waypoint.confirmDelete')) {
+        if (!armed(button, t('waypoint.confirmDelete'))) {
             return;
         }
         const problem = await this.target?.onDelete();
@@ -149,16 +125,10 @@ class RegionList {
         this.actions = actions;
         $('regions-filter').placeholder = t('manager.filter');
         $('regions-open').addEventListener('click', () => this.open());
-        $('regions-close').addEventListener('click', () => this.dialog.close());
         $('regions-filter').addEventListener('input', () => this.render());
         $('regions-new').addEventListener('click', () => {
             this.dialog.close();
             this.actions.create();
-        });
-        this.dialog.addEventListener('click', (event) => {
-            if (event.target === this.dialog) {
-                this.dialog.close();
-            }
         });
     }
 
@@ -186,13 +156,13 @@ class RegionList {
     }
 
     row(region) {
-        const row = element('li', 'manager__row manager__row--region');
-        const icon = element('span', 'search__icon search__icon--area');
+        const row = element('li', 'row manager__row manager__row--region');
+        const icon = element('span', 'marker-icon marker-icon--area');
         icon.style.setProperty('--marker', region.color);
-        const text = element('button', 'manager__text');
+        const text = element('button', 'row__text manager__text');
         text.type = 'button';
         text.title = t('manager.showOnMap');
-        text.append(element('span', 'manager__name', regionName(region)), element('span', 'manager__meta', meta(region)));
+        text.append(element('span', 'row__name', regionName(region)), element('span', 'row__meta', meta(region)));
         text.addEventListener('click', () => {
             this.dialog.close();
             const [x, z] = region.label;
@@ -200,12 +170,9 @@ class RegionList {
         });
         const actions = element('span', 'manager__actions');
         const action = (name, label, run) => {
-            const button = element('button', 'manager__action');
-            button.type = 'button';
-            button.dataset.action = name;
-            button.title = t(label);
+            const button = iconButton(name, t(label), (button) => void run(button));
             button.setAttribute('aria-label', `${t(label)}: ${regionName(region)}`);
-            button.addEventListener('click', () => void run(button));
+            button.classList.toggle('icon-btn--danger', name === 'delete');
             actions.append(button);
         };
         action('edit', 'waypoint.editShort', () => {
@@ -215,9 +182,7 @@ class RegionList {
             this.actions.edit(region);
         });
         const confirmed = (confirmKey, path, method) => async (button) => {
-            if (!button.classList.contains('is-armed')) {
-                button.classList.add('is-armed');
-                button.title = t(confirmKey);
+            if (!armed(button, t(confirmKey))) {
                 return;
             }
             let response = null;
@@ -225,9 +190,10 @@ class RegionList {
                 response = await fetch(`/api/regions/${region.id}${path}`, {method});
             } catch {
             }
-            button.classList.remove('is-armed');
+            disarm(button);
             if (!response?.ok) {
                 button.title = t('region.problem.failed');
+                button.classList.add('is-failed');
             }
         };
         if (region.fog !== 'none' && region.discoverable && accountManager.canResetRegions()) {
