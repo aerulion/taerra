@@ -1,8 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg version="1.1" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <mask id="folds">
-        <path d="M10 6.6795H42L36 17.0718 44 30.9282 38 41.3205H6L12 30.9282 4 17.0718Z" fill="#fff"/>
-        <path d="M0 17.0718H48M0 30.9282H48" stroke="#000" stroke-width="2"/>
-    </mask>
-    <rect width="48" height="48" fill="#fff" mask="url(#folds)"/>
+    <path d="M10 6.6795H42L36.5774 16.0718H4.5774ZM4.5774 18.0718H36.5774L43.4226 29.9282H11.4226ZM11.4226 31.9282H43.4226L38 41.3205H6Z" fill="#fff"/>
 </svg>
