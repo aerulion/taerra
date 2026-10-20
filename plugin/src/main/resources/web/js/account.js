@@ -354,6 +354,11 @@ async function initialize() {
     });
     tabs.addEventListener('message', changed);
     wsManager.on('account', changed);
+    wsManager.on('devices', () => {
+        if ($('devices').open) {
+            void loadDevices();
+        }
+    });
     await (code === null ? refresh() : login(code));
 }
 

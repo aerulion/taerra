@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -56,6 +57,7 @@ public final class WebSessions {
   private final @NotNull Map<String, Long> seen = new HashMap<>();
   private long seenSaved;
   private @NotNull Runnable onChange = () -> {};
+  private @NotNull Consumer<UUID> onDevices = uuid -> {};
 
   public WebSessions(final @NotNull File file, final @NotNull Logger logger) {
     super();
@@ -81,6 +83,10 @@ public final class WebSessions {
 
   public synchronized void onChange(final @NotNull Runnable listener) {
     this.onChange = listener;
+  }
+
+  public synchronized void onDevices(final @NotNull Consumer<UUID> listener) {
+    this.onDevices = listener;
   }
 
   public synchronized void load() {
@@ -187,6 +193,7 @@ public final class WebSessions {
     this.sessions.put(key, session);
     this.seen.put(key, now);
     save();
+    this.onDevices.accept(who.uuid());
     return new Login(token, session);
   }
 
@@ -264,6 +271,7 @@ public final class WebSessions {
         key, new Session(uuid, name, skin, now + SESSION_LIFETIME.toMillis(), now, null));
     this.seen.put(key, now);
     this.unsaved.add(key);
+    this.onDevices.accept(uuid);
     return token;
   }
 
@@ -328,6 +336,7 @@ public final class WebSessions {
     this.sessions.remove(key);
     save();
     this.onChange.run();
+    this.onDevices.accept(uuid);
     return true;
   }
 
@@ -374,11 +383,13 @@ public final class WebSessions {
       return;
     }
     final @NotNull String key = hash(token);
-    if (this.sessions.remove(key) != null) {
+    final @Nullable Session ended = this.sessions.remove(key);
+    if (ended != null) {
       if (!this.unsaved.remove(key)) {
         save();
       }
       this.onChange.run();
+      this.onDevices.accept(ended.uuid());
     }
   }
 

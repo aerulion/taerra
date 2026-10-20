@@ -227,6 +227,7 @@ public final class Taerra extends JavaPlugin {
       final @NotNull MapWebSocketHandler webSocketHandler =
           new MapWebSocketHandlerImpl(this, configuration, webSessions, webSettings);
       webSessions.onChange(webSocketHandler::revalidate);
+      webSessions.onDevices(uuid -> webSocketHandler.sendTo(uuid, Map.of("type", "devices")));
       WebGrants.start(this, configuration, webSessions);
       final @NotNull ModHandshake modHandshake =
           new ModHandshake(this, configuration, webSettings, webSessions);

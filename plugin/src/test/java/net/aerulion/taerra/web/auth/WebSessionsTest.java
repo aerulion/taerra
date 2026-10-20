@@ -2,12 +2,14 @@ package net.aerulion.taerra.web.auth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -225,6 +227,8 @@ class WebSessionsTest {
     final @NotNull WebSessions sessions = sessions();
     final @NotNull AtomicInteger ends = new AtomicInteger();
     sessions.onChange(ends::incrementAndGet);
+    final @NotNull List<UUID> devices = new ArrayList<>();
+    sessions.onDevices(devices::add);
     final WebSessions.@Nullable Login first =
         sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), PHONE);
     final WebSessions.@Nullable Login second =
@@ -238,6 +242,11 @@ class WebSessionsTest {
     sessions.end(first.token());
     sessions.end("unknown");
     assertEquals(1, ends.get(), "only an ended session notifies");
+    assertEquals(
+        List.of(PLAYER, PLAYER, devices.get(2), PLAYER),
+        devices,
+        "logins and ends tell the account's devices");
+    assertNotEquals(PLAYER, devices.get(2));
     assertNull(sessions.session(first.token()));
     assertNotNull(sessions.session(second.token()));
 
