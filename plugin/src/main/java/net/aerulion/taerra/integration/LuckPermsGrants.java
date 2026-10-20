@@ -1,8 +1,12 @@
 package net.aerulion.taerra.integration;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -100,6 +104,9 @@ public final class LuckPermsGrants {
   }
 
   private void refresh() {
+    if (this.changed.isEmpty() && !this.everyone.get()) {
+      return;
+    }
     final @NotNull Set<UUID> due = new HashSet<>(this.changed);
     this.changed.removeAll(due);
     final @NotNull Set<UUID> accounts = this.sessions.accounts();
@@ -107,41 +114,56 @@ public final class LuckPermsGrants {
       due.addAll(accounts);
     }
     due.retainAll(accounts);
-    for (final @NotNull UUID uuid : due) {
-      if (Bukkit.getPlayer(uuid) == null) {
-        this.luckPerms
-            .getUserManager()
-            .loadUser(uuid)
-            .whenComplete(
-                (user, error) -> {
-                  if (error != null) {
-                    this.plugin
-                        .getLogger()
-                        .log(Level.WARNING, "Failed to load the permissions of " + uuid, error);
-                  } else if (this.plugin.isEnabled()) {
-                    Bukkit.getScheduler().runTask(this.plugin, () -> grant(user));
-                  }
-                });
-      }
-    }
-  }
-
-  private void grant(final @NotNull User user) {
-    final @NotNull UUID uuid = user.getUniqueId();
-    if (Bukkit.getPlayer(uuid) != null || !this.sessions.accounts().contains(uuid)) {
+    due.removeIf(uuid -> Bukkit.getPlayer(uuid) != null);
+    if (due.isEmpty()) {
       return;
     }
-    final @NotNull OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
+    final @NotNull List<CompletableFuture<User>> loads =
+        due.stream().map(this.luckPerms.getUserManager()::loadUser).toList();
+    CompletableFuture.allOf(loads.toArray(CompletableFuture[]::new))
+        .whenComplete(
+            (_, error) -> {
+              if (error != null) {
+                this.plugin
+                    .getLogger()
+                    .log(Level.WARNING, "Failed to load permissions from LuckPerms", error);
+              }
+              if (this.plugin.isEnabled()) {
+                Bukkit.getScheduler()
+                    .runTask(
+                        this.plugin,
+                        () ->
+                            grant(
+                                loads.stream()
+                                    .filter(load -> !load.isCompletedExceptionally())
+                                    .map(CompletableFuture::join)
+                                    .toList()));
+              }
+            });
+  }
+
+  private void grant(final @NotNull List<User> users) {
+    final @NotNull Set<UUID> accounts = this.sessions.accounts();
+    final @NotNull Map<UUID, Set<String>> granted = new HashMap<>();
+    for (final @NotNull User user : users) {
+      final @NotNull UUID uuid = user.getUniqueId();
+      if (Bukkit.getPlayer(uuid) == null && accounts.contains(uuid)) {
+        granted.put(uuid, grants(user));
+      }
+    }
+    this.sessions.grant(granted);
+  }
+
+  private @NotNull Set<String> grants(final @NotNull User user) {
+    final @NotNull OfflinePlayer player = Bukkit.getOfflinePlayer(user.getUniqueId());
     final @NotNull CachedPermissionData data =
         user.getCachedData()
             .getPermissionData(
                 this.luckPerms.getContextManager().getStaticQueryOptions().toBuilder()
                     .option(OP, player.isOp())
                     .build());
-    this.sessions.grant(
-        uuid,
-        WebGrants.nodes(this.config)
-            .filter(node -> has(data, player, node))
-            .collect(Collectors.toUnmodifiableSet()));
+    return WebGrants.nodes(this.config)
+        .filter(node -> has(data, player, node))
+        .collect(Collectors.toUnmodifiableSet());
   }
 }

@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -266,6 +267,15 @@ class WebSessionsTest {
     sessions.grant(PLAYER, Set.of("taerra.world.minecraft.the_end"));
     sessions.grant(PLAYER, Set.of("taerra.world.minecraft.the_end"));
     assertEquals(1, changes.get());
+    sessions.grant(
+        Map.of(
+            PLAYER,
+            Set.of("taerra.world.minecraft.the_end"),
+            UUID.randomUUID(),
+            Set.of("taerra.teleport"),
+            UUID.randomUUID(),
+            Set.of("taerra.status")));
+    assertEquals(2, changes.get(), "a batch notifies once");
 
     final WebSessions.@Nullable Login login = sessions.redeem(code, PHONE);
     assertNotNull(login);

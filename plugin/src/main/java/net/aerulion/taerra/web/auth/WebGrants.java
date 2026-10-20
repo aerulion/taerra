@@ -1,6 +1,8 @@
 package net.aerulion.taerra.web.auth;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -44,16 +46,18 @@ public final class WebGrants {
         .runTaskTimer(
             plugin,
             () -> {
+              final @NotNull Map<UUID, Set<String>> granted = new HashMap<>();
               for (final @NotNull UUID uuid : sessions.accounts()) {
                 final @Nullable Player player = Bukkit.getPlayer(uuid);
                 if (player != null) {
-                  sessions.grant(uuid, of(player, config));
+                  granted.put(uuid, of(player, config));
                 } else if (Bukkit.getOfflinePlayer(uuid).isBanned()) {
                   sessions.endAll(uuid);
                 } else {
                   sessions.revoke(uuid, MOD);
                 }
               }
+              sessions.grant(granted);
             },
             REFRESH_TICKS,
             REFRESH_TICKS);

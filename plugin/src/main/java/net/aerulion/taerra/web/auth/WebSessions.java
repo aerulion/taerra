@@ -360,8 +360,18 @@ public final class WebSessions {
   }
 
   public synchronized void grant(final @NotNull UUID uuid, final @NotNull Set<String> granted) {
-    if (!Objects.equals(this.grants.get(uuid), granted)) {
-      this.grants.put(uuid, Set.copyOf(granted));
+    grant(Map.of(uuid, granted));
+  }
+
+  public synchronized void grant(final @NotNull Map<UUID, Set<String>> granted) {
+    boolean changed = false;
+    for (final @NotNull Map.Entry<UUID, Set<String>> entry : granted.entrySet()) {
+      if (!Objects.equals(this.grants.get(entry.getKey()), entry.getValue())) {
+        this.grants.put(entry.getKey(), Set.copyOf(entry.getValue()));
+        changed = true;
+      }
+    }
+    if (changed) {
       save();
       this.onChange.run();
     }
