@@ -25,12 +25,15 @@ public final class WebGrants {
   public static @NotNull Set<String> of(
       final @NotNull Player player, final @NotNull TaerraConfig config) {
     return Stream.concat(
-            Stream.concat(
-                config.webPermissions().stream(),
-                ModHandshake.uses(player) ? Stream.of(MOD) : Stream.empty()),
-            Arrays.stream(TaerraPermission.values()).map(TaerraPermission::node))
-        .filter(node -> node.equals(MOD) || player.hasPermission(node))
+            nodes(config).filter(player::hasPermission),
+            ModHandshake.uses(player) ? Stream.of(MOD) : Stream.empty())
         .collect(Collectors.toUnmodifiableSet());
+  }
+
+  public static @NotNull Stream<String> nodes(final @NotNull TaerraConfig config) {
+    return Stream.concat(
+        config.webPermissions().stream(),
+        Arrays.stream(TaerraPermission.values()).map(TaerraPermission::node));
   }
 
   public static void start(

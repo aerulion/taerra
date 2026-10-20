@@ -142,6 +142,8 @@ Every setting can also be changed in game with `/taerra config`, or on the setti
 | `taerra.layer.<layer>` | op | Seeing a private layer, such as `taerra.layer.worldguard` |
 | `taerra.hide` | nobody | Being hidden from the map |
 
+The web map picks up permission changes while a player is online. With LuckPerms it picks them up right away for players who are offline too.
+
 ![Requirements](https://assets.corpium.net/taerra/section-requirements.png?v=6a05f98a)
 
 - **Plugin:** Paper 26.3 and Java 25. Spigot and Folia are not supported.

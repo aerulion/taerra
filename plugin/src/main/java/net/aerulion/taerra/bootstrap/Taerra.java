@@ -25,6 +25,7 @@ import net.aerulion.taerra.config.LiveSettings;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.integration.ChunkyGeneration;
+import net.aerulion.taerra.integration.LuckPermsGrants;
 import net.aerulion.taerra.integration.WorldEditChanges;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.listener.JoinHint;
@@ -229,6 +230,9 @@ public final class Taerra extends JavaPlugin {
       webSessions.onChange(webSocketHandler::revalidate);
       webSessions.onDevices(uuid -> webSocketHandler.sendTo(uuid, Map.of("type", "devices")));
       WebGrants.start(this, configuration, webSessions);
+      if (getServer().getPluginManager().isPluginEnabled("LuckPerms")) {
+        LuckPermsGrants.start(this, configuration, webSessions);
+      }
       final @NotNull ModHandshake modHandshake =
           new ModHandshake(this, configuration, webSettings, webSessions);
       modHandshake.start();

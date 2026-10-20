@@ -367,7 +367,7 @@ const en = {
     reference: {
         kicker: 'Reference',
         title: 'Commands and permissions',
-        lede: 'Everything runs through /taerra. The permissions work with LuckPerms or any other permissions plugin, and every private world, layer and world’s players get one of their own.',
+        lede: 'Everything runs through /taerra. The permissions work with LuckPerms or any other permissions plugin, and every private world, layer and world’s players get one of their own. With LuckPerms, changes reach the map right away, even for players who are offline.',
         commands: {
             title: 'Commands',
             head: ['Command', 'What it does'],

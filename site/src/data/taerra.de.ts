@@ -322,7 +322,7 @@ export const de: Copy = {
     reference: {
         kicker: 'Referenz',
         title: 'Befehle und Berechtigungen',
-        lede: 'Alles läuft über /taerra. Die Berechtigungen funktionieren mit LuckPerms oder jedem anderen Berechtigungs-Plugin, und jede private Welt, Ebene und Welt mit privaten Positionen bekommt ihre eigene.',
+        lede: 'Alles läuft über /taerra. Die Berechtigungen funktionieren mit LuckPerms oder jedem anderen Berechtigungs-Plugin, und jede private Welt, Ebene und Welt mit privaten Positionen bekommt ihre eigene. Mit LuckPerms kommen Änderungen sofort auf der Karte an, auch bei Spielern, die gerade offline sind.',
         commands: {
             title: 'Befehle',
             head: ['Befehl', 'Was er tut'],

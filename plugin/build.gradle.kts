@@ -47,6 +47,7 @@ dependencies {
     compileOnly(libs.worldedit.bukkit) { isTransitive = false }
     compileOnly(libs.chunky.common) { isTransitive = false }
     compileOnly(libs.chunkyborder.common) { isTransitive = false }
+    compileOnly(libs.luckperms.api)
 }
 
 val writeLibraries =
@@ -149,6 +150,11 @@ paper {
             joinClasspath = true
         }
         register("ChunkyBorder") {
+            required = false
+            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+            joinClasspath = true
+        }
+        register("LuckPerms") {
             required = false
             load = PaperPluginDescription.RelativeLoadOrder.BEFORE
             joinClasspath = true
