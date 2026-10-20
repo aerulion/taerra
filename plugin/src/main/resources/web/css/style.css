@@ -418,9 +418,25 @@
     }
 
     .icon-btn--danger:is(:hover, :focus-visible):not(:disabled),
-    .icon-btn.is-armed,
     .icon-btn.is-failed {
         color: var(--red);
+    }
+
+    .icon-btn.is-armed,
+    .icon-btn.is-armed:is(:hover, :focus-visible):not(:disabled) {
+        grid-auto-flow: column;
+        gap: var(--space-2);
+        width: auto;
+        padding-inline: var(--space-3);
+        background: var(--red);
+        color: var(--white);
+    }
+
+    .icon-btn.is-armed::after {
+        content: attr(title);
+        font-size: var(--text-s);
+        font-weight: 700;
+        white-space: nowrap;
     }
 
     .icon-btn.is-done {
