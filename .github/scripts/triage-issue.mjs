@@ -1,4 +1,5 @@
 export const MARKER = '<!-- taerra-triage -->';
+export const STALE_DAYS = 14;
 
 const AREA_LABELS = {
     'Web map': 'web map',
@@ -26,7 +27,7 @@ export function sections(body) {
 
 export function debugInfo(text) {
     const lines = (text ?? '').replace(/\r\n/g, '\n').split('\n');
-    const start = lines.findIndex(line => line.trim() === 'TAERRA debug');
+    const start = lines.findIndex(line => /TAERRA debug\s*$/.test(line));
     if (start < 0) {
         return null;
     }
@@ -49,7 +50,7 @@ export function build(version) {
 function outdated(what, reported, latest) {
     return `This was reported on ${what} Build ${reported}, the newest is Build ${latest}. Please update from `
         + '[download.taerra.dev](https://download.taerra.dev) and check whether it still happens, then edit this issue '
-        + 'with the new build.';
+        + 'with the new debug info.';
 }
 
 export function triage({body, labels, latest}) {
@@ -61,32 +62,39 @@ export function triage({body, labels, latest}) {
     let old = false;
 
     if (has.has('bug') && has.has('plugin')) {
-        const plugin = build(debugInfo(fields['Debug info'])?.Plugin);
-        if (!debugInfo(fields['Debug info'])) {
+        const info = debugInfo(fields['Debug info']);
+        const plugin = build(info?.Plugin);
+        if (!info) {
             missing = true;
-            notes.push('Please run `/taerra debug` on the server, click **Copy** and paste it into **Debug info** by '
-                + 'editing this issue. It says which builds and integrations are involved.');
+            notes.push('Please add the debug info by editing this issue: run `/taerra debug` on the server and click '
+                + '**Copy**, or, without access to the server, open the web map\'s account menu, then **About TAERRA** '
+                + 'and **Copy debug info**. It says which builds and integrations are involved.');
         } else if (plugin !== null && latest.plugin !== null && plugin < latest.plugin) {
             old = true;
             notes.push(outdated('plugin', plugin, latest.plugin));
         }
-        const area = AREA_LABELS[fields['Where']];
+        if (info?.Web?.startsWith('not running')) {
+            notes.push('The web server is not running. The server log says why when it starts, in the line '
+                + '`Failed to start the web server`: most often another program already uses the port.');
+        }
+        const area = AREA_LABELS[fields['Where']] ?? (info?.Browser ? 'web map' : null);
         if (area) {
             add.add(area);
         }
     }
 
     if (has.has('bug') && has.has('mod')) {
-        const mod = build(fields['Mod build']);
+        const info = debugInfo(fields['Debug info']);
+        const mod = build(info?.Mod ?? fields['Debug info']);
         if (mod === null) {
             missing = true;
-            notes.push('Please add the mod build from the jar\'s name, for example `412-a1b2c3d` from '
-                + '`taerra-fabric-build-412-a1b2c3d.jar`, by editing this issue.');
+            notes.push('Please add the debug info by editing this issue: open the map, then **Options...** and click '
+                + '**Report a Bug...**, which copies it. It says which builds, mods and GPU are involved.');
         } else if (latest.mod !== null && mod < latest.mod) {
             old = true;
             notes.push(outdated('mod', mod, latest.mod));
         }
-        const plugin = build(debugInfo(fields['Server debug info'])?.Plugin);
+        const plugin = build(info?.Plugin);
         if (plugin !== null && latest.plugin !== null && plugin < latest.plugin) {
             notes.push(`The server runs plugin Build ${plugin}, the newest is Build ${latest.plugin}. If it is your `
                 + 'server, update it too.');
@@ -119,3 +127,15 @@ export function newest(releases, prefix) {
         .filter(Number.isInteger);
     return builds.length ? Math.max(...builds) : null;
 }
+
+export function stale(issues, now) {
+    const limit = now - STALE_DAYS * 24 * 60 * 60 * 1000;
+    return issues
+        .filter(issue => !issue.pull_request && issue.state === 'open')
+        .filter(issue => issue.labels.some(label => label.name === 'needs info'))
+        .filter(issue => Date.parse(issue.updated_at) < limit)
+        .map(issue => issue.number);
+}
+
+export const STALE_COMMENT = `Closed because the details asked for above did not come in ${STALE_DAYS} days. `
+    + 'Add them in a comment and it can be reopened.';

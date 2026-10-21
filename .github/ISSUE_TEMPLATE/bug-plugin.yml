@@ -13,8 +13,9 @@ body:
     attributes:
       label: Debug info
       description: >-
-        Run `/taerra debug` in game, click **Copy** and paste it here. In the console, copy the lines it prints. It
-        holds versions and settings only, no addresses or player names.
+        Run `/taerra debug` in game and click **Report a bug**, which fills this in, or paste what **Copy** or the
+        console gives you. Not the server's admin? On the web map, open the account menu, then **About TAERRA** and
+        **Report a bug**. It holds versions and settings only, no addresses or player names.
       placeholder: |
         TAERRA debug
         Plugin: 412-a1b2c3d
@@ -30,6 +31,7 @@ body:
       options:
         - Web map
         - Rendering
+        - Performance or lag
         - Regions and fog
         - Waypoints
         - Login and devices

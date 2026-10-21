@@ -8,40 +8,21 @@ body:
         Thanks for reporting! Questions and setup help go to [Discord](https://discord.taerra.dev) instead, and
         security issues to [contact@taerra.dev](mailto:contact@taerra.dev).
 
-  - type: input
-    id: mod
-    attributes:
-      label: Mod build
-      description: In the jar's name, for example `taerra-fabric-build-412-a1b2c3d.jar` is `412-a1b2c3d`.
-      placeholder: 412-a1b2c3d
-    validations:
-      required: true
-
-  - type: input
-    id: minecraft
-    attributes:
-      label: Minecraft and Fabric Loader
-      placeholder: Minecraft 26.3, Fabric Loader 0.17.2
-    validations:
-      required: true
-
-  - type: textarea
-    id: mods
-    attributes:
-      label: Other mods
-      description: The other mods you play with, or the name of the modpack.
-
   - type: textarea
     id: debug
     attributes:
-      label: Server debug info
+      label: Debug info
       description: >-
-        If the server is involved, its admin can run `/taerra debug`, click **Copy** and paste it here.
+        Open the map, then **Options...** (or TAERRA in Mod Menu) and click **Report a Bug...**, which fills this in
+        and copies it too. It holds versions, your GPU and your mod list, no addresses or player names.
       placeholder: |
         TAERRA debug
-        Plugin: 412-a1b2c3d
-        Server: Paper ...
+        Mod: 410-9f8e7d6, protocol 6
+        Minecraft: 26.3
+        ...
       render: text
+    validations:
+      required: true
 
   - type: dropdown
     id: area

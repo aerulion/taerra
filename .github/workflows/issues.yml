@@ -2,20 +2,25 @@ name: 🏷️ Issue triage
 
 on:
   issues:
-    types: [ opened, edited, reopened ]
+    types: [ opened, edited, reopened, labeled, closed ]
+  schedule:
+    - cron: '17 6 * * *'
 
 permissions:
   contents: read
 
 concurrency:
-  group: issue-${{ github.event.issue.number }}
-  cancel-in-progress: true
+  group: issue-${{ github.event.issue.number || 'stale' }}
+  cancel-in-progress: false
 
 jobs:
   triage:
     name: 🏷️ Check the report
     timeout-minutes: 5
-    if: github.repository == 'aerulion/taerra' && github.event.issue.state == 'open'
+    if: >-
+      github.repository == 'aerulion/taerra' && github.event_name == 'issues'
+      && contains(fromJSON('["opened", "edited", "reopened"]'), github.event.action)
+      && github.event.issue.state == 'open'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -62,4 +67,62 @@ jobs:
               await github.rest.issues.createComment({...repo, issue_number: issue.number, body: result.comment});
             } else if (previous) {
               await github.rest.issues.deleteComment({...repo, comment_id: previous.id});
+            }
+
+  settle:
+    name: 🏷️ Clear the triage label
+    timeout-minutes: 5
+    if: >-
+      github.repository == 'aerulion/taerra' && github.event_name == 'issues'
+      && (github.event.action == 'closed'
+      || (github.event.action == 'labeled'
+      && contains(fromJSON('["confirmed", "duplicate", "wontfix"]'), github.event.label.name)))
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: 🏷️ Remove triage
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            const names = issue.labels.map(label => label.name);
+            const done = issue.state === 'closed' ? ['triage', 'needs info'] : ['triage'];
+            for (const name of done.filter(label => names.includes(label))) {
+              await github.rest.issues.removeLabel({...context.repo, issue_number: issue.number, name});
+            }
+
+  stale:
+    name: 🧹 Close reports waiting on info
+    timeout-minutes: 5
+    if: github.repository == 'aerulion/taerra' && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - name: 🧹 Close the stale ones
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const {STALE_COMMENT, stale} = await import(`${process.env.GITHUB_WORKSPACE}/.github/scripts/triage-issue.mjs`);
+            const repo = {owner: context.repo.owner, repo: context.repo.repo};
+            const waiting = await github.paginate(github.rest.issues.listForRepo, {
+              ...repo,
+              state: 'open',
+              labels: 'needs info',
+              per_page: 100
+            });
+            for (const number of stale(waiting, Date.now())) {
+              console.log(`Closing #${number}`);
+              await github.rest.issues.createComment({...repo, issue_number: number, body: STALE_COMMENT});
+              await github.rest.issues.update({...repo, issue_number: number, state: 'closed', state_reason: 'not_planned'});
             }

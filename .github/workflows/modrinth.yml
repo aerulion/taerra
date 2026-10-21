@@ -253,6 +253,70 @@ jobs:
       id-token: write
     uses: ./.github/workflows/site.yml
 
+  released:
+    name: 🏷️ Tell fixed issues
+    timeout-minutes: 10
+    needs: publish
+    if: ${{ !cancelled() && startsWith(needs.publish.outputs.targets, '[{') }}
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON(needs.publish.outputs.targets) }}
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout the history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: 🏷️ Comment on the issues this build fixes
+        uses: actions/github-script@v9
+        env:
+          PART: ${{ matrix.part }}
+          BUILD: ${{ matrix.build }}
+          URL: ${{ fromJSON(needs.publish.outputs.announcements)[matrix.part].url }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const {PART: part, BUILD: build, URL: url} = process.env;
+            const repo = {owner: context.repo.owner, repo: context.repo.repo};
+            const name = `TAERRA Build ${build} for ${part === 'plugin' ? 'Paper' : 'Fabric'}`;
+            const closed = await github.paginate(github.rest.issues.listForRepo, {
+              ...repo,
+              state: 'closed',
+              labels: part,
+              per_page: 100
+            });
+            for (const issue of closed) {
+              if (issue.pull_request || issue.state_reason !== 'completed'
+                || issue.labels.some(label => label.name === 'released')) {
+                continue;
+              }
+              const events = await github.paginate(github.rest.issues.listEvents, {
+                ...repo,
+                issue_number: issue.number,
+                per_page: 100
+              });
+              const commit = events.filter(event => event.event === 'closed' && event.commit_id).at(-1)?.commit_id;
+              if (!commit || await exec.exec('git', ['merge-base', '--is-ancestor', commit, `${part}-${build}`],
+                {ignoreReturnCode: true, silent: true}) !== 0) {
+                continue;
+              }
+              console.log(`#${issue.number} was fixed in ${commit}`);
+              await github.rest.issues.createComment({
+                ...repo,
+                issue_number: issue.number,
+                body: `Fixed in [${name}](${url}), out now on Modrinth.`
+              });
+              await github.rest.issues.addLabels({...repo, issue_number: issue.number, labels: ['released']});
+            }
+
   announce:
     name: 💬 Announce on Discord
     needs: [ publish, site ]
