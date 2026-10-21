@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and setup help
+    url: https://discord.taerra.dev
+    about: Ask on Discord.
+  - name: Security issue
+    url: mailto:contact@taerra.dev
+    about: Write to contact@taerra.dev instead of opening a public issue.
+  - name: Downloads
+    url: https://download.taerra.dev
+    about: Every build of the plugin and the mod.

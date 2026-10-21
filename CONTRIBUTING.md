@@ -1,7 +1,7 @@
 # Contributing
 
-Report bugs in the [issue tracker](https://github.com/aerulion/taerra/issues); questions and ideas go to
-[Discord](https://discord.taerra.dev). Pull requests are welcome; the [README](README.md) has the build, the formatting
+Report bugs and ideas in the [issue tracker](https://github.com/aerulion/taerra/issues/new/choose), through its
+forms; questions go to [Discord](https://discord.taerra.dev). Pull requests are welcome; the [README](README.md) has the build, the formatting
 and the commit message format CI checks. Anything else, such as security issues or permission requests, goes to
 [contact@taerra.dev](mailto:contact@taerra.dev).
 

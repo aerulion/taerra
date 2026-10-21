@@ -1,0 +1,65 @@
+name: 🏷️ Issue triage
+
+on:
+  issues:
+    types: [ opened, edited, reopened ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: issue-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    name: 🏷️ Check the report
+    timeout-minutes: 5
+    if: github.repository == 'aerulion/taerra' && github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - name: 🏷️ Label and answer the issue
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const {MARKER, newest, triage} = await import(`${process.env.GITHUB_WORKSPACE}/.github/scripts/triage-issue.mjs`);
+            const repo = {owner: context.repo.owner, repo: context.repo.repo};
+            const issue = context.payload.issue;
+
+            const releases = await github.paginate(github.rest.repos.listReleases, {...repo, per_page: 100});
+            const latest = {plugin: newest(releases, 'plugin-'), mod: newest(releases, 'mod-')};
+            const result = triage({body: issue.body, labels: issue.labels.map(label => label.name), latest});
+            console.log(`Latest ${JSON.stringify(latest)}, result ${JSON.stringify(result)}`);
+
+            if (result.add.length) {
+              await github.rest.issues.addLabels({...repo, issue_number: issue.number, labels: result.add});
+            }
+            for (const name of result.remove) {
+              await github.rest.issues.removeLabel({...repo, issue_number: issue.number, name});
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...repo,
+              issue_number: issue.number,
+              per_page: 100
+            });
+            const previous = comments.find(comment => comment.user.type === 'Bot' && comment.body.startsWith(MARKER));
+            if (result.comment && previous) {
+              if (previous.body !== result.comment) {
+                await github.rest.issues.updateComment({...repo, comment_id: previous.id, body: result.comment});
+              }
+            } else if (result.comment) {
+              await github.rest.issues.createComment({...repo, issue_number: issue.number, body: result.comment});
+            } else if (previous) {
+              await github.rest.issues.deleteComment({...repo, comment_id: previous.id});
+            }

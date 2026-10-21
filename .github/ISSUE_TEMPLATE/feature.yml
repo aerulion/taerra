@@ -1,0 +1,53 @@
+name: Idea
+description: Something TAERRA should do, or do differently
+labels: [ enhancement, triage ]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        The map's look is part of TAERRA: full blocks, one colour per face, fixed lighting. Ideas for style options or
+        toggles are closed, ideas for everything else are welcome.
+
+  - type: dropdown
+    id: part
+    attributes:
+      label: Part
+      multiple: true
+      options:
+        - Plugin
+        - Web map
+        - Mod
+        - API
+        - Website
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you want to do
+      description: What you are trying to do, and what stops you today.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How TAERRA could help with it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried instead
+      description: Workarounds, other plugins or mods that do this.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send it
+      options:
+        - label: I searched the existing issues and this isn't one of them
+          required: true

@@ -98,6 +98,25 @@ jobs:
             exit 1
           fi
 
+  scripts:
+    name: 🧪 Test workflow scripts
+    timeout-minutes: 5
+    if: >-
+      github.event.action != 'edited'
+      && ((github.event.action != 'labeled' && github.event.action != 'unlabeled')
+      || github.event.label.name == 'deploy')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - name: 🧪 Run the tests
+        run: node --test .github/scripts/*.test.mjs
+
   build:
     name: 🛡️ Validation
     needs: changes
@@ -218,7 +237,7 @@ jobs:
   checks:
     name: ✅ Checks
     timeout-minutes: 60
-    needs: [ changes, commit-messages, build, site ]
+    needs: [ changes, commit-messages, scripts, build, site ]
     if: ${{ !cancelled() }}
     permissions:
       actions: read

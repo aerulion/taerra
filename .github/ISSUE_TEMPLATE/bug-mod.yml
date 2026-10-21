@@ -1,0 +1,104 @@
+name: Mod bug
+description: Something in the Fabric mod's map screen or minimap doesn't work as it should
+labels: [ bug, mod, triage ]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks for reporting! Questions and setup help go to [Discord](https://discord.taerra.dev) instead, and
+        security issues to [contact@taerra.dev](mailto:contact@taerra.dev).
+
+  - type: input
+    id: mod
+    attributes:
+      label: Mod build
+      description: In the jar's name, for example `taerra-fabric-build-412-a1b2c3d.jar` is `412-a1b2c3d`.
+      placeholder: 412-a1b2c3d
+    validations:
+      required: true
+
+  - type: input
+    id: minecraft
+    attributes:
+      label: Minecraft and Fabric Loader
+      placeholder: Minecraft 26.3, Fabric Loader 0.17.2
+    validations:
+      required: true
+
+  - type: textarea
+    id: mods
+    attributes:
+      label: Other mods
+      description: The other mods you play with, or the name of the modpack.
+
+  - type: textarea
+    id: debug
+    attributes:
+      label: Server debug info
+      description: >-
+        If the server is involved, its admin can run `/taerra debug`, click **Copy** and paste it here.
+      placeholder: |
+        TAERRA debug
+        Plugin: 412-a1b2c3d
+        Server: Paper ...
+      render: text
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where
+      options:
+        - Map screen
+        - Minimap
+        - Navigation
+        - Login and connection
+        - Settings
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen
+      placeholder: |
+        1. Join the server
+        2. Open the map with M
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Game log
+      description: Errors or warnings from TAERRA in `logs/latest.log` of your game folder, with the lines around them.
+      render: shell
+
+  - type: textarea
+    id: more
+    attributes:
+      label: Screenshots and anything else
+      description: Drop images or videos here.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send it
+      options:
+        - label: I'm on the newest build from [download.taerra.dev](https://download.taerra.dev)
+          required: true
+        - label: I searched the existing issues and this isn't one of them
+          required: true

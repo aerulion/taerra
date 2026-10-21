@@ -1,0 +1,87 @@
+name: Plugin bug
+description: Something on the server or the web map doesn't work as it should
+labels: [ bug, plugin, triage ]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks for reporting! Questions and setup help go to [Discord](https://discord.taerra.dev) instead, and
+        security issues to [contact@taerra.dev](mailto:contact@taerra.dev).
+
+  - type: textarea
+    id: debug
+    attributes:
+      label: Debug info
+      description: >-
+        Run `/taerra debug` in game, click **Copy** and paste it here. In the console, copy the lines it prints. It
+        holds versions and settings only, no addresses or player names.
+      placeholder: |
+        TAERRA debug
+        Plugin: 412-a1b2c3d
+        Server: Paper ...
+      render: text
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where
+      options:
+        - Web map
+        - Rendering
+        - Regions and fog
+        - Waypoints
+        - Login and devices
+        - Commands
+        - Another plugin's layer or integration
+        - API
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen
+      placeholder: |
+        1. Run /taerra render full minecraft:overworld
+        2. Open the web map in isometric view
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Server log
+      description: Errors or warnings from TAERRA in `logs/latest.log`, with the lines around them.
+      render: shell
+
+  - type: textarea
+    id: more
+    attributes:
+      label: Screenshots and anything else
+      description: Drop images or videos here. For the web map, the browser and its console errors help too.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send it
+      options:
+        - label: I'm on the newest build from [download.taerra.dev](https://download.taerra.dev)
+          required: true
+        - label: I searched the existing issues and this isn't one of them
+          required: true
