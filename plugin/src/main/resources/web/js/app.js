@@ -164,9 +164,26 @@ function updateTitle() {
     }
 }
 
+function showVersion(version) {
+    const build = version.match(/^(?:pr\d+-)?(\d+)-\p{Hex_Digit}+$/u)?.[1];
+    $('about-build').textContent = build ? t('about.build', {number: build}) : t('about.dev');
+    const commit = version.match(/(?<=^|-)\p{Hex_Digit}{7,}(?=(?:-dirty)?(?:-dev)?$)/u);
+    if (!commit) {
+        $('about-version-text').textContent = version;
+        return;
+    }
+    const link = element('a', 'about__commit', commit[0]);
+    link.href = `https://github.com/aerulion/taerra/commit/${commit[0]}`;
+    link.target = '_blank';
+    $('about-version-text').replaceChildren(version.slice(0, commit.index), link,
+        version.slice(commit.index + commit[0].length));
+}
+
 async function refreshServerName() {
     try {
-        const name = (await fetchJson('api/config')).name ?? '';
+        const config = await fetchJson('api/config');
+        showVersion(config.version ?? '');
+        const name = config.name ?? '';
         if (name === serverName) {
             return;
         }
@@ -339,11 +356,21 @@ function setupLanguage() {
 
 function setupDialogs() {
     document.querySelectorAll('dialog').forEach(modal);
-    $('shortcuts-open').addEventListener('click', () => {
-        if ($('account-menu').matches(':popover-open')) {
-            $('account-menu').hidePopover();
-        }
-        $('shortcuts').showModal();
+    for (const name of ['shortcuts', 'about']) {
+        $(`${name}-open`).addEventListener('click', () => {
+            if ($('account-menu').matches(':popover-open')) {
+                $('account-menu').hidePopover();
+            }
+            $(name).showModal();
+        });
+    }
+    $('about-open').addEventListener('click', () => void refreshServerName());
+    let copiedTimer;
+    $('about-copy').addEventListener('click', async () => {
+        await copyText($('about-version-text').textContent);
+        clearTimeout(copiedTimer);
+        $('about-copy').dataset.icon = 'check';
+        copiedTimer = setTimeout(() => $('about-copy').dataset.icon = 'copy', 1500);
     });
 }
 

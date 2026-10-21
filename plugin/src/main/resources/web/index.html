@@ -129,6 +129,11 @@
                 <select class="input input--small" id="language-select"></select>
             </label>
         </div>
+        <div class="menu__group">
+            <button class="menu__item" data-i18n="about.title" data-icon="info" id="about-open" type="button">About
+                TAERRA
+            </button>
+        </div>
     </div>
 </header>
 
@@ -619,6 +624,27 @@
         <button class="btn btn--primary" data-i18n="account.device" data-icon="phone" id="device-button"
                 type="button">Log in on another device
         </button>
+    </footer>
+</dialog>
+
+<dialog aria-labelledby="about-title" class="dialog about" id="about">
+    <button aria-label="Close" class="icon-btn about__close" data-close data-i18n-label="manager.close"
+            data-icon="close" type="button"></button>
+    <div class="about__body">
+        <img alt="" class="about__icon" src="images/icon.svg">
+        <h2 class="about__name" id="about-title">TAERRA</h2>
+        <p class="about__tagline" data-i18n="about.tagline">Live map of the server world</p>
+        <p class="title about__build" id="about-build"></p>
+        <div class="about__version">
+            <span data-i18n="about.version">Version</span>
+            <b id="about-version-text"></b>
+            <button aria-label="Copy" class="icon-btn" data-i18n-label="about.copy" data-i18n-title="about.copy"
+                    data-icon="copy" id="about-copy" type="button"></button>
+        </div>
+    </div>
+    <footer class="about__footer">
+        <a class="about__link" href="https://taerra.dev" target="_blank">taerra.dev</a>
+        <p class="about__copyright">© aerulion</p>
     </footer>
 </dialog>
 

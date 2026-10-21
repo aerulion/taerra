@@ -283,6 +283,8 @@ public final class MapRoutes implements Routes {
         Map.of(
             "name",
             name,
+            "version",
+            this.plugin.getPluginMeta().getVersion(),
             "tileSize",
             TileGeometry.TILE_SIZE,
             "maxZoom",
