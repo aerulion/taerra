@@ -1,6 +1,6 @@
 name: Build the website
 description: >-
-  Checks taerra.dev in site/ the way `bun run check` does, fetches every build mirrored for download, then builds it
+  Checks taerra.dev in site/ the way `bun run check` does, lists every build on Modrinth for download, then builds it
   into site/dist. Needs the repository checked out, with the files the page takes from branding/ and the plugin.
 
 runs:
@@ -39,12 +39,10 @@ runs:
       working-directory: site
       run: bun run lint
 
-    - name: 📥 Fetch the mirrored downloads
+    - name: 📥 List the builds on Modrinth
       if: ${{ !cancelled() }}
       shell: bash
       working-directory: site
-      env:
-        GH_TOKEN: ${{ github.token }}
       run: bun run downloads
 
     - name: 🖼️ Restore the optimized images

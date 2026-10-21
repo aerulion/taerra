@@ -502,16 +502,14 @@ export const de: Copy = {
                 loader: 'Paper',
                 audience: 'Für den Server',
                 title: 'Paper-Plugin',
-                text: 'Rendert die Karte auf deinem Server und liefert sie an jeden Browser aus. Leg die Jar in plugins/.',
-                download: 'Plugin herunterladen'
+                text: 'Rendert die Karte auf deinem Server und liefert sie an jeden Browser aus. Leg die Jar in plugins/.'
             },
             mod: {
                 label: 'Mod',
                 loader: 'Fabric',
                 audience: 'Fürs Spiel',
                 title: 'Fabric-Mod',
-                text: 'Die Karte des Servers in deinem Spiel, mit Minikarte und Wegpunkten in der Welt. Leg die Jar in mods/.',
-                download: 'Mod herunterladen'
+                text: 'Die Karte des Servers in deinem Spiel, mit Minikarte und Wegpunkten in der Welt. Leg die Jar in mods/.'
             }
         },
         latest: 'Neuester Build',
@@ -520,7 +518,7 @@ export const de: Copy = {
         none: 'Noch kein Build veröffentlicht.',
         minecraft: 'Minecraft',
         changes: 'Änderungen',
-        modrinth: 'Auf Modrinth',
+        modrinth: 'Auf Modrinth herunterladen',
         channels: {release: 'Release', beta: 'Beta', alpha: 'Alpha'},
         archive: {
             kicker: 'Archiv',
@@ -535,9 +533,6 @@ export const de: Copy = {
             'CC BY-NC-SA 4.0',
             '.'
         ] as Marked,
-        hash: 'SHA-512',
-        copy: 'SHA-512-Prüfsumme kopieren',
-        copied: 'Kopiert',
         sections: {
             Features: 'Neu',
             Fixes: 'Behoben',

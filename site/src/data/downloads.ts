@@ -16,15 +16,7 @@ export interface Build {
     minecraft: string[];
     published: string;
     changelog: string;
-    file: string;
-    size: number;
-    sha512: string;
     modrinth: string;
-}
-
-export interface Mirror {
-    modrinth: boolean;
-    builds: Build[];
 }
 
 export type Block = {list: string[]} | {text: string};
@@ -34,16 +26,12 @@ export interface Section {
     blocks: Block[];
 }
 
-export const folder = 'downloads';
+const index = 'downloads/index.json';
 
-const index = `${folder}/index.json`;
-
-export const mirror: Mirror = existsSync(index)
-    ? JSON.parse(readFileSync(index, 'utf8'))
-    : {modrinth: false, builds: []};
+export const builds: Build[] = existsSync(index) ? JSON.parse(readFileSync(index, 'utf8')).builds : [];
 
 export function latest(part: Part) {
-    const own = mirror.builds.filter((build) => build.part === part);
+    const own = builds.filter((build) => build.part === part);
     return own.find((build) => build.channel === 'release') ?? own[0];
 }
 
@@ -83,15 +71,6 @@ export const inline = (text: string) =>
                   ? {kind: 'link' as const, text: label, href}
                   : {kind: 'text' as const, text: plain}
     );
-
-export function size(bytes: number, lang: string) {
-    const mega = bytes >= 1_000_000;
-    return new Intl.NumberFormat(lang, {
-        style: 'unit',
-        unit: mega ? 'megabyte' : 'kilobyte',
-        maximumFractionDigits: mega ? 1 : 0
-    }).format(mega ? bytes / 1_000_000 : bytes / 1_000);
-}
 
 export const date = (iso: string, lang: string) =>
     new Intl.DateTimeFormat(lang, {dateStyle: 'medium', timeZone: 'UTC'}).format(new Date(iso));

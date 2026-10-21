@@ -2,10 +2,10 @@ name: 🟢 Publish to Modrinth
 
 # Promotes development builds to Modrinth releases: the jars attached to their GitHub releases, so what ships is exactly
 # what was tested. Plugin and mod are one Modrinth project, told apart by loader. By default it releases the newest
-# plugin and the newest mod build that are not on taerra.dev/download/ yet, each of them only if it is new; plugin or
-# mod picks one part, its newest build or the one given. A plugin build's API is rebuilt and tested at its tag and
-# published to Maven Central under the same version. The website is deployed once, after every part is mirrored, and
-# each part is announced on Discord in its own message.
+# plugin and the newest mod build that are still GitHub prereleases, each of them only if it is new; plugin or mod
+# picks one part, its newest build or the one given. A plugin build's API is rebuilt and tested at its tag and
+# published to Maven Central under the same version. The website, whose download page lists the Modrinth versions, is
+# deployed once after every part is uploaded, and each part is announced on Discord in its own message.
 on:
   workflow_dispatch:
     inputs:
@@ -41,6 +41,8 @@ jobs:
     name: 🟢 Publish to Modrinth
     timeout-minutes: 20
     if: github.repository == 'aerulion/taerra'
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     outputs:
       targets: ${{ steps.publish.outputs.targets }}
@@ -164,18 +166,11 @@ jobs:
               new=true
               echo "Published ${name} (${version}, ${CHANNEL})."
             fi
+            gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" --prerelease=false \
+              --latest="$([ "${part}" = plugin ] && echo true || echo false)"
             url="https://modrinth.com/project/${SLUG}/version/${uploaded}"
             echo "${url}"
-
-            mirror="https://taerra.dev/download/#${TAG}"
-            links="📥 [Download on Modrinth](${url}) or [on taerra.dev](${mirror})"
-            case "$(jq -r '.status' <<< "${project}")" in
-              approved | archived | unlisted) ;;
-              *)
-                url="${mirror}"
-                links="📥 [Download on taerra.dev](${mirror})"
-                ;;
-            esac
+            links="📥 [Download on Modrinth](${url})"
 
             title="${name} is out"
             if [ "${CHANNEL}" != 'release' ]; then
@@ -204,9 +199,9 @@ jobs:
               failed+=("${part}")
               continue
             fi
-            # Released means mirrored: a build on Modrinth without its modrinth.json still gets mirrored and announced.
-            if [ "${PART}" = 'newest' ] && [ -n "$(gh release view "${part}-${build}" --repo "${GITHUB_REPOSITORY}" \
-              --json assets --jq '.assets[].name | select(. == "modrinth.json")')" ]; then
+            # Released means promoted: a build on Modrinth that is still a prerelease still gets promoted and announced.
+            if [ "${PART}" = 'newest' ] && [ "$(gh release view "${part}-${build}" --repo "${GITHUB_REPOSITORY}" \
+              --json isPrerelease --jq '.isPrerelease')" = 'false' ]; then
               echo "${part}-${build}, the newest ${part} build, is already released."
               continue
             fi
@@ -248,29 +243,9 @@ jobs:
       SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
       SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
 
-  downloads:
-    name: 📥 Mirror on taerra.dev
-    needs: publish
-    if: ${{ !cancelled() && startsWith(needs.publish.outputs.targets, '[{') }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJSON(needs.publish.outputs.targets) }}
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
-    uses: ./.github/workflows/downloads.yml
-    with:
-      part: ${{ matrix.part }}
-      build: ${{ matrix.build }}
-      skip-site: true
-    secrets:
-      MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-
   site:
     name: 🌐 Website
-    needs: [ publish, downloads ]
+    needs: publish
     if: ${{ !cancelled() && startsWith(needs.publish.outputs.targets, '[{') }}
     permissions:
       contents: write

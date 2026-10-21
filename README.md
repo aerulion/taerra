@@ -84,7 +84,7 @@ than silently not releasing one.
 
 Every release runs the whole Gradle build first, and the API is published in a second step, after every test has
 passed. The ten most recent releases per stream and the ten most recent API versions are kept, and so is every release
-mirrored on taerra.dev. `manual-cleanup.yml` runs the same cleanup on demand.
+on Modrinth. `manual-cleanup.yml` runs the same cleanup on demand.
 
 Workflows that release, deploy or publish only run in `aerulion/taerra`, never in a fork.
 
@@ -93,9 +93,8 @@ Workflows that release, deploy or publish only run in `aerulion/taerra`, never i
 Plugin and mod are one Modrinth project, told apart by loader. Nothing reaches it on its own: run the **Publish to
 Modrinth** workflow. By default it releases the newest `plugin-<n>` and the newest `mod-<n>` that are not on Modrinth
 yet; pick `plugin` or `mod` and a build number to release one part alone. It uploads each release's jar, never a
-rebuild, with the player-facing changes since the previous Modrinth version of that loader, mirrors it on
-[taerra.dev/download](https://taerra.dev/download/), turns its GitHub prerelease into a full release (the plugin's as
-Latest), deploys the website and announces each part on Discord. Only the ten most recent builds per stream still have a
+rebuild, with the player-facing changes since the previous Modrinth version of that loader, turns its GitHub
+prerelease into a full release (the plugin's as Latest), deploys the website and announces each part on Discord. Only the ten most recent builds per stream still have a
 release to publish from.
 
 | Secret                                        | Value                                                                                                                                                    |
@@ -116,8 +115,8 @@ Central versions can never be deleted, so this is the only path there. It needs:
 
 `site/` is [taerra.dev](https://taerra.dev), the project's page and its download page, built with Astro and Bun. CI
 runs `bun run check` (Prettier, ESLint, `astro check`) on every pull request that touches it. The download page lists
-every build mirrored from Modrinth: `bun run downloads` fetches them from the GitHub releases, which needs the `gh` CLI,
-and without it the page shows none. `site.yml` is the only way to GitHub Pages and can be run by hand for a deploy
+every build on Modrinth and links each to its Modrinth version page: `bun run downloads` lists them from Modrinth's
+API, and without it the page shows none. `site.yml` is the only way to GitHub Pages and can be run by hand for a deploy
 alone.
 
 ## Commit messages

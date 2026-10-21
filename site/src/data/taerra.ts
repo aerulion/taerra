@@ -533,16 +533,14 @@ const en = {
                 loader: 'Paper',
                 audience: 'For server owners',
                 title: 'Paper Plugin',
-                text: 'Renders the map on your server and serves it to every browser. Put the jar in plugins/.',
-                download: 'Download the plugin'
+                text: 'Renders the map on your server and serves it to every browser. Put the jar in plugins/.'
             },
             mod: {
                 label: 'Mod',
                 loader: 'Fabric',
                 audience: 'For players',
                 title: 'Fabric Mod',
-                text: 'The server’s map in your game, with a minimap and waypoints in the world. Put the jar in mods/.',
-                download: 'Download the mod'
+                text: 'The server’s map in your game, with a minimap and waypoints in the world. Put the jar in mods/.'
             }
         },
         latest: 'Latest build',
@@ -551,7 +549,7 @@ const en = {
         none: 'No build released yet.',
         minecraft: 'Minecraft',
         changes: 'What changed',
-        modrinth: 'On Modrinth',
+        modrinth: 'Download on Modrinth',
         channels: {release: 'Release', beta: 'Beta', alpha: 'Alpha'},
         archive: {
             kicker: 'Archive',
@@ -566,9 +564,6 @@ const en = {
             'CC BY-NC-SA 4.0',
             '.'
         ] as Marked,
-        hash: 'SHA-512',
-        copy: 'Copy the SHA-512 checksum',
-        copied: 'Copied',
         sections: {
             Features: 'New',
             Fixes: 'Fixed',

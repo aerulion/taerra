@@ -1,8 +1,6 @@
 ---
 import {Image} from 'astro:assets';
 import Download from '../icons/download.svg';
-import Copy from '../icons/copy.svg';
-import Check from '../icons/check.svg';
 import backdrop from '../assets/backdrop.png';
 import detail from '../assets/detail.png';
 import ingame from '../../../branding/ingame/mod-labels.png';
@@ -14,29 +12,26 @@ import {
     changelog,
     date,
     inline,
+    builds,
     latest,
-    mirror,
     modrinthUrl,
     commit,
     commitUrl,
     parts,
-    size,
-    type Build,
     type Part
 } from '../data/downloads';
 
 const lang = Astro.currentLocale ?? 'en';
 const {downloads: t, start} = copy(lang);
 const logos = {plugin: paper, mod: fabric};
-const file = (build: Build) => `/download/${build.file}`;
 const newest = new Set(parts.map(latest).flatMap((build) => (build ? [anchor(build)] : [])));
 const filters = [
-    {value: 'all', label: t.archive.all, logo: undefined, count: mirror.builds.length},
+    {value: 'all', label: t.archive.all, logo: undefined, count: builds.length},
     ...parts.map((part: Part) => ({
         value: part,
         label: t.parts[part].label,
         logo: logos[part],
-        count: mirror.builds.filter((build) => build.part === part).length
+        count: builds.filter((build) => build.part === part).length
     }))
 ];
 const phrase = (text: string) => t.phrases[text] ?? text;
@@ -59,7 +54,7 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
             <div class="latest">
                 {parts.map((part, i) => {
                     const build = latest(part);
-                    const {audience, title, text, download} = t.parts[part];
+                    const {audience, title, text} = t.parts[part];
                     return (
                         <article
                             id={`latest-${part}`}
@@ -92,18 +87,13 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
                                 {build ? (
                                     <>
                                         <div class="get">
-                                            <a class="btn btn--primary" href={file(build)} download>
+                                            <a class="btn btn--primary" href={modrinthUrl(build)}>
                                                 <Download aria-hidden="true" />
-                                                {download}
+                                                {t.modrinth}
                                             </a>
                                             <a class="more" href={`#${anchor(build)}`}>
                                                 {t.changes}
                                             </a>
-                                            {mirror.modrinth && (
-                                                <a class="more" href={modrinthUrl(build)}>
-                                                    {t.modrinth}
-                                                </a>
-                                            )}
                                         </div>
                                         <p class="facts">
                                             <span class="tag pixel">
@@ -116,7 +106,6 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
                                             <span>
                                                 {t.minecraft} {build.minecraft.join(', ')}
                                             </span>
-                                            <span>{size(build.size, lang)}</span>
                                             <a class="commit" href={commitUrl(commit(build))}>
                                                 {commit(build)}
                                             </a>
@@ -147,7 +136,7 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
                 </h2>
                 <p class="lede">{t.archive.lede}</p>
             </div>
-            {mirror.builds.length ? (
+            {builds.length ? (
                 <>
                     <fieldset class="filter">
                         <legend class="visually-hidden">{t.archive.filter}</legend>
@@ -167,7 +156,7 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
                         ))}
                     </fieldset>
                     <ol class="timeline">
-                        {mirror.builds.map((build) => {
+                        {builds.map((build) => {
                             const id = anchor(build);
                             const {title} = t.parts[build.part];
                             return (
@@ -247,34 +236,12 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
                                     <div class="get">
                                         <a
                                             class="btn btn--dark"
-                                            href={file(build)}
-                                            download
-                                            aria-label={`${t.download}: ${title}, ${t.build} ${build.build}`}
+                                            href={modrinthUrl(build)}
+                                            aria-label={`${t.modrinth}: ${title}, ${t.build} ${build.build}`}
                                         >
                                             <Download aria-hidden="true" />
                                             {t.download}
-                                            <span class="size">{size(build.size, lang)}</span>
                                         </a>
-                                        <button
-                                            class="hash"
-                                            type="button"
-                                            data-hash={build.sha512}
-                                            data-copied={t.copied}
-                                            title={`${t.hash} ${build.sha512}`}
-                                        >
-                                            <Copy class="idle" aria-hidden="true" />
-                                            <Check class="done" aria-hidden="true" />
-                                            <span class="visually-hidden">{t.copy}</span>
-                                            <code aria-hidden="true">
-                                                {t.hash} {build.sha512.slice(0, 8)}…
-                                            </code>
-                                            <span class="visually-hidden" aria-live="polite" />
-                                        </button>
-                                        {mirror.modrinth && (
-                                            <a class="more" href={modrinthUrl(build)}>
-                                                {t.modrinth}
-                                            </a>
-                                        )}
                                     </div>
                                 </li>
                             );
@@ -294,26 +261,6 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
 </main>
 
 <script>
-    for (const button of document.querySelectorAll<HTMLButtonElement>('button[data-hash]')) {
-        const status = button.querySelector('[aria-live]')!;
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        button.addEventListener('click', async () => {
-            try {
-                await navigator.clipboard.writeText(button.dataset.hash!);
-            } catch (error) {
-                console.debug(error);
-                return;
-            }
-            clearTimeout(timer);
-            button.classList.add('is-copied');
-            status.textContent = button.dataset.copied!;
-            timer = setTimeout(() => {
-                button.classList.remove('is-copied');
-                status.textContent = '';
-            }, 1600);
-        });
-    }
-
     const reveal = () => {
         const entry = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
         if (!entry?.classList.contains('entry')) return;
@@ -805,62 +752,6 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
         flex-direction: column;
         align-items: stretch;
         gap: 10px;
-    }
-
-    .size {
-        font-family: var(--font-mono);
-        font-size: 13px;
-        font-weight: 400;
-        opacity: 0.75;
-    }
-
-    .hash {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        min-height: 32px;
-        padding: 0 10px;
-        background: none;
-        border: 1px solid var(--stone-700);
-        color: var(--stone-200);
-        font: inherit;
-        cursor: pointer;
-        transition:
-            border-color 0.2s ease,
-            color 0.2s ease;
-    }
-
-    .hash:hover {
-        border-color: var(--stone-200);
-        color: var(--white);
-    }
-
-    .hash code {
-        font-size: 12px;
-    }
-
-    .hash :global(svg) {
-        width: 12px;
-        height: 12px;
-    }
-
-    .hash :global(.done),
-    .hash.is-copied :global(.idle) {
-        display: none;
-    }
-
-    .hash.is-copied {
-        border-color: var(--accent);
-        color: var(--accent-hi);
-    }
-
-    .hash.is-copied :global(.done) {
-        display: block;
-    }
-
-    .entry .more {
-        text-align: center;
     }
 
     .empty {

@@ -4,45 +4,20 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-repo="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
 rm -rf downloads
-mkdir -p downloads/records
+mkdir -p downloads
 
-fetch() {
-  for attempt in 1 2 3; do
-    gh release download "$@" --repo "${repo}" --clobber && return
-    sleep $((attempt * 10))
-  done
-  gh release download "$@" --repo "${repo}" --clobber
-}
-
-tags="$(gh api --paginate "repos/${repo}/releases?per_page=100" \
-  --jq '.[] | select(any(.assets[]; .name == "modrinth.json")) | .tag_name')"
-
-for tag in ${tags}; do
-  record="downloads/records/${tag}.json"
-  fetch "${tag}" --pattern modrinth.json --output "${record}"
-  file="$(jq -r .file "${record}")"
-  fetch "${tag}" --pattern "${file}" --dir downloads
-  actual="$(shasum -a 512 "downloads/${file}" | cut -d ' ' -f 1)"
-  if [ "${actual}" != "$(jq -r .sha512 "${record}")" ]; then
-    echo "::error::${file} in ${tag} does not match the hash Modrinth has for it."
-    exit 1
-  fi
-done
-
-listed=false
-if curl --silent --fail --output /dev/null --max-time 30 --user-agent 'aerulion/taerra website (taerra.dev)' \
-  https://api.modrinth.com/v2/project/taerra; then
-  listed=true
-fi
-
-if [ -z "${tags}" ]; then
-  echo '[]' > downloads/records.json
-else
-  jq -s . downloads/records/*.json > downloads/records.json
-fi
-jq --argjson listed "${listed}" '{modrinth: $listed, builds: (sort_by(.published) | reverse)}' \
-  downloads/records.json > downloads/index.json
-rm -r downloads/records downloads/records.json
-echo "Mirrored $(jq '.builds | length' downloads/index.json) builds, Modrinth page listed: ${listed}."
+curl --silent --show-error --fail-with-body --retry 3 --max-time 60 \
+  --user-agent 'aerulion/taerra website (taerra.dev)' https://api.modrinth.com/v2/project/taerra/version \
+  | jq '{builds: [.[] | {
+      part: (if .loaders | index("paper") then "plugin" else "mod" end),
+      build: (.version_number | split("-")[0] | tonumber),
+      version: .version_number,
+      name: .name,
+      channel: .version_type,
+      minecraft: .game_versions,
+      published: .date_published,
+      changelog: .changelog,
+      modrinth: .id
+    }] | sort_by(.published) | reverse}' > downloads/index.json
+echo "Listed $(jq '.builds | length' downloads/index.json) builds from Modrinth."
