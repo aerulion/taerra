@@ -48,6 +48,7 @@ dependencies {
     compileOnly(libs.chunky.common) { isTransitive = false }
     compileOnly(libs.chunkyborder.common) { isTransitive = false }
     compileOnly(libs.luckperms.api)
+    compileOnly(libs.towny) { isTransitive = false }
 }
 
 val writeLibraries =
@@ -155,6 +156,11 @@ paper {
             joinClasspath = true
         }
         register("LuckPerms") {
+            required = false
+            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+            joinClasspath = true
+        }
+        register("Towny") {
             required = false
             load = PaperPluginDescription.RelativeLoadOrder.BEFORE
             joinClasspath = true

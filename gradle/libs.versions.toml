@@ -15,6 +15,7 @@ worldedit = "7.4.4"
 chunky = "1.5.4"
 chunkyborder = "1.2.33"
 luckperms = "5.5"
+towny = "0.103.2.13"
 minecraft = "26.3"
 fabric-loader = "0.19.5"
 fabric-api = "0.161.0+26.3"
@@ -33,6 +34,7 @@ worldedit-bukkit = { module = "com.sk89q.worldedit:worldedit-bukkit", version.re
 chunky-common = { module = "org.popcraft:chunky-common", version.ref = "chunky" }
 chunkyborder-common = { module = "org.popcraft:chunkyborder-common", version.ref = "chunkyborder" }
 luckperms-api = { module = "net.luckperms:api", version.ref = "luckperms" }
+towny = { module = "com.palmergames.bukkit.towny:towny", version.ref = "towny" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }

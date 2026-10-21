@@ -234,6 +234,7 @@ const en = {
                 title: 'Fits the plugins you already have',
                 features: [
                     {title: 'WorldGuard', text: 'Regions as a layer, private to staff unless you share it.'},
+                    {title: 'Towny', text: 'Towns as a layer, each with its mayor, nation and residents.'},
                     {title: 'World borders', text: "The vanilla world border and ChunkyBorder's borders as a layer."},
                     {
                         title: 'Chunky',

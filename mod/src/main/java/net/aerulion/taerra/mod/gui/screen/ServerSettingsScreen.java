@@ -93,6 +93,8 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                   "markers.worldborder.shown-by-default",
                   "markers.worldguard.enabled",
                   "markers.worldguard.shown-by-default",
+                  "markers.towny.enabled",
+                  "markers.towny.shown-by-default",
                   "markers.loaded-chunks.enabled",
                   "markers.loaded-chunks.shown-by-default")),
           new Section(

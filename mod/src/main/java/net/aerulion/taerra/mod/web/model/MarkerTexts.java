@@ -32,7 +32,7 @@ public final class MarkerTexts {
               layer.markers().stream()
                   .map(marker -> with(marker, I18n.get("taerra.marker.spawn"), marker.details()))
                   .toList());
-      case "worldguard" ->
+      case "worldguard", "towny" ->
           withMarkers(
               layer,
               layer.markers().stream()

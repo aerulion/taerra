@@ -50,6 +50,8 @@ public final class ConfigEditor {
           Setting.toggle("markers.spawn.shown-by-default"),
           Setting.toggle("markers.worldguard.enabled"),
           Setting.toggle("markers.worldguard.shown-by-default"),
+          Setting.toggle("markers.towny.enabled"),
+          Setting.toggle("markers.towny.shown-by-default"),
           Setting.toggle("markers.worldborder.enabled"),
           Setting.toggle("markers.worldborder.shown-by-default"),
           Setting.toggle("markers.loaded-chunks.enabled"),

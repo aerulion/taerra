@@ -13,6 +13,9 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://maven.enginehub.org/repo/")
     maven("https://repo.codemc.io/repository/maven-public/")
+    maven("https://repo.glaremasters.me/repository/towny/") {
+        mavenContent { includeGroup("com.palmergames.bukkit.towny") }
+    }
     mavenCentral()
 }
 

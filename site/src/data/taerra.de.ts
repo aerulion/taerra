@@ -186,6 +186,7 @@ export const de: Copy = {
                         title: 'WorldGuard',
                         text: 'Regionen als Ebene, nur für dein Team, solange du sie nicht freigibst.'
                     },
+                    {title: 'Towny', text: 'Städte als Ebene, jede mit Bürgermeister, Nation und Einwohnern.'},
                     {
                         title: 'Weltbarrieren',
                         text: 'Die Weltbarriere aus Vanilla und die Grenzen von ChunkyBorder als Ebene.'
