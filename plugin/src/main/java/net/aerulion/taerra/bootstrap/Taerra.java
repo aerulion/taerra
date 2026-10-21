@@ -10,6 +10,7 @@ import net.aerulion.taerra.api.TaerraApi;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.chat.RenderFeedback;
 import net.aerulion.taerra.command.ConfigSubCommand;
+import net.aerulion.taerra.command.DebugSubCommand;
 import net.aerulion.taerra.command.DevicesSubCommand;
 import net.aerulion.taerra.command.ImportSubCommand;
 import net.aerulion.taerra.command.LimitSubCommand;
@@ -24,6 +25,7 @@ import net.aerulion.taerra.config.ConfigEditor;
 import net.aerulion.taerra.config.LiveSettings;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
+import net.aerulion.taerra.diagnostics.DebugReport;
 import net.aerulion.taerra.integration.ChunkyGeneration;
 import net.aerulion.taerra.integration.LuckPermsGrants;
 import net.aerulion.taerra.integration.WorldEditChanges;
@@ -461,6 +463,9 @@ public final class Taerra extends JavaPlugin {
             new LoginSubCommand(webSettings, configuration, webSessions),
             new LogoutSubCommand(webSessions),
             new DevicesSubCommand(webSessions),
-            new ModSubCommand(modHandshake)));
+            new ModSubCommand(modHandshake),
+            new DebugSubCommand(
+                new DebugReport(
+                    this, webSettings, configuration, generatorService, modHandshake))));
   }
 }

@@ -29,6 +29,10 @@ public enum TaerraPermission {
       "mods",
       "Lets the user see who plays with the TAERRA mod with '/taerra mod'.",
       PermissionDefault.OP),
+  DEBUG(
+      "debug",
+      "Lets the user copy the versions and setup a bug report needs with '/taerra debug'.",
+      PermissionDefault.OP),
   TELEPORT(
       "teleport",
       "Lets the user teleport from the web map, the mod's map and their waypoint lists.",

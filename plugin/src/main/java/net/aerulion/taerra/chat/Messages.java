@@ -173,6 +173,18 @@ public final class Messages {
         .build();
   }
 
+  public static @NotNull Component copyButton(
+      final @NotNull String text, final @NotNull ComponentLike label) {
+    return Component.text()
+        .color(GOLD)
+        .append(Component.text("["))
+        .append(label)
+        .append(Component.text("]"))
+        .hoverEvent(tr("click.copy").color(TEXT))
+        .clickEvent(ClickEvent.copyToClipboard(text))
+        .build();
+  }
+
   public static @NotNull Component suggest(
       final @NotNull String command, final @NotNull ComponentLike hover) {
     return Component.text(command, GOLD)

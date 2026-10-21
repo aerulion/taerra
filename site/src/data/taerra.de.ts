@@ -360,7 +360,8 @@ export const de: Copy = {
                 {command: '/taerra login [code]', text: 'Bei der Webkarte anmelden'},
                 {command: '/taerra logout [name]', text: 'In jedem Browser von der Webkarte abmelden'},
                 {command: '/taerra devices', text: 'Deine Geräte auf der Webkarte anzeigen und abmelden'},
-                {command: '/taerra mod', text: 'Anzeigen, wer mit der TAERRA-Mod spielt, und mit welchem Build'}
+                {command: '/taerra mod', text: 'Anzeigen, wer mit der TAERRA-Mod spielt, und mit welchem Build'},
+                {command: '/taerra debug', text: 'Versionen und Einrichtung für einen Fehlerbericht kopieren'}
             ]
         },
         permissions: {
@@ -379,6 +380,7 @@ export const de: Copy = {
                 },
                 {permission: 'taerra.status', standard: 'OP', text: '`/taerra status`'},
                 {permission: 'taerra.mods', standard: 'OP', text: '`/taerra mod`'},
+                {permission: 'taerra.debug', standard: 'OP', text: '`/taerra debug`'},
                 {
                     permission: 'taerra.teleport',
                     standard: 'OP',
@@ -468,7 +470,7 @@ export const de: Copy = {
         kicker: 'Early Access',
         title: 'Ausprobieren, kaputt machen, melden',
         text: [
-            'TAERRA läuft schon auf echten Servern und wächst noch: Zwischen Versionen kann sich etwas ändern, und hier und da gibt es Ecken und Kanten. Wenn etwas kaputtgeht oder falsch aussieht, ',
+            'TAERRA läuft schon auf echten Servern und wächst noch: Zwischen Versionen kann sich etwas ändern, und hier und da gibt es Ecken und Kanten. Wenn etwas kaputtgeht, falsch aussieht oder du eine Idee hast, ',
             'melde es auf GitHub',
             '. Jede Meldung macht es für alle besser, und Fragen sind auf Discord willkommen.'
         ] as Marked,

@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 public sealed interface TaerraSubCommand
     permits ConfigSubCommand,
+        DebugSubCommand,
         DevicesSubCommand,
         ImportSubCommand,
         LimitSubCommand,

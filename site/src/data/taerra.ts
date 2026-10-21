@@ -399,7 +399,8 @@ const en = {
                 {command: '/taerra login [code]', text: 'Log in to the web map'},
                 {command: '/taerra logout [player]', text: 'Log out of the web map in every browser'},
                 {command: '/taerra devices', text: 'See and log out your web map devices'},
-                {command: '/taerra mod', text: 'See who plays with the TAERRA mod, and which build'}
+                {command: '/taerra mod', text: 'See who plays with the TAERRA mod, and which build'},
+                {command: '/taerra debug', text: 'Copy the versions and setup a bug report needs'}
             ] satisfies Command[]
         },
         permissions: {
@@ -418,6 +419,7 @@ const en = {
                 },
                 {permission: 'taerra.status', standard: 'op', text: '`/taerra status`'},
                 {permission: 'taerra.mods', standard: 'op', text: '`/taerra mod`'},
+                {permission: 'taerra.debug', standard: 'op', text: '`/taerra debug`'},
                 {permission: 'taerra.teleport', standard: 'op', text: 'Teleporting from the map and the waypoint list'},
                 {
                     permission: 'taerra.render.world',
@@ -503,7 +505,7 @@ const en = {
         kicker: 'Early access',
         title: 'Try it out, break it, report it',
         text: [
-            'TAERRA already runs on live servers, and it is still growing: things can change between versions, and you may find rough edges. If something breaks or looks wrong, ',
+            'TAERRA already runs on live servers, and it is still growing: things can change between versions, and you may find rough edges. If something breaks or looks wrong, or you have an idea, ',
             'report it on GitHub',
             '. Every report makes it better for everyone, and questions are welcome on Discord.'
         ] as Marked,

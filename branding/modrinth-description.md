@@ -16,7 +16,7 @@ Everything is rendered on the server. Visitors and players only download finishe
 
 TAERRA is early in its development. It already runs on live servers, but it is not feature complete yet, and you may run into bugs or rough edges. Things can still change between versions as it grows.
 
-If something breaks or looks wrong, please report it on [GitHub](https://github.com/aerulion/taerra/issues): every report helps make TAERRA better for everyone. Questions are welcome on [Discord](https://discord.taerra.dev).
+If something breaks or looks wrong, or you have an idea, please report it on [GitHub](https://github.com/aerulion/taerra/issues): every report helps make TAERRA better for everyone. Questions are welcome on [Discord](https://discord.taerra.dev).
 
 ![Features](https://assets.corpium.net/taerra/section-features.png?v=ec83b754)
 
@@ -114,6 +114,7 @@ Every setting can also be changed in game with `/taerra config`, or on the setti
 | `/taerra logout [player]` | Log out of the web map in every browser |
 | `/taerra devices` | See and log out your web map devices |
 | `/taerra mod` | See who plays with the TAERRA mod, and which build |
+| `/taerra debug` | Copy the versions and setup a bug report needs |
 
 ![Permissions](https://assets.corpium.net/taerra/section-permissions.png?v=f3f283ed)
 
@@ -123,6 +124,7 @@ Every setting can also be changed in game with `/taerra config`, or on the setti
 | `taerra.logout.others` | op | Logging other players out with `/taerra logout <player>` |
 | `taerra.status` | op | `/taerra status` |
 | `taerra.mods` | op | `/taerra mod` |
+| `taerra.debug` | op | `/taerra debug` |
 | `taerra.teleport` | op | Teleporting from the map and the waypoint list |
 | `taerra.render.world` | op | Rendering a whole world again, with `/taerra render full` or from the map |
 | `taerra.render.area` | op | Rendering an area again, with `/taerra render radius` or by selecting chunks on the map |
@@ -157,7 +159,7 @@ Render threads and cache sizes are configurable, so you decide how much CPU and 
 
 ![More](https://assets.corpium.net/taerra/section-more.png?v=020fdb28)
 
-See TAERRA running on a real server at [map.corpium.net](https://map.corpium.net/), and if you are curious how it works under the hood, read the [technical deep dive](https://aerulion.net/work/taerra/). Questions and ideas are welcome on [Discord](https://discord.taerra.dev), bug reports on [GitHub](https://github.com/aerulion/taerra/issues).
+See TAERRA running on a real server at [map.corpium.net](https://map.corpium.net/), and if you are curious how it works under the hood, read the [technical deep dive](https://aerulion.net/work/taerra/). Questions are welcome on [Discord](https://discord.taerra.dev), bug reports and ideas on [GitHub](https://github.com/aerulion/taerra/issues).
 
 TAERRA is free to use on any server, commercial ones included. Its source code is available on [GitHub](https://github.com/aerulion/taerra), and the [license](https://github.com/aerulion/taerra/blob/main/LICENSE.md) has the details.
 
