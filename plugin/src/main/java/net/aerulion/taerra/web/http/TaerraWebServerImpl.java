@@ -63,6 +63,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private final @NotNull List<Routes> routes;
   private final @NotNull ObjectMapper mapper = new ObjectMapper();
   private @Nullable Javalin app;
+  private volatile boolean running;
   private @Nullable BukkitTask progressTask;
   private @Nullable BukkitTask worldsTask;
 
@@ -168,6 +169,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       final @NotNull String host = this.web.host();
       final int port = this.web.port();
       app.start(host, port);
+      this.running = true;
 
       this.progressTask =
           Bukkit.getScheduler()
@@ -203,6 +205,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
 
   @Override
   public synchronized void stop() {
+    this.running = false;
     if (this.progressTask != null) {
       this.progressTask.cancel();
       this.progressTask = null;
@@ -222,6 +225,11 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   public synchronized void restart() {
     stop();
     start();
+  }
+
+  @Override
+  public boolean running() {
+    return this.running;
   }
 
   @Override

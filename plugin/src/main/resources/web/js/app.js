@@ -164,19 +164,31 @@ function updateTitle() {
     }
 }
 
+function debugInfo() {
+    return [
+        'TAERRA debug',
+        `Plugin: ${$('about-version-text').textContent || 'unknown'}`,
+        `Browser: ${navigator.userAgent}`,
+        `Screen: ${screen.width}x${screen.height} at ${devicePixelRatio}x, window ${innerWidth}x${innerHeight}`,
+        `Language: ${navigator.language}, map in ${language}`
+    ].join('\n');
+}
+
 function showVersion(version) {
     const build = version.match(/^(?:pr\d+-)?(\d+)-\p{Hex_Digit}+$/u)?.[1];
     $('about-build').textContent = build ? t('about.build', {number: build}) : t('about.dev');
     const commit = version.match(/(?<=^|-)\p{Hex_Digit}{7,}(?=(?:-dirty)?(?:-dev)?$)/u);
-    if (!commit) {
+    if (commit) {
+        const link = element('a', 'about__commit', commit[0]);
+        link.href = `https://github.com/aerulion/taerra/commit/${commit[0]}`;
+        link.target = '_blank';
+        $('about-version-text').replaceChildren(version.slice(0, commit.index), link,
+            version.slice(commit.index + commit[0].length));
+    } else {
         $('about-version-text').textContent = version;
-        return;
     }
-    const link = element('a', 'about__commit', commit[0]);
-    link.href = `https://github.com/aerulion/taerra/commit/${commit[0]}`;
-    link.target = '_blank';
-    $('about-version-text').replaceChildren(version.slice(0, commit.index), link,
-        version.slice(commit.index + commit[0].length));
+    $('about-report').href = `https://github.com/aerulion/taerra/issues/new?template=bug-plugin.yml&debug=${
+        encodeURIComponent(debugInfo())}`;
 }
 
 async function refreshServerName() {
@@ -371,6 +383,13 @@ function setupDialogs() {
         clearTimeout(copiedTimer);
         $('about-copy').dataset.icon = 'check';
         copiedTimer = setTimeout(() => $('about-copy').dataset.icon = 'copy', 1500);
+    });
+    let debugTimer;
+    $('about-debug').addEventListener('click', async () => {
+        await copyText(debugInfo());
+        clearTimeout(debugTimer);
+        $('about-debug').textContent = t('menu.copied');
+        debugTimer = setTimeout(() => $('about-debug').textContent = t('about.debug'), 1500);
     });
 }
 

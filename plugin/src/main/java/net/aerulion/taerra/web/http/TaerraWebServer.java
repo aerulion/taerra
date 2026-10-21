@@ -8,5 +8,7 @@ public sealed interface TaerraWebServer permits TaerraWebServerImpl {
 
   void restart();
 
+  boolean running();
+
   void refreshMarkers();
 }

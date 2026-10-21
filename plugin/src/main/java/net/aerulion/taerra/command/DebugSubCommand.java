@@ -15,9 +15,6 @@ import org.jetbrains.annotations.NotNull;
 
 public final class DebugSubCommand implements TaerraSubCommand {
 
-  private static final @NotNull String NEW_ISSUE =
-      "https://github.com/aerulion/taerra/issues/new/choose";
-
   private final @NotNull DebugReport report;
 
   public DebugSubCommand(final @NotNull DebugReport report) {
@@ -43,17 +40,20 @@ public final class DebugSubCommand implements TaerraSubCommand {
 
   private int show(final @NotNull CommandContext<CommandSourceStack> context) {
     final @NotNull String text = this.report.text();
+    if (!(sender(context) instanceof Player)) {
+      feedback(context, Component.text(text));
+      return SUCCESS;
+    }
     final @NotNull List<Component> lines = new ArrayList<>();
     lines.add(Messages.header(Messages.tr("debug.title")));
     for (final @NotNull String line : text.lines().skip(1).toList()) {
       lines.add(Messages.indent(Component.text(line, Messages.MUTED)));
     }
-    if (sender(context) instanceof Player) {
-      lines.add(
-          Messages.indent(
-              Messages.copyButton(text, Messages.tr("debug.copy")),
-              Messages.link(NEW_ISSUE, Messages.tr("debug.report"))));
-    }
+    lines.add(
+        Messages.indent(
+            Messages.copyButton(text, Messages.tr("debug.copy")),
+            Messages.link(
+                DebugReport.issueUrl(DebugReport.PLUGIN_BUG, text), Messages.tr("debug.report"))));
     feedback(context, Messages.lines(lines));
     return SUCCESS;
   }

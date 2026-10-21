@@ -1,5 +1,6 @@
 package net.aerulion.taerra.mod.gui.screen;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,12 +9,17 @@ import net.aerulion.taerra.mod.config.MinimapInfo;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.gui.hud.Minimap;
 import net.aerulion.taerra.mod.gui.widget.FooterRows;
+import net.aerulion.taerra.mod.util.DebugReport;
+import net.aerulion.taerra.mod.util.Toasts;
+import net.aerulion.taerra.mod.util.Urls;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
 import net.minecraft.locale.Language;
@@ -54,26 +60,37 @@ public final class SettingsScreen extends OptionsSubScreen {
   @Override
   protected void addFooter() {
     final @Nullable WebMap map = this.map;
-    if (map == null || map.account() == null) {
-      super.addFooter();
-      return;
-    }
     final @NotNull List<Button> buttons = new ArrayList<>();
-    buttons.add(
-        Button.builder(
-                Component.translatable("taerra.devices.open"),
-                _ -> this.minecraft.setScreenAndShow(new DevicesScreen(this, map)))
-            .build());
-    if (map.account() != null && map.account().config()) {
+    if (map != null && map.account() != null) {
+      buttons.add(
+          Button.builder(
+                  Component.translatable("taerra.devices.open"),
+                  _ -> this.minecraft.setScreenAndShow(new DevicesScreen(this, map)))
+              .build());
+    }
+    if (map != null && map.account() != null && map.account().config()) {
       buttons.add(
           Button.builder(
                   Component.translatable("taerra.settings.open"),
                   _ -> this.minecraft.setScreenAndShow(new ServerSettingsScreen(this, map)))
               .build());
     }
+    buttons.add(
+        Button.builder(Component.translatable("taerra.report"), _ -> report())
+            .tooltip(Tooltip.create(Component.translatable("taerra.report.tooltip")))
+            .build());
     buttons.add(Button.builder(CommonComponents.GUI_DONE, _ -> onClose()).build());
     FooterRows.add(
         this.layout, this.width, HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT, buttons);
+  }
+
+  private void report() {
+    final @NotNull String debug = DebugReport.text(this.map);
+    this.minecraft.keyboardHandler.setClipboard(debug);
+    Toasts.show(
+        Component.translatable("taerra.report.copied"),
+        Component.translatable("taerra.report.copied.detail"));
+    ConfirmLinkScreen.confirmLinkNow(this, URI.create(Urls.newIssue(DebugReport.MOD_BUG, debug)));
   }
 
   @Override

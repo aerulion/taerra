@@ -1898,6 +1898,18 @@
         color: var(--green);
     }
 
+    .about__actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-3);
+        margin-top: var(--space-3);
+    }
+
+    .about__actions .btn {
+        text-decoration: none;
+    }
+
     .about__footer {
         display: grid;
         justify-items: center;

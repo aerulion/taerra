@@ -74,6 +74,8 @@
   "about.tagline": "Live-Karte der Serverwelt",
   "about.version": "Version",
   "about.copy": "Version kopieren",
+  "about.debug": "Debug-Infos kopieren",
+  "about.report": "Fehler melden",
   "about.build": "Build {number}",
   "about.dev": "Entwicklungsversion",
   "marker.blocks.one": "{count} Block",

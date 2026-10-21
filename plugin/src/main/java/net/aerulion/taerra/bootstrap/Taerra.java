@@ -427,6 +427,11 @@ public final class Taerra extends JavaPlugin {
     }
   }
 
+  private boolean webRunning() {
+    final @Nullable TaerraWebServer webServer = this.webServer;
+    return webServer != null && webServer.running();
+  }
+
   private void shutdownStep(final @NotNull String step, final @NotNull Runnable action) {
     try {
       action.run();
@@ -466,6 +471,11 @@ public final class Taerra extends JavaPlugin {
             new ModSubCommand(modHandshake),
             new DebugSubCommand(
                 new DebugReport(
-                    this, webSettings, configuration, generatorService, modHandshake))));
+                    this,
+                    webSettings,
+                    this::webRunning,
+                    configuration,
+                    generatorService,
+                    modHandshake))));
   }
 }

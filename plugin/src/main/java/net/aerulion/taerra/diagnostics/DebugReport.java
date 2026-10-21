@@ -1,10 +1,13 @@
 package net.aerulion.taerra.diagnostics;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
@@ -20,6 +23,10 @@ import org.jetbrains.annotations.Nullable;
 public final class DebugReport {
 
   public static final @NotNull String TITLE = "TAERRA debug";
+  public static final @NotNull String PLUGIN_BUG = "bug-plugin.yml";
+
+  private static final @NotNull String NEW_ISSUE = "https://github.com/aerulion/taerra/issues/new";
+  private static final int MAX_URL = 6000;
 
   private static final @NotNull List<String> INTEGRATIONS =
       List.of(
@@ -34,6 +41,7 @@ public final class DebugReport {
 
   private final @NotNull Plugin plugin;
   private final @NotNull WebSettings web;
+  private final @NotNull BooleanSupplier webRunning;
   private final @NotNull TaerraConfig configuration;
   private final @NotNull TileGeneratorService generator;
   private final @NotNull ModHandshake handshake;
@@ -41,15 +49,25 @@ public final class DebugReport {
   public DebugReport(
       final @NotNull Plugin plugin,
       final @NotNull WebSettings web,
+      final @NotNull BooleanSupplier webRunning,
       final @NotNull TaerraConfig configuration,
       final @NotNull TileGeneratorService generator,
       final @NotNull ModHandshake handshake) {
     super();
     this.plugin = plugin;
     this.web = web;
+    this.webRunning = webRunning;
     this.configuration = configuration;
     this.generator = generator;
     this.handshake = handshake;
+  }
+
+  public static @NotNull String issueUrl(
+      final @NotNull String template, final @NotNull String debug) {
+    final @NotNull String form = NEW_ISSUE + "?template=" + template;
+    final @NotNull String filled =
+        form + "&debug=" + URLEncoder.encode(debug, StandardCharsets.UTF_8).replace("+", "%20");
+    return filled.length() <= MAX_URL ? filled : form;
   }
 
   public static boolean subpath(final @NotNull String publicUrl) {
@@ -85,7 +103,9 @@ public final class DebugReport {
             runtime.maxMemory() / (1024 * 1024),
             runtime.availableProcessors()));
     lines.add(
-        "Web: port "
+        "Web: "
+            + (this.webRunning.getAsBoolean() ? "running" : "not running")
+            + " on port "
             + this.web.port()
             + (publicUrl.isEmpty() ? ", no public URL" : ", public URL set")
             + (subpath(publicUrl) ? ", under a subpath" : ""));

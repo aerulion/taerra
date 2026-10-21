@@ -1,5 +1,6 @@
 package net.aerulion.taerra.diagnostics;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -7,6 +8,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class DebugReportTest {
+
+  @Test
+  @DisplayName("the issue link fills in the debug info, and leaves it out when it is too long")
+  void issueUrl() {
+    assertEquals(
+        "https://github.com/aerulion/taerra/issues/new?template=bug-plugin.yml"
+            + "&debug=TAERRA%20debug%0APlugin%3A%20412-a1b2c3d",
+        DebugReport.issueUrl(DebugReport.PLUGIN_BUG, "TAERRA debug\nPlugin: 412-a1b2c3d"));
+    assertEquals(
+        "https://github.com/aerulion/taerra/issues/new?template=bug-plugin.yml",
+        DebugReport.issueUrl(DebugReport.PLUGIN_BUG, "x".repeat(10_000)));
+  }
 
   @Test
   @DisplayName("a public URL counts as a subpath only when it has a path after the host")

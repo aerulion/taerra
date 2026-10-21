@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class ProjectionTest {
 
   private static final MapConfig CONFIG =
-      new MapConfig(64, 4, new MapConfig.Isometric(256, 4, 8), null);
+      new MapConfig(64, 4, new MapConfig.Isometric(256, 4, 8), null, null);
 
   @Test
   void topDownMatchesTheWebMapScale() {

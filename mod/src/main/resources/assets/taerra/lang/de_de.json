@@ -512,5 +512,9 @@
   "taerra.regions.new": "Neue Region",
   "taerra.regions.unnamed": "Region ohne Namen",
   "taerra.regions.none": "Noch keine Regionen in dieser Welt",
-  "taerra.region.problem.name_taken": "Eine andere Region heißt schon so"
+  "taerra.region.problem.name_taken": "Eine andere Region heißt schon so",
+  "taerra.report": "Fehler melden …",
+  "taerra.report.tooltip": "Kopiert die Versionen, die ein Fehlerbericht braucht, und öffnet das Formular auf GitHub",
+  "taerra.report.copied": "Debug-Infos kopiert",
+  "taerra.report.copied.detail": "Füge sie in den Bericht ein, falls das Formular leer ist"
 }

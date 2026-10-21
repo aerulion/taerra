@@ -512,5 +512,9 @@
   "taerra.regions.new": "New Region",
   "taerra.regions.unnamed": "Unnamed Region",
   "taerra.regions.none": "No regions in this world yet",
-  "taerra.region.problem.name_taken": "Another region already has that name"
+  "taerra.region.problem.name_taken": "Another region already has that name",
+  "taerra.report": "Report a Bug...",
+  "taerra.report.tooltip": "Copies the versions a bug report needs and opens the report form on GitHub",
+  "taerra.report.copied": "Debug Info Copied",
+  "taerra.report.copied.detail": "Paste it into the report if the form is empty"
 }

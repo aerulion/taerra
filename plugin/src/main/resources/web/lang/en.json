@@ -74,6 +74,8 @@
   "about.tagline": "Live map of the server world",
   "about.version": "Version",
   "about.copy": "Copy version",
+  "about.debug": "Copy debug info",
+  "about.report": "Report a bug",
   "about.build": "Build {number}",
   "about.dev": "Development build",
   "marker.blocks.one": "{count} block",
