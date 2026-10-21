@@ -82,6 +82,8 @@ const en = {
         note: 'Free for every server, commercial ones included.',
         alt: 'A whole Minecraft world rendered by TAERRA as one isometric block of terrain',
         rotate: 'Turn it',
+        flatten: 'Flatten it',
+        tilt: 'Tilt it',
         top: 'Top-down',
         facing: ['Looking northwest', 'Looking northeast', 'Looking southeast', 'Looking southwest']
     },

@@ -39,7 +39,11 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
             </div>
             <p class="note">{hero.note}</p>
         </div>
-        <figure class="world" data-labels={JSON.stringify([...hero.facing, hero.top])}>
+        <figure
+            class="world"
+            data-labels={JSON.stringify([...hero.facing, hero.top])}
+            data-actions={JSON.stringify([hero.rotate, hero.flatten, hero.tilt])}
+        >
             <div class="stage">
                 <Picture class="flat" src={worldTop} formats={['avif']} fallbackFormat="webp" width={720} alt="" />
                 {worlds.map((world, i) => (
@@ -56,7 +60,7 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
             <figcaption>
                 <button class="btn btn--dark" type="button" data-rotate>
                     <Rotate aria-hidden="true" />
-                    {hero.rotate}
+                    <span class="action">{hero.rotate}</span>
                 </button>
                 <span class="side">{hero.facing[0]}</span>
             </figcaption>
@@ -78,7 +82,9 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 
     for (const figure of document.querySelectorAll<HTMLElement>('.world')) {
         const labels: string[] = JSON.parse(figure.dataset.labels!);
+        const [rotate, flatten, tilt]: string[] = JSON.parse(figure.dataset.actions!);
         const side = figure.querySelector('.side')!;
+        const action = figure.querySelector('.action')!;
         const [top, ...isos] = [...figure.querySelectorAll<HTMLElement>('.stage > picture')];
         const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
         let step = 0;
@@ -102,6 +108,8 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
             step = (step + 1) % ORDER.length;
             const to = ORDER[step];
             side.textContent = labels[to];
+            const next = ORDER[(step + 1) % ORDER.length];
+            action.textContent = next === TOP ? flatten : to === TOP ? tilt : rotate;
             if (to === TOP) {
                 const angle = theta(from) + 360;
                 await Promise.all([

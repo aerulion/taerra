@@ -31,6 +31,8 @@ export const de: Copy = {
         note: 'Kostenlos für jeden Server, auch für kommerzielle.',
         alt: 'Eine ganze Minecraft-Welt, von TAERRA als ein isometrischer Block Landschaft gerendert',
         rotate: 'Drehen',
+        flatten: 'Von oben',
+        tilt: 'Kippen',
         top: 'Draufsicht',
         facing: ['Blick nach Nordwesten', 'Blick nach Nordosten', 'Blick nach Südosten', 'Blick nach Südwesten']
     },
