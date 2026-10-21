@@ -97,6 +97,8 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                   "markers.towny.shown-by-default",
                   "markers.griefprevention.enabled",
                   "markers.griefprevention.shown-by-default",
+                  "markers.plotsquared.enabled",
+                  "markers.plotsquared.shown-by-default",
                   "markers.loaded-chunks.enabled",
                   "markers.loaded-chunks.shown-by-default")),
           new Section(

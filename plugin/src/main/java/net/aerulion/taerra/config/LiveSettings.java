@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.integration.GriefPreventionClaims;
+import net.aerulion.taerra.integration.PlotSquaredPlots;
 import net.aerulion.taerra.integration.TownyTowns;
 import net.aerulion.taerra.integration.WorldBorders;
 import net.aerulion.taerra.integration.WorldGuardRegions;
@@ -145,6 +146,13 @@ public final class LiveSettings {
             this.plugin.getLogger().info("Hooked into GriefPrevention, claims show up on the map");
             yield GriefPreventionClaims.start(this.plugin, this.markers, this.config, shown);
           }
+          case PLOTSQUARED -> {
+            if (!Bukkit.getPluginManager().isPluginEnabled("PlotSquared")) {
+              yield null;
+            }
+            this.plugin.getLogger().info("Hooked into PlotSquared, plots show up on the map");
+            yield PlotSquaredPlots.start(this.plugin, this.markers, this.config, shown);
+          }
           case SPAWN -> SpawnMarkers.start(this.plugin, this.markers, this.config, shown);
           case WORLDBORDER -> WorldBorders.start(this.plugin, this.markers, this.config, shown);
           case LOADED_CHUNKS ->
@@ -161,6 +169,7 @@ public final class LiveSettings {
     WORLDGUARD("worldguard", "worldguard", false, false),
     TOWNY("towny", "towny", true, true),
     GRIEFPREVENTION("griefprevention", "griefprevention", false, false),
+    PLOTSQUARED("plotsquared", "plotsquared", true, true),
     WORLDBORDER("worldborder", "worldborder", true, true),
     LOADED_CHUNKS("loaded-chunks", "chunks", false, false);
 

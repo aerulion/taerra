@@ -191,6 +191,7 @@ export const de: Copy = {
                         title: 'GriefPrevention',
                         text: 'Claims als Ebene, nur für dein Team, solange du sie nicht freigibst.'
                     },
+                    {title: 'PlotSquared', text: 'Vergebene Plots als Ebene, jeder mit Besitzern und Mitgliedern.'},
                     {
                         title: 'Weltbarrieren',
                         text: 'Die Weltbarriere aus Vanilla und die Grenzen von ChunkyBorder als Ebene.'

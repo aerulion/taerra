@@ -17,6 +17,7 @@ const SECTIONS = [
     ['layers', ['markers.spawn.enabled', 'markers.spawn.shown-by-default', 'markers.worldborder.enabled', 'markers.worldborder.shown-by-default', 'markers.worldguard.enabled',
         'markers.worldguard.shown-by-default', 'markers.towny.enabled', 'markers.towny.shown-by-default',
         'markers.griefprevention.enabled', 'markers.griefprevention.shown-by-default',
+        'markers.plotsquared.enabled', 'markers.plotsquared.shown-by-default',
         'markers.loaded-chunks.enabled',
         'markers.loaded-chunks.shown-by-default']],
     ['rendering', ['rendering.update-interval', 'rendering.render-threads', 'cache.max-tiles', 'cache.max-chunks']],

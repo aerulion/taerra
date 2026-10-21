@@ -183,6 +183,7 @@ function localize(layer) {
         case 'worldguard':
         case 'towny':
         case 'griefprevention':
+        case 'plotsquared':
             return {...layer, markers: layer.markers.map(marker => ({...marker, details: localizedDetails(marker)}))};
         case 'spawn':
             return {...layer, markers: layer.markers.map(marker => ({...marker, label: t('marker.spawn')}))};

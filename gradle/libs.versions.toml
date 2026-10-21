@@ -17,6 +17,8 @@ chunkyborder = "1.2.33"
 luckperms = "5.5"
 towny = "0.103.2.13"
 griefprevention = "16.18.7"
+plotsquared = "7.6.0"
+guice = "7.0.0"
 minecraft = "26.3"
 fabric-loader = "0.19.5"
 fabric-api = "0.161.0+26.3"
@@ -37,6 +39,8 @@ chunkyborder-common = { module = "org.popcraft:chunkyborder-common", version.ref
 luckperms-api = { module = "net.luckperms:api", version.ref = "luckperms" }
 towny = { module = "com.palmergames.bukkit.towny:towny", version.ref = "towny" }
 griefprevention = { module = "com.github.GriefPrevention:GriefPrevention", version.ref = "griefprevention" }
+plotsquared-core = { module = "com.intellectualsites.plotsquared:plotsquared-core", version.ref = "plotsquared" }
+guice = { module = "com.google.inject:guice", version.ref = "guice" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }

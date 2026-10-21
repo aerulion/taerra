@@ -50,6 +50,8 @@ dependencies {
     compileOnly(libs.luckperms.api)
     compileOnly(libs.towny) { isTransitive = false }
     compileOnly(libs.griefprevention) { isTransitive = false }
+    compileOnly(libs.plotsquared.core) { isTransitive = false }
+    compileOnly(libs.guice) { isTransitive = false }
 }
 
 val writeLibraries =
@@ -167,6 +169,11 @@ paper {
             joinClasspath = true
         }
         register("GriefPrevention") {
+            required = false
+            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+            joinClasspath = true
+        }
+        register("PlotSquared") {
             required = false
             load = PaperPluginDescription.RelativeLoadOrder.BEFORE
             joinClasspath = true

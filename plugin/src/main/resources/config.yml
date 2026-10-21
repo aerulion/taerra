@@ -91,6 +91,12 @@ markers:
     enabled: false
     # Whether the layer is on for viewers who have not toggled it themselves
     shown-by-default: false
+  plotsquared:
+    # Show claimed PlotSquared plots as a layer (needs PlotSquared installed), each with its owners,
+    # trusted players and members
+    enabled: true
+    # Whether the layer is on for viewers who have not toggled it themselves
+    shown-by-default: true
   worldborder:
     # Show the vanilla world border and ChunkyBorder borders (if ChunkyBorder is installed) as a layer
     enabled: true

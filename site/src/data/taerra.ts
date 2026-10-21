@@ -236,6 +236,7 @@ const en = {
                     {title: 'WorldGuard', text: 'Regions as a layer, private to staff unless you share it.'},
                     {title: 'Towny', text: 'Towns as a layer, each with its mayor, nation and residents.'},
                     {title: 'GriefPrevention', text: 'Claims as a layer, private to staff unless you share it.'},
+                    {title: 'PlotSquared', text: 'Claimed plots as a layer, each with its owners and members.'},
                     {title: 'World borders', text: "The vanilla world border and ChunkyBorder's borders as a layer."},
                     {
                         title: 'Chunky',

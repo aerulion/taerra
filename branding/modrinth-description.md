@@ -62,6 +62,7 @@ If something breaks or looks wrong, please report it on [GitHub](https://github.
 - **WorldGuard:** regions as a layer, private to staff unless you share it.
 - **Towny:** towns as a layer, each with its mayor, nation and residents.
 - **GriefPrevention:** claims as a layer, private to staff unless you share it.
+- **PlotSquared:** claimed plots as a layer, each with its owners and members.
 - **World borders:** the vanilla world border and ChunkyBorder's borders as a layer.
 - **Chunky:** while Chunky pre-generates a world, TAERRA stays out of its way, then tells you when a full render is worth starting.
 - **dynmap:** bring your existing markers over as waypoints with `/taerra import dynmap`, each marker set becoming a waypoint group.
