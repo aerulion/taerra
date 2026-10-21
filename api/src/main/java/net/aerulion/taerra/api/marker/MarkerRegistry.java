@@ -22,9 +22,10 @@ public interface MarkerRegistry {
    *
    * <p>Ids are unique across all plugins, so prefix them with your plugin's name, like {@code
    * myplugin.claims}. TAERRA's own layers are {@code worldguard}, {@code towny}, {@code
-   * worldborder}, {@code chunks}, {@code waypoints} and {@code waypoints.*}. Server owners can make
-   * a layer private with {@code /taerra config layer <id> private}; only logged-in viewers with
-   * {@code taerra.layer.<id>} see it then, any colon in the id replaced by a dot.
+   * griefprevention}, {@code worldborder}, {@code chunks}, {@code waypoints} and {@code
+   * waypoints.*}. Server owners can make a layer private with {@code /taerra config layer <id>
+   * private}; only logged-in viewers with {@code taerra.layer.<id>} see it then, any colon in the
+   * id replaced by a dot.
    *
    * @param owner the plugin that owns the layer
    * @param id the layer's id

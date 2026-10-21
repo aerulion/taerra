@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
+import net.aerulion.taerra.integration.GriefPreventionClaims;
 import net.aerulion.taerra.integration.TownyTowns;
 import net.aerulion.taerra.integration.WorldBorders;
 import net.aerulion.taerra.integration.WorldGuardRegions;
@@ -137,6 +138,13 @@ public final class LiveSettings {
             this.plugin.getLogger().info("Hooked into Towny, towns show up on the map");
             yield TownyTowns.start(this.plugin, this.markers, this.config, shown);
           }
+          case GRIEFPREVENTION -> {
+            if (!Bukkit.getPluginManager().isPluginEnabled("GriefPrevention")) {
+              yield null;
+            }
+            this.plugin.getLogger().info("Hooked into GriefPrevention, claims show up on the map");
+            yield GriefPreventionClaims.start(this.plugin, this.markers, this.config, shown);
+          }
           case SPAWN -> SpawnMarkers.start(this.plugin, this.markers, this.config, shown);
           case WORLDBORDER -> WorldBorders.start(this.plugin, this.markers, this.config, shown);
           case LOADED_CHUNKS ->
@@ -152,6 +160,7 @@ public final class LiveSettings {
     SPAWN("spawn", "spawn", true, true),
     WORLDGUARD("worldguard", "worldguard", false, false),
     TOWNY("towny", "towny", true, true),
+    GRIEFPREVENTION("griefprevention", "griefprevention", false, false),
     WORLDBORDER("worldborder", "worldborder", true, true),
     LOADED_CHUNKS("loaded-chunks", "chunks", false, false);
 

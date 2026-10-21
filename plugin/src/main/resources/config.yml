@@ -66,7 +66,7 @@ private-players: [ ]
 markers:
   # Layers only logged-in viewers with taerra.layer.<layer> see, like taerra.layer.worldguard.
   # Set in game with /taerra config layer <layer> private
-  private-layers: [ chunks, worldguard ]
+  private-layers: [ chunks, worldguard, griefprevention ]
   spawn:
     # Mark each world's spawn point on a layer of its own, moved along when the spawn moves
     enabled: true
@@ -84,6 +84,13 @@ markers:
     enabled: true
     # Whether the layer is on for viewers who have not toggled it themselves
     shown-by-default: true
+  griefprevention:
+    # Show GriefPrevention claims as a layer (needs GriefPrevention installed). It names each claim's
+    # owner and who is trusted there, so it shows where players live. It is in private-layers: only
+    # viewers with taerra.layer.griefprevention see it
+    enabled: false
+    # Whether the layer is on for viewers who have not toggled it themselves
+    shown-by-default: false
   worldborder:
     # Show the vanilla world border and ChunkyBorder borders (if ChunkyBorder is installed) as a layer
     enabled: true

@@ -16,6 +16,7 @@ repositories {
     maven("https://repo.glaremasters.me/repository/towny/") {
         mavenContent { includeGroup("com.palmergames.bukkit.towny") }
     }
+    maven("https://jitpack.io") { mavenContent { includeGroup("com.github.GriefPrevention") } }
     mavenCentral()
 }
 
