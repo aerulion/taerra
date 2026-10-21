@@ -301,7 +301,7 @@ export const de: Copy = {
             },
             {
                 title: 'Öffentlich machen',
-                text: 'Stell die Karte hinter einen Reverse Proxy mit HTTPS und sag TAERRA ihre Adresse. Anmeldelinks und Linkvorschauen nutzen sie.',
+                text: 'Stell die Karte hinter einen Reverse Proxy mit HTTPS, unter einer eigenen Domain oder einem Pfad wie /map/, und sag TAERRA ihre Adresse. Anmeldelinks und Linkvorschauen nutzen sie.',
                 command: '/taerra config web.public-url https://map.example.com'
             },
             {

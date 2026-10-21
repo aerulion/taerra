@@ -100,7 +100,7 @@ class WaypointManager {
 
     async load() {
         try {
-            const response = await fetch('/api/waypoints/personal');
+            const response = await fetch('api/waypoints/personal');
             this.waypoints = response.ok ? await response.json() : [];
         } catch {
             this.waypoints = [];
@@ -256,7 +256,7 @@ class WaypointManager {
     async teleport(waypoint, button) {
         let response = null;
         try {
-            response = await fetch('/api/teleport', {
+            response = await fetch('api/teleport', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({world: waypoint.world, x: waypoint.x, y: waypoint.y, z: waypoint.z})
@@ -271,7 +271,7 @@ class WaypointManager {
     async setHidden(names, hidden) {
         let response = null;
         try {
-            response = await fetch('/api/waypoints/personal/hidden', {
+            response = await fetch('api/waypoints/personal/hidden', {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({names, hidden})
@@ -384,7 +384,7 @@ class WaypointManager {
         }
         let response = null;
         try {
-            response = await fetch('/api/waypoints/personal/import', {
+            response = await fetch('api/waypoints/personal/import', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({mode, waypoints: incoming.waypoints})

@@ -18,7 +18,7 @@ const SAVE_ERRORS = {409: 'waypoint.taken', 422: 'waypoint.full'};
 const cleanName = (text) => text.normalize('NFC').replace(NOT_NAME, '');
 
 export const waypointUrl = (name, personal) =>
-    `/api/waypoints/${encodeURIComponent(name)}${personal ? '?personal=true' : ''}`;
+    `api/waypoints/${encodeURIComponent(name)}${personal ? '?personal=true' : ''}`;
 
 class WaypointEditor {
     constructor() {
@@ -142,7 +142,7 @@ class WaypointEditor {
             return;
         }
         try {
-            const response = await fetch('/api/waypoints/groups');
+            const response = await fetch('api/waypoints/groups');
             if (response.ok && this.dialog.open) {
                 this.renderGroups(await response.json(), current);
             }
@@ -167,7 +167,7 @@ class WaypointEditor {
             return;
         }
         const {world, x, y, z, type, points, smooth, previous, onSaved} = this.target;
-        const response = await this.send('/api/waypoints', {
+        const response = await this.send('api/waypoints', {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -223,7 +223,7 @@ class WaypointEditor {
         }
         const {x, y, z} = mapManager.latLngToBlock(latLng);
         this.stopMoving();
-        const response = await this.send('/api/waypoints', {
+        const response = await this.send('api/waypoints', {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({

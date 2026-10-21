@@ -30,7 +30,7 @@ class RegionManager {
         this.world = world;
         let data = null;
         try {
-            const response = await fetch(`/api/regions/${encodeURIComponent(world)}`);
+            const response = await fetch(`api/regions/${encodeURIComponent(world)}`);
             data = response.ok ? await response.json() : null;
         } catch {
         }

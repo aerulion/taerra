@@ -22,7 +22,7 @@ export function located(player) {
 export function avatar(player, size) {
     const img = new Image(size, size);
     img.alt = '';
-    img.src = player.anonymous ? FALLBACK_AVATAR : `/api/avatars/${player.uuid}.png`;
+    img.src = player.anonymous ? FALLBACK_AVATAR : `api/avatars/${player.uuid}.png`;
     img.addEventListener('error', () => img.src = FALLBACK_AVATAR, {once: true});
     return img;
 }

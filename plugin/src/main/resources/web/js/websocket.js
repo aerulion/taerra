@@ -31,8 +31,7 @@ class WebSocketManager {
             return;
         }
         this.updateStatus('connecting', t('status.connecting'));
-        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const ws = new WebSocket(`${protocol}//${location.host}/ws`);
+        const ws = new WebSocket(new URL('ws', location.href).href.replace(/^http/, 'ws'));
         this.ws = ws;
 
         ws.onopen = () => {

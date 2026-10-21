@@ -215,7 +215,7 @@ class MapManager {
 
     async loadGeometry() {
         try {
-            const response = await fetch('/api/config');
+            const response = await fetch('api/config');
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
@@ -365,9 +365,9 @@ class MapManager {
         const world = encodeURIComponent(this.currentWorld);
         const suffix = `?v=${this.tileVersion(zoom, x, y)}`;
         if (this.isIsometric()) {
-            return `/api/iso/${world}/${this.rotation}/${zoom}/${x}/${y}.png${suffix}`;
+            return `api/iso/${world}/${this.rotation}/${zoom}/${x}/${y}.png${suffix}`;
         }
-        return `/api/tiles/${world}/${zoom}/${x}/${y}.png${suffix}`;
+        return `api/tiles/${world}/${zoom}/${x}/${y}.png${suffix}`;
     }
 
     rebuildTileLayer() {
@@ -398,8 +398,8 @@ class MapManager {
             this.tileLayer = new Layered(options);
             this.tileLayer.on('tileunload', event => event.tile.loading?.abort());
         } else {
-            const template = this.isIsometric() ? '/api/iso/{world}/{rotation}/{z}/{x}/{y}.png?v={v}' :
-                '/api/tiles/{world}/{z}/{x}/{y}.png?v={v}';
+            const template = this.isIsometric() ? 'api/iso/{world}/{rotation}/{z}/{x}/{y}.png?v={v}' :
+                'api/tiles/{world}/{z}/{x}/{y}.png?v={v}';
             this.tileLayer = L.tileLayer(template, {
                 ...options,
                 world: encodeURIComponent(this.currentWorld),
@@ -663,7 +663,7 @@ class MapManager {
         const tileZ = Math.floor(z / size);
         return {
             key: `top:${this.currentWorld}:${tileX}:${tileZ}`,
-            url: `/api/tiles/${encodeURIComponent(this.currentWorld)}/${tileX}/${tileZ}.pick`,
+            url: `api/tiles/${encodeURIComponent(this.currentWorld)}/${tileX}/${tileZ}.pick`,
             height: buffer => buffer ? MapManager.pickCell(buffer, x - tileX * size, z - tileZ * size)?.height : undefined
         };
     }
@@ -735,7 +735,7 @@ class MapManager {
         const tileX = Math.floor(screenX / size);
         const tileY = Math.floor(screenY / size);
         const buffer = this.cachedPick(this.pickKey(tileX, tileY),
-            `/api/iso/${encodeURIComponent(this.currentWorld)}/${this.rotation}/${tileX}/${tileY}.pick`);
+            `api/iso/${encodeURIComponent(this.currentWorld)}/${this.rotation}/${tileX}/${tileY}.pick`);
         const cell = buffer && MapManager.pickCell(buffer, screenX - tileX * size, screenY - tileY * size);
         if (!cell) {
             return null;

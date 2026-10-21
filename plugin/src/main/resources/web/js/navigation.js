@@ -34,7 +34,7 @@ class NavigationManager {
             return;
         }
         try {
-            const response = await fetch('/api/navigation');
+            const response = await fetch('api/navigation');
             this.apply(response.status === 200 ? await response.json() : null);
         } catch (error) {
             console.error('Failed to load the navigation:', error);
@@ -43,7 +43,7 @@ class NavigationManager {
 
     async navigate(target) {
         try {
-            const response = await fetch('/api/navigation', target
+            const response = await fetch('api/navigation', target
                 ? {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(target)}
                 : {method: 'DELETE'});
             if (response.ok) {

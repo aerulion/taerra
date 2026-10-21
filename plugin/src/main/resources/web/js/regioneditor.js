@@ -187,7 +187,7 @@ class RegionList {
             }
             let response = null;
             try {
-                response = await fetch(`/api/regions/${region.id}${path}`, {method});
+                response = await fetch(`api/regions/${region.id}${path}`, {method});
             } catch {
             }
             disarm(button);

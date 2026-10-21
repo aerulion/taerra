@@ -127,7 +127,7 @@ async function selectWorld(name) {
 
 async function loadPlayers() {
     try {
-        playerManager.updatePlayers(await fetchJson('/api/players'));
+        playerManager.updatePlayers(await fetchJson('api/players'));
     } catch (error) {
         console.error('Failed to load players:', error);
     }
@@ -135,7 +135,7 @@ async function loadPlayers() {
 
 async function loadSky() {
     try {
-        skyManager.update(await fetchJson('/api/sky'));
+        skyManager.update(await fetchJson('api/sky'));
     } catch (error) {
         console.error('Failed to load the sky:', error);
     }
@@ -143,7 +143,7 @@ async function loadSky() {
 
 async function loadWorlds() {
     try {
-        worlds = await fetchJson('/api/worlds');
+        worlds = await fetchJson('api/worlds');
     } catch (error) {
         console.error('Failed to load worlds:', error);
         $('world-list').textContent = t('worlds.error');
@@ -166,7 +166,7 @@ function updateTitle() {
 
 async function refreshServerName() {
     try {
-        const name = (await fetchJson('/api/config')).name ?? '';
+        const name = (await fetchJson('api/config')).name ?? '';
         if (name === serverName) {
             return;
         }
@@ -181,7 +181,7 @@ async function refreshServerName() {
 
 async function refreshWorlds() {
     try {
-        worlds = await fetchJson('/api/worlds');
+        worlds = await fetchJson('api/worlds');
     } catch (error) {
         console.error('Failed to load worlds:', error);
         return;
@@ -449,7 +449,7 @@ async function renderButton(button, action) {
     button.disabled = true;
     let response;
     try {
-        response = await fetch('/api/render', {
+        response = await fetch('api/render', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({action, world: currentWorld.name})
@@ -471,7 +471,7 @@ async function teleportButton(button, {world, x, y, z}) {
     button.disabled = true;
     let response;
     try {
-        response = await fetch('/api/teleport', {
+        response = await fetch('api/teleport', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({world, x, y: Number.isFinite(y) ? y : null, z})

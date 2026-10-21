@@ -8,9 +8,10 @@ web:
   port: 8100
   # Bind address (0.0.0.0 for all interfaces, 127.0.0.1 for localhost only)
   host: "0.0.0.0"
-  # Address players open the map at, like https://map.example.com. /taerra login then sends a link
-  # that logs the browser in; left empty, the link points at this machine and only works here.
-  # Link previews in chat apps also need it to show the map's image.
+  # Address players open the map at, like https://map.example.com, or https://example.com/map when
+  # the reverse proxy serves it under a path and passes requests on without it. /taerra login then
+  # sends a link that logs the browser in; left empty, the link points at this machine and only
+  # works here. Link previews in chat apps also need it to show the map's image.
   public-url: ""
   # The server's name, shown beside TAERRA in the web map's header, as its page title, in link
   # previews, when the map is installed as an app, and in the mod's map screen. Empty shows TAERRA

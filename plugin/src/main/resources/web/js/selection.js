@@ -1023,7 +1023,7 @@ class ChunkSelection {
         this.setSending(true);
         let response = null;
         try {
-            response = await fetch('/api/area', {
+            response = await fetch('api/area', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({action, world, chunks: [...this.chunks.values()]})
@@ -1067,7 +1067,7 @@ class ChunkSelection {
         this.setSending(true);
         let response = null;
         try {
-            response = await fetch('/api/regions', {
+            response = await fetch('api/regions', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({world, id: this.editing?.id ?? null, ...fields, chunks: [...this.chunks.values()]})
@@ -1093,7 +1093,7 @@ class ChunkSelection {
     async deleteRegion() {
         let response = null;
         try {
-            response = await fetch(`/api/regions/${this.editing.id}`, {method: 'DELETE'});
+            response = await fetch(`api/regions/${this.editing.id}`, {method: 'DELETE'});
         } catch {
         }
         if (response?.ok) {

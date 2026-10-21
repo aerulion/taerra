@@ -53,14 +53,14 @@ function show(account) {
     $('account-head').hidden = true;
     $('account-avatar').hidden = true;
     if (account) {
-        $('account-head').src = `/api/account/avatar.png?uuid=${account.uuid}`;
+        $('account-head').src = `api/account/avatar.png?uuid=${account.uuid}`;
         $('account-avatar').src = $('account-head').src;
     }
 }
 
 async function refresh() {
     try {
-        const response = await fetch('/api/account');
+        const response = await fetch('api/account');
         show(response.status === 200 ? await response.json() : null);
     } catch (error) {
         console.error('Failed to load the account:', error);
@@ -80,7 +80,7 @@ function loggedInHere(account) {
 }
 
 async function login(code) {
-    const response = await fetch('/api/login', {method: 'POST', body: code});
+    const response = await fetch('api/login', {method: 'POST', body: code});
     if (response.ok) {
         loggedInHere(await response.json());
         return;
@@ -136,7 +136,7 @@ async function startPairing() {
     pairing = started;
     let response = null;
     try {
-        response = await fetch('/api/login/pair', {method: 'POST'});
+        response = await fetch('api/login/pair', {method: 'POST'});
     } catch {
     }
     if (pairing !== started) {
@@ -166,7 +166,7 @@ async function pollPairing() {
     }
     let response = null;
     try {
-        response = await fetch('/api/login/claim', {method: 'POST', body: waiting.claim});
+        response = await fetch('api/login/claim', {method: 'POST', body: waiting.claim});
     } catch {
     }
     if (pairing !== waiting) {
@@ -205,7 +205,7 @@ async function showDeviceLink() {
     const panel = $('device-qr');
     let response = null;
     try {
-        response = await fetch('/api/login/link', {method: 'POST'});
+        response = await fetch('api/login/link', {method: 'POST'});
     } catch {
     }
     panel.hidden = false;
@@ -272,7 +272,7 @@ function ago(time) {
 async function loadDevices() {
     let devices = [];
     try {
-        const response = await fetch('/api/account/sessions');
+        const response = await fetch('api/account/sessions');
         devices = response.ok ? await response.json() : [];
     } catch {
     }
@@ -288,7 +288,7 @@ async function loadDevices() {
             const button = iconButton('logout', t('account.endDeviceLabel', {device: deviceName(device)}), async () => {
                 button.disabled = true;
                 try {
-                    await fetch(`/api/account/sessions/${encodeURIComponent(device.id)}`, {method: 'DELETE'});
+                    await fetch(`api/account/sessions/${encodeURIComponent(device.id)}`, {method: 'DELETE'});
                 } catch {
                 }
                 await loadDevices();
@@ -353,7 +353,7 @@ async function initialize() {
             return;
         }
         disarm($('logout-button'));
-        await fetch('/api/logout', {method: 'POST'});
+        await fetch('api/logout', {method: 'POST'});
         $('account-menu').hidePopover();
         show(null);
     });

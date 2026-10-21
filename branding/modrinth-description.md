@@ -91,7 +91,7 @@ It only works on servers running the TAERRA plugin, and it renders nothing itsel
 2. **Choose your worlds.** None are on the map until you enable them: `/taerra config world minecraft:overworld enable`
 3. **Render.** `/taerra render full minecraft:overworld` draws the whole world. From then on, changes are drawn automatically. `/taerra status` shows the progress.
 4. **Open the map** at `http://<your-server>:8100`.
-5. **Make it public.** Put the map behind a reverse proxy with HTTPS and set its address with `/taerra config web.public-url https://map.example.com`. Login links and link previews in chat apps use it.
+5. **Make it public.** Put the map behind a reverse proxy with HTTPS, on its own domain or under a path like `/map/`, and set its address with `/taerra config web.public-url https://map.example.com`. Login links and link previews in chat apps use it.
 6. **Name it.** `/taerra config web.name "My Server"` shows your server's name in the map's header, page title, and link previews.
 
 Every setting can also be changed in game with `/taerra config`, or on the settings page of the web map and the mod.

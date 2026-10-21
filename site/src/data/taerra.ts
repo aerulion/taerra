@@ -343,7 +343,7 @@ const en = {
             },
             {
                 title: 'Make it public',
-                text: 'Put the map behind a reverse proxy with HTTPS and tell TAERRA its address. Login links and link previews use it.',
+                text: 'Put the map behind a reverse proxy with HTTPS, on its own domain or under a path like /map/, and tell TAERRA its address. Login links and link previews use it.',
                 command: '/taerra config web.public-url https://map.example.com'
             },
             {

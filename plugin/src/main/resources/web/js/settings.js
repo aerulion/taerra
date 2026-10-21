@@ -196,7 +196,7 @@ class SettingsDialog {
 
     async fetchView() {
         try {
-            const response = await fetch('/api/settings', {cache: 'no-store'});
+            const response = await fetch('api/settings', {cache: 'no-store'});
             return response.ok ? await response.json() : null;
         } catch {
             return null;
@@ -431,7 +431,7 @@ class SettingsDialog {
             const head = document.createElement('img');
             head.className = 'settings__editor-head';
             head.alt = '';
-            head.src = `/api/avatars/${editor.uuid}.png`;
+            head.src = `api/avatars/${editor.uuid}.png`;
             head.addEventListener('error', () => head.src = FALLBACK_AVATAR, {once: true});
             item.append(head, element('span', 'settings__editor-name', name));
             item.dataset.client = editor.client;
@@ -888,7 +888,7 @@ class SettingsDialog {
         $('settings-save').classList.add('is-busy');
         let response = null;
         try {
-            response = await fetch('/api/settings', {
+            response = await fetch('api/settings', {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({base: this.view.revision, changes})

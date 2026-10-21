@@ -82,7 +82,7 @@ class SearchPalette {
         const worlds = this.app.worlds();
         const loaded = await Promise.all(worlds.map(async world => {
             try {
-                const response = await fetch(`/api/markers/${encodeURIComponent(world.name)}`);
+                const response = await fetch(`api/markers/${encodeURIComponent(world.name)}`);
                 return response.ok ? (await response.json()).map(layer => ({world, layer})) : [];
             } catch {
                 return [];

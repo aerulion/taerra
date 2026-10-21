@@ -302,7 +302,7 @@ class MarkerManager {
             return;
         }
         try {
-            const response = await fetch('/api/layers');
+            const response = await fetch('api/layers');
             if (response.status === 200) {
                 this.applySaved(await response.json());
             }
@@ -322,7 +322,7 @@ class MarkerManager {
         }
         const change = {[shown === layer.shown ? 'reset' : shown ? 'show' : 'hide']: [layer.id]};
         try {
-            await fetch('/api/layers', {
+            await fetch('api/layers', {
                 method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(change)
             });
         } catch (error) {
@@ -355,7 +355,7 @@ class MarkerManager {
             this.setLayers([]);
         }
         try {
-            const response = await fetch(`/api/markers/${encodeURIComponent(world)}`);
+            const response = await fetch(`api/markers/${encodeURIComponent(world)}`);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
