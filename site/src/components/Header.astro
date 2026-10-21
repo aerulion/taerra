@@ -99,10 +99,15 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
     }
 
     .language {
+        appearance: none;
         min-height: 40px;
-        padding: 0 8px;
-        background: var(--stone-900);
-        border: 1px solid var(--stone-600);
+        padding: 0 26px 0 8px;
+        background: var(--stone-900)
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 5 3' shape-rendering='crispEdges'%3E%3Cpath fill='%23a0a1a4' d='M0 0h5v1H0zM1 1h3v1H1zM2 2h1v1H2z'/%3E%3C/svg%3E")
+            right 8px center / 10px 6px no-repeat;
+        border: 2px solid var(--stone-600);
+        border-radius: 0;
+        box-shadow: inset 2px 2px rgb(0 0 0 / 0.4);
         color: var(--stone-100);
         font: inherit;
         font-size: 15px;
@@ -111,6 +116,11 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
 
     .language:hover {
         border-color: var(--stone-200);
+    }
+
+    .language:focus-visible {
+        border-color: var(--white);
+        outline: none;
     }
 
     @media (max-width: 720px) {
