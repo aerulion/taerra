@@ -25,6 +25,7 @@ import net.aerulion.taerra.region.RegionShapes;
 import net.aerulion.taerra.util.HexColors;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -91,6 +92,19 @@ public final class TownyTowns {
               }
             }
           });
+      final @Nullable Location spawn = town.isPublic() ? town.getSpawnOrNull() : null;
+      if (spawn != null
+          && spawn.isWorldLoaded()
+          && config.worldEnabled(WorldKeys.id(spawn.getWorld()))) {
+        markers.add(
+            Marker.point(
+                    WorldKeys.id(spawn.getWorld()) + "/" + town.getUUID() + "/spawn",
+                    spawn.getWorld().getKey(),
+                    new Vector(spawn.getBlockX() + .5, spawn.getBlockY(), spawn.getBlockZ() + .5),
+                    town.getName())
+                .withColor(color)
+                .withDetails(details));
+      }
     }
     return markers;
   }
