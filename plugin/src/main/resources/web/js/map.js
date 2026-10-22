@@ -803,11 +803,12 @@ class MapManager {
 
             const picked = this.pickAt(Math.floor(screenX), Math.floor(screenY));
             if (picked) {
+                this.lastPickedY = picked.y;
                 return picked;
             }
 
             const difference = screenX / half;
-            const sum = (screenY + MapManager.ISO_REFERENCE_Y * half) / quarter;
+            const sum = (screenY + (this.lastPickedY ?? MapManager.ISO_REFERENCE_Y) * half) / quarter;
             const [x, z] = MapManager.unrotateCell(this.rotation, Math.round((sum + difference) / 2),
                 Math.round((sum - difference) / 2));
             return {x, z};
