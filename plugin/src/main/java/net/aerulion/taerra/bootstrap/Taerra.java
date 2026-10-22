@@ -26,6 +26,7 @@ import net.aerulion.taerra.config.LiveSettings;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.diagnostics.DebugReport;
+import net.aerulion.taerra.icon.MarkerIconsImpl;
 import net.aerulion.taerra.integration.ChunkyGeneration;
 import net.aerulion.taerra.integration.LuckPermsGrants;
 import net.aerulion.taerra.integration.WorldEditChanges;
@@ -70,6 +71,7 @@ import net.aerulion.taerra.storage.TileCache;
 import net.aerulion.taerra.storage.TileCacheImpl;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.storage.TileStorageImpl;
+import net.aerulion.taerra.util.HexColors;
 import net.aerulion.taerra.util.Throwables;
 import net.aerulion.taerra.waypoint.DynmapImport;
 import net.aerulion.taerra.waypoint.PersonalWaypoints;
@@ -262,6 +264,11 @@ public final class Taerra extends JavaPlugin {
 
       final @NotNull MarkerRegistryInternal markers = new MarkerRegistryImpl();
       getServer().getPluginManager().registerEvents(markers, this);
+      final @NotNull MarkerIconsImpl icons =
+          new MarkerIconsImpl(this, markers, new File(getDataFolder(), "icons"));
+      icons.load();
+      icons.onChange(() -> webSocketHandler.broadcast("{\"type\":\"icons\"}"));
+      getServer().getPluginManager().registerEvents(icons, this);
       final @NotNull PlayerPositionBroadcaster playerBroadcaster =
           new PlayerPositionBroadcasterImpl(
               this, configuration, webSocketHandler, worldLimits, regionVisibility);
@@ -316,11 +323,17 @@ public final class Taerra extends JavaPlugin {
               () -> onWebServer(TaerraWebServer::refreshMarkers),
               revision ->
                   webSocketHandler.broadcastToConfigurers(
-                      "{\"type\":\"settings\",\"revision\":" + revision + "}"));
+                      "{\"type\":\"settings\",\"revision\":" + revision + "}"),
+              icons::exists);
       configEditor.start();
       final @NotNull RegionEditor regionEditor =
           new RegionEditor(
               this, regions, renders, () -> webSocketHandler.broadcast("{\"type\":\"regions\"}"));
+      final @NotNull Preferences preferences = new Preferences(playerFiles);
+      preferences.onWaypointColor(
+          (player, rgb) ->
+              webSocketHandler.sendTo(
+                  player, Map.of("type", "waypointColor", "color", HexColors.format(rgb))));
       final @NotNull TaerraWebServer webServer =
           new TaerraWebServerImpl(
               this,
@@ -338,11 +351,12 @@ public final class Taerra extends JavaPlugin {
               renders,
               renderFeedback,
               new Teleports(this),
-              new WaypointEditor(this, configuration, waypoints, personalWaypoints),
+              new WaypointEditor(this, configuration, waypoints, personalWaypoints, preferences),
               configEditor,
               regionVisibility,
               regionEditor,
-              new Preferences(playerFiles));
+              preferences,
+              icons);
       this.webServer = webServer;
       webServer.start();
       tileUpdateBroadcaster.start();
@@ -377,7 +391,7 @@ public final class Taerra extends JavaPlugin {
           .getServicesManager()
           .register(
               TaerraApi.class,
-              new TaerraApiImpl(this, markers, worldChanges),
+              new TaerraApiImpl(this, markers, icons, worldChanges),
               this,
               ServicePriority.Normal);
       liveSettings.startLayers();
@@ -410,7 +424,8 @@ public final class Taerra extends JavaPlugin {
           configEditor,
           webSessions,
           modHandshake,
-          markers);
+          markers,
+          icons);
 
       final long duration = System.currentTimeMillis() - startTime;
       getLogger().info("Enabled in " + duration + "ms");
@@ -455,7 +470,8 @@ public final class Taerra extends JavaPlugin {
       final @NotNull ConfigEditor configEditor,
       final @NotNull WebSessions webSessions,
       final @NotNull ModHandshake modHandshake,
-      final @NotNull MarkerRegistryInternal markers) {
+      final @NotNull MarkerRegistryInternal markers,
+      final @NotNull MarkerIconsImpl icons) {
     TaerraCommands.register(
         this,
         List.of(
@@ -463,7 +479,7 @@ public final class Taerra extends JavaPlugin {
             new RenderSubCommand(renders, renderFeedback, exports),
             new LimitSubCommand(configEditor, renderFeedback, worldLimits),
             new WaypointSubCommand(waypoints),
-            new ConfigSubCommand(configEditor, configuration, markers),
+            new ConfigSubCommand(configEditor, configuration, markers, icons),
             new ImportSubCommand(new DynmapImport(this, waypoints)),
             new LoginSubCommand(webSettings, configuration, webSessions),
             new LogoutSubCommand(webSessions),

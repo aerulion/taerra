@@ -11,10 +11,11 @@ public record PlayerData(
     @NotNull List<PersonalWaypoints.Saved> waypoints,
     @NotNull Map<UUID, Long> discoveries,
     @Nullable Navigation navigation,
-    @NotNull Map<String, Boolean> layers) {
+    @NotNull Map<String, Boolean> layers,
+    @Nullable Integer waypointColor) {
 
   public static final @NotNull PlayerData EMPTY =
-      new PlayerData(List.of(), Map.of(), null, Map.of());
+      new PlayerData(List.of(), Map.of(), null, Map.of(), null);
 
   public PlayerData {
     waypoints = List.copyOf(waypoints);
@@ -23,25 +24,35 @@ public record PlayerData(
   }
 
   public @NotNull PlayerData withWaypoints(final @NotNull List<PersonalWaypoints.Saved> waypoints) {
-    return new PlayerData(waypoints, this.discoveries, this.navigation, this.layers);
+    return new PlayerData(
+        waypoints, this.discoveries, this.navigation, this.layers, this.waypointColor);
   }
 
   public @NotNull PlayerData withDiscoveries(final @NotNull Map<UUID, Long> discoveries) {
-    return new PlayerData(this.waypoints, discoveries, this.navigation, this.layers);
+    return new PlayerData(
+        this.waypoints, discoveries, this.navigation, this.layers, this.waypointColor);
   }
 
   public @NotNull PlayerData withNavigation(final @Nullable Navigation navigation) {
-    return new PlayerData(this.waypoints, this.discoveries, navigation, this.layers);
+    return new PlayerData(
+        this.waypoints, this.discoveries, navigation, this.layers, this.waypointColor);
   }
 
   public @NotNull PlayerData withLayers(final @NotNull Map<String, Boolean> layers) {
-    return new PlayerData(this.waypoints, this.discoveries, this.navigation, layers);
+    return new PlayerData(
+        this.waypoints, this.discoveries, this.navigation, layers, this.waypointColor);
+  }
+
+  public @NotNull PlayerData withWaypointColor(final @Nullable Integer waypointColor) {
+    return new PlayerData(
+        this.waypoints, this.discoveries, this.navigation, this.layers, waypointColor);
   }
 
   public boolean isEmpty() {
     return this.waypoints.isEmpty()
         && this.discoveries.isEmpty()
         && this.navigation == null
-        && this.layers.isEmpty();
+        && this.layers.isEmpty()
+        && this.waypointColor == null;
   }
 }

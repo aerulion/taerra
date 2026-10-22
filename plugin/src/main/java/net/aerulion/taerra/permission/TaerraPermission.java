@@ -90,6 +90,11 @@ public enum TaerraPermission {
       "waypoint.death",
       "Saves where the user last died as one of their personal waypoints.",
       PermissionDefault.TRUE),
+  ICON_EDIT(
+      "icon.edit",
+      "Lets the user upload, rename, replace and delete the server's map icons on the map and in"
+          + " the mod.",
+      PermissionDefault.OP),
   REGION_EDIT(
       "region.edit",
       "Lets the user draw, name, fog and remove regions on the map.",

@@ -11,9 +11,11 @@ import java.lang.reflect.Type;
 import java.net.http.WebSocket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,17 +25,20 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import net.aerulion.taerra.mod.config.Settings;
+import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.pick.PickCache;
 import net.aerulion.taerra.mod.pick.PickCacheImpl;
 import net.aerulion.taerra.mod.tile.TileCache;
 import net.aerulion.taerra.mod.tile.TileCacheImpl;
 import net.aerulion.taerra.mod.tile.TileKey;
+import net.aerulion.taerra.mod.util.Pixels;
 import net.aerulion.taerra.mod.util.Toasts;
 import net.aerulion.taerra.mod.util.Urls;
 import net.aerulion.taerra.mod.web.model.Account;
 import net.aerulion.taerra.mod.web.model.Device;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.MapConfig;
+import net.aerulion.taerra.mod.web.model.MapIcon;
 import net.aerulion.taerra.mod.web.model.MarkerTexts;
 import net.aerulion.taerra.mod.web.model.NavigationTarget;
 import net.aerulion.taerra.mod.web.model.PersonalWaypoint;
@@ -64,9 +69,11 @@ public final class WebMapImpl implements WebMap {
   private static final Type GROUPS = new TypeToken<List<WaypointGroup>>() {}.getType();
   private static final Type DEVICES = new TypeToken<List<Device>>() {}.getType();
   private static final Type PERSONAL = new TypeToken<List<PersonalWaypoint>>() {}.getType();
+  private static final Type ICONS = new TypeToken<List<MapIcon>>() {}.getType();
   private static final long KEEP_ALIVE_MILLIS = 20_000;
   private static final long RECONNECT_MILLIS = 5_000;
   private static final long UNREACHABLE_RETRY_MILLIS = 10_000;
+  private static final long ICON_RETRY_MILLIS = 10_000;
   private static final double GLIDE_PER_SECOND = 6;
   private static final double JUMP_BLOCKS = 32;
 
@@ -81,6 +88,9 @@ public final class WebMapImpl implements WebMap {
   private final Map<String, Regions> regions = new HashMap<>();
   private final Map<String, Set<String>> revealed = new HashMap<>();
   private final Set<String> staleRegions = new HashSet<>();
+  private final Map<String, int[]> iconPixels = new HashMap<>();
+  private final Map<String, Long> iconTries = new HashMap<>();
+  private @NotNull Map<String, MapIcon> icons = Map.of();
   private @Nullable MapConfig config;
   private @NotNull List<World> worlds = List.of();
   private @NotNull List<Player> players = List.of();
@@ -284,6 +294,9 @@ public final class WebMapImpl implements WebMap {
         body.put("y", waypoint.y());
       }
       body.put("z", waypoint.z());
+      if (waypoint.icon() != null && !waypoint.icon().isEmpty()) {
+        body.put("icon", waypoint.icon());
+      }
     } else {
       body.put("type", waypoint.type());
       body.put("points", waypoint.points());
@@ -601,6 +614,7 @@ public final class WebMapImpl implements WebMap {
   @Override
   public void close() {
     this.closed = true;
+    MapIcons.clear();
     this.client.close();
     if (this.socket != null) {
       this.socket.abort();
@@ -655,6 +669,115 @@ public final class WebMapImpl implements WebMap {
     refreshWorlds();
     refreshPlayers();
     refreshAccount();
+    refreshIcons();
+  }
+
+  @Override
+  public @NotNull List<MapIcon> icons() {
+    return List.copyOf(this.icons.values());
+  }
+
+  @Override
+  public @Nullable MapIcon icon(final @Nullable String id) {
+    return id == null ? null : this.icons.get(id);
+  }
+
+  @Override
+  public int @Nullable [] iconPixels(final @NotNull MapIcon icon) {
+    final @NotNull String key = icon.id() + "@" + icon.version();
+    final int @Nullable [] pixels = this.iconPixels.get(key);
+    final long now = System.currentTimeMillis();
+    final @Nullable Long tried = this.iconTries.get(key);
+    if (pixels != null || (tried != null && now - tried < ICON_RETRY_MILLIS)) {
+      return pixels;
+    }
+    this.iconTries.put(key, now);
+    this.client
+        .get(icon.path() + ".png?v=" + Urls.segment(icon.version()), null)
+        .thenAccept(
+            response -> {
+              final int @Nullable [] read =
+                  response.statusCode() == 200 ? Pixels.read(response.body()) : null;
+              this.client.execute(
+                  () -> {
+                    if (read != null) {
+                      this.iconPixels.put(key, read);
+                      List.copyOf(this.listeners).forEach(WebMapListener::iconsChanged);
+                    }
+                  });
+            })
+        .exceptionally(
+            error -> {
+              LOGGER.warn("TAERRA: the icon {} failed: {}", icon.id(), error.toString());
+              return null;
+            });
+    return null;
+  }
+
+  @Override
+  public void uploadIcon(
+      final @NotNull String name,
+      final byte @NotNull [] png,
+      final @NotNull BiConsumer<Integer, @Nullable String> then) {
+    this.client.request(
+        "POST",
+        "/api/icons",
+        Map.of("name", name, "png", Base64.getEncoder().encodeToString(png)),
+        (status, body) -> {
+          if (status / 100 == 2) {
+            refreshIcons();
+          }
+          then.accept(status, body);
+        });
+  }
+
+  @Override
+  public void updateIcon(
+      final @NotNull MapIcon icon,
+      final @Nullable String name,
+      final byte @Nullable [] png,
+      final @NotNull IntConsumer then) {
+    final @NotNull Map<String, Object> body = new HashMap<>();
+    if (name != null) {
+      body.put("name", name);
+    }
+    if (png != null) {
+      body.put("png", Base64.getEncoder().encodeToString(png));
+    }
+    this.client.send("PUT", icon.path(), body, iconsRefreshing(then));
+  }
+
+  @Override
+  public void deleteIcon(final @NotNull MapIcon icon, final @NotNull IntConsumer then) {
+    this.client.send("DELETE", icon.path(), null, iconsRefreshing(then));
+  }
+
+  private @NotNull IntConsumer iconsRefreshing(final @NotNull IntConsumer then) {
+    return status -> {
+      if (status / 100 == 2) {
+        refreshIcons();
+      }
+      then.accept(status);
+    };
+  }
+
+  private void refreshIcons() {
+    this.client.<List<MapIcon>>json(
+        "/api/icons",
+        ICONS,
+        icons -> {
+          final @NotNull Map<String, MapIcon> known = new LinkedHashMap<>();
+          final @NotNull Set<String> current = new HashSet<>();
+          for (final @NotNull MapIcon icon : icons == null ? List.<MapIcon>of() : icons) {
+            known.put(icon.id(), icon);
+            current.add(icon.id() + "@" + icon.version());
+          }
+          this.icons = known;
+          this.iconPixels.keySet().retainAll(current);
+          this.iconTries.clear();
+          MapIcons.retain(current);
+          List.copyOf(this.listeners).forEach(WebMapListener::iconsChanged);
+        });
   }
 
   private void refreshMarkers(final @NotNull String world) {
@@ -733,6 +856,7 @@ public final class WebMapImpl implements WebMap {
                             this.staleRegions.addAll(this.regions.keySet());
                             refreshPlayers();
                             refreshLayers();
+                            refreshIcons();
                             if (this.settingsOpen) {
                               send(Map.of("type", "settings", "open", true, "client", "mod"));
                               List.copyOf(this.listeners)
@@ -803,6 +927,8 @@ public final class WebMapImpl implements WebMap {
         refreshPlayers();
       }
       case "progress" -> this.progress = GSON.fromJson(message, Progress.class);
+      case "icons" -> refreshIcons();
+      case "waypointColor" -> refreshAccount();
       case "config" -> {
         if (!this.loadingConfig) {
           loadConfig();

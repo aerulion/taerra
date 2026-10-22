@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import net.aerulion.taerra.api.marker.MarkerLayer;
@@ -64,6 +65,7 @@ public final class ConfigEditor {
   public static final @NotNull String SETTING = "setting:";
   public static final @NotNull String WORLD = "world:";
   public static final @NotNull String LAYER = "layer:";
+  public static final @NotNull String LAYER_ICON = "layer-icon:";
   public static final @NotNull String ORDER = "order";
   public static final @NotNull String LIMIT = "limit";
   private static final long TRACK_INTERVAL_TICKS = 20L;
@@ -79,6 +81,7 @@ public final class ConfigEditor {
   private final @NotNull Consumer<Set<String>> applied;
   private final @NotNull Runnable layersChanged;
   private final @NotNull LongConsumer published;
+  private final @NotNull Predicate<String> iconExists;
   private final @NotNull SettingsRevisions revisions = new SettingsRevisions();
 
   public ConfigEditor(
@@ -90,7 +93,8 @@ public final class ConfigEditor {
       final @NotNull RenderService renders,
       final @NotNull Consumer<Set<String>> applied,
       final @NotNull Runnable layersChanged,
-      final @NotNull LongConsumer published) {
+      final @NotNull LongConsumer published,
+      final @NotNull Predicate<String> iconExists) {
     super();
     this.plugin = plugin;
     this.config = config;
@@ -101,6 +105,7 @@ public final class ConfigEditor {
     this.applied = applied;
     this.layersChanged = layersChanged;
     this.published = published;
+    this.iconExists = iconExists;
   }
 
   public static @Nullable Setting setting(final @NotNull String key) {
@@ -276,6 +281,20 @@ public final class ConfigEditor {
     this.layersChanged.run();
     track(who);
     return true;
+  }
+
+  public @NotNull LayerIcon setLayerIcon(
+      final @NotNull String layerId, final @NotNull String icon, final @NotNull String who) {
+    if (this.markers.existingLayer(layerId) == null && this.config.layerIcon(layerId) == null) {
+      return LayerIcon.UNKNOWN_LAYER;
+    }
+    if (!icon.isEmpty() && !this.iconExists.test(icon)) {
+      return LayerIcon.UNKNOWN_ICON;
+    }
+    this.config.setLayerIcon(this.plugin, layerId, icon);
+    this.layersChanged.run();
+    track(who);
+    return LayerIcon.SET;
   }
 
   public RenderService.@NotNull Start setLimit(
@@ -478,6 +497,12 @@ public final class ConfigEditor {
             change.getKey().substring(LAYER.length()),
             Boolean.TRUE.equals(change.getValue()));
         layers = true;
+      } else if (change.getKey().startsWith(LAYER_ICON)) {
+        this.config.setLayerIcon(
+            this.plugin,
+            change.getKey().substring(LAYER_ICON.length()),
+            (String) change.getValue());
+        layers = true;
       }
     }
     if (layers) {
@@ -525,6 +550,12 @@ public final class ConfigEditor {
           ? value instanceof final @NotNull String name ? worldName(world, name) : null
           : value instanceof Boolean ? value : null;
     }
+    if (field.startsWith(LAYER_ICON)) {
+      return value instanceof final @NotNull String icon
+              && (icon.isEmpty() || this.iconExists.test(icon))
+          ? icon
+          : null;
+    }
     return field.startsWith(LAYER) && value instanceof Boolean ? value : null;
   }
 
@@ -550,6 +581,9 @@ public final class ConfigEditor {
     values.put(ORDER, List.copyOf(this.config.enabledWorlds()));
     for (final @NotNull LayerInfo layer : layers()) {
       values.put(LAYER + layer.id(), this.config.layerPrivate(layer.id()));
+      values.put(
+          LAYER_ICON + layer.id(),
+          Objects.requireNonNullElse(this.config.layerIcon(layer.id()), ""));
     }
     return values;
   }
@@ -573,6 +607,9 @@ public final class ConfigEditor {
       layers.putIfAbsent(group.id(), new LayerInfo(group.id(), group.label(), true));
     }
     for (final @NotNull String layer : this.config.privateLayers()) {
+      layers.putIfAbsent(layer, new LayerInfo(layer, layer, false));
+    }
+    for (final @NotNull String layer : this.config.layerIcons().keySet()) {
       layers.putIfAbsent(layer, new LayerInfo(layer, layer, false));
     }
     return List.copyOf(layers.values());
@@ -620,6 +657,12 @@ public final class ConfigEditor {
     APPLIED,
     WEB_RESTARTED,
     REJECTED
+  }
+
+  public enum LayerIcon {
+    SET,
+    UNKNOWN_LAYER,
+    UNKNOWN_ICON
   }
 
   public enum Kind {

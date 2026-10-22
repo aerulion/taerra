@@ -3,11 +3,14 @@ package net.aerulion.taerra.waypoint;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.aerulion.taerra.api.marker.MarkerIcons;
+import net.aerulion.taerra.icon.MarkerIconsImpl;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
@@ -121,6 +124,19 @@ class DynmapMarkersTest {
     assertEquals(0xF38BAA, DynmapMarkers.color("pinkflag"));
     assertEquals(DynmapMarkers.color("anchor"), DynmapMarkers.color("Anchor"));
     assertNotEquals(DynmapMarkers.color("anchor"), DynmapMarkers.color("tree"));
+  }
+
+  @Test
+  @DisplayName("Dynmap icons with a built-in counterpart keep it, others show the layer's icon")
+  void icons() {
+    assertEquals(MarkerIcons.builtIn("home"), DynmapMarkers.icon("BigHouse"));
+    assertEquals(MarkerIcons.builtIn("flag"), DynmapMarkers.icon("pinkflag"));
+    assertEquals(MarkerIcons.builtIn("crown"), DynmapMarkers.icon("queen"));
+    assertNull(DynmapMarkers.icon("default"));
+    assertNull(DynmapMarkers.icon("tornado"));
+    assertTrue(
+        MarkerIconsImpl.BUILT_IN.containsAll(DynmapMarkers.ICON_NAMES.values()),
+        "every mapped Dynmap icon is a built-in one");
   }
 
   @Test

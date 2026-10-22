@@ -307,7 +307,8 @@ public final class MapViewImpl implements MapView {
                           layer.personal(),
                           layer.markers().stream()
                               .filter(marker -> !marker.id().equals(hidden))
-                              .toList()))
+                              .toList(),
+                          layer.icon()))
               .toList();
     }
     return this.withoutHidden;
@@ -470,7 +471,7 @@ public final class MapViewImpl implements MapView {
           this.spin == 0 ? y1 : graphics.guiHeight());
     }
     drawRegionNames(graphics, map, projection);
-    drawPoints(graphics, points, mouse);
+    drawPoints(graphics, map, points, mouse);
     drawTarget(graphics, map, projection, x0, y0, x1, y1);
     drawPlayers(graphics, map, projection, x0, y0, x1, y1, mouse, partialTick);
     pose.popMatrix();
@@ -605,7 +606,7 @@ public final class MapViewImpl implements MapView {
       return new double[] {x, y};
     }
     return new double[] {
-      snap(x + this.subPixelX) - this.subPixelX, snap(y + this.subPixelY) - this.subPixelY
+      this.offsetX + snap(x - this.offsetX), this.offsetY + snap(y - this.offsetY)
     };
   }
 
@@ -619,7 +620,7 @@ public final class MapViewImpl implements MapView {
         graphics, points, top, bottom, color, this.subPixelX, this.subPixelY, this.pixels);
   }
 
-  private void icon(
+  private void decoration(
       final @NotNull GuiGraphicsExtractor graphics,
       final double[] point,
       final double angle,
@@ -1199,36 +1200,46 @@ public final class MapViewImpl implements MapView {
 
   private void drawPoints(
       final @NotNull GuiGraphicsExtractor graphics,
+      final @NotNull WebMap map,
       final @NotNull List<DrawnPoint> points,
       final double[] mouse) {
     final @NotNull Font font = Minecraft.getInstance().font;
     this.labels.clear();
+    final @NotNull List<MapIcons.Sprite> sprites = new ArrayList<>(points.size());
     for (final @NotNull DrawnPoint drawn : points) {
-      final double @NotNull [] at = toScreen(drawn.shape().point);
-      final @NotNull MarkerShape shape = drawn.shape();
-      icon(
-          graphics,
-          at,
-          0,
-          drawn.layer().personal()
-              ? () -> MapIcons.gem(graphics, shape.color)
-              : () ->
-                  graphics.blitSprite(RenderPipelines.GUI_TEXTURED, shape.banner(), 0, 0, 8, 8));
-      if (hovers(at, mouse[0], mouse[1])) {
+      final double @NotNull [] screen = toScreen(drawn.shape().point);
+      final double @NotNull [] at = snapped(screen[0], screen[1]);
+      final MapIcons.@NotNull Sprite sprite = MapIcons.sprite(map, drawn.layer(), drawn.marker());
+      sprites.add(sprite);
+      final @NotNull Matrix3x2fStack pose = graphics.pose();
+      pose.pushMatrix();
+      pose.translate((float) at[0], (float) at[1]);
+      pose.rotate((float) -this.spin);
+      pose.translate(-sprite.width() / 2f, -sprite.tip());
+      graphics.blit(sprite.texture(), 0, 0, sprite.width(), sprite.height(), 0, 1, 0, 1);
+      pose.popMatrix();
+      final double lift = sprite.tip() / 2.0;
+      final double @NotNull [] body = {
+        at[0] - lift * Math.sin(this.spin), at[1] - lift * Math.cos(this.spin)
+      };
+      if (Math.abs(mouse[0] - body[0]) <= sprite.width() / 2.0 + 1
+          && Math.abs(mouse[1] - body[1]) <= lift + 1) {
         hovered(drawn.layer(), drawn.marker(), drawn.shape());
       }
     }
     if (this.minimap) {
       return;
     }
-    for (final @NotNull DrawnPoint drawn : points) {
+    for (int i = 0; i < points.size(); i++) {
+      final @NotNull DrawnPoint drawn = points.get(i);
       final String label = drawn.marker().label();
       if (label == null || label.isEmpty()) {
         continue;
       }
       final double @NotNull [] at = toScreen(drawn.shape().point);
       final int width = font.width(label);
-      final double @NotNull [] corner = snapped(at[0] - (width + 1) / 2.0, at[1] + 5);
+      final double @NotNull [] corner =
+          snapped(at[0] - (width + 1) / 2.0, at[1] - sprites.get(i).tip() - 2 - 9);
       final double @NotNull [] box = {corner[0], corner[1], corner[0] + width + 1, corner[1] + 9};
       if (this.labels.stream()
           .anyMatch(
@@ -1275,7 +1286,7 @@ public final class MapViewImpl implements MapView {
     }
     final @NotNull TextureAtlasSprite sprite =
         MapIcons.decoration(inside ? "target_x" : "target_point");
-    icon(
+    decoration(
         graphics,
         inside ? point : offMap(shown, x0, y0, x1, y1),
         0,
@@ -1312,7 +1323,7 @@ public final class MapViewImpl implements MapView {
         if (this.minimap) {
           final double @NotNull [] pin = offMap(shown, x0, y0, x1, y1);
           final @NotNull TextureAtlasSprite offMap = MapIcons.decoration("player_off_map");
-          icon(
+          decoration(
               graphics,
               pin,
               projection.bearing(player.yaw()) + this.spin,
@@ -1322,7 +1333,7 @@ public final class MapViewImpl implements MapView {
       }
       final @Nullable PlayerInfo info = player.anonymous() ? null : PlayerInfos.find(player.uuid());
       if (info != null && this.zoom >= this.maxZoom) {
-        icon(
+        decoration(
             graphics,
             at,
             0,
@@ -1331,7 +1342,7 @@ public final class MapViewImpl implements MapView {
               PlayerFaceExtractor.extractRenderState(graphics, info.getSkin(), 0, 0, 8);
             });
       } else {
-        icon(
+        decoration(
             graphics,
             at,
             projection.bearing(player.yaw()) + this.spin,
@@ -1350,7 +1361,7 @@ public final class MapViewImpl implements MapView {
     }
     if (self != null && Dimensions.current().equals(this.world)) {
       final @NotNull Vec3 position = self.getPosition(partialTick);
-      icon(
+      decoration(
           graphics,
           toScreen(projection.toMap(position.x, position.y, position.z)),
           projection.bearing(self.getViewYRot(partialTick)) + this.spin,

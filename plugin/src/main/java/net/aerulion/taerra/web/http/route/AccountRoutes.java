@@ -5,9 +5,12 @@ import io.javalin.http.Context;
 import io.javalin.http.Cookie;
 import io.javalin.http.SameSite;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.config.WebSettings;
+import net.aerulion.taerra.player.Preferences;
+import net.aerulion.taerra.util.HexColors;
 import net.aerulion.taerra.web.auth.Device;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.auth.WebSessions;
@@ -26,19 +29,22 @@ public final class AccountRoutes implements Routes {
   private final @NotNull WebSessions sessions;
   private final @NotNull WebSettings web;
   private final @NotNull PlayerAvatars avatars;
+  private final @NotNull Preferences preferences;
 
   public AccountRoutes(
       final @NotNull Plugin plugin,
       final @NotNull Requests requests,
       final @NotNull WebSessions sessions,
       final @NotNull WebSettings web,
-      final @NotNull PlayerAvatars avatars) {
+      final @NotNull PlayerAvatars avatars,
+      final @NotNull Preferences preferences) {
     super();
     this.plugin = plugin;
     this.requests = requests;
     this.sessions = sessions;
     this.web = web;
     this.avatars = avatars;
+    this.preferences = preferences;
   }
 
   @Override
@@ -54,22 +60,30 @@ public final class AccountRoutes implements Routes {
     routes.post("/api/login/link", this::handleLinkRequest);
   }
 
-  private static @NotNull Map<String, Object> account(
+  private @NotNull Map<String, Object> account(
       final WebSessions.@NotNull Session session, final @NotNull Viewer viewer) {
-    return Map.ofEntries(
-        Map.entry("uuid", session.uuid().toString()),
-        Map.entry("name", session.name()),
-        Map.entry("teleport", viewer.canTeleport()),
-        Map.entry("mod", viewer.usesMod()),
-        Map.entry("markers", viewer.canEditMarkers()),
-        Map.entry("privateGroups", viewer.canCreatePrivateGroups()),
-        Map.entry("personal", viewer.canKeepPersonalMarkers()),
-        Map.entry("renderWorld", viewer.canRenderWorld()),
-        Map.entry("renderArea", viewer.canRenderArea()),
-        Map.entry("cancelRender", viewer.canCancelRender()),
-        Map.entry("regions", viewer.canEditRegions()),
-        Map.entry("resetRegions", viewer.canResetRegions()),
-        Map.entry("config", viewer.canConfigure()));
+    final @NotNull Map<String, Object> account =
+        new LinkedHashMap<>(
+            Map.ofEntries(
+                Map.entry("uuid", session.uuid().toString()),
+                Map.entry("name", session.name()),
+                Map.entry("teleport", viewer.canTeleport()),
+                Map.entry("mod", viewer.usesMod()),
+                Map.entry("markers", viewer.canEditMarkers()),
+                Map.entry("privateGroups", viewer.canCreatePrivateGroups()),
+                Map.entry("personal", viewer.canKeepPersonalMarkers()),
+                Map.entry("icons", viewer.canEditIcons()),
+                Map.entry("renderWorld", viewer.canRenderWorld()),
+                Map.entry("renderArea", viewer.canRenderArea()),
+                Map.entry("cancelRender", viewer.canCancelRender()),
+                Map.entry("regions", viewer.canEditRegions()),
+                Map.entry("resetRegions", viewer.canResetRegions()),
+                Map.entry("config", viewer.canConfigure())));
+    final @Nullable Integer color = this.preferences.waypointColor(session.uuid());
+    if (color != null) {
+      account.put("waypointColor", HexColors.format(color));
+    }
+    return account;
   }
 
   private void handleAccountRequest(final @NotNull Context ctx) {

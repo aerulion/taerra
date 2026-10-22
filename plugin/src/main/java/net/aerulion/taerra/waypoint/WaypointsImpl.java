@@ -131,12 +131,17 @@ public final class WaypointsImpl implements Waypoints {
       return null;
     }
     final @NotNull OptionalInt rgb = HexColors.parseRgb(String.valueOf(entry.get("color")));
-    return marker
-        .withColor(rgb.isPresent() ? Color.fromRGB(rgb.getAsInt()) : DEFAULT_COLOR)
-        .withDescription(
-            entry.get("description") instanceof final @NotNull String description
-                ? description
-                : null);
+    final @NotNull Marker read =
+        marker
+            .withColor(rgb.isPresent() ? Color.fromRGB(rgb.getAsInt()) : DEFAULT_COLOR)
+            .withDescription(
+                entry.get("description") instanceof final @NotNull String description
+                    ? description
+                    : null);
+    return read instanceof final @NotNull PointMarker point
+            && entry.get("icon") instanceof final @NotNull String icon
+        ? point.withIcon(NamespacedKey.fromString(icon))
+        : read;
   }
 
   static @NotNull Map<String, Object> entry(final @NotNull Marker marker) {
@@ -148,6 +153,9 @@ public final class WaypointsImpl implements Waypoints {
         entry.put("x", point.position().getX());
         entry.put("y", point.position().getY());
         entry.put("z", point.position().getZ());
+        if (point.icon() != null) {
+          entry.put("icon", point.icon().asString());
+        }
       }
       case final @NotNull AreaMarker area -> {
         entry.put("type", "area");
@@ -201,7 +209,7 @@ public final class WaypointsImpl implements Waypoints {
       final @NotNull Location location,
       final @NotNull Color color,
       final @Nullable String group) {
-    place(name, location, color, group);
+    place(name, location, color, null, group);
     save();
   }
 
@@ -222,7 +230,12 @@ public final class WaypointsImpl implements Waypoints {
   @Override
   public synchronized void addAll(final @NotNull Collection<Waypoint> waypoints) {
     for (final @NotNull Waypoint waypoint : waypoints) {
-      place(waypoint.name(), waypoint.location(), waypoint.color(), waypoint.group());
+      place(
+          waypoint.name(),
+          waypoint.location(),
+          waypoint.color(),
+          waypoint.icon(),
+          waypoint.group());
     }
     save();
   }
@@ -271,6 +284,7 @@ public final class WaypointsImpl implements Waypoints {
       final @NotNull String name,
       final @NotNull Location location,
       final @NotNull Color color,
+      final @Nullable NamespacedKey icon,
       final @Nullable String group) {
     place(
         Marker.point(
@@ -279,6 +293,7 @@ public final class WaypointsImpl implements Waypoints {
                 new Vector(
                     location.getBlockX() + .5, location.getBlockY(), location.getBlockZ() + .5),
                 name)
+            .withIcon(icon)
             .withColor(color),
         group);
   }

@@ -1,5 +1,8 @@
 import {accountManager} from './account.js';
 import {copyText} from './clipboard.js';
+import {iconEditor} from './iconeditor.js';
+import {iconChooser, iconStore} from './icons.js';
+import {iconManager} from './iconmanager.js';
 import {waypointManager} from './manager.js';
 import {defaultLanguage, hashLanguage, language, LANGUAGES, numbers, setLanguage, t, translatePage} from './i18n.js';
 import {mapManager} from './map.js';
@@ -753,6 +756,7 @@ wsManager.on('connect', () => {
 translatePage();
 const accountReady = accountManager.initialize().catch(error => console.error('Failed to log in:', error));
 await mapManager.initialize();
+void iconStore.initialize();
 markerManager.initialize();
 regionManager.initialize();
 skyManager.initialize({
@@ -777,6 +781,9 @@ regionList.initialize({
     edit: (region) => currentWorld && chunkSelection.start(currentWorld.name, 'region', region)
 });
 settingsDialog.initialize();
+iconChooser.initialize();
+iconEditor.initialize();
+iconManager.initialize();
 chunkSelection.initialize();
 searchPalette.initialize({
     worlds: () => worlds,

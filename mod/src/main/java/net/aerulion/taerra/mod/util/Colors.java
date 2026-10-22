@@ -34,6 +34,33 @@ public final class Colors {
     return shaded;
   }
 
+  public static int mix(final int from, final int to, final double amount) {
+    int mixed = 0xFF000000;
+    for (int shift = 0; shift <= 16; shift += 8) {
+      final int start = from >> shift & 0xFF;
+      mixed |= (int) Math.round(start + ((to >> shift & 0xFF) - start) * amount) << shift;
+    }
+    return mixed;
+  }
+
+  public static double contrast(final int first, final int second) {
+    final double a = luminance(first);
+    final double b = luminance(second);
+    return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+  }
+
+  private static double luminance(final int color) {
+    double luminance = 0;
+    final double[] weights = {.0722, .7152, .2126};
+    for (int i = 0; i < 3; i++) {
+      final double channel = (color >> i * 8 & 0xFF) / 255.0;
+      luminance +=
+          weights[i]
+              * (channel <= .04045 ? channel / 12.92 : Math.pow((channel + .055) / 1.055, 2.4));
+    }
+    return luminance;
+  }
+
   public static int fromHsv(final double hue, final double saturation, final double value) {
     int rgb = 0;
     for (final int n : new int[] {5, 3, 1}) {

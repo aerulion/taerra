@@ -51,7 +51,7 @@ public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
       final @NotNull NamespacedKey world,
       final @NotNull Vector position,
       final @Nullable String label) {
-    return new PointMarkerImpl(id, world, position, label, Map.of(), null, DEFAULT_COLOR);
+    return new PointMarkerImpl(id, world, position, label, Map.of(), null, DEFAULT_COLOR, null);
   }
 
   /**

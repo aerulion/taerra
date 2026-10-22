@@ -8,6 +8,7 @@ import net.aerulion.taerra.api.marker.LineMarker;
 import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.WorldKeys;
+import net.aerulion.taerra.player.Preferences;
 import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.world.WorldPositions;
 import org.bukkit.Color;
@@ -24,17 +25,20 @@ public final class WaypointEditor {
   private final @NotNull TaerraConfig config;
   private final @NotNull Waypoints waypoints;
   private final @NotNull PersonalWaypoints personal;
+  private final @NotNull Preferences preferences;
 
   public WaypointEditor(
       final @NotNull Plugin plugin,
       final @NotNull TaerraConfig config,
       final @NotNull Waypoints waypoints,
-      final @NotNull PersonalWaypoints personal) {
+      final @NotNull PersonalWaypoints personal,
+      final @NotNull Preferences preferences) {
     super();
     this.plugin = plugin;
     this.config = config;
     this.waypoints = waypoints;
     this.personal = personal;
+    this.preferences = preferences;
   }
 
   private static @Nullable CompletableFuture<Marker> shape(
@@ -51,7 +55,8 @@ public final class WaypointEditor {
               .thenApply(
                   y ->
                       Marker.point(
-                          id, key, new Vector(draft.x() + .5, y, draft.z() + .5), draft.name()))
+                              id, key, new Vector(draft.x() + .5, y, draft.z() + .5), draft.name())
+                          .withIcon(draft.icon()))
           : null;
     }
     if (points.stream()
@@ -116,15 +121,20 @@ public final class WaypointEditor {
               }
               shaped
                   .thenAccept(
-                      marker ->
-                          result.complete(
-                              store(
-                                  marker
-                                      .withColor(Color.fromRGB(draft.rgb()))
-                                      .withDescription(Names.description(draft.description())),
-                                  draft,
-                                  groupId,
-                                  author)))
+                      marker -> {
+                        final @NotNull Result stored =
+                            store(
+                                marker
+                                    .withColor(Color.fromRGB(draft.rgb()))
+                                    .withDescription(Names.description(draft.description())),
+                                draft,
+                                groupId,
+                                author);
+                        if (stored == Result.SAVED && author.uuid() != null) {
+                          this.preferences.rememberWaypointColor(author.uuid(), draft.rgb());
+                        }
+                        result.complete(stored);
+                      })
                   .exceptionally(
                       error -> {
                         result.complete(Result.FAILED);
@@ -221,5 +231,6 @@ public final class WaypointEditor {
       boolean smooth,
       @Nullable String description,
       @Nullable String previous,
-      boolean personal) {}
+      boolean personal,
+      @Nullable NamespacedKey icon) {}
 }

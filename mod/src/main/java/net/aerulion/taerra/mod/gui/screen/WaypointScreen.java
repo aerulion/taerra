@@ -7,11 +7,15 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import net.aerulion.taerra.mod.gui.widget.ColorField;
 import net.aerulion.taerra.mod.gui.widget.FooterRows;
+import net.aerulion.taerra.mod.gui.widget.IconChoice;
+import net.aerulion.taerra.mod.gui.widget.ScrollingContents;
 import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.map.Place;
 import net.aerulion.taerra.mod.util.Colors;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.aerulion.taerra.mod.web.model.Account;
+import net.aerulion.taerra.mod.web.model.Layer;
+import net.aerulion.taerra.mod.web.model.MapIcon;
 import net.aerulion.taerra.mod.web.model.Waypoint;
 import net.aerulion.taerra.mod.web.model.WaypointGroup;
 import net.minecraft.ChatFormatting;
@@ -26,6 +30,7 @@ import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,6 +44,7 @@ public final class WaypointScreen extends Screen {
 
   private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
   private int footerWidth;
+  private @Nullable ScrollingContents scroll;
   private final Screen parent;
   private final @NotNull WebMap map;
   private final @NotNull Waypoint target;
@@ -47,6 +53,7 @@ public final class WaypointScreen extends Screen {
   private String name;
   private String color;
   private String description;
+  private @NotNull String icon;
   private String group;
   private @NotNull String newGroup = "";
   private boolean privateGroup;
@@ -84,16 +91,19 @@ public final class WaypointScreen extends Screen {
     this.target = target;
     this.saved = saved;
     this.name = target.name();
-    this.color =
-        Colors.isHex(target.color())
-            ? target.color().toLowerCase(Locale.ROOT)
-            : Waypoint.DEFAULT_COLOR;
     final @Nullable Account account = map.account();
+    final @Nullable String color =
+        target.previous() == null && account != null ? account.waypointColor() : target.color();
+    this.color =
+        color != null && Colors.isHex(color)
+            ? color.toLowerCase(Locale.ROOT)
+            : Waypoint.DEFAULT_COLOR;
     this.ownGroup =
         account != null && account.personal() && (target.personal() || target.previous() == null);
     this.serverGroups = account != null && account.markers() && !target.personal();
     this.group = this.ownGroup && target.previous() == null ? Waypoint.PERSONAL : target.group();
     this.description = target.description();
+    this.icon = target.points() == null && target.icon() != null ? target.icon() : "";
     this.colors = new ColorField(WIDTH, this.color, value -> this.color = value);
     if (this.serverGroups) {
       map.waypointGroups(
@@ -113,7 +123,7 @@ public final class WaypointScreen extends Screen {
     }
     if (value.equals(Waypoint.PERSONAL)) {
       return Component.translatable("taerra.waypoint.personal")
-          .append(Component.literal(" " + MapIcons.GEM).withStyle(ChatFormatting.GOLD));
+          .append(Component.literal(" " + MapIcons.PERSONAL).withStyle(ChatFormatting.GOLD));
     }
     final boolean restricted =
         this.groups.stream().anyMatch(group -> group.label().equals(value) && group.restricted());
@@ -121,6 +131,53 @@ public final class WaypointScreen extends Screen {
         ? Component.literal(value)
             .append(Component.translatable("taerra.private.suffix").withStyle(ChatFormatting.GRAY))
         : Component.literal(value);
+  }
+
+  private @Nullable String groupIcon() {
+    if (this.group.equals(NEW_GROUP)) {
+      return null;
+    }
+    if (this.group.equals(Waypoint.PERSONAL) || this.group.isEmpty()) {
+      final @NotNull String layer = this.group.isEmpty() ? "waypoints" : Layer.PERSONAL;
+      return this.map.markers(this.target.world()).stream()
+          .filter(known -> known.id().equals(layer))
+          .map(Layer::icon)
+          .filter(this.map::hasIcon)
+          .findFirst()
+          .orElse(null);
+    }
+    return this.groups.stream()
+        .filter(known -> known.label().equals(this.group))
+        .map(WaypointGroup::icon)
+        .filter(this.map::hasIcon)
+        .findFirst()
+        .orElse(null);
+  }
+
+  private @Nullable Identifier texture(final @Nullable String icon) {
+    return MapIcons.icon(this.map, icon, this.group.equals(Waypoint.PERSONAL));
+  }
+
+  private @NotNull Component fallbackLabel() {
+    final @Nullable MapIcon icon = this.map.icon(groupIcon());
+    return icon == null
+        ? Component.translatable("taerra.icons.default")
+        : Component.translatable("taerra.icons.group_icon", icon.displayName());
+  }
+
+  private void pickIcon() {
+    this.minecraft.setScreenAndShow(
+        new IconPickerScreen(
+            this,
+            this.map,
+            Component.translatable("taerra.icons.choose"),
+            this.icon,
+            () -> texture(groupIcon()),
+            fallbackLabel(),
+            picked -> {
+              this.icon = picked;
+              rebuildWidgets();
+            }));
   }
 
   @Override
@@ -132,8 +189,7 @@ public final class WaypointScreen extends Screen {
   protected void init() {
     this.layout.removeChildren();
     this.layout.addTitleHeader(this.title, this.font);
-    final @NotNull LinearLayout contents =
-        this.layout.addToContents(LinearLayout.vertical().spacing(6));
+    final @NotNull LinearLayout contents = LinearLayout.vertical().spacing(6);
     contents.addChild(
         new StringWidget(
             WIDTH,
@@ -157,13 +213,23 @@ public final class WaypointScreen extends Screen {
                 .setPlaceholder(
                     Component.translatable("taerra.waypoint.description.hint")
                         .withStyle(ChatFormatting.DARK_GRAY))
-                .build(
-                    this.font, WIDTH, 40, Component.translatable("taerra.waypoint.description")));
+                .build(this.font, WIDTH, 40, Component.translatable("taerra.waypoint.description")),
+            settings -> settings.paddingBottom(this.font.lineHeight));
     description.setCharacterLimit(MAX_DESCRIPTION);
     description.setValue(this.description);
     description.setValueListener(value -> this.description = value);
 
     this.colors.addTo(contents, this.font);
+    if (this.target.points() == null) {
+      final @Nullable MapIcon chosen = this.map.icon(this.icon);
+      contents.addChild(
+          new IconChoice(
+              WIDTH,
+              Component.translatable(
+                  "taerra.waypoint.icon", chosen == null ? fallbackLabel() : chosen.displayName()),
+              () -> texture(chosen == null ? groupIcon() : this.icon),
+              this::pickIcon));
+    }
 
     final @NotNull List<String> values = new ArrayList<>();
     if (this.ownGroup) {
@@ -235,12 +301,13 @@ public final class WaypointScreen extends Screen {
             .build();
     save.active = !this.saving;
     buttons.add(save);
+    this.scroll = new ScrollingContents(this.minecraft, this.layout, contents);
     this.footerWidth = this.width;
     FooterRows.add(
         this.layout, this.width, HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT, buttons);
     this.layout.visitWidgets(this::addRenderableWidget);
     repositionElements();
-    setInitialFocus(name);
+    setInitialFocus();
   }
 
   @Override
@@ -248,6 +315,9 @@ public final class WaypointScreen extends Screen {
     if (this.footerWidth != this.width) {
       rebuildWidgets();
       return;
+    }
+    if (this.scroll != null) {
+      this.scroll.fit(this.layout);
     }
     this.layout.arrangeElements();
   }
@@ -274,7 +344,12 @@ public final class WaypointScreen extends Screen {
     this.saving = true;
     rebuildWidgets();
     this.map.saveWaypoint(
-        this.target.with(name, this.color, group, this.description.strip()),
+        this.target.with(
+            name,
+            this.color,
+            group,
+            this.description.strip(),
+            this.target.points() == null && !this.icon.isEmpty() ? this.icon : null),
         creating && this.privateGroup,
         status -> {
           if (status == 204) {

@@ -187,7 +187,7 @@ const en = {
                     },
                     {
                         title: 'Waypoints, areas and lines',
-                        text: 'In named groups and colors, private ones too, each with an optional description. Players with permission draw, move and recolor them on the map: areas chunk by chunk or point by point, lines straight or smooth.'
+                        text: 'In named groups and colors, private ones too, each with an optional description and an icon: built in, uploaded or drawn by your staff or added by plugins. Players with permission draw, move and recolor them on the map: areas chunk by chunk or point by point, lines straight or smooth.'
                     },
                     {
                         title: 'Waypoints of your own',
@@ -244,7 +244,10 @@ const en = {
                         title: 'Chunky',
                         text: 'Stays out of the way while Chunky generates, then says when a full render is worth it.'
                     },
-                    {title: 'dynmap', text: 'Bring your markers over as waypoints with one command.'}
+                    {
+                        title: 'dynmap',
+                        text: 'Bring your markers over as waypoints with one command, their icons as the closest built-in ones.'
+                    }
                 ]
             }
         ] satisfies Group[]
@@ -392,7 +395,7 @@ const en = {
                 },
                 {
                     command: '/taerra config …',
-                    text: 'Change settings, enable, name, order and hide worlds, make layers private'
+                    text: 'Change settings, enable, name, order and hide worlds, make layers private or give them an icon'
                 },
                 {command: '/taerra waypoint add|remove …', text: 'Add or remove waypoints'},
                 {command: '/taerra import dynmap <file>', text: 'Import markers from dynmap'},
@@ -460,6 +463,11 @@ const en = {
                     permission: 'taerra.waypoint.death',
                     standard: 'everyone',
                     text: 'Getting a personal waypoint where you last died'
+                },
+                {
+                    permission: 'taerra.icon.edit',
+                    standard: 'op',
+                    text: 'Uploading, renaming, replacing and deleting the server’s map icons'
                 },
                 {
                     permission: 'taerra.region.edit',

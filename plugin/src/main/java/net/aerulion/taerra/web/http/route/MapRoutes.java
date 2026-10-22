@@ -454,10 +454,15 @@ public final class MapRoutes implements Routes {
                     viewer.uuid(),
                     worldName,
                     visible,
-                    this.taerraConfig::layerPrivate));
+                    this.taerraConfig::layerPrivate,
+                    this.taerraConfig::layerIcon));
     layers.addAll(
         MarkerPayloadSerializer.world(
-            this.markers, worldName, visible, this.taerraConfig::layerPrivate));
+            this.markers,
+            worldName,
+            visible,
+            this.taerraConfig::layerPrivate,
+            this.taerraConfig::layerIcon));
     final @Nullable MarkerLayer regions = this.markers.existingLayer(RegionMarkers.LAYER);
     if (regions != null && visible.test(RegionMarkers.LAYER)) {
       layers.addAll(

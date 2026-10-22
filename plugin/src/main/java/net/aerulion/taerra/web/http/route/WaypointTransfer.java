@@ -16,6 +16,7 @@ import net.aerulion.taerra.waypoint.PersonalWaypoints;
 import net.aerulion.taerra.waypoint.Waypoints;
 import net.aerulion.taerra.world.WorldPositions;
 import org.bukkit.Color;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -41,6 +42,9 @@ final class WaypointTransfer {
         entry.put("x", (int) Math.floor(point.position().getX()));
         entry.put("y", (int) Math.floor(point.position().getY()));
         entry.put("z", (int) Math.floor(point.position().getZ()));
+        if (point.icon() != null) {
+          entry.put("icon", point.icon().asString());
+        }
       }
       case final @NotNull AreaMarker area -> {
         entry.put("type", "area");
@@ -90,8 +94,12 @@ final class WaypointTransfer {
     final @NotNull OptionalInt rgb =
         HexColors.parseRgb(
             entry.get("color") instanceof final @NotNull String color ? color : null);
+    final @Nullable NamespacedKey icon =
+        entry.get("icon") instanceof final @NotNull String key
+            ? NamespacedKey.fromString(key)
+            : null;
     return new PersonalWaypoints.Saved(
-        shape
+        (shape instanceof final @NotNull PointMarker point ? point.withIcon(icon) : shape)
             .withColor(rgb.isPresent() ? Color.fromRGB(rgb.getAsInt()) : DEFAULT_COLOR)
             .withDescription(
                 Names.description(

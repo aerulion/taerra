@@ -8,6 +8,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +17,10 @@ import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.config.ConfigEditor;
 import net.aerulion.taerra.config.TaerraConfig;
+import net.aerulion.taerra.icon.MarkerIconsImpl;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.permission.TaerraPermission;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
@@ -42,15 +45,18 @@ public final class ConfigSubCommand implements TaerraSubCommand {
   private final @NotNull ConfigEditor editor;
   private final @NotNull TaerraConfig config;
   private final @NotNull MarkerRegistry markers;
+  private final @NotNull MarkerIconsImpl icons;
 
   public ConfigSubCommand(
       final @NotNull ConfigEditor editor,
       final @NotNull TaerraConfig config,
-      final @NotNull MarkerRegistry markers) {
+      final @NotNull MarkerRegistry markers,
+      final @NotNull MarkerIconsImpl icons) {
     super();
     this.editor = editor;
     this.config = config;
     this.markers = markers;
+    this.icons = icons;
   }
 
   private static @NotNull Component listRow(
@@ -132,7 +138,43 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                                     .executes(context -> setLayerPrivate(context, true)))
                             .then(
                                 Commands.literal("public")
-                                    .executes(context -> setLayerPrivate(context, false)))));
+                                    .executes(context -> setLayerPrivate(context, false)))
+                            .then(
+                                Commands.literal("icon")
+                                    .then(
+                                        Commands.literal("none")
+                                            .executes(context -> setLayerIcon(context, "")))
+                                    .then(
+                                        Commands.argument("icon", ArgumentTypes.key())
+                                            .suggests(
+                                                (context, suggestions) -> {
+                                                  for (final MarkerIconsImpl.@NotNull Icon icon :
+                                                      this.icons.all()) {
+                                                    final @NotNull String key =
+                                                        icon.key().asString();
+                                                    if (!key.startsWith(
+                                                        suggestions.getRemaining())) {
+                                                      continue;
+                                                    }
+                                                    if (icon.label() == null) {
+                                                      suggestions.suggest(key);
+                                                    } else {
+                                                      suggestions.suggest(
+                                                          key,
+                                                          MessageComponentSerializer.message()
+                                                              .serialize(
+                                                                  Component.text(icon.label())));
+                                                    }
+                                                  }
+                                                  return suggestions.buildFuture();
+                                                })
+                                            .executes(
+                                                context ->
+                                                    setLayerIcon(
+                                                        context,
+                                                        context
+                                                            .getArgument("icon", Key.class)
+                                                            .asString()))))));
     ConfigEditor.SETTINGS.forEach(
         setting ->
             builder.then(
@@ -289,6 +331,23 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                 Messages.value(layerId),
                 Messages.copyable(TaerraConfig.layerPermission(layerId)))
             : Messages.success("config.layer_public", Messages.value(layerId)));
+    return SUCCESS;
+  }
+
+  private int setLayerIcon(
+      final @NotNull CommandContext<CommandSourceStack> context, final @NotNull String icon) {
+    final @NotNull String layerId = StringArgumentType.getString(context, "layer");
+    feedback(
+        context,
+        switch (this.editor.setLayerIcon(layerId, icon, who(context))) {
+          case SET ->
+              icon.isEmpty()
+                  ? Messages.success("config.layer_icon_cleared", Messages.value(layerId))
+                  : Messages.success(
+                      "config.layer_icon", Messages.value(layerId), Messages.value(icon));
+          case UNKNOWN_LAYER -> Messages.error("config.unknown_layer", Messages.value(layerId));
+          case UNKNOWN_ICON -> Messages.error("config.unknown_icon", Messages.value(icon));
+        });
     return SUCCESS;
   }
 

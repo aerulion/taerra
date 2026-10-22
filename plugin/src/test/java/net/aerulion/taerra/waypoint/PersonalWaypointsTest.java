@@ -46,6 +46,22 @@ class PersonalWaypointsTest {
   }
 
   @Test
+  @DisplayName("a point keeps its icon through its saved entry")
+  void keepsIcons() {
+    final @NotNull NamespacedKey icon = new NamespacedKey("towns", "spawn");
+    final @NotNull Marker marker = ((PointMarker) point("Home", 1)).withIcon(icon);
+
+    final @NotNull Marker read =
+        PersonalWaypoints.read(
+                List.of(
+                    PersonalWaypoints.entries(List.of(new PersonalWaypoints.Saved(marker, false)))
+                        .getFirst()))
+            .getFirst()
+            .marker();
+    assertEquals(icon, ((PointMarker) read).icon());
+  }
+
+  @Test
   @DisplayName("each player keeps their own waypoints, read back from one file each")
   void keepsWaypointsPerPlayer(final @TempDir Path directory) {
     final @NotNull MarkerRegistryImpl registry = new MarkerRegistryImpl();

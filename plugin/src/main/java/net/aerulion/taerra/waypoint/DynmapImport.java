@@ -50,6 +50,7 @@ public final class DynmapImport {
                 found.name(),
                 new Location(world, found.x(), found.y(), found.z()),
                 Color.fromRGB(found.rgb()),
+                found.icon(),
                 found.group()));
         final @Nullable String groupId = Waypoints.groupLayerId(found.group());
         if (groupId != null) {

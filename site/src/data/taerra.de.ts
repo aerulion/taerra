@@ -136,7 +136,7 @@ export const de: Copy = {
                     },
                     {
                         title: 'Wegpunkte, Flächen und Linien',
-                        text: 'In benannten Gruppen und Farben, auch privaten, jeweils mit optionaler Beschreibung. Wer die Berechtigung hat, zeichnet, verschiebt und färbt sie auf der Karte: Flächen Chunk für Chunk oder Punkt für Punkt, Linien gerade oder geglättet.'
+                        text: 'In benannten Gruppen und Farben, auch privaten, jeweils mit optionaler Beschreibung und einem Symbol: eingebaut, von deinem Team hochgeladen oder gezeichnet oder von Plugins. Wer die Berechtigung hat, zeichnet, verschiebt und färbt sie auf der Karte: Flächen Chunk für Chunk oder Punkt für Punkt, Linien gerade oder geglättet.'
                     },
                     {
                         title: 'Eigene Wegpunkte',
@@ -202,7 +202,10 @@ export const de: Copy = {
                         title: 'Chunky',
                         text: 'Hält sich zurück, während Chunky generiert, und sagt dann, wann sich das Rendern der ganzen Welt lohnt.'
                     },
-                    {title: 'dynmap', text: 'Übernimm deine Marker mit einem Befehl als Wegpunkte.'}
+                    {
+                        title: 'dynmap',
+                        text: 'Übernimm deine Marker mit einem Befehl als Wegpunkte, samt den passenden eingebauten Symbolen.'
+                    }
                 ]
             }
         ]
@@ -353,7 +356,7 @@ export const de: Copy = {
                 },
                 {
                     command: '/taerra config …',
-                    text: 'Einstellungen ändern, Welten aktivieren, benennen, ordnen und verbergen, Ebenen privat machen'
+                    text: 'Einstellungen ändern, Welten aktivieren, benennen, ordnen und verbergen, Ebenen privat machen oder ihnen ein Symbol geben'
                 },
                 {command: '/taerra waypoint add|remove …', text: 'Wegpunkte hinzufügen oder entfernen'},
                 {command: '/taerra import dynmap <datei>', text: 'Marker aus dynmap importieren'},
@@ -425,6 +428,11 @@ export const de: Copy = {
                     permission: 'taerra.waypoint.death',
                     standard: 'alle',
                     text: 'Einen eigenen Wegpunkt da bekommen, wo du zuletzt gestorben bist'
+                },
+                {
+                    permission: 'taerra.icon.edit',
+                    standard: 'OP',
+                    text: 'Die Kartensymbole des Servers hochladen, umbenennen, ersetzen und löschen'
                 },
                 {
                     permission: 'taerra.region.edit',

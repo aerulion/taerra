@@ -14,7 +14,6 @@ import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.Marker;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +36,6 @@ final class MarkerShape {
   private double maxX = -Double.MAX_VALUE;
   private double maxY = -Double.MAX_VALUE;
   private double length;
-  private @Nullable TextureAtlasSprite banner;
   private @Nullable List<Component> tooltip;
 
   MarkerShape(final @NotNull Marker marker, final @NotNull Projection projection) {
@@ -161,14 +159,6 @@ final class MarkerShape {
   }
 
   @NotNull
-  TextureAtlasSprite banner() {
-    if (this.banner == null) {
-      this.banner = MapIcons.banner(this.color);
-    }
-    return this.banner;
-  }
-
-  @NotNull
   List<Component> tooltip(final @NotNull Layer layer, final @NotNull Marker marker) {
     if (this.tooltip == null) {
       final @NotNull List<Component> lines = new ArrayList<>();
@@ -202,7 +192,7 @@ final class MarkerShape {
       final @NotNull MutableComponent where =
           layer.displayName().copy().withStyle(ChatFormatting.DARK_GRAY);
       if (layer.personal()) {
-        where.append(Component.literal(" " + MapIcons.GEM).withStyle(ChatFormatting.GOLD));
+        where.append(Component.literal(" " + MapIcons.PERSONAL).withStyle(ChatFormatting.GOLD));
       }
       lines.add(where);
       this.tooltip = lines;

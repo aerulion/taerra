@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import net.aerulion.taerra.api.marker.MarkerIcons;
 import net.aerulion.taerra.util.Names;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,6 +34,48 @@ public final class DynmapMarkers {
           "purpleflag", 0x8932B8,
           "pinkflag", 0xF38BAA,
           "world", 0xFFCF3F);
+  static final @NotNull Map<String, String> ICON_NAMES =
+      Map.ofEntries(
+          Map.entry("house", "home"),
+          Map.entry("bighouse", "home"),
+          Map.entry("anchor", "anchor"),
+          Map.entry("bed", "bed"),
+          Map.entry("chest", "chest"),
+          Map.entry("church", "temple"),
+          Map.entry("temple", "temple"),
+          Map.entry("tower", "tower"),
+          Map.entry("lighthouse", "tower"),
+          Map.entry("tree", "tree"),
+          Map.entry("redflag", "flag"),
+          Map.entry("orangeflag", "flag"),
+          Map.entry("yellowflag", "flag"),
+          Map.entry("greenflag", "flag"),
+          Map.entry("blueflag", "flag"),
+          Map.entry("purpleflag", "flag"),
+          Map.entry("pinkflag", "flag"),
+          Map.entry("pirateflag", "flag"),
+          Map.entry("star", "star"),
+          Map.entry("goldstar", "star"),
+          Map.entry("silverstar", "star"),
+          Map.entry("bronzestar", "star"),
+          Map.entry("world", "star"),
+          Map.entry("heart", "heart"),
+          Map.entry("skull", "skull"),
+          Map.entry("king", "crown"),
+          Map.entry("queen", "crown"),
+          Map.entry("diamond", "gem"),
+          Map.entry("ruby", "gem"),
+          Map.entry("basket", "shop"),
+          Map.entry("cart", "shop"),
+          Map.entry("coins", "shop"),
+          Map.entry("key", "key"),
+          Map.entry("lock", "key"),
+          Map.entry("fire", "fire"),
+          Map.entry("exclamation", "warning"),
+          Map.entry("warning", "warning"),
+          Map.entry("caution", "warning"),
+          Map.entry("sign", "info"),
+          Map.entry("comment", "info"));
 
   private DynmapMarkers() {
     super();
@@ -78,6 +122,7 @@ public final class DynmapMarkers {
                   marker.getDouble("y"),
                   marker.getDouble("z"),
                   color(marker.getString("icon", "")),
+                  icon(marker.getString("icon", "")),
                   group));
         }
       }
@@ -93,6 +138,11 @@ public final class DynmapMarkers {
     }
     final @Nullable Integer flag = ICON_COLORS.get(name);
     return flag != null ? flag : ICON_DYES[Math.floorMod(name.hashCode(), ICON_DYES.length)];
+  }
+
+  static @Nullable NamespacedKey icon(final @NotNull String icon) {
+    final @Nullable String name = ICON_NAMES.get(icon.toLowerCase(Locale.ROOT));
+    return name == null ? null : MarkerIcons.builtIn(name);
   }
 
   private static int count(final @NotNull ConfigurationSection set, final @NotNull String kind) {
@@ -149,6 +199,7 @@ public final class DynmapMarkers {
       double y,
       double z,
       int rgb,
+      @Nullable NamespacedKey icon,
       @Nullable String group) {}
 
   public record Parsed(

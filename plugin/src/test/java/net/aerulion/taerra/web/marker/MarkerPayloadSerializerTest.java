@@ -1,7 +1,9 @@
 package net.aerulion.taerra.web.marker;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.aerulion.taerra.api.marker.Marker;
@@ -40,7 +42,7 @@ class MarkerPayloadSerializerTest {
 
     final @NotNull List<Map<String, Object>> layers =
         MarkerPayloadSerializer.world(
-            registry, "minecraft:overworld", layer -> true, layer -> false);
+            registry, "minecraft:overworld", layer -> true, layer -> false, layer -> null);
 
     assertEquals(1, layers.size());
     assertEquals("paths", layers.getFirst().get("id"));
@@ -51,5 +53,32 @@ class MarkerPayloadSerializerTest {
     assertEquals("#4fa3e0", road.get("color"));
     assertEquals(List.of(List.of(0.0, 64.0, 0.0), List.of(10.0, 70.0, 5.0)), road.get("points"));
     assertEquals(List.of(List.of("Built by", "Alex")), road.get("details"));
+  }
+
+  @Test
+  @DisplayName("a point names its own icon and its layer the icon its other points fall back to")
+  void icons() {
+    final @NotNull MarkerRegistry registry = new MarkerRegistryImpl();
+    final @NotNull NamespacedKey overworld = NamespacedKey.minecraft("overworld");
+    registry
+        .layer(TestPlugins.named("Taerra"), "shops", "Shops")
+        .setAll(
+            List.of(
+                Marker.point("bakery", overworld, new Vector(0, 64, 0), "Bakery")
+                    .withIcon(NamespacedKey.fromString("taerra:shop")),
+                Marker.point("forge", overworld, new Vector(8, 64, 0), "Forge")));
+
+    final @NotNull Map<String, Object> layer =
+        MarkerPayloadSerializer.world(
+                registry, "minecraft:overworld", id -> true, id -> false, id -> "taerra:home")
+            .getFirst();
+
+    assertEquals("taerra:home", layer.get("icon"));
+    final @NotNull Map<Object, Object> icons = new HashMap<>();
+    for (final Object marker : (List<?>) layer.get("markers")) {
+      icons.put(((Map<?, ?>) marker).get("id"), ((Map<?, ?>) marker).get("icon"));
+    }
+    assertEquals("taerra:shop", icons.get("bakery"));
+    assertNull(icons.get("forge"));
   }
 }

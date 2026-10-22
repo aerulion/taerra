@@ -268,7 +268,7 @@ class ChunkSelection {
         }
         this.points = region ? [] : editing?.points.map(([x, , z]) => [x, z]) ?? [];
         this.smooth = editing?.smooth ?? false;
-        this.color = editing?.color ?? (region ? freshColor() : DEFAULT_COLOR);
+        this.color = editing?.color ?? (region ? freshColor() : accountManager.waypointColor() ?? DEFAULT_COLOR);
         this.history = [];
         this.future = [];
         this.hover = null;

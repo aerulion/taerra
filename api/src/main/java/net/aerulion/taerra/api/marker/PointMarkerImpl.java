@@ -15,7 +15,8 @@ record PointMarkerImpl(
     @Nullable String label,
     @NotNull Map<String, String> details,
     @Nullable String description,
-    @NotNull Color color)
+    @NotNull Color color,
+    @Nullable NamespacedKey icon)
     implements PointMarker {
 
   PointMarkerImpl {
@@ -34,18 +35,52 @@ record PointMarkerImpl(
   @Override
   public @NotNull PointMarker withColor(final @NotNull Color color) {
     return new PointMarkerImpl(
-        this.id, this.world, this.position, this.label, this.details, this.description, color);
+        this.id,
+        this.world,
+        this.position,
+        this.label,
+        this.details,
+        this.description,
+        color,
+        this.icon);
   }
 
   @Override
   public @NotNull PointMarker withDetails(final @NotNull Map<String, String> details) {
     return new PointMarkerImpl(
-        this.id, this.world, this.position, this.label, details, this.description, this.color);
+        this.id,
+        this.world,
+        this.position,
+        this.label,
+        details,
+        this.description,
+        this.color,
+        this.icon);
   }
 
   @Override
   public @NotNull PointMarker withDescription(final @Nullable String description) {
     return new PointMarkerImpl(
-        this.id, this.world, this.position, this.label, this.details, description, this.color);
+        this.id,
+        this.world,
+        this.position,
+        this.label,
+        this.details,
+        description,
+        this.color,
+        this.icon);
+  }
+
+  @Override
+  public @NotNull PointMarker withIcon(final @Nullable NamespacedKey icon) {
+    return new PointMarkerImpl(
+        this.id,
+        this.world,
+        this.position,
+        this.label,
+        this.details,
+        this.description,
+        this.color,
+        icon);
   }
 }

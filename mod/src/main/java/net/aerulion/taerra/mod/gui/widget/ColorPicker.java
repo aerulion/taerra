@@ -17,6 +17,7 @@ public final class ColorPicker extends AbstractWidget {
   private static final int HUE_HEIGHT = 6;
   private static final double STEP = .02;
   private static final double MAX_HUE = 359;
+  private static final int BORDER = 0xFFA0A0A0;
 
   private final Consumer<String> onChange;
   private double hue;
@@ -29,7 +30,7 @@ public final class ColorPicker extends AbstractWidget {
         0,
         0,
         width,
-        SHADE_HEIGHT + GAP + HUE_HEIGHT,
+        SHADE_HEIGHT + GAP + HUE_HEIGHT + 4,
         Component.translatable("taerra.waypoint.shade"));
     this.onChange = onChange;
     setHex(hex);
@@ -50,9 +51,21 @@ public final class ColorPicker extends AbstractWidget {
       final int mouseX,
       final int mouseY,
       final float partialTick) {
-    final int x = getX();
-    final int y = getY();
-    final int width = getWidth();
+    graphics.outline(
+        getX(),
+        getY(),
+        getWidth(),
+        SHADE_HEIGHT + 2,
+        isFocused() && !this.draggingHue ? 0xFFFFFFFF : BORDER);
+    graphics.outline(
+        getX(),
+        getY() + SHADE_HEIGHT + 2 + GAP,
+        getWidth(),
+        HUE_HEIGHT + 2,
+        isFocused() && this.draggingHue ? 0xFFFFFFFF : BORDER);
+    final int x = getX() + 1;
+    final int y = getY() + 1;
+    final int width = getWidth() - 2;
     final int span = Math.max(1, width - 1);
     for (int i = 0; i < width; i++) {
       graphics.fillGradient(
@@ -74,7 +87,7 @@ public final class ColorPicker extends AbstractWidget {
         thumbY + 1,
         0xFF000000 | Colors.fromHsv(this.hue, this.saturation, this.value));
 
-    final int hueY = y + SHADE_HEIGHT + GAP;
+    final int hueY = y + SHADE_HEIGHT + 2 + GAP;
     for (int i = 0; i < width; i++) {
       graphics.fill(
           x + i,
@@ -86,17 +99,11 @@ public final class ColorPicker extends AbstractWidget {
     final int hueX = x + (int) Math.round(this.hue / MAX_HUE * span);
     graphics.fill(hueX - 1, hueY - 1, hueX + 2, hueY + HUE_HEIGHT + 1, 0xFF000000);
     graphics.fill(hueX, hueY - 1, hueX + 1, hueY + HUE_HEIGHT + 1, 0xFFFFFFFF);
-    if (isFocused()) {
-      graphics.fill(x - 1, y - 1, x + width + 1, y, 0xFFFFFFFF);
-      graphics.fill(x - 1, y + SHADE_HEIGHT, x + width + 1, y + SHADE_HEIGHT + 1, 0xFFFFFFFF);
-      graphics.fill(x - 1, y, x, y + SHADE_HEIGHT, 0xFFFFFFFF);
-      graphics.fill(x + width, y, x + width + 1, y + SHADE_HEIGHT, 0xFFFFFFFF);
-    }
   }
 
   @Override
   public void onClick(final @NotNull MouseButtonEvent event, final boolean doubleClick) {
-    this.draggingHue = event.y() >= getY() + SHADE_HEIGHT + GAP / 2.0;
+    this.draggingHue = event.y() >= getY() + SHADE_HEIGHT + 2 + GAP / 2.0;
     pick(event.x(), event.y());
   }
 
@@ -114,9 +121,11 @@ public final class ColorPicker extends AbstractWidget {
   @Override
   public boolean keyPressed(final @NotNull KeyEvent event) {
     final double step = STEP * (event.hasShiftDown() ? 5 : 1);
-    if (event.isLeft() || event.isRight()) {
+    if (this.draggingHue && (event.isLeft() || event.isRight())) {
+      this.hue = Math.clamp(this.hue + (event.isRight() ? step : -step) * MAX_HUE, 0, MAX_HUE);
+    } else if (event.isLeft() || event.isRight()) {
       this.saturation = Math.clamp(this.saturation + (event.isRight() ? step : -step), 0, 1);
-    } else if (event.isUp() || event.isDown()) {
+    } else if (!this.draggingHue && (event.isUp() || event.isDown())) {
       this.value = Math.clamp(this.value + (event.isUp() ? step : -step), 0, 1);
     } else {
       return false;
@@ -126,12 +135,12 @@ public final class ColorPicker extends AbstractWidget {
   }
 
   private void pick(final double mouseX, final double mouseY) {
-    final double across = Math.clamp((mouseX - getX()) / Math.max(1, getWidth() - 1), 0, 1);
+    final double across = Math.clamp((mouseX - getX() - 1) / Math.max(1, getWidth() - 3), 0, 1);
     if (this.draggingHue) {
       this.hue = across * MAX_HUE;
     } else {
       this.saturation = across;
-      this.value = Math.clamp(1 - (mouseY - getY()) / (SHADE_HEIGHT - 1), 0, 1);
+      this.value = Math.clamp(1 - (mouseY - getY() - 1) / (SHADE_HEIGHT - 1), 0, 1);
     }
     changed();
   }

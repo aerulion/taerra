@@ -31,6 +31,10 @@ public record Viewer(@Nullable UUID uuid, @NotNull Set<String> grants) {
     return has(TaerraPermission.WAYPOINT_PRIVATE_GROUPS);
   }
 
+  public boolean canEditIcons() {
+    return this.uuid != null && has(TaerraPermission.ICON_EDIT);
+  }
+
   public boolean canKeepPersonalMarkers() {
     return this.uuid != null && has(TaerraPermission.WAYPOINT_PERSONAL);
   }

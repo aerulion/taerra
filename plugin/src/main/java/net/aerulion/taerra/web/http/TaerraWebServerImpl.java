@@ -15,6 +15,7 @@ import net.aerulion.taerra.chat.RenderFeedback;
 import net.aerulion.taerra.config.ConfigEditor;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.config.WebSettings;
+import net.aerulion.taerra.icon.MarkerIconsImpl;
 import net.aerulion.taerra.marker.MarkerRegistryInternal;
 import net.aerulion.taerra.player.Preferences;
 import net.aerulion.taerra.region.RegionEditor;
@@ -29,6 +30,7 @@ import net.aerulion.taerra.web.auth.ModHandshake;
 import net.aerulion.taerra.web.auth.WebSessions;
 import net.aerulion.taerra.web.http.route.AccountRoutes;
 import net.aerulion.taerra.web.http.route.ActionRoutes;
+import net.aerulion.taerra.web.http.route.IconRoutes;
 import net.aerulion.taerra.web.http.route.LayerRoutes;
 import net.aerulion.taerra.web.http.route.MapRoutes;
 import net.aerulion.taerra.web.http.route.NavigationRoutes;
@@ -87,7 +89,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
       final @NotNull ConfigEditor configEditor,
       final @NotNull RegionVisibility regionVisibility,
       final @NotNull RegionEditor regionEditor,
-      final @NotNull Preferences preferences) {
+      final @NotNull Preferences preferences,
+      final @NotNull MarkerIconsImpl icons) {
     super();
     this.plugin = plugin;
     this.taerraConfig = taerraConfig;
@@ -115,7 +118,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 this.worldList,
                 this.skyList,
                 regionVisibility),
-            new AccountRoutes(plugin, requests, sessions, web, avatars),
+            new AccountRoutes(plugin, requests, sessions, web, avatars, preferences),
             new WaypointRoutes(
                 plugin, requests, taerraConfig, waypoints, personalWaypoints, waypointEditor),
             new NavigationRoutes(requests, taerraConfig, wsHandler, preferences),
@@ -124,7 +127,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 plugin, requests, taerraConfig, modHandshake, teleports, renders, renderFeedback),
             new SettingsRoutes(requests, configEditor, wsHandler),
             new RegionRoutes(
-                requests, taerraConfig, regionVisibility, regionEditor, renderFeedback));
+                requests, taerraConfig, regionVisibility, regionEditor, renderFeedback),
+            new IconRoutes(requests, taerraConfig, icons));
   }
 
   @Override

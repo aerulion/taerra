@@ -14,6 +14,7 @@ import net.aerulion.taerra.mod.web.model.Account;
 import net.aerulion.taerra.mod.web.model.Device;
 import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.MapConfig;
+import net.aerulion.taerra.mod.web.model.MapIcon;
 import net.aerulion.taerra.mod.web.model.NavigationTarget;
 import net.aerulion.taerra.mod.web.model.PersonalWaypoint;
 import net.aerulion.taerra.mod.web.model.Player;
@@ -117,6 +118,23 @@ public sealed interface WebMap permits WebMapImpl {
   void resetRegion(String id, IntConsumer then);
 
   void render(String action, String world, IntConsumer then);
+
+  List<MapIcon> icons();
+
+  @Nullable
+  MapIcon icon(@Nullable String id);
+
+  default boolean hasIcon(final @Nullable String id) {
+    return icon(id) != null;
+  }
+
+  int @Nullable [] iconPixels(MapIcon icon);
+
+  void uploadIcon(String name, byte[] png, BiConsumer<Integer, @Nullable String> then);
+
+  void updateIcon(MapIcon icon, @Nullable String name, byte @Nullable [] png, IntConsumer then);
+
+  void deleteIcon(MapIcon icon, IntConsumer then);
 
   String link(
       String world, int x, @Nullable Integer y, int z, long zoom, boolean isometric, int rotation);

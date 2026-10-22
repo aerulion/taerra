@@ -1,6 +1,7 @@
 package net.aerulion.taerra.api;
 
 import java.util.Collection;
+import net.aerulion.taerra.api.marker.MarkerIcons;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -37,6 +38,14 @@ public interface TaerraApi {
    */
   @NotNull
   MarkerRegistry markers();
+
+  /**
+   * Returns the icons point markers can show.
+   *
+   * @return the marker icons
+   */
+  @NotNull
+  MarkerIcons icons();
 
   /**
    * Tells the map that blocks changed in a way no Bukkit event reports, such as a plugin writing

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import net.aerulion.taerra.mod.gui.widget.ColorField;
 import net.aerulion.taerra.mod.gui.widget.FooterRows;
+import net.aerulion.taerra.mod.gui.widget.ScrollingContents;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.Button;
@@ -37,6 +38,7 @@ public final class RegionScreen extends Screen {
   private final @NotNull String originalColor;
   private final @NotNull ColorField colors;
   private int footerWidth;
+  private @Nullable ScrollingContents scroll;
   private @NotNull String name;
   private @NotNull String fog;
   private boolean discoverable;
@@ -98,8 +100,7 @@ public final class RegionScreen extends Screen {
   protected void init() {
     this.layout.removeChildren();
     this.layout.addTitleHeader(this.title, this.font);
-    final @NotNull LinearLayout contents =
-        this.layout.addToContents(LinearLayout.vertical().spacing(6));
+    final @NotNull LinearLayout contents = LinearLayout.vertical().spacing(6);
     contents.addChild(
         new StringWidget(
             WIDTH,
@@ -167,12 +168,13 @@ public final class RegionScreen extends Screen {
             .build();
     save.active = !this.saving;
     buttons.add(save);
+    this.scroll = new ScrollingContents(this.minecraft, this.layout, contents);
     this.footerWidth = this.width;
     FooterRows.add(
         this.layout, this.width, HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT, buttons);
     this.layout.visitWidgets(this::addRenderableWidget);
     repositionElements();
-    setInitialFocus(name);
+    setInitialFocus();
   }
 
   @Override
@@ -180,6 +182,9 @@ public final class RegionScreen extends Screen {
     if (this.footerWidth != this.width) {
       rebuildWidgets();
       return;
+    }
+    if (this.scroll != null) {
+      this.scroll.fit(this.layout);
     }
     this.layout.arrangeElements();
   }

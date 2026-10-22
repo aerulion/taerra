@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import net.aerulion.taerra.util.AtomicFiles;
+import net.aerulion.taerra.util.HexColors;
 import net.aerulion.taerra.waypoint.PersonalWaypoints;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -154,6 +156,9 @@ public final class PlayerFiles {
             yaml.set(shown ? "layers.shown" : "layers.hidden", ids);
           }
         }
+        if (data.waypointColor() != null) {
+          yaml.set("waypoint-color", HexColors.format(data.waypointColor()));
+        }
         AtomicFiles.write(file, yaml.saveToString().getBytes(StandardCharsets.UTF_8));
       }
     } catch (final IOException e) {
@@ -188,11 +193,13 @@ public final class PlayerFiles {
     final @NotNull Map<String, Boolean> layers = new HashMap<>();
     yaml.getStringList("layers.hidden").forEach(id -> layers.put(id, false));
     yaml.getStringList("layers.shown").forEach(id -> layers.put(id, true));
+    final @NotNull OptionalInt color = HexColors.parseRgb(yaml.getString("waypoint-color"));
     return new PlayerData(
         PersonalWaypoints.read(yaml.getMapList("waypoints")),
         discoveries,
         Navigation.read(yaml.getConfigurationSection("navigation")),
-        layers);
+        layers,
+        color.isPresent() ? color.getAsInt() : null);
   }
 
   private @NotNull File file(final @NotNull UUID player) {

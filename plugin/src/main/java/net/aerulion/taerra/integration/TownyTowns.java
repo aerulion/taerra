@@ -35,6 +35,8 @@ import org.jetbrains.annotations.Nullable;
 
 public final class TownyTowns {
 
+  public static final @NotNull String LAYER = "towny";
+
   private static final long SYNC_INTERVAL_TICKS = 200L;
 
   private static final @NotNull Color TOWN = Color.fromRGB(0x3C8DDE);
@@ -48,8 +50,7 @@ public final class TownyTowns {
       final @NotNull MarkerRegistry registry,
       final @NotNull TaerraConfig config,
       final boolean shownByDefault) {
-    final @NotNull MarkerLayer layer =
-        registry.layer(plugin, "towny", "Towny Towns", shownByDefault);
+    final @NotNull MarkerLayer layer = registry.layer(plugin, LAYER, "Towny Towns", shownByDefault);
     return Bukkit.getScheduler()
         .runTaskTimerAsynchronously(
             plugin, () -> layer.setAll(towns(config)), 20L, SYNC_INTERVAL_TICKS);

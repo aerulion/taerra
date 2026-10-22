@@ -527,6 +527,17 @@ public final class MapScreen extends Screen {
                 .width(BUTTON_WIDTH)
                 .build());
       }
+      if (account != null && account.icons()) {
+        menu.add(
+            Button.builder(
+                    Component.translatable("taerra.icons"),
+                    _ -> {
+                      closeMenu();
+                      this.minecraft.setScreenAndShow(new IconsScreen(this, this.map));
+                    })
+                .width(BUTTON_WIDTH)
+                .build());
+      }
       menu.add(
           Button.builder(
                   Component.translatable("menu.options"),
