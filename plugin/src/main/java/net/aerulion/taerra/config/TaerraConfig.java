@@ -31,6 +31,15 @@ public record TaerraConfig(
     @NotNull CopyOnWriteArrayList<String> privateLayers,
     @NotNull Map<String, String> worldNames) {
 
+  private static final long HEAP_BYTES = Runtime.getRuntime().maxMemory();
+  private static final long TILE_BYTES = 256L << 10;
+  private static final long CHUNK_BYTES = 19L << 10;
+  private static final int MIN_CACHE_CHUNKS = 256;
+
+  public static final int CACHE_TILES_LIMIT = cacheEntries(HEAP_BYTES, 10, TILE_BYTES, 1, 50_000);
+  public static final int CACHE_CHUNKS_LIMIT =
+      cacheEntries(HEAP_BYTES, 5, CHUNK_BYTES, MIN_CACHE_CHUNKS, 131_072);
+
   private static final @NotNull String WORLD_PERMISSION = "taerra.world.";
   private static final @NotNull String PLAYERS_PERMISSION = "taerra.players.";
   private static final @NotNull String LAYER_PERMISSION = "taerra.layer.";
@@ -64,11 +73,33 @@ public record TaerraConfig(
   }
 
   public static int maxCacheTiles(final @NotNull FileConfiguration file) {
-    return Math.max(1, file.getInt("cache.max-tiles", 500));
+    return cacheSize(
+        file.getInt("cache.max-tiles", 0),
+        cacheEntries(HEAP_BYTES, 64, TILE_BYTES, 1, CACHE_TILES_LIMIT),
+        1,
+        CACHE_TILES_LIMIT);
   }
 
   public static int maxCacheChunks(final @NotNull FileConfiguration file) {
-    return Math.max(256, file.getInt("cache.max-chunks", 8192));
+    return cacheSize(
+        file.getInt("cache.max-chunks", 0),
+        cacheEntries(HEAP_BYTES, 50, CHUNK_BYTES, MIN_CACHE_CHUNKS, CACHE_CHUNKS_LIMIT),
+        MIN_CACHE_CHUNKS,
+        CACHE_CHUNKS_LIMIT);
+  }
+
+  static int cacheSize(
+      final int configured, final int automatic, final int floor, final int limit) {
+    return configured <= 0 ? automatic : Math.clamp(configured, floor, limit);
+  }
+
+  static int cacheEntries(
+      final long heapBytes,
+      final int heapShare,
+      final long entryBytes,
+      final int floor,
+      final int ceiling) {
+    return Math.clamp(heapBytes / heapShare / entryBytes, floor, ceiling);
   }
 
   private static @NotNull Map<String, String> names(final @Nullable ConfigurationSection section) {

@@ -33,15 +33,15 @@ rendering:
   # A tile changed many times in between is rendered once. 0 = render changes immediately.
   update-interval: 900
 
-# Cache settings
+# Cache settings. 0 sizes a cache from the server's memory (its -Xmx): about 1.5% of it for tiles
+# and 2% for chunks. A set number is capped at 10% of it for tiles and 20% for chunks.
 cache:
-  # Maximum number of tiles to keep in memory (affects RAM usage)
-  # Most tiles take 256 KB decoded, so 500 tiles is up to ~130 MB
-  max-tiles: 500
-  # How many chunks of sampled block data to keep in memory for the isometric view. Each is around 19 KB,
-  # so the default is roughly 160 MB. A render reads each chunk once per stage when its area fits in here,
-  # and more often when it does not: raising it speeds up renders of large areas for the memory it costs.
-  max-chunks: 8192
+  # Maximum number of tiles to keep in memory. Most tiles take 256 KB decoded, so 500 tiles is up to ~130 MB
+  max-tiles: 0
+  # How many chunks of sampled block data to keep in memory for the isometric view, each around 19 KB.
+  # A render reads each chunk once per stage when its area fits in here, and more often when it does
+  # not: raising it speeds up renders of large areas for the memory it costs.
+  max-chunks: 0
 
 # Worlds to render, by dimension key. None by default: enable them in game with
 # /taerra config world <world> enable

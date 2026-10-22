@@ -44,8 +44,8 @@ public final class ConfigEditor {
           Setting.number(
               "rendering.render-threads", 0, Runtime.getRuntime().availableProcessors(), true),
           Setting.number("rendering.update-interval", 0, Integer.MAX_VALUE, true),
-          Setting.number("cache.max-tiles", 1, 50_000, true),
-          Setting.number("cache.max-chunks", 256, 131_072, true),
+          Setting.number("cache.max-tiles", 0, TaerraConfig.CACHE_TILES_LIMIT, true),
+          Setting.number("cache.max-chunks", 0, TaerraConfig.CACHE_CHUNKS_LIMIT, true),
           Setting.toggle("markers.spawn.enabled"),
           Setting.toggle("markers.spawn.shown-by-default"),
           Setting.toggle("markers.worldguard.enabled"),
