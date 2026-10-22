@@ -78,5 +78,9 @@ class RegionFileReaderTest {
     assertTrue(RegionFileChunkSourceProvider.isFinished(""));
     assertFalse(RegionFileChunkSourceProvider.isFinished("minecraft:noise"));
     assertFalse(RegionFileChunkSourceProvider.isFinished("minecraft:carvers"));
+    assertFalse(RegionFileChunkSourceProvider.isFinished("minecraft:terrain"));
+    assertFalse(RegionFileChunkSourceProvider.isFinished("minecraft:liquid_carvers"));
+    assertFalse(RegionFileChunkSourceProvider.isFinished("noise"));
+    assertTrue(RegionFileChunkSourceProvider.isFinished("full"));
   }
 }

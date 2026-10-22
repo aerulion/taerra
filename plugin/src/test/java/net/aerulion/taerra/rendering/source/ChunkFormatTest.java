@@ -19,27 +19,42 @@ class ChunkFormatTest {
   }
 
   @Test
-  @DisplayName("chunks pick the format of their DataVersion, from 26.2 up to the server's own")
+  @DisplayName("chunks pick the format of their DataVersion, from 1.18 up to the server's own")
   void dataVersionsPickTheirFormat() {
     assertNull(ChunkFormat.of(0, 5023));
-    assertNull(ChunkFormat.of(4902, 5023));
-    assertEquals(ChunkFormat.MINECRAFT_26_2, ChunkFormat.of(4903, 5023));
-    assertEquals(ChunkFormat.MINECRAFT_26_2, ChunkFormat.of(5022, 5023));
-    assertEquals(ChunkFormat.MINECRAFT_26_3, ChunkFormat.of(5023, 5023));
+    assertNull(ChunkFormat.of(2859, 5023));
+    assertEquals(ChunkFormat.MINECRAFT_1_18, ChunkFormat.of(2860, 5023));
+    assertEquals(ChunkFormat.MINECRAFT_1_20_3, ChunkFormat.of(3692, 5023));
+    assertEquals(ChunkFormat.MINECRAFT_1_21_9, ChunkFormat.of(5005, 5023));
+    assertEquals(ChunkFormat.MINECRAFT_26_3, ChunkFormat.of(5006, 5023));
     assertEquals(ChunkFormat.MINECRAFT_26_3, ChunkFormat.of(5100, 5200));
     assertNull(ChunkFormat.of(5024, 5023));
-    assertEquals(4903, ChunkFormat.oldestDataVersion());
+    assertEquals(2860, ChunkFormat.oldestDataVersion());
   }
 
   @Test
-  @DisplayName("26.2 palettes name their blocks in Name compounds")
-  void minecraft26_2Palette() {
+  @DisplayName("palettes before 26.3 name their blocks in Name compounds")
+  void nameCompoundPalette() {
     final @NotNull ListTag palette = new ListTag();
     palette.add(entry("Name", "minecraft:deepslate"));
     palette.add(new CompoundTag());
 
-    assertEquals("minecraft:deepslate", ChunkFormat.MINECRAFT_26_2.blockStateName(palette, 0));
-    assertEquals("", ChunkFormat.MINECRAFT_26_2.blockStateName(palette, 1));
+    assertEquals("minecraft:deepslate", ChunkFormat.MINECRAFT_1_21_9.blockStateName(palette, 0));
+    assertEquals("", ChunkFormat.MINECRAFT_1_21_9.blockStateName(palette, 1));
+  }
+
+  @Test
+  @DisplayName("blocks renamed since a chunk was saved read under their current name")
+  void renamedBlocks() {
+    final @NotNull ListTag palette = new ListTag();
+    palette.add(entry("Name", "minecraft:grass"));
+    palette.add(entry("Name", "minecraft:chain"));
+
+    assertEquals("minecraft:short_grass", ChunkFormat.MINECRAFT_1_18.blockStateName(palette, 0));
+    assertEquals("minecraft:iron_chain", ChunkFormat.MINECRAFT_1_18.blockStateName(palette, 1));
+    assertEquals("minecraft:grass", ChunkFormat.MINECRAFT_1_20_3.blockStateName(palette, 0));
+    assertEquals("minecraft:iron_chain", ChunkFormat.MINECRAFT_1_20_3.blockStateName(palette, 1));
+    assertEquals("minecraft:chain", ChunkFormat.MINECRAFT_1_21_9.blockStateName(palette, 1));
   }
 
   @Test

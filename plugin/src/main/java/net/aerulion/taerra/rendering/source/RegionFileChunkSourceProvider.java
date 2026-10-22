@@ -33,13 +33,15 @@ public final class RegionFileChunkSourceProvider implements ChunkSourceProvider,
 
   private static final @NotNull Set<String> UNFINISHED_STATUSES =
       Set.of(
-          "minecraft:empty",
-          "minecraft:structure_starts",
-          "minecraft:structure_references",
-          "minecraft:biomes",
-          "minecraft:noise",
-          "minecraft:surface",
-          "minecraft:carvers");
+          "empty",
+          "structure_starts",
+          "structure_references",
+          "biomes",
+          "noise",
+          "surface",
+          "carvers",
+          "liquid_carvers",
+          "terrain");
 
   private final int currentDataVersion;
   private final @NotNull String worldId;
@@ -60,7 +62,7 @@ public final class RegionFileChunkSourceProvider implements ChunkSourceProvider,
   }
 
   static boolean isFinished(final @NotNull String status) {
-    return !UNFINISHED_STATUSES.contains(status);
+    return !UNFINISHED_STATUSES.contains(status.substring(status.indexOf(':') + 1));
   }
 
   @Override
@@ -136,7 +138,7 @@ public final class RegionFileChunkSourceProvider implements ChunkSourceProvider,
                 + ") than this server; they stay off the map"
             : "World "
                 + this.worldId
-                + " has chunks saved before Minecraft 26.2 (DataVersion "
+                + " has chunks saved before Minecraft 1.18 (DataVersion "
                 + dataVersion
                 + ", oldest supported "
                 + ChunkFormat.oldestDataVersion()
