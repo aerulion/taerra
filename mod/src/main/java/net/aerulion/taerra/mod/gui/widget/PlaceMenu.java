@@ -23,9 +23,10 @@ public final class PlaceMenu extends AbstractContainerEventHandler
     implements Renderable, NarratableEntry {
 
   private static final int ROW = 12;
-  private static final int HEADER = 14;
+  private static final int HEADER = 17;
   private static final int FRAME = 4;
   private static final int PAD = 2;
+  private static final int GAP = 5;
 
   private final @NotNull Component title;
   private final List<Item> items = new ArrayList<>();
@@ -33,13 +34,20 @@ public final class PlaceMenu extends AbstractContainerEventHandler
   private int y;
   private int width;
   private long closesAt;
+  private boolean grouping;
 
   public PlaceMenu(final @NotNull Component title) {
     this.title = title.copy().withStyle(ChatFormatting.GRAY);
   }
 
   public @NotNull PlaceMenu add(final @NotNull Component label, final Consumer<Item> action) {
-    this.items.add(new Item(label, action));
+    this.items.add(new Item(label, action, this.grouping));
+    this.grouping = false;
+    return this;
+  }
+
+  public @NotNull PlaceMenu group() {
+    this.grouping = !this.items.isEmpty();
     return this;
   }
 
@@ -115,10 +123,13 @@ public final class PlaceMenu extends AbstractContainerEventHandler
     arrange();
     TooltipRenderUtil.extractTooltipBackground(
         graphics, this.x, this.y, this.width, height(), null);
-    graphics.text(font, this.title, this.x, this.y, 0xFFFFFFFF, true);
+    graphics.text(font, this.title, this.x, this.y + PAD, 0xFFFFFFFF, true);
     graphics.fill(
         this.x, this.y + HEADER - 4, this.x + this.width, this.y + HEADER - 3, 0x33FFFFFF);
     for (final @NotNull Item item : this.items) {
+      if (item.opensGroup) {
+        graphics.fill(this.x, item.getY() - 3, this.x + this.width, item.getY() - 2, 0x33FFFFFF);
+      }
       item.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
   }
@@ -136,13 +147,19 @@ public final class PlaceMenu extends AbstractContainerEventHandler
   }
 
   private int height() {
-    return HEADER + this.items.size() * ROW - PAD;
+    int height = HEADER + this.items.size() * ROW - 2 * PAD;
+    for (final @NotNull Item item : this.items) {
+      height += item.opensGroup ? GAP : 0;
+    }
+    return height;
   }
 
   private void arrange() {
-    for (int i = 0; i < this.items.size(); i++) {
-      final Item item = this.items.get(i);
-      item.setRectangle(this.width + 2 * PAD, ROW, this.x - PAD, this.y + HEADER + i * ROW - PAD);
+    int top = this.y + HEADER - PAD;
+    for (final @NotNull Item item : this.items) {
+      top += item.opensGroup ? GAP : 0;
+      item.setRectangle(this.width + 2 * PAD, ROW, this.x - PAD, top);
+      top += ROW;
     }
   }
 
@@ -153,10 +170,13 @@ public final class PlaceMenu extends AbstractContainerEventHandler
     private static final int HIGHLIGHT = 0x28FFFFFF;
 
     private final Consumer<Item> action;
+    private final boolean opensGroup;
 
-    private Item(final @NotNull Component label, final Consumer<Item> action) {
+    private Item(
+        final @NotNull Component label, final Consumer<Item> action, final boolean opensGroup) {
       super(0, 0, 0, ROW, label);
       this.action = action;
+      this.opensGroup = opensGroup;
     }
 
     public void show(final @NotNull Component label, final boolean busy) {

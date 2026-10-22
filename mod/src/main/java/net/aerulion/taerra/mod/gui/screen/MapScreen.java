@@ -1379,80 +1379,6 @@ public final class MapScreen extends Screen {
     menu.add(
         Component.translatable("taerra.menu.coordinates"),
         item -> copy(menu, item, place.coordinates()));
-    if (account != null && account.teleport()) {
-      menu.add(
-          Component.translatable("taerra.menu.teleport"),
-          item -> teleport(menu, item, world, place.x(), standing, place.z()));
-    }
-    final boolean placing = account != null && (account.markers() || account.personal());
-    if (placing) {
-      menu.add(
-          Component.translatable("taerra.menu.waypoint"),
-          _ ->
-              this.minecraft.setScreenAndShow(
-                  new WaypointScreen(
-                      this,
-                      this.map,
-                      Waypoint.create(world, place.x(), standing, place.z()),
-                      () -> {})));
-    }
-    if (placing) {
-      menu.add(
-          Component.translatable("taerra.menu.area"),
-          _ -> {
-            closeMenu();
-            startDrawing(Kind.AREA, null, null);
-          });
-      menu.add(
-          Component.translatable("taerra.menu.line"),
-          _ -> {
-            closeMenu();
-            startDrawing(Kind.LINE, null, null);
-          });
-    }
-    if (account != null && account.renderArea()) {
-      menu.add(
-          Component.translatable("taerra.menu.select"),
-          _ -> {
-            closeMenu();
-            startDrawing(Kind.CHUNKS, null, null);
-          });
-    }
-    if (account != null && account.regions()) {
-      final Regions.@Nullable Region owner =
-          regionAt(world, Math.floorDiv(place.x(), 16), Math.floorDiv(place.z(), 16));
-      menu.add(
-          owner == null
-              ? Component.translatable("taerra.menu.draw_region")
-              : Component.translatable(
-                  "taerra.menu.edit_region",
-                  owner.name().isEmpty()
-                      ? Component.translatable("taerra.regions.unnamed")
-                      : Component.literal(owner.name())),
-          _ -> {
-            closeMenu();
-            startRegion(owner);
-          });
-    }
-    final @Nullable Progress progress = this.map.progress();
-    final boolean cancel =
-        progress != null && progress.render() != null && world.equals(progress.render().world());
-    if (account != null && (cancel ? account.cancelRender() : account.renderWorld())) {
-      final @NotNull AtomicBoolean armed = new AtomicBoolean();
-      menu.add(
-          Component.translatable(cancel ? "taerra.menu.cancel_render" : "taerra.menu.render_world"),
-          item -> {
-            if (!armed.getAndSet(true)) {
-              item.show(
-                  Component.translatable(
-                      cancel ? "taerra.menu.cancel_confirm" : "taerra.menu.render_confirm",
-                      worldName(world)),
-                  false);
-              return;
-            }
-            renderWorld(menu, item, world, cancel);
-          });
-    }
     menu.add(
         Component.translatable("taerra.menu.link"),
         item ->
@@ -1475,6 +1401,7 @@ public final class MapScreen extends Screen {
               config, place.x() + .5, standing == null ? 64 : standing, place.z() + .5);
           closeMenu();
         });
+    menu.group();
     menu.add(
         Component.translatable("taerra.menu.navigate"),
         _ ->
@@ -1508,6 +1435,82 @@ public final class MapScreen extends Screen {
           _ -> {
             TaerraClient.navigation().stop();
             closeMenu();
+          });
+    }
+    if (account != null && account.teleport()) {
+      menu.add(
+          Component.translatable("taerra.menu.teleport"),
+          item -> teleport(menu, item, world, place.x(), standing, place.z()));
+    }
+    menu.group();
+    final boolean placing = account != null && (account.markers() || account.personal());
+    if (placing) {
+      menu.add(
+          Component.translatable("taerra.menu.waypoint"),
+          _ ->
+              this.minecraft.setScreenAndShow(
+                  new WaypointScreen(
+                      this,
+                      this.map,
+                      Waypoint.create(world, place.x(), standing, place.z()),
+                      () -> {})));
+    }
+    if (placing) {
+      menu.add(
+          Component.translatable("taerra.menu.area"),
+          _ -> {
+            closeMenu();
+            startDrawing(Kind.AREA, null, null);
+          });
+      menu.add(
+          Component.translatable("taerra.menu.line"),
+          _ -> {
+            closeMenu();
+            startDrawing(Kind.LINE, null, null);
+          });
+    }
+    menu.group();
+    if (account != null && account.regions()) {
+      final Regions.@Nullable Region owner =
+          regionAt(world, Math.floorDiv(place.x(), 16), Math.floorDiv(place.z(), 16));
+      menu.add(
+          owner == null
+              ? Component.translatable("taerra.menu.draw_region")
+              : Component.translatable(
+                  "taerra.menu.edit_region",
+                  owner.name().isEmpty()
+                      ? Component.translatable("taerra.regions.unnamed")
+                      : Component.literal(owner.name())),
+          _ -> {
+            closeMenu();
+            startRegion(owner);
+          });
+    }
+    if (account != null && account.renderArea()) {
+      menu.add(
+          Component.translatable("taerra.menu.select"),
+          _ -> {
+            closeMenu();
+            startDrawing(Kind.CHUNKS, null, null);
+          });
+    }
+    final @Nullable Progress progress = this.map.progress();
+    final boolean cancel =
+        progress != null && progress.render() != null && world.equals(progress.render().world());
+    if (account != null && (cancel ? account.cancelRender() : account.renderWorld())) {
+      final @NotNull AtomicBoolean armed = new AtomicBoolean();
+      menu.add(
+          Component.translatable(cancel ? "taerra.menu.cancel_render" : "taerra.menu.render_world"),
+          item -> {
+            if (!armed.getAndSet(true)) {
+              item.show(
+                  Component.translatable(
+                      cancel ? "taerra.menu.cancel_confirm" : "taerra.menu.render_confirm",
+                      worldName(world)),
+                  false);
+              return;
+            }
+            renderWorld(menu, item, world, cancel);
           });
     }
     showMenu(menu, mouseX, mouseY);
