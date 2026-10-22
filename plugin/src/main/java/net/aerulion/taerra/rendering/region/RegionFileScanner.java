@@ -151,6 +151,9 @@ public final class RegionFileScanner {
       throws IOException {
     int chunkCount = 0;
     final long fileLength = region.path().toFile().length();
+    if (fileLength == 0) {
+      return 0;
+    }
     if (fileLength < MIN_REGION_HEADER_BYTES) {
       throw new IOException(
           "Region header truncated: expected at least "
