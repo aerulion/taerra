@@ -1,5 +1,5 @@
 import {accountManager} from './account.js';
-import {numbers, t} from './i18n.js';
+import {MAC, numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
 import {cell, freshColor, regionManager} from './regions.js';
 import {regionEditor} from './regioneditor.js';
@@ -200,7 +200,7 @@ class ChunkSelection {
             if (!this.world || event.target.closest('input, select, textarea, dialog')) {
                 return;
             }
-            const command = event.ctrlKey || event.metaKey;
+            const command = MAC ? event.metaKey : event.ctrlKey;
             if (command && event.key.toLowerCase() === 'z') {
                 event.preventDefault();
                 event.shiftKey ? this.redo() : this.undo();
@@ -991,7 +991,7 @@ class ChunkSelection {
         }
         return pairs.flatMap(([key, action]) => {
             const keycap = element('span', 'selection__key');
-            keycap.append(element('kbd', '', t(`hint.key.${key}`)));
+            keycap.append(element('kbd', '', t(`hint.key.${key}`, {mod: t(MAC ? 'key.command' : 'key.control')})));
             return [keycap, element('span', 'selection__action', t(`hint.do.${action}`))];
         });
     }

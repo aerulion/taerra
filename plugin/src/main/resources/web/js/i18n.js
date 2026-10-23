@@ -1,3 +1,5 @@
+export const MAC = /Mac|iPhone|iPad/.test(navigator.platform);
+
 export const LANGUAGES = {en: 'English', de: 'Deutsch'};
 
 function browserLanguage() {
@@ -46,8 +48,14 @@ export function translatePage() {
     for (const element of document.querySelectorAll('[data-i18n-label]')) {
         element.setAttribute('aria-label', t(element.dataset.i18nLabel));
     }
+    if (MAC) {
+        for (const element of document.querySelectorAll('[aria-keyshortcuts^="Control+"]')) {
+            element.setAttribute('aria-keyshortcuts', element.getAttribute('aria-keyshortcuts').replace('Control+', 'Meta+'));
+        }
+    }
+    const mod = t(MAC ? 'key.command' : 'key.control');
     for (const element of document.querySelectorAll('[data-i18n-title]')) {
-        element.title = t(element.dataset.i18nTitle, {key: element.getAttribute('aria-keyshortcuts') ?? ''});
+        element.title = t(element.dataset.i18nTitle, {key: element.getAttribute('aria-keyshortcuts') ?? '', mod});
     }
 }
 

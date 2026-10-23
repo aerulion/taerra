@@ -1,5 +1,5 @@
 import {ColorPicker} from './colors.js';
-import {t} from './i18n.js';
+import {MAC, t} from './i18n.js';
 import {badgeFrame, NOT_NAME, tintFilter} from './icons.js';
 import {armed, disarm, element} from './ui.js';
 
@@ -122,7 +122,7 @@ class IconEditor {
             }
         });
         this.dialog.addEventListener('keydown', (event) => {
-            const command = event.ctrlKey || event.metaKey;
+            const command = MAC ? event.metaKey : event.ctrlKey;
             if (!command || event.target.closest('input[type="text"], input[type="search"], textarea')) {
                 return;
             }

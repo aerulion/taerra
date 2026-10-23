@@ -575,10 +575,12 @@
   "selection.mode.erase.tooltip": "Remove chunks ({key})",
   "selection.size": "Brush size",
   "selection.undo": "Undo",
-  "selection.undo.tooltip": "Undo (Ctrl+Z)",
+  "selection.undo.tooltip": "Undo ({mod}+Z)",
   "selection.redo": "Redo",
-  "selection.redo.tooltip": "Redo (Ctrl+Shift+Z)",
-  "hint.key.undoKey": "Ctrl Z",
+  "selection.redo.tooltip": "Redo ({mod}+Shift+Z)",
+  "hint.key.undoKey": "{mod} Z",
+  "key.control": "Ctrl",
+  "key.command": "Cmd",
   "hint.do.history": "Undo",
   "region.problem.name_taken": "Another region already has that name"
 }

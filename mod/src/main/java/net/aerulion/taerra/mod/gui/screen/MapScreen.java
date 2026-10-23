@@ -33,6 +33,7 @@ import net.aerulion.taerra.mod.map.Place;
 import net.aerulion.taerra.mod.navigation.Navigation;
 import net.aerulion.taerra.mod.util.Colors;
 import net.aerulion.taerra.mod.util.Dimensions;
+import net.aerulion.taerra.mod.util.Shortcuts;
 import net.aerulion.taerra.mod.util.Toasts;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.aerulion.taerra.mod.web.WebMapListener;
@@ -370,9 +371,8 @@ public final class MapScreen extends Screen {
     }
     if (this.selection != null
         && !this.stroking
-        && event.hasControlDown()
-        && (event.key() == InputConstants.KEY_Z || event.key() == InputConstants.KEY_Y)) {
-      if (event.key() == InputConstants.KEY_Y || event.hasShiftDown()) {
+        && (Shortcuts.isUndo(event) || Shortcuts.isRedo(event))) {
+      if (Shortcuts.isRedo(event)) {
         redo();
       } else {
         undo();
@@ -2175,14 +2175,12 @@ public final class MapScreen extends Screen {
       this.undoButton =
           new IconButton(
               20, IconButton.UNDO, Component.translatable("taerra.selection.undo"), this::undo);
-      this.undoButton.setTooltip(
-          Tooltip.create(Component.translatable("taerra.selection.undo.tooltip")));
+      this.undoButton.setTooltip(Shortcuts.undoTooltip());
       this.undoButton.active = !this.history.isEmpty();
       this.redoButton =
           new IconButton(
               20, IconButton.REDO, Component.translatable("taerra.selection.redo"), this::redo);
-      this.redoButton.setTooltip(
-          Tooltip.create(Component.translatable("taerra.selection.redo.tooltip")));
+      this.redoButton.setTooltip(Shortcuts.redoTooltip());
       this.redoButton.active = !this.future.isEmpty();
       controls.add(this.undoButton);
       controls.add(this.redoButton);

@@ -1,4 +1,4 @@
-import {t} from './i18n.js';
+import {MAC, t} from './i18n.js';
 import {mapManager} from './map.js';
 import {markerBadge, markerManager} from './markers.js';
 import {element} from './ui.js';
@@ -9,7 +9,6 @@ const $ = (id) => document.getElementById(id);
 const LIMIT = 30;
 const KINDS = ['place', 'player', 'marker', 'world'];
 const COORDINATES = /^(-?\d+(?:\.\d+)?)(?:[\s,]+(-?\d+(?:\.\d+)?))?[\s,]+(-?\d+(?:\.\d+)?)$/;
-const MAC = /Mac|iPhone|iPad/.test(navigator.platform);
 
 const fold = (text) => text.normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase();
 

@@ -575,10 +575,12 @@
   "selection.mode.erase.tooltip": "Chunks entfernen ({key})",
   "selection.size": "Pinselgröße",
   "selection.undo": "Rückgängig",
-  "selection.undo.tooltip": "Rückgängig (Strg+Z)",
+  "selection.undo.tooltip": "Rückgängig ({mod}+Z)",
   "selection.redo": "Wiederholen",
-  "selection.redo.tooltip": "Wiederholen (Strg+Umschalt+Z)",
-  "hint.key.undoKey": "Strg Z",
+  "selection.redo.tooltip": "Wiederholen ({mod}+Umschalt+Z)",
+  "hint.key.undoKey": "{mod} Z",
+  "key.control": "Strg",
+  "key.command": "Cmd",
   "hint.do.history": "Rückgängig",
   "region.problem.name_taken": "Eine andere Region heißt schon so"
 }

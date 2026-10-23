@@ -14,6 +14,7 @@ import net.aerulion.taerra.mod.gui.widget.ScrollingContents;
 import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.util.Colors;
 import net.aerulion.taerra.mod.util.Pixels;
+import net.aerulion.taerra.mod.util.Shortcuts;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.aerulion.taerra.mod.web.model.MapIcon;
 import net.minecraft.ChatFormatting;
@@ -146,12 +147,12 @@ public final class IconEditorScreen extends Screen {
         history.addChild(
             new IconButton(
                 20, IconButton.UNDO, Component.translatable("taerra.selection.undo"), this::undo));
-    this.undo.setTooltip(Tooltip.create(Component.translatable("taerra.selection.undo.tooltip")));
+    this.undo.setTooltip(Shortcuts.undoTooltip());
     this.redo =
         history.addChild(
             new IconButton(
                 20, IconButton.REDO, Component.translatable("taerra.selection.redo"), this::redo));
-    this.redo.setTooltip(Tooltip.create(Component.translatable("taerra.selection.redo.tooltip")));
+    this.redo.setTooltip(Shortcuts.redoTooltip());
     history.addChild(
         Button.builder(Component.translatable("taerra.icon_editor.clear"), _ -> clear())
             .width(SIDE - 44)
@@ -204,10 +205,9 @@ public final class IconEditorScreen extends Screen {
 
   @Override
   public boolean keyPressed(final @NotNull KeyEvent event) {
-    if (event.hasControlDown()
-        && !(focusedLeaf() instanceof EditBox)
-        && (event.key() == InputConstants.KEY_Z || event.key() == InputConstants.KEY_Y)) {
-      if (event.key() == InputConstants.KEY_Y || event.hasShiftDown()) {
+    if (!(focusedLeaf() instanceof EditBox)
+        && (Shortcuts.isUndo(event) || Shortcuts.isRedo(event))) {
+      if (Shortcuts.isRedo(event)) {
         redo();
       } else {
         undo();
