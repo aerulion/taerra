@@ -59,6 +59,7 @@ import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -1547,6 +1548,25 @@ public final class MapScreen extends Screen {
     final @NotNull PlaceMenu menu = new PlaceMenu(Component.literal(marker.label()));
     if (point) {
       menu.add(
+          Component.translatable("taerra.menu.coordinates"),
+          item ->
+              copy(menu, item, new Place(waypoint.x(), waypoint.y(), waypoint.z()).coordinates()));
+      menu.add(
+          Component.translatable("taerra.menu.link"),
+          item ->
+              copy(
+                  menu,
+                  item,
+                  this.map.link(
+                      world,
+                      waypoint.x(),
+                      waypoint.y(),
+                      waypoint.z(),
+                      this.view.targetZoom(),
+                      this.view.isometric(),
+                      this.view.rotation())));
+      menu.group();
+      menu.add(
           Component.translatable("taerra.waypoint.navigate"),
           _ ->
               navigate(
@@ -1568,6 +1588,7 @@ public final class MapScreen extends Screen {
           Component.translatable("taerra.waypoint.teleport"),
           item -> teleport(menu, item, world, waypoint.x(), waypoint.y(), waypoint.z()));
     }
+    menu.group();
     if (waypoint.personal()
         ? account.personal()
         : marker.id().startsWith("waypoint:") && account.markers()) {
@@ -1578,6 +1599,15 @@ public final class MapScreen extends Screen {
               closeMenu();
               this.moving = waypoint;
             });
+        final @Nullable LocalPlayer player = this.minecraft.player;
+        if (player != null && world.equals(Dimensions.current())) {
+          menu.add(
+              Component.translatable("taerra.waypoint.here"),
+              _ -> {
+                closeMenu();
+                saveMoved(waypoint.at(player.getBlockX(), player.getBlockY(), player.getBlockZ()));
+              });
+        }
       }
       menu.add(
           Component.translatable("taerra.waypoint.edit_short"),
@@ -2375,8 +2405,12 @@ public final class MapScreen extends Screen {
       return;
     }
     this.moving = null;
+    saveMoved(waypoint.at(place.x(), place.standing(), place.z()));
+  }
+
+  private void saveMoved(final @NotNull Waypoint waypoint) {
     this.map.saveWaypoint(
-        waypoint.at(place.x(), place.standing(), place.z()),
+        waypoint,
         false,
         status -> {
           if (status != 204) {

@@ -180,6 +180,8 @@
   "waypoint.shade": "Saturation and brightness",
   "waypoint.hue": "Hue",
   "waypoint.hex": "Hex color",
+  "waypoint.here": "Move to me",
+  "waypoint.hereHint": "Use where you stand in game, height included",
   "waypoint.save": "Save",
   "waypoint.cancel": "Cancel",
   "waypoint.delete": "Delete",

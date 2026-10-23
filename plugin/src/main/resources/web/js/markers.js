@@ -734,15 +734,12 @@ class MarkerManager {
             }
             content.append(rows);
         }
-        const actions = this.waypointActions(layer, marker);
-        if (actions.childElementCount > 0) {
-            content.append(actions);
-        }
+        content.append(...this.waypointActions(layer, marker).filter(group => group.childElementCount > 0));
         return content;
     }
 
     waypointActions(layer, marker) {
-        const actions = element('div', 'menu__group');
+        const groups = [element('div', 'menu__group'), element('div', 'menu__group'), element('div', 'menu__group')];
         const point = marker.type === 'point';
         const [x, y, z] = point ? marker.position.map(Math.floor) : [];
         const personal = layer.id === PERSONAL_LAYER;
@@ -755,26 +752,30 @@ class MarkerManager {
                 points: marker.type === 'area' ? marker.points.map(([px, pz]) => [px, null, pz]) : marker.points
             })
         };
-        const action = (name, label) => {
-            actions.append(menuItem(name, t(label), (button) => this.onWaypoint?.(name, waypoint, button)));
+        const action = (group, name, label, icon = name) => {
+            groups[group].append(menuItem(icon, t(label), (button) => this.onWaypoint?.(name, waypoint, button)));
         };
+        if (point) {
+            action(0, 'coordinates', 'menu.coordinates', 'copy');
+            action(0, 'link', 'waypoint.link');
+        }
         if (point && accountManager.usesMod()) {
-            action('navigate', 'waypoint.navigate');
+            action(1, 'navigate', 'waypoint.navigate');
         }
         if (point && isWaypointLayer(layer) && accountManager.canTeleport()) {
-            action('teleport', 'waypoint.teleport');
-        }
-        if (point) {
-            action('link', 'waypoint.link');
+            action(1, 'teleport', 'waypoint.teleport');
         }
         if (isWaypointLayer(layer) && (personal ? accountManager.canKeepPersonal()
             : marker.id.startsWith('waypoint:') && accountManager.canEditMarkers())) {
             if (point) {
-                action('move', 'waypoint.move');
+                action(2, 'move', 'waypoint.move');
+                if (this.me?.(this.world)) {
+                    action(2, 'here', 'waypoint.here');
+                }
             }
-            action('edit', 'waypoint.editShort');
+            action(2, 'edit', 'waypoint.editShort');
         }
-        return actions;
+        return groups;
     }
 
     layerLabel(layer) {

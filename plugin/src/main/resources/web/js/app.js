@@ -801,6 +801,7 @@ playerManager.worldLabel = worldName;
 playerManager.onWorld = selectWorld;
 markerManager.onPlayers = () => playerManager.showAll();
 markerManager.onLayers = () => regionManager.redraw();
+markerManager.me = (world) => playerManager.own(world);
 markerManager.onWaypoint = async (action, waypoint, button) => {
     if (action === 'navigate') {
         mapManager.getMap().closePopup();
@@ -810,8 +811,8 @@ markerManager.onWaypoint = async (action, waypoint, button) => {
         });
         return;
     }
-    if (action === 'link') {
-        await copyText(placeLink(waypoint));
+    if (action === 'coordinates' || action === 'link') {
+        await copyText(action === 'coordinates' ? `${waypoint.x} ${waypoint.y} ${waypoint.z}` : placeLink(waypoint));
         button.textContent = t('menu.copied');
         button.classList.add('is-done');
         return;
@@ -825,6 +826,8 @@ markerManager.onWaypoint = async (action, waypoint, button) => {
     mapManager.getMap().closePopup();
     if (action === 'move') {
         waypointEditor.move(waypoint);
+    } else if (action === 'here') {
+        void waypointEditor.moveToMe(waypoint);
     } else if (waypoint.type) {
         chunkSelection.start(waypoint.world, waypoint.type, waypoint);
     } else {

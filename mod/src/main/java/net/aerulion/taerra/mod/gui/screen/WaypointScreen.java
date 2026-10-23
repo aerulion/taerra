@@ -12,6 +12,7 @@ import net.aerulion.taerra.mod.gui.widget.ScrollingContents;
 import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.map.Place;
 import net.aerulion.taerra.mod.util.Colors;
+import net.aerulion.taerra.mod.util.Dimensions;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.aerulion.taerra.mod.web.model.Account;
 import net.aerulion.taerra.mod.web.model.Layer;
@@ -29,6 +30,7 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
@@ -47,7 +49,7 @@ public final class WaypointScreen extends Screen {
   private @Nullable ScrollingContents scroll;
   private final Screen parent;
   private final @NotNull WebMap map;
-  private final @NotNull Waypoint target;
+  private @NotNull Waypoint target;
   private final @NotNull Runnable saved;
   private final @NotNull ColorField colors;
   private String name;
@@ -190,16 +192,37 @@ public final class WaypointScreen extends Screen {
     this.layout.removeChildren();
     this.layout.addTitleHeader(this.title, this.font);
     final @NotNull LinearLayout contents = LinearLayout.vertical().spacing(6);
-    contents.addChild(
+    final @Nullable LocalPlayer player = this.minecraft.player;
+    final boolean here =
+        this.target.points() == null
+            && player != null
+            && this.target.world().equals(Dimensions.current());
+    final @NotNull Component hereLabel = Component.translatable("taerra.waypoint.here");
+    final int hereWidth = this.font.width(hereLabel) + 12;
+    final @NotNull LinearLayout where = contents.addChild(LinearLayout.horizontal().spacing(4));
+    where.addChild(
         new StringWidget(
-            WIDTH,
-            9,
+            here ? WIDTH - hereWidth - 4 : WIDTH,
+            here ? 20 : 9,
             (this.target.points() == null
                     ? new Place(this.target.x(), this.target.y(), this.target.z()).describe()
                     : Component.translatable("taerra.waypoint.points", this.target.points().size()))
                 .copy()
                 .withStyle(ChatFormatting.GRAY),
             this.font));
+    if (here) {
+      where.addChild(
+          Button.builder(
+                  hereLabel,
+                  _ -> {
+                    this.target =
+                        this.target.at(player.getBlockX(), player.getBlockY(), player.getBlockZ());
+                    rebuildWidgets();
+                  })
+              .width(hereWidth)
+              .tooltip(Tooltip.create(Component.translatable("taerra.waypoint.here.hint")))
+              .build());
+    }
     final @NotNull EditBox name =
         contents.addChild(
             new EditBox(this.font, WIDTH, 20, Component.translatable("taerra.waypoint.name")));

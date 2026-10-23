@@ -167,6 +167,8 @@
   "taerra.waypoint.group": "Gruppe",
   "taerra.waypoint.group_name": "Gruppenname",
   "taerra.waypoint.hex": "Hex-Farbe",
+  "taerra.waypoint.here": "An meine Position",
+  "taerra.waypoint.here.hint": "Nimmt deinen Standort, samt Höhe",
   "taerra.waypoint.icon": "Symbol: %s",
   "taerra.icons": "Kartensymbole",
   "taerra.icons.choose": "Symbol wählen",

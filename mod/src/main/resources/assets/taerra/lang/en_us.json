@@ -167,6 +167,8 @@
   "taerra.waypoint.group": "Group",
   "taerra.waypoint.group_name": "Group Name",
   "taerra.waypoint.hex": "Hex Color",
+  "taerra.waypoint.here": "Move to Me",
+  "taerra.waypoint.here.hint": "Use where you stand, height included",
   "taerra.waypoint.icon": "Icon: %s",
   "taerra.icons": "Map Icons",
   "taerra.icons.choose": "Choose an Icon",

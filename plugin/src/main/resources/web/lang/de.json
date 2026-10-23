@@ -180,6 +180,8 @@
   "waypoint.shade": "Sättigung und Helligkeit",
   "waypoint.hue": "Farbton",
   "waypoint.hex": "Hex-Farbe",
+  "waypoint.here": "An meine Position",
+  "waypoint.hereHint": "Nimmt deinen Standort im Spiel, samt Höhe",
   "waypoint.save": "Speichern",
   "waypoint.cancel": "Abbrechen",
   "waypoint.delete": "Löschen",

@@ -413,7 +413,11 @@
             <span class="editor__preview" id="waypoint-preview"></span>
             <div class="dialog__heading">
                 <h2 class="title" id="waypoint-title"></h2>
-                <p class="mono dialog__subtitle" id="waypoint-where"></p>
+                <div class="dialog__where">
+                    <p class="mono dialog__subtitle" id="waypoint-where"></p>
+                    <button class="btn btn--small" data-i18n="waypoint.here" data-i18n-title="waypoint.hereHint" hidden
+                            id="waypoint-here" type="button">Move to me</button>
+                </div>
             </div>
             <button aria-label="Close" class="icon-btn" data-close data-i18n-label="manager.close" data-icon="close"
                     type="button"></button>
