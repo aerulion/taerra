@@ -17,8 +17,10 @@ import org.jetbrains.annotations.Nullable;
  * tower}, {@code temple}, {@code shop}, {@code chest}, {@code bed}, {@code anchor}, {@code boat},
  * {@code tree}, {@code mountain}, {@code fish}, {@code fire}, {@code pickaxe}, {@code sword},
  * {@code key}, {@code potion}, {@code bell}, {@code crown}, {@code flag}, {@code star}, {@code
- * heart}, {@code skull}, {@code death}, {@code info} and {@code warning}. Icons the server's admins
- * upload on the web map or in the mod are in the {@code taerra} namespace too; icons plugins
+ * heart}, {@code skull}, {@code death}, {@code info}, {@code warning}, {@code person}, {@code
+ * mail}, {@code checkmark}, {@code cross}, {@code plus}, {@code minus}, {@code ring}, {@code
+ * arrow_up}, {@code arrow_right}, {@code arrow_down} and {@code arrow_left}. Icons the server's
+ * admins upload on the web map or in the mod are in the {@code taerra} namespace too; icons plugins
  * register are in their own namespace and removed when the plugin disables. An icon whose visible
  * pixels are all pure white or all pure black is drawn white, or black on badges too light for
  * white, like the built-in ones; any other icon keeps its colors.

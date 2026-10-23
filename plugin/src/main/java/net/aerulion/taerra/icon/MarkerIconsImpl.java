@@ -70,7 +70,18 @@ public final class MarkerIconsImpl implements MarkerIcons, Listener {
           "skull",
           "death",
           "info",
-          "warning");
+          "warning",
+          "person",
+          "mail",
+          "checkmark",
+          "cross",
+          "plus",
+          "minus",
+          "ring",
+          "arrow_up",
+          "arrow_right",
+          "arrow_down",
+          "arrow_left");
   public static final int MAX_UPLOADS = 256;
   public static final int MAX_BYTES = 16 * 1024;
   private static final @NotNull String NAMESPACE = "taerra";

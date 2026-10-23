@@ -75,7 +75,17 @@ public final class DynmapMarkers {
           Map.entry("warning", "warning"),
           Map.entry("caution", "warning"),
           Map.entry("sign", "info"),
-          Map.entry("comment", "info"));
+          Map.entry("comment", "info"),
+          Map.entry("walk", "person"),
+          Map.entry("offlineuser", "person"),
+          Map.entry("up", "arrow_up"),
+          Map.entry("pointup", "arrow_up"),
+          Map.entry("right", "arrow_right"),
+          Map.entry("pointright", "arrow_right"),
+          Map.entry("down", "arrow_down"),
+          Map.entry("pointdown", "arrow_down"),
+          Map.entry("left", "arrow_left"),
+          Map.entry("pointleft", "arrow_left"));
 
   private DynmapMarkers() {
     super();
