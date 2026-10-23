@@ -204,9 +204,10 @@ class WaypointEditor {
 
     showWhere() {
         const {x, y, z, points} = this.target;
-        $('waypoint-where').textContent = points
-            ? t('waypoint.points', {count: numbers.format(points.length)})
-            : `${x}, ${Number.isFinite(y) ? y : '—'}, ${z}`;
+        $('waypoint-where').hidden = !points;
+        $('waypoint-where').textContent = points ? t('waypoint.points', {count: numbers.format(points.length)}) : '';
+        $('waypoint-position-field').hidden = Boolean(points);
+        $('waypoint-position').textContent = `${x}, ${Number.isFinite(y) ? y : '—'}, ${z}`;
         $('waypoint-here').hidden = Boolean(points) || !this.me();
     }
 

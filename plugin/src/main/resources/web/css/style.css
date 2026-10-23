@@ -892,17 +892,6 @@
         min-width: 0;
     }
 
-    .dialog__where {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        min-width: 0;
-    }
-
-    .dialog__where .btn {
-        flex: none;
-    }
-
     .dialog__subtitle {
         overflow: hidden;
         color: var(--stone-200);
@@ -2902,6 +2891,22 @@
 
     .editor__preview--region svg {
         filter: drop-shadow(0 2px 0 rgb(0 0 0 / .45));
+    }
+
+    .position-field {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        min-height: var(--control);
+        padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+        background: var(--stone-900);
+        border: var(--field-edge);
+        box-shadow: var(--well);
+    }
+
+    .position-field .btn {
+        flex: none;
     }
 
     .color-picker {

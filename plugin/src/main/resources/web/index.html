@@ -413,17 +413,21 @@
             <span class="editor__preview" id="waypoint-preview"></span>
             <div class="dialog__heading">
                 <h2 class="title" id="waypoint-title"></h2>
-                <div class="dialog__where">
-                    <p class="mono dialog__subtitle" id="waypoint-where"></p>
-                    <button class="btn btn--small" data-i18n="waypoint.here" data-i18n-title="waypoint.hereHint" hidden
-                            id="waypoint-here" type="button">Move to me</button>
-                </div>
+                <p class="mono dialog__subtitle" id="waypoint-where"></p>
             </div>
             <button aria-label="Close" class="icon-btn" data-close data-i18n-label="manager.close" data-icon="close"
                     type="button"></button>
         </header>
 
         <div class="dialog__body stack">
+            <div class="field" id="waypoint-position-field">
+                <span class="label" data-i18n="waypoint.position">Position</span>
+                <div class="position-field">
+                    <span class="mono" id="waypoint-position"></span>
+                    <button class="btn btn--small" data-i18n="waypoint.here" data-i18n-title="waypoint.hereHint"
+                            data-icon="here" hidden id="waypoint-here" type="button">Move to me</button>
+                </div>
+            </div>
             <div class="field">
                 <label class="label" data-i18n="waypoint.name" for="waypoint-name">Name</label>
                 <input autocomplete="off" class="input" id="waypoint-name" maxlength="32" spellcheck="false"
