@@ -22,7 +22,6 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
-import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -162,7 +161,7 @@ public final class IconEditorScreen extends Screen {
             new MultiLineTextWidget(Component.translatable("taerra.icon_editor.tint"), this.font)
                 .setMaxWidth(SIDE));
     this.colors.addTo(contents, this.font);
-    contents.addChild(new StringWidget(WIDTH, 9, this.error, this.font));
+    contents.addChild(new MultiLineTextWidget(this.error, this.font).setMaxWidth(WIDTH));
 
     final @NotNull Button cancel =
         Button.builder(
