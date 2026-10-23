@@ -717,9 +717,20 @@ class MarkerManager {
         if (layer.personal) {
             layerLabel.prepend(personalIcon());
         }
-        content.append(layerLabel,
+        const heading = [layerLabel,
             element('strong', 'title marker-popup__title', marker.label ?? marker.id),
-            element('span', 'mono marker-popup__facts', facts(marker, layer.id === 'regions')));
+            element('span', 'mono marker-popup__facts', facts(marker, layer.id === 'regions'))];
+        if (marker.type === 'point') {
+            const badge = element('span', 'marker-popup__badge');
+            badge.innerHTML = markerBadge(layer, marker);
+            const text = element('div', 'marker-popup__heading');
+            text.append(...heading);
+            const head = element('div', 'marker-popup__head');
+            head.append(badge, text);
+            content.append(head);
+        } else {
+            content.append(...heading);
+        }
         if (marker.discovered) {
             content.append(element('span', 'marker-popup__discovered',
                 t('region.discovered', {date: dates.format(new Date(marker.discovered))})));

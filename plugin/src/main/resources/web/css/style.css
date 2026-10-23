@@ -1217,7 +1217,7 @@
     }
 
     [data-icon="here"] {
-        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M3 0h2v1H3zM2 1h4v2H2zM3 3h2v1H3zM2 5h4v1H2zM1 6h6v2H1z'/></svg>");
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M3 0h2v1H3zM2 1h1v1H2zM5 1h1v1H5zM2 2h1v1H2zM5 2h1v1H5zM3 3h2v1H3zM2 5h4v1H2zM1 6h1v1H1zM6 6h1v1H6zM0 7h1v1H0zM7 7h1v1H7z'/></svg>");
     }
 
     [data-icon="edit"] {
@@ -2194,6 +2194,33 @@
         --marker: var(--accent-hi);
     }
 
+    .marker-popup__head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
+    .marker-popup__heading {
+        display: grid;
+        gap: var(--space-3);
+        min-width: 0;
+    }
+
+    .marker-popup__badge {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: var(--row);
+        height: var(--row);
+        background: var(--stone-900);
+        box-shadow: var(--well);
+        color: var(--marker);
+    }
+
+    .marker-popup__badge svg {
+        shape-rendering: crispEdges;
+    }
+
     .marker-popup__layer {
         display: flex;
         align-items: center;
@@ -2254,6 +2281,10 @@
 
     .marker-popup > .menu__group {
         margin-inline: calc(-1 * var(--space-3));
+    }
+
+    .marker-popup > .menu__group + .menu__group {
+        margin-top: calc(var(--space-2) - var(--space-3));
     }
 
     .waypoint-icon,
