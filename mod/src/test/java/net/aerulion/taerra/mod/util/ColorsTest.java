@@ -2,6 +2,7 @@ package net.aerulion.taerra.mod.util;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -22,5 +23,14 @@ class ColorsTest {
       final double @NotNull [] hsv = Colors.toHsv(rgb);
       assertEquals(rgb, Colors.fromHsv(hsv[0], hsv[1], hsv[2]), Colors.hex(rgb));
     }
+  }
+
+  @Test
+  void contrastFollowsWcag() {
+    assertEquals(21, Colors.contrast(0xFFFFFFFF, 0xFF000000), 1e-9);
+    assertEquals(1, Colors.contrast(0xFF3AB3DA, 0xFF3AB3DA), 1e-9);
+    assertEquals(4.54, Colors.contrast(0xFFFFFFFF, 0xFF767676), .01);
+    assertTrue(Colors.contrast(0xFFFFFFFF, 0xFFFFCF3F) < 3);
+    assertTrue(Colors.contrast(0xFFFFFFFF, 0xFF3C44AA) > 3);
   }
 }

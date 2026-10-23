@@ -62,7 +62,7 @@ public final class LayerList extends ContainerObjectSelectionList<LayerList.Entr
               - 4
               - font.width(this.count)
               - COUNT_GAP
-              - (layer.personal() ? font.width(" " + MapIcons.GEM) : 0);
+              - (layer.personal() ? font.width(" " + MapIcons.PERSONAL) : 0);
       final boolean cut = font.width(name) > room;
       final @NotNull String label =
           cut ? font.plainSubstrByWidth(name, room - font.width(ELLIPSIS)) + ELLIPSIS : name;
@@ -71,7 +71,8 @@ public final class LayerList extends ContainerObjectSelectionList<LayerList.Entr
                   layer.personal()
                       ? Component.literal(label)
                           .append(
-                              Component.literal(" " + MapIcons.GEM).withStyle(ChatFormatting.GOLD))
+                              Component.literal(" " + MapIcons.PERSONAL)
+                                  .withStyle(ChatFormatting.GOLD))
                       : Component.literal(label),
                   font)
               .selected(LayerList.this.map.shown(layer))

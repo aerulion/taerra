@@ -1,5 +1,6 @@
 import {accountManager, FALLBACK_AVATAR} from './account.js';
 import {language, numbers, plurals, t} from './i18n.js';
+import {iconChooser, iconStore, MARKER} from './icons.js';
 import {privateIcon} from './markers.js';
 import {armed, disarm, element, iconButton, switchInput} from './ui.js';
 import {wsManager} from './websocket.js';
@@ -28,6 +29,7 @@ const ago = new Intl.RelativeTimeFormat(language, {numeric: 'auto'});
 const settingField = (key) => `setting:${key}`;
 const worldField = (id, part) => `world:${id}:${part}`;
 const layerField = (id) => `layer:${id}`;
+const layerIconField = (id) => `layer-icon:${id}`;
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 const relative = (order, other) => (order ?? []).filter(id => (other ?? []).includes(id));
 const sameOrder = (a, b) => same(relative(a, b), relative(b, a));
@@ -113,6 +115,7 @@ class SettingsDialog {
 
     initialize() {
         $('settings-open').addEventListener('click', () => void this.open());
+        iconStore.onChange(() => this.dialog.open && this.draft && this.render());
         this.dialog.addEventListener('cancel', (event) => {
             if (this.mustConfirm()) {
                 event.preventDefault();
@@ -340,6 +343,9 @@ class SettingsDialog {
             const id = field.slice('layer:'.length);
             return translated(`layer.${id}`, this.view.layers.find(layer => layer.id === id)?.label ?? id);
         }
+        if (field.startsWith('layer-icon:')) {
+            return `${this.label(layerField(field.slice('layer-icon:'.length)))}: ${t('settings.layerIcon')}`;
+        }
         const key = field.startsWith('setting:') ? field.slice('setting:'.length) : field;
         return translated(`settings.${key}`, key);
     }
@@ -354,6 +360,9 @@ class SettingsDialog {
         }
         if (typeof value === 'boolean') {
             return t(value ? 'settings.on' : 'settings.off');
+        }
+        if (field.startsWith('layer-icon:')) {
+            return value ? iconStore.label(value) || value : t('icons.default');
         }
         if (value === '' || value === null || value === undefined) {
             return t('settings.default');
@@ -795,11 +804,13 @@ class SettingsDialog {
 
     layerRow(layer) {
         const field = layerField(layer.id);
-        const row = element('label', 'row row--action settings__row');
-        row.dataset.fields = field;
-        row.title = this.changedBy(field);
-        row.classList.toggle('is-conflict', this.conflicts.has(field));
-        row.classList.toggle('is-changed', !same(this.draft[field], this.base[field]));
+        const iconField = layerIconField(layer.id);
+        const fields = [field, iconField];
+        const row = element('label', 'row row--action settings__row settings__layer');
+        row.dataset.fields = fields.join(' ');
+        row.title = fields.map(each => this.changedBy(each)).filter(Boolean)[0] ?? '';
+        row.classList.toggle('is-conflict', fields.some(each => this.conflicts.has(each)));
+        row.classList.toggle('is-changed', fields.some(each => !same(this.draft[each], this.base[each])));
         const text = element('span', 'row__text');
         const title = element('span', 'settings__label', this.label(field));
         text.append(title, element('span', 'hint', layer.present ? t('settings.layerPermission', {
@@ -810,8 +821,27 @@ class SettingsDialog {
                 this.set(field, checked);
                 this.render();
             });
-        row.append(text, wrap);
-        const conflict = this.conflict(field);
+        const icon = this.draft[iconField] ?? '';
+        const choose = element('button', 'icon-choice');
+        choose.type = 'button';
+        choose.dataset.field = iconField;
+        const label = `${t('settings.layerIcon')}: ${this.format(iconField, icon)}`;
+        choose.title = label;
+        choose.setAttribute('aria-label', `${title.textContent}, ${label}`);
+        choose.append(iconStore.image(iconStore.get(icon) ? icon : MARKER));
+        choose.classList.toggle('is-default', !iconStore.get(icon));
+        choose.addEventListener('click', async (event) => {
+            event.preventDefault();
+            const chosen = await iconChooser.choose(t('settings.layerIconTitle', {layer: title.textContent}),
+                this.draft[iconField] ?? '', MARKER, t('icons.default'));
+            if (chosen !== null) {
+                this.set(iconField, chosen);
+                this.render();
+            }
+            this.dialog.querySelector(`[data-field="${CSS.escape(iconField)}"]`)?.focus();
+        });
+        row.append(text, wrap, choose);
+        const conflict = this.conflict(...fields);
         return conflict ? [row, conflict] : [row];
     }
 

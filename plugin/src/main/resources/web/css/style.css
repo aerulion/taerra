@@ -680,37 +680,33 @@
         gap: var(--space-2);
         min-height: var(--control-s);
         padding: 0 var(--space-3);
-        background: var(--stone-800);
-        border: var(--edge);
+        background: var(--stone-900);
+        border: var(--field-edge);
+        box-shadow: var(--well);
+        color: var(--stone-100);
         font-size: var(--text-m);
         font-weight: 700;
         cursor: pointer;
     }
 
     .chip:hover .chip__label {
-        background: var(--stone-600);
-    }
-
-    .chip input:checked + .chip__label {
-        background: var(--accent-lo);
-        box-shadow: inset 0 -3px var(--accent-hi);
+        border-color: var(--stone-500);
     }
 
     .chip input:focus-visible + .chip__label {
+        background: var(--stone-700);
+    }
+
+    .chip input:checked + .chip__label {
+        background: var(--stone-600);
+        box-shadow: none;
+        color: var(--white);
         outline: 2px solid var(--white);
-        outline-offset: -2px;
+        outline-offset: 1px;
     }
 
     .chip--new .chip__label {
-        background: none;
-        border: 2px dashed var(--stone-500);
-        color: var(--stone-100);
-    }
-
-    .chip--new input:checked + .chip__label {
-        border-style: solid;
-        border-color: var(--stone-900);
-        color: var(--white);
+        color: var(--stone-200);
     }
 
     .list {
@@ -915,6 +911,10 @@
         flex: 1 1 12rem;
     }
 
+    #icons .dialog__tools > [type="search"] {
+        flex-basis: 16rem;
+    }
+
     .dialog__body {
         flex: 1;
         min-height: 0;
@@ -1015,10 +1015,14 @@
         color: var(--marker);
     }
 
-    .marker-icon--point svg {
-        width: 14px;
-        height: 17px;
-        filter: drop-shadow(0 2px 0 rgb(0 0 0 / .45));
+    .marker-icon--point .waypoint__badge {
+        width: 24px;
+        height: 30px;
+    }
+
+    .marker-icon--personal.marker-icon--point .waypoint__badge {
+        width: 28px;
+        height: 34px;
     }
 
     .marker-icon--area::before {
@@ -1164,6 +1168,10 @@
         --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-0.5 0 8 8' shape-rendering='crispEdges'><path d='M1 0h5v1H1zM0 1h7v1H0zM0 2h3v1H0zM4 2h3v1H4zM0 3h2v1H0zM5 3h2v1H5zM0 4h3v1H0zM4 4h3v1H4zM1 5h5v1H1zM2 6h3v1H2zM3 7h1v1H3z'/></svg>");
     }
 
+    [data-icon="image"] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M0 0h8v1H0zM0 7h8v1H0zM0 1h1v6H0zM7 1h1v6H7zM5 2h1v1H5zM2 3h1v1H2zM1 4h3v1H1zM5 4h1v1H5zM1 5h6v1H1z'/></svg>");
+    }
+
     [data-icon="area"] {
         --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M0 0h8v1H0zM0 7h8v1H0zM0 1h1v6H0zM7 1h1v6H7z'/><path d='M1 1h6v6H1z' fill-opacity='.35'/></svg>");
     }
@@ -1195,6 +1203,10 @@
 
     [data-icon="move"] {
         --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-0.5 -0.5 8 8' shape-rendering='crispEdges'><path d='M3 0h1v1H3zM2 1h3v1H2zM1 2h1v1H1zM3 2h1v1H3zM5 2h1v1H5zM0 3h7v1H0zM1 4h1v1H1zM3 4h1v1H3zM5 4h1v1H5zM2 5h3v1H2zM3 6h1v1H3z'/></svg>");
+    }
+
+    [data-icon="here"] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M3 0h2v1H3zM2 1h1v1H2zM5 1h1v1H5zM2 2h1v1H2zM5 2h1v1H5zM3 3h2v1H3zM2 5h4v1H2zM1 6h1v1H1zM6 6h1v1H6zM0 7h1v1H0zM7 7h1v1H7z'/></svg>");
     }
 
     [data-icon="edit"] {
@@ -1706,7 +1718,8 @@
     }
 
     .rotation .btn[data-turn="1"]::before,
-    #selection-redo::before {
+    #selection-redo::before,
+    #icon-editor-redo::before {
         scale: -1 1;
     }
 
@@ -1829,6 +1842,10 @@
 
     .about {
         --dialog-w: 320px;
+    }
+
+    #waypoint-editor {
+        --dialog-w: 480px;
     }
 
     .about__close {
@@ -2166,6 +2183,33 @@
         --marker: var(--accent-hi);
     }
 
+    .marker-popup__head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
+    .marker-popup__heading {
+        display: grid;
+        gap: var(--space-3);
+        min-width: 0;
+    }
+
+    .marker-popup__badge {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: var(--row);
+        height: var(--row);
+        background: var(--stone-900);
+        box-shadow: var(--well);
+        color: var(--marker);
+    }
+
+    .marker-popup__badge svg {
+        shape-rendering: crispEdges;
+    }
+
     .marker-popup__layer {
         display: flex;
         align-items: center;
@@ -2228,6 +2272,10 @@
         margin-inline: calc(-1 * var(--space-3));
     }
 
+    .marker-popup > .menu__group + .menu__group {
+        margin-top: calc(var(--space-2) - var(--space-3));
+    }
+
     .waypoint-icon,
     .region-flag-icon,
     .region-name-icon {
@@ -2237,18 +2285,26 @@
 
     .waypoint {
         position: relative;
-        width: 18px;
-        height: 22px;
+        width: 24px;
+        height: 30px;
     }
 
-    .waypoint__pin {
+    .waypoint__badge image,
+    .icon-image {
+        image-rendering: pixelated;
+    }
+
+    .icon-image--tint {
+        filter: brightness(0) invert(1);
+    }
+
+    .waypoint__badge {
         display: block;
-        filter: drop-shadow(0 2px 0 rgb(0 0 0 / .45));
         shape-rendering: crispEdges;
         transition: translate .12s steps(2);
     }
 
-    .waypoint-icon:hover .waypoint__pin {
+    .waypoint-icon:hover .waypoint__badge {
         translate: 0 -2px;
     }
 
@@ -2831,7 +2887,26 @@
 
     .editor__preview svg {
         shape-rendering: crispEdges;
+    }
+
+    .editor__preview--region svg {
         filter: drop-shadow(0 2px 0 rgb(0 0 0 / .45));
+    }
+
+    .position-field {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        min-height: var(--control);
+        padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+        background: var(--stone-900);
+        border: var(--field-edge);
+        box-shadow: var(--well);
+    }
+
+    .position-field .btn {
+        flex: none;
     }
 
     .color-picker {
@@ -3041,6 +3116,221 @@
         .manager__row--region .manager__actions {
             grid-column: auto;
         }
+    }
+
+    .icon-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+        gap: var(--space-2);
+        max-height: min(60vh, 420px);
+        padding: var(--space-1);
+        overflow-y: auto;
+    }
+
+    .icon-tile {
+        position: relative;
+        display: grid;
+        place-items: center;
+        aspect-ratio: 1;
+        background: var(--stone-900);
+        box-shadow: var(--well);
+        color: var(--waypoint, var(--stone-200));
+        cursor: pointer;
+    }
+
+    .icon-tile input {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .icon-tile .icon-image {
+        width: 32px;
+        height: 32px;
+    }
+
+    .icon-tile:hover {
+        background: var(--stone-700);
+    }
+
+    .icon-tile:has(input:focus-visible) {
+        background: var(--stone-700);
+    }
+
+    .icon-tile:has(input:checked) {
+        background: var(--stone-600);
+        outline: 2px solid var(--white);
+        outline-offset: 1px;
+    }
+
+    .icon-choice {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: var(--control-s);
+        height: var(--control-s);
+        padding: 0;
+        background: var(--stone-900);
+        border: var(--field-edge);
+        box-shadow: var(--well);
+        color: var(--stone-200);
+        cursor: pointer;
+    }
+
+    .icon-editor {
+        display: flex;
+        gap: var(--space-4);
+        align-items: flex-start;
+    }
+
+    .icon-editor__grid {
+        display: grid;
+        flex: none;
+        grid-template-columns: repeat(8, 24px);
+        gap: 1px;
+        padding: 1px;
+        background: var(--stone-700);
+        border: var(--field-edge);
+        box-shadow: var(--well);
+        touch-action: none;
+    }
+
+    .icon-editor__cell {
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: 0;
+        cursor: crosshair;
+    }
+
+    .icon-editor__cell.is-empty {
+        background: repeating-conic-gradient(var(--stone-800) 0 25%, var(--stone-900) 0 50%) 0 0 / 12px 12px;
+    }
+
+    .icon-editor__cell:focus-visible {
+        outline-offset: -2px;
+    }
+
+    .icon-editor__side {
+        display: grid;
+        container-type: inline-size;
+        flex: 1;
+        gap: var(--space-3);
+        min-width: 0;
+    }
+
+    .icon-editor__tools,
+    .icon-editor__history {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    .icon-editor__tools {
+        justify-content: space-between;
+    }
+
+    .icon-editor__previews {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    .icon-editor__preview .waypoint__badge {
+        width: 36px;
+        height: 45px;
+    }
+
+    @container (max-width: 123px) {
+        .icon-editor__preview .waypoint__badge {
+            width: 24px;
+            height: 30px;
+        }
+    }
+
+    .icon-field {
+        display: flex;
+        gap: var(--space-3);
+        align-items: center;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .icon-field__image {
+        display: grid;
+        flex: none;
+    }
+
+    .icon-field > :last-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .icon-field .icon-image {
+        width: 24px;
+        height: 24px;
+    }
+
+    .icon-field.is-default {
+        color: var(--stone-200);
+    }
+
+    .icon-field.is-default .icon-image {
+        opacity: .5;
+    }
+
+    .icon-choice:hover {
+        border-color: var(--stone-200);
+    }
+
+    .icon-choice.is-default .icon-image {
+        opacity: .5;
+    }
+
+    .settings__row.settings__layer {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        gap: var(--space-3);
+    }
+
+    .settings__layer .icon-choice {
+        order: 1;
+    }
+
+    .settings__layer .switch {
+        order: 2;
+    }
+
+    .icons__hint {
+        flex: none;
+        padding: var(--space-3) var(--space-5) 0;
+    }
+
+    .icons__row {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .icons__preview {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        background: var(--stone-900);
+        box-shadow: var(--well);
+    }
+
+    .icons__preview .icon-image {
+        width: 32px;
+        height: 32px;
+    }
+
+    .icons__name {
+        width: 100%;
     }
 
     .settings__editors {

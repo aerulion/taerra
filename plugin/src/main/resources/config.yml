@@ -68,6 +68,10 @@ markers:
   # Layers only logged-in viewers with taerra.layer.<layer> see, like taerra.layer.worldguard.
   # Set in game with /taerra config layer <layer> private
   private-layers: [ chunks, worldguard, griefprevention ]
+  # The icon each layer's points show unless they have their own, like
+  # - { layer: waypoints.shops, icon: "taerra:shop" }
+  # Set in game with /taerra config layer <layer> icon <icon>
+  layer-icons: [ ]
   spawn:
     # Mark each world's spawn point on a layer of its own, moved along when the spawn moves
     enabled: true

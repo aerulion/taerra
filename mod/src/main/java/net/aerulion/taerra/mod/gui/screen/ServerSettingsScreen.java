@@ -18,10 +18,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import net.aerulion.taerra.mod.gui.widget.IconChoice;
+import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.util.PlayerInfos;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.aerulion.taerra.mod.web.WebMapListener;
 import net.aerulion.taerra.mod.web.model.Account;
+import net.aerulion.taerra.mod.web.model.MapIcon;
 import net.aerulion.taerra.mod.web.model.ServerSettings;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -142,8 +145,6 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     super(Component.translatable("taerra.settings"));
     this.parent = parent;
     this.map = map;
-    map.addListener(this);
-    map.setSettingsOpen(true);
   }
 
   private static @NotNull Component text(
@@ -176,6 +177,10 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
 
   private static @NotNull String layerField(final @NotNull String id) {
     return "layer:" + id;
+  }
+
+  private static @NotNull String layerIconField(final @NotNull String id) {
+    return "layer-icon:" + id;
   }
 
   private static boolean same(final @Nullable JsonElement a, final @Nullable JsonElement b) {
@@ -376,6 +381,9 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
 
   @Override
   protected void init() {
+    this.map.removeListener(this);
+    this.map.addListener(this);
+    this.map.setSettingsOpen(true);
     this.tabs.clear();
     for (final @NotNull Section section : SECTIONS) {
       this.tabs.add(new SectionTab(section));
@@ -792,6 +800,12 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
               Component.translatable(
                   "taerra.settings.world." + field.substring(field.lastIndexOf(':') + 1)));
     }
+    if (field.startsWith("layer-icon:")) {
+      return label(layerField(field.substring("layer-icon:".length())))
+          .copy()
+          .append(": ")
+          .append(Component.translatable("taerra.settings.layer_icon"));
+    }
     if (field.startsWith("layer:")) {
       final @NotNull String id = field.substring("layer:".length());
       final @NotNull String label =
@@ -817,6 +831,10 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     }
     if (isLimit(field)) {
       return describeLimit(value);
+    }
+    if (field.startsWith("layer-icon:")) {
+      final @Nullable MapIcon icon = this.map.icon(string(value));
+      return icon == null ? Component.translatable("taerra.icons.default") : icon.displayName();
     }
     if (value == null || value.isJsonNull() || string(value).isEmpty()) {
       return Component.translatable("taerra.settings.default");
@@ -1100,6 +1118,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
         for (final ServerSettings.@NotNull LayerInfo layer : view.layers()) {
           add(new LayerRow(layer));
           conflict(layerField(layer.id()));
+          conflict(layerIconField(layer.id()));
         }
       }
       setScrollAmount(scroll);
@@ -1885,13 +1904,40 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   private final class LayerRow extends Row {
 
     private final @NotNull String field;
+    private final @NotNull String iconField;
     private final @NotNull Component label;
     private final @NotNull List<FormattedCharSequence> hint;
     private final @NotNull CycleButton<Boolean> toggle;
+    private final @NotNull IconChoice icon;
 
     private LayerRow(final ServerSettings.@NotNull LayerInfo layer) {
       this.field = layerField(layer.id());
+      this.iconField = layerIconField(layer.id());
       this.label = label(this.field);
+      final @NotNull WebMap map = ServerSettingsScreen.this.map;
+      final @NotNull String chosen = string(ServerSettingsScreen.this.draft.get(this.iconField));
+      this.icon =
+          new IconChoice(
+              20,
+              label(this.iconField)
+                  .copy()
+                  .append(": ")
+                  .append(format(this.iconField, new JsonPrimitive(chosen))),
+              () -> MapIcons.icon(map, chosen, false),
+              () ->
+                  ServerSettingsScreen.this.minecraft.setScreenAndShow(
+                      new IconPickerScreen(
+                          ServerSettingsScreen.this,
+                          map,
+                          Component.translatable("taerra.settings.layer_icon_title", this.label),
+                          chosen,
+                          () -> MapIcons.icon(map, null, false),
+                          Component.translatable("taerra.icons.default"),
+                          picked -> {
+                            set(this.iconField, new JsonPrimitive(picked));
+                            refill();
+                          })));
+      this.icon.setTooltip(Tooltip.create(this.icon.getMessage()));
       this.hint =
           Minecraft.getInstance()
               .font
@@ -1901,7 +1947,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                           "taerra.settings.layer_permission",
                           "taerra.layer." + layer.id().replace(':', '.'))
                       : Component.translatable("taerra.settings.layer_gone"),
-                  rowWidth() - 90);
+                  rowWidth() - 116);
       this.toggle =
           CycleButton.booleanBuilder(
                   Component.translatable("taerra.settings.private").withStyle(ChatFormatting.GOLD),
@@ -1928,17 +1974,17 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     @Override
     @NotNull
     List<String> fields() {
-      return List.of(this.field);
+      return List.of(this.field, this.iconField);
     }
 
     @Override
     public @NotNull List<? extends GuiEventListener> children() {
-      return List.of(this.toggle);
+      return List.of(this.icon, this.toggle);
     }
 
     @Override
     public @NotNull List<? extends NarratableEntry> narratables() {
-      return List.of(this.toggle);
+      return List.of(this.icon, this.toggle);
     }
 
     @Override
@@ -1959,6 +2005,10 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           getContentRight() - 6 - this.toggle.getWidth(),
           getY() + getHeight() / 2 - this.toggle.getHeight() / 2);
       this.toggle.extractRenderState(graphics, mouseX, mouseY, partialTick);
+      this.icon.setPosition(
+          this.toggle.getX() - 6 - this.icon.getWidth(),
+          getY() + getHeight() / 2 - this.icon.getHeight() / 2);
+      this.icon.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
   }
 }

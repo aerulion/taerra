@@ -39,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class TaerraClient implements ClientModInitializer {
 
-  public static final int PROTOCOL = 6;
+  public static final int PROTOCOL = 7;
 
   private static @Nullable Settings settings;
   private static final Navigation NAVIGATION = new Navigation();
@@ -87,7 +87,8 @@ public final class TaerraClient implements ClientModInitializer {
             sender.sendPacket(HandshakePayload.version());
           }
         });
-    ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> close());
+    ClientPlayConnectionEvents.DISCONNECT.register(
+        (handler, client) -> client.execute(this::close));
     ClientConfigurationConnectionEvents.INIT.register(
         (handler, client) -> client.execute(this::close));
     TaerraKeys.register();

@@ -131,7 +131,13 @@ public final class MarkerTexts {
   private static @NotNull Layer withMarkers(
       final @NotNull Layer layer, final @NotNull List<Marker> markers) {
     return new Layer(
-        layer.id(), layer.label(), layer.shown(), layer.restricted(), layer.personal(), markers);
+        layer.id(),
+        layer.label(),
+        layer.shown(),
+        layer.restricted(),
+        layer.personal(),
+        markers,
+        layer.icon());
   }
 
   private static @NotNull Marker with(
@@ -151,6 +157,7 @@ public final class MarkerTexts {
         marker.fullHeight(),
         marker.smooth(),
         marker.muted(),
-        marker.discovered());
+        marker.discovered(),
+        marker.icon());
   }
 }

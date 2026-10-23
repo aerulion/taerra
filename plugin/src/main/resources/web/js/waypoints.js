@@ -2,7 +2,9 @@ import {accountManager} from './account.js';
 import {numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
 import {ColorPicker, DEFAULT_COLOR, HEX} from './colors.js';
-import {GEM_SVG, markerManager, personalIcon, PIN_SVG, privateIcon} from './markers.js';
+import {GEM, iconChooser, iconStore, MARKER} from './icons.js';
+import {markerManager, PERSONAL_LAYER, personalIcon, privateIcon} from './markers.js';
+import {playerManager} from './players.js';
 import {armed, disarm, element} from './ui.js';
 
 export {DEFAULT_COLOR};
@@ -25,6 +27,8 @@ class WaypointEditor {
         this.dialog = $('waypoint-editor');
         this.target = null;
         this.hex = DEFAULT_COLOR;
+        this.icon = '';
+        this.groups = [];
         this.moving = null;
         this.placingTimer = 0;
     }
@@ -34,6 +38,13 @@ class WaypointEditor {
         $('waypoint-description').placeholder = t('waypoint.descriptionHint');
         $('waypoint-private-title').append(privateIcon());
         $('placing-cancel').addEventListener('click', () => this.stopMoving());
+        $('waypoint-here').addEventListener('click', () => {
+            const me = this.me();
+            if (me) {
+                Object.assign(this.target, {x: me.x, y: me.y, z: me.z});
+                this.showWhere();
+            }
+        });
         mapManager.getMap().on('click', (event) => void this.place(event.latlng));
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && this.moving) {
@@ -43,8 +54,22 @@ class WaypointEditor {
         this.picker = new ColorPicker($('waypoint-color'), (hex) => {
             this.hex = hex;
             this.target?.onColor?.(hex);
+            if (this.target) {
+                this.showPreview();
+            }
             this.dialog.style.setProperty('--waypoint', hex);
         });
+
+        $('waypoint-icon').addEventListener('click', async () => {
+            const fallback = this.fallback();
+            const chosen = await iconChooser.choose(t('icons.choose'), this.icon, fallback.id, fallback.label);
+            if (chosen !== null) {
+                this.icon = chosen;
+                this.showPreview();
+            }
+            $('waypoint-icon').focus();
+        });
+        iconStore.onChange(() => this.target && this.showPreview());
 
         $('waypoint-groups').addEventListener('change', () => {
             this.showPreview();
@@ -74,12 +99,34 @@ class WaypointEditor {
         return $('waypoint-groups').querySelector('input:checked')?.value ?? '';
     }
 
+    groupIcon() {
+        const group = this.selectedGroup();
+        const icon = group === PERSONAL ? markerManager.layers.find(layer => layer.id === PERSONAL_LAYER)?.icon
+            : group === '' ? markerManager.layers.find(layer => layer.id === 'waypoints')?.icon
+                : this.groups.find(known => known.label === group)?.icon;
+        return iconStore.get(icon) ? icon : '';
+    }
+
+    fallback() {
+        const group = this.groupIcon();
+        return {
+            id: group || (this.selectedGroup() === PERSONAL ? GEM : MARKER),
+            label: group ? t('icons.groupIcon', {icon: iconStore.label(group)}) : t('icons.default')
+        };
+    }
+
     showPreview() {
-        $('waypoint-preview').innerHTML = this.selectedGroup() === PERSONAL ? GEM_SVG : PIN_SVG;
+        const fallback = this.fallback();
+        const own = iconStore.get(this.icon) ? this.icon : '';
+        $('waypoint-preview').innerHTML = iconStore.badge(own || fallback.id, this.hex,
+            this.selectedGroup() === PERSONAL);
+        $('waypoint-icon-image').replaceChildren(iconStore.image(own || fallback.id));
+        $('waypoint-icon').classList.toggle('is-default', !own);
+        $('waypoint-icon-name').textContent = own ? iconStore.label(own) : fallback.label;
     }
 
     renderGroups(groups, current) {
-        const {personal, previous} = this.target;
+        this.groups = groups;
         const chip = (value, label, isPrivate) => {
             const wrapper = element('label', value === NEW_GROUP ? 'chip chip--new' : 'chip');
             const radio = document.createElement('input');
@@ -97,8 +144,8 @@ class WaypointEditor {
             wrapper.append(radio, text);
             return wrapper;
         };
-        const ownChip = (personal || !previous) && accountManager.canKeepPersonal();
-        const serverChips = !personal && accountManager.canEditMarkers();
+        const ownChip = accountManager.canKeepPersonal();
+        const serverChips = accountManager.canEditMarkers();
         $('waypoint-groups').replaceChildren(
             ...(ownChip ? [chip(PERSONAL, t('waypoint.personal'), false)] : []),
             ...(serverChips ? [
@@ -118,27 +165,27 @@ class WaypointEditor {
 
     async open({
                    world, x, y, z, type = 'point', points = null, smooth = false,
-                   name = '', description = '', color = DEFAULT_COLOR, group = '', previous = null,
-                   personal = false, onSaved = null, onColor = null
+                   name = '', description = '', color = null, group = '', previous = null,
+                   personal = false, icon = '', onSaved = null, onColor = null
                }) {
         this.target = {world, x, y, z, type, points, smooth, previous, personal, onSaved, onColor};
         const kind = type === 'point' ? 'waypoint' : type;
         $('waypoint-title').textContent = t(previous ? `${kind}.edit` : `${kind}.new`);
         $('waypoint-preview').hidden = Boolean(points);
-        $('waypoint-where').textContent = points
-            ? t('waypoint.points', {count: numbers.format(points.length)})
-            : `${x}, ${Number.isFinite(y) ? y : '—'}, ${z}`;
+        this.showWhere();
         $('waypoint-name').value = cleanName(name);
         $('waypoint-description').value = description;
         $('waypoint-delete').hidden = !previous;
         disarm($('waypoint-delete'));
         this.showError(null);
-        this.picker.set(HEX.test(color) ? color : DEFAULT_COLOR);
+        this.picker.set(HEX.test(color ?? '') ? color : accountManager.waypointColor() ?? DEFAULT_COLOR);
+        this.icon = points ? '' : icon;
+        $('waypoint-icon-field').hidden = Boolean(points);
         const current = personal || (!previous && accountManager.canKeepPersonal()) ? PERSONAL : group;
         this.renderGroups([], current);
         this.dialog.showModal();
         $('waypoint-name').focus();
-        if (personal || !accountManager.canEditMarkers()) {
+        if (!accountManager.canEditMarkers()) {
             return;
         }
         try {
@@ -149,6 +196,19 @@ class WaypointEditor {
         } catch (error) {
             console.error('Failed to load the waypoint groups:', error);
         }
+    }
+
+    me() {
+        return playerManager.own(this.target.world);
+    }
+
+    showWhere() {
+        const {x, y, z, points} = this.target;
+        $('waypoint-where').hidden = !points;
+        $('waypoint-where').textContent = points ? t('waypoint.points', {count: numbers.format(points.length)}) : '';
+        $('waypoint-position-field').hidden = Boolean(points);
+        $('waypoint-position').textContent = `${x}, ${Number.isFinite(y) ? y : '—'}, ${z}`;
+        $('waypoint-here').hidden = Boolean(points) || !this.me();
     }
 
     async save() {
@@ -173,11 +233,12 @@ class WaypointEditor {
             body: JSON.stringify({
                 name, color: this.hex, group: group || null, description: $('waypoint-description').value,
                 privateGroup: creating && $('waypoint-private').checked,
-                world, previous, personal,
-                ...(points ? {type, points, smooth} : {x, y: Number.isFinite(y) ? y : null, z})
+                world, previous, personal, previousPersonal: this.target.personal,
+                ...(points ? {type, points, smooth} : {x, y: Number.isFinite(y) ? y : null, z, icon: this.icon || null})
             })
         });
         if (response?.ok) {
+            accountManager.rememberWaypointColor(this.hex);
             this.dialog.close();
             onSaved?.();
             void markerManager.load(world);
@@ -223,13 +284,24 @@ class WaypointEditor {
         }
         const {x, y, z} = mapManager.latLngToBlock(latLng);
         this.stopMoving();
+        await this.relocate(waypoint, world, x, Number.isFinite(y) ? y + 1 : null, z);
+    }
+
+    async moveToMe(waypoint) {
+        const me = playerManager.own(waypoint.world);
+        if (me) {
+            await this.relocate(waypoint, waypoint.world, me.x, me.y, me.z);
+        }
+    }
+
+    async relocate(waypoint, world, x, y, z) {
         const response = await this.send('api/waypoints', {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 name: waypoint.name, color: waypoint.color, group: waypoint.group || null,
-                description: waypoint.description, personal: waypoint.personal,
-                world, x, y: Number.isFinite(y) ? y + 1 : null, z, previous: waypoint.previous
+                description: waypoint.description, personal: waypoint.personal, icon: waypoint.icon || null,
+                world, x, y, z, previous: waypoint.previous
             })
         });
         if (response?.ok) {

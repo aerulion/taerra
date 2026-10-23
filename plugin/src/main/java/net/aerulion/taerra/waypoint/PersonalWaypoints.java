@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import net.aerulion.taerra.api.marker.Marker;
+import net.aerulion.taerra.api.marker.MarkerIcons;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.api.marker.PlayerMarkerLayer;
 import net.aerulion.taerra.chat.Messages;
@@ -134,6 +135,7 @@ public final class PersonalWaypoints implements Listener {
                     Math.clamp(at.getBlockY(), world.getMinHeight(), world.getMaxHeight() - 1),
                     at.getBlockZ() + .5),
                 name)
+            .withIcon(MarkerIcons.builtIn("death"))
             .withColor(DEATH_COLOR);
     final @NotNull UUID uuid = player.getUniqueId();
     final @NotNull List<String> previous = Messages.plainInEveryLocale(DEATH);

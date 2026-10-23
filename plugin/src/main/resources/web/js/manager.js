@@ -1,7 +1,7 @@
 import {accountManager} from './account.js';
 import {language, numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
-import {markerIcon, markerManager, PERSONAL_LAYER} from './markers.js';
+import {markerBadge, markerManager, PERSONAL_LAYER} from './markers.js';
 import {playerManager} from './players.js';
 import {armed, element, iconButton} from './ui.js';
 import {waypointUrl} from './waypoints.js';
@@ -188,7 +188,8 @@ class WaypointManager {
         const icon = element('span', `marker-icon marker-icon--${waypoint.type} marker-icon--personal`);
         icon.style.setProperty('--marker', waypoint.color);
         if (waypoint.type === 'point') {
-            icon.innerHTML = markerIcon({personal: true});
+            icon.innerHTML = markerBadge(markerManager.layers.find(layer => layer.id === PERSONAL_LAYER)
+                ?? {personal: true}, waypoint);
         }
         const text = element('button', 'row__text manager__text');
         text.type = 'button';
@@ -231,6 +232,7 @@ class WaypointManager {
             world: waypoint.world, x: waypoint.x, y: waypoint.y, z: waypoint.z, name: waypoint.name,
             color: waypoint.color, personal: true, group: '', previous: waypoint.name,
             id: `${PERSONAL_LAYER}:${key(waypoint.name)}`, description: waypoint.description ?? '',
+            icon: waypoint.icon ?? '',
             ...(waypoint.type === 'point' ? {} : {
                 type: waypoint.type, smooth: Boolean(waypoint.smooth),
                 points: waypoint.type === 'area' ? waypoint.points.map(([x, z]) => [x, null, z]) : waypoint.points

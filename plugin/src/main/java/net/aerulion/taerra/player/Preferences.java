@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,6 +16,7 @@ public final class Preferences {
   private static final int MAX_LAYER_ID = 128;
 
   private final @NotNull PlayerFiles files;
+  private @NotNull BiConsumer<UUID, Integer> waypointColorChanged = (player, rgb) -> {};
 
   public Preferences(final @NotNull PlayerFiles files) {
     super();
@@ -33,6 +35,22 @@ public final class Preferences {
     this.files.update(
         player,
         data -> Objects.equals(data.navigation(), target) ? data : data.withNavigation(target));
+  }
+
+  public @Nullable Integer waypointColor(final @NotNull UUID player) {
+    return this.files.get(player).waypointColor();
+  }
+
+  public void onWaypointColor(final @NotNull BiConsumer<UUID, Integer> changed) {
+    this.waypointColorChanged = changed;
+  }
+
+  public void rememberWaypointColor(final @NotNull UUID player, final int rgb) {
+    if (Objects.equals(this.files.get(player).waypointColor(), rgb)) {
+      return;
+    }
+    this.files.update(player, data -> data.withWaypointColor(rgb));
+    this.waypointColorChanged.accept(player, rgb);
   }
 
   public @NotNull Map<String, Boolean> layers(final @NotNull UUID player) {

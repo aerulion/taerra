@@ -310,6 +310,7 @@ class WebSessionsTest {
             new CopyOnWriteArrayList<>(List.of("minecraft:the_end")),
             new CopyOnWriteArrayList<>(List.of("minecraft:overworld")),
             new CopyOnWriteArrayList<>(List.of("worldguard")),
+            new ConcurrentHashMap<>(),
             new ConcurrentHashMap<>());
     final @NotNull Viewer staff =
         new Viewer(

@@ -33,6 +33,7 @@ import net.aerulion.taerra.mod.map.Place;
 import net.aerulion.taerra.mod.navigation.Navigation;
 import net.aerulion.taerra.mod.util.Colors;
 import net.aerulion.taerra.mod.util.Dimensions;
+import net.aerulion.taerra.mod.util.Shortcuts;
 import net.aerulion.taerra.mod.util.Toasts;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.aerulion.taerra.mod.web.WebMapListener;
@@ -58,6 +59,7 @@ import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -370,9 +372,8 @@ public final class MapScreen extends Screen {
     }
     if (this.selection != null
         && !this.stroking
-        && event.hasControlDown()
-        && (event.key() == InputConstants.KEY_Z || event.key() == InputConstants.KEY_Y)) {
-      if (event.key() == InputConstants.KEY_Y || event.hasShiftDown()) {
+        && (Shortcuts.isUndo(event) || Shortcuts.isRedo(event))) {
+      if (Shortcuts.isRedo(event)) {
         redo();
       } else {
         undo();
@@ -524,6 +525,17 @@ public final class MapScreen extends Screen {
       if (account != null && account.regions()) {
         menu.add(
             Button.builder(Component.translatable("taerra.regions"), _ -> openRegionList())
+                .width(BUTTON_WIDTH)
+                .build());
+      }
+      if (account != null && account.icons()) {
+        menu.add(
+            Button.builder(
+                    Component.translatable("taerra.icons"),
+                    _ -> {
+                      closeMenu();
+                      this.minecraft.setScreenAndShow(new IconsScreen(this, this.map));
+                    })
                 .width(BUTTON_WIDTH)
                 .build());
       }
@@ -1536,6 +1548,25 @@ public final class MapScreen extends Screen {
     final @NotNull PlaceMenu menu = new PlaceMenu(Component.literal(marker.label()));
     if (point) {
       menu.add(
+          Component.translatable("taerra.menu.coordinates"),
+          item ->
+              copy(menu, item, new Place(waypoint.x(), waypoint.y(), waypoint.z()).coordinates()));
+      menu.add(
+          Component.translatable("taerra.menu.link"),
+          item ->
+              copy(
+                  menu,
+                  item,
+                  this.map.link(
+                      world,
+                      waypoint.x(),
+                      waypoint.y(),
+                      waypoint.z(),
+                      this.view.targetZoom(),
+                      this.view.isometric(),
+                      this.view.rotation())));
+      menu.group();
+      menu.add(
           Component.translatable("taerra.waypoint.navigate"),
           _ ->
               navigate(
@@ -1557,6 +1588,7 @@ public final class MapScreen extends Screen {
           Component.translatable("taerra.waypoint.teleport"),
           item -> teleport(menu, item, world, waypoint.x(), waypoint.y(), waypoint.z()));
     }
+    menu.group();
     if (waypoint.personal()
         ? account.personal()
         : marker.id().startsWith("waypoint:") && account.markers()) {
@@ -1567,6 +1599,15 @@ public final class MapScreen extends Screen {
               closeMenu();
               this.moving = waypoint;
             });
+        final @Nullable LocalPlayer player = this.minecraft.player;
+        if (player != null && world.equals(Dimensions.current())) {
+          menu.add(
+              Component.translatable("taerra.waypoint.here"),
+              _ -> {
+                closeMenu();
+                saveMoved(waypoint.at(player.getBlockX(), player.getBlockY(), player.getBlockZ()));
+              });
+        }
       }
       menu.add(
           Component.translatable("taerra.waypoint.edit_short"),
@@ -2164,14 +2205,12 @@ public final class MapScreen extends Screen {
       this.undoButton =
           new IconButton(
               20, IconButton.UNDO, Component.translatable("taerra.selection.undo"), this::undo);
-      this.undoButton.setTooltip(
-          Tooltip.create(Component.translatable("taerra.selection.undo.tooltip")));
+      this.undoButton.setTooltip(Shortcuts.undoTooltip());
       this.undoButton.active = !this.history.isEmpty();
       this.redoButton =
           new IconButton(
               20, IconButton.REDO, Component.translatable("taerra.selection.redo"), this::redo);
-      this.redoButton.setTooltip(
-          Tooltip.create(Component.translatable("taerra.selection.redo.tooltip")));
+      this.redoButton.setTooltip(Shortcuts.redoTooltip());
       this.redoButton.active = !this.future.isEmpty();
       controls.add(this.undoButton);
       controls.add(this.redoButton);
@@ -2366,8 +2405,13 @@ public final class MapScreen extends Screen {
       return;
     }
     this.moving = null;
+    saveMoved(waypoint.at(place.x(), place.standing(), place.z()));
+  }
+
+  private void saveMoved(final @NotNull Waypoint waypoint) {
     this.map.saveWaypoint(
-        waypoint.at(place.x(), place.standing(), place.z()),
+        waypoint,
+        waypoint.personal(),
         false,
         status -> {
           if (status != 204) {

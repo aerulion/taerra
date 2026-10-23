@@ -45,6 +45,7 @@ function show(account) {
     $('account-out').hidden = Boolean(account);
     $('account-name').textContent = account?.name ?? '';
     $('manager-open').hidden = account?.personal !== true;
+    $('icons-open').hidden = account?.icons !== true;
     $('settings-open').hidden = account?.config !== true;
     $('regions-open').hidden = account?.regions !== true;
     const label = account ? `${t('account.as')} ${account.name}` : t('account.login');
@@ -359,6 +360,7 @@ async function initialize() {
     });
     tabs.addEventListener('message', changed);
     wsManager.on('account', changed);
+    wsManager.on('waypointColor', (message) => rememberWaypointColor(message.color));
     wsManager.on('devices', () => {
         if ($('devices').open) {
             void loadDevices();
@@ -391,6 +393,20 @@ function canKeepPersonal() {
     return current?.personal === true;
 }
 
+function waypointColor() {
+    return current?.waypointColor ?? null;
+}
+
+function rememberWaypointColor(hex) {
+    if (current) {
+        current.waypointColor = hex;
+    }
+}
+
+function canEditIcons() {
+    return current?.icons === true;
+}
+
 function canCreatePrivateGroups() {
     return current?.privateGroups === true;
 }
@@ -420,6 +436,8 @@ function canConfigure() {
 }
 
 export const accountManager = {
-    initialize, loggedIn, usesMod, ownUuid, canTeleport, canEditMarkers, canKeepPersonal, canCreatePrivateGroups,
+    initialize, loggedIn, usesMod, ownUuid, canTeleport, canEditMarkers, canKeepPersonal, canEditIcons,
+    waypointColor, rememberWaypointColor,
+    canCreatePrivateGroups,
     canRenderWorld, canRenderArea, canCancelRender, canEditRegions, canResetRegions, canConfigure
 };

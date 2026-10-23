@@ -16,6 +16,8 @@ import org.jetbrains.annotations.NotNull;
 
 public final class SpawnMarkers {
 
+  public static final @NotNull String LAYER = "spawn";
+
   private static final long SYNC_INTERVAL_TICKS = 20L;
   private static final @NotNull Color COLOR = Color.fromRGB(0xFFCF3F);
 
@@ -28,7 +30,7 @@ public final class SpawnMarkers {
       final @NotNull MarkerRegistry registry,
       final @NotNull TaerraConfig config,
       final boolean shownByDefault) {
-    final @NotNull MarkerLayer layer = registry.layer(plugin, "spawn", "Spawn", shownByDefault);
+    final @NotNull MarkerLayer layer = registry.layer(plugin, LAYER, "Spawn", shownByDefault);
     return Bukkit.getScheduler()
         .runTaskTimer(plugin, () -> layer.setAll(spawns(config)), 0L, SYNC_INTERVAL_TICKS);
   }

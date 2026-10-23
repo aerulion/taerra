@@ -5,6 +5,7 @@ import io.javalin.http.Context;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import net.aerulion.taerra.config.TaerraConfig;
@@ -17,6 +18,7 @@ import net.aerulion.taerra.waypoint.Waypoints;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.http.Requests;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -89,7 +91,10 @@ public final class WaypointRoutes implements Routes {
                         Map.of(
                             "id", group.id(),
                             "label", group.label(),
-                            "private", this.taerraConfig.layerPrivate(group.id())))
+                            "private", this.taerraConfig.layerPrivate(group.id()),
+                            "icon",
+                                Objects.requireNonNullElse(
+                                    this.taerraConfig.layerIcon(group.id()), "")))
                 .toList());
   }
 
@@ -106,7 +111,15 @@ public final class WaypointRoutes implements Routes {
       ctx.status(400).result("Invalid waypoint");
       return;
     }
+    final boolean previousPersonal =
+        request.previousPersonal() == null ? request.personal() : request.previousPersonal();
     if (request.personal() ? !viewer.canKeepPersonalMarkers() : !viewer.canEditMarkers()) {
+      ctx.status(403).result("Not allowed");
+      return;
+    }
+    if (request.previous() != null
+        && previousPersonal != request.personal()
+        && (previousPersonal ? !viewer.canKeepPersonalMarkers() : !viewer.canEditMarkers())) {
       ctx.status(403).result("Not allowed");
       return;
     }
@@ -115,10 +128,13 @@ public final class WaypointRoutes implements Routes {
         !request.personal() && request.group() != null && !request.group().isBlank();
     final @Nullable String group = grouped ? Names.of(request.group()) : null;
     final @NotNull OptionalInt color = HexColors.parseRgb(request.color());
+    final boolean iconed = request.icon() != null && !request.icon().isEmpty();
+    final @Nullable NamespacedKey icon = iconed ? NamespacedKey.fromString(request.icon()) : null;
     final boolean point = request.type() == null || "point".equals(request.type());
     if (name == null
         || (grouped && group == null)
         || color.isEmpty()
+        || (iconed && icon == null)
         || request.world() == null
         || (point
             ? request.x() == null || request.z() == null
@@ -146,7 +162,9 @@ public final class WaypointRoutes implements Routes {
             request.smooth(),
             request.description(),
             request.previous(),
-            request.personal());
+            previousPersonal,
+            request.personal(),
+            point ? icon : null);
     ctx.future(
         () ->
             this.waypointEditor
@@ -222,7 +240,7 @@ public final class WaypointRoutes implements Routes {
     }
     if (request.names() == null
         || request.names().size() > PersonalWaypoints.MAX
-        || request.names().stream().anyMatch(java.util.Objects::isNull)) {
+        || request.names().stream().anyMatch(Objects::isNull)) {
       ctx.status(400).result("Invalid request");
       return;
     }
@@ -327,5 +345,7 @@ public final class WaypointRoutes implements Routes {
       @Nullable List<List<Double>> points,
       boolean smooth,
       @Nullable String description,
-      boolean personal) {}
+      boolean personal,
+      @Nullable Boolean previousPersonal,
+      @Nullable String icon) {}
 }

@@ -63,13 +63,15 @@ class PlayerFilesTest {
   }
 
   @Test
-  @DisplayName("navigation and layer choices are read back after a restart")
+  @DisplayName(
+      "navigation, layer choices and the last waypoint color are read back after a restart")
   void keepsPreferences() {
     final @NotNull Plugin plugin = TestPlugins.in(this.folder.toFile());
     final @NotNull Preferences preferences = new Preferences(new PlayerFiles(plugin));
     final @NotNull Navigation home =
         new Navigation("Home", "minecraft:overworld", 1.5, null, -3.5, "#3AB3DA", null);
     preferences.navigate(ALEX, home);
+    preferences.rememberWaypointColor(ALEX, 0xB02E26);
     preferences.changeLayers(
         ALEX, List.of("chunks", "waypoints.Shops"), List.of("players"), List.of());
     final @NotNull Map<String, Boolean> layers = Map.of("players", false, "waypoints.Shops", true);
@@ -80,5 +82,6 @@ class PlayerFilesTest {
     final @NotNull PlayerData data = new PlayerFiles(plugin).get(ALEX);
     assertEquals(home, data.navigation());
     assertEquals(layers, data.layers());
+    assertEquals(0xB02E26, data.waypointColor());
   }
 }

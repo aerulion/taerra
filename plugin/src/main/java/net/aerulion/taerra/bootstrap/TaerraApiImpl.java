@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import net.aerulion.taerra.api.TaerraApi;
+import net.aerulion.taerra.api.marker.MarkerIcons;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.rendering.queue.WorldChanges;
 import org.bukkit.World;
@@ -13,7 +14,10 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 record TaerraApiImpl(
-    @NotNull Plugin plugin, @NotNull MarkerRegistry markers, @NotNull WorldChanges changes)
+    @NotNull Plugin plugin,
+    @NotNull MarkerRegistry markers,
+    @NotNull MarkerIcons icons,
+    @NotNull WorldChanges changes)
     implements TaerraApi {
 
   @Override

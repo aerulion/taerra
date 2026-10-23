@@ -18,4 +18,5 @@ public record Marker(
     boolean fullHeight,
     boolean smooth,
     boolean muted,
-    @Nullable Long discovered) {}
+    @Nullable Long discovered,
+    @Nullable String icon) {}

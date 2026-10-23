@@ -8,6 +8,7 @@ import java.util.Locale;
 import net.aerulion.taerra.api.marker.Marker;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -90,5 +91,6 @@ public sealed interface Waypoints permits WaypointsImpl {
       @NotNull String name,
       @NotNull Location location,
       @NotNull Color color,
+      @Nullable NamespacedKey icon,
       @Nullable String group) {}
 }

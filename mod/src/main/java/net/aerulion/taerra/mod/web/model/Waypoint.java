@@ -17,14 +17,16 @@ public record Waypoint(
     String type,
     @Nullable List<List<Double>> points,
     boolean smooth,
-    String description) {
+    String description,
+    @Nullable String icon) {
 
   public static final String DEFAULT_COLOR = "#3ab3da";
   public static final String PERSONAL = "\u0000personal";
 
   public static @NotNull Waypoint create(
       final String world, final int x, final @Nullable Integer y, final int z) {
-    return new Waypoint(world, x, y, z, "", DEFAULT_COLOR, "", null, "point", null, false, "");
+    return new Waypoint(
+        world, x, y, z, "", DEFAULT_COLOR, "", null, "point", null, false, "", null);
   }
 
   public static @NotNull Waypoint of(
@@ -49,7 +51,8 @@ public record Waypoint(
                 .map(point -> area ? Arrays.asList(point.get(0), null, point.get(1)) : point)
                 .toList(),
         marker.smooth(),
-        marker.description() == null ? "" : marker.description());
+        marker.description() == null ? "" : marker.description(),
+        marker.icon());
   }
 
   public boolean personal() {
@@ -69,11 +72,16 @@ public record Waypoint(
         this.type,
         this.points,
         this.smooth,
-        this.description);
+        this.description,
+        this.icon);
   }
 
   public @NotNull Waypoint with(
-      final String name, final String color, final String group, final String description) {
+      final String name,
+      final String color,
+      final String group,
+      final String description,
+      final @Nullable String icon) {
     return new Waypoint(
         this.world,
         this.x,
@@ -86,7 +94,8 @@ public record Waypoint(
         this.type,
         this.points,
         this.smooth,
-        this.description);
+        description,
+        icon);
   }
 
   public @NotNull Waypoint shaped(
@@ -103,6 +112,7 @@ public record Waypoint(
         type,
         points,
         smooth,
-        this.description);
+        this.description,
+        this.icon);
   }
 }

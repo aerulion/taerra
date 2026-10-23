@@ -11,6 +11,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import net.aerulion.taerra.integration.TownyTowns;
+import net.aerulion.taerra.world.SpawnMarkers;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.permissions.Permission;
@@ -29,7 +31,8 @@ public record TaerraConfig(
     @NotNull CopyOnWriteArrayList<String> privateWorlds,
     @NotNull CopyOnWriteArrayList<String> privatePlayers,
     @NotNull CopyOnWriteArrayList<String> privateLayers,
-    @NotNull Map<String, String> worldNames) {
+    @NotNull Map<String, String> worldNames,
+    @NotNull Map<String, String> layerIcons) {
 
   private static final long HEAP_BYTES = Runtime.getRuntime().maxMemory();
   private static final long TILE_BYTES = 256L << 10;
@@ -40,6 +43,8 @@ public record TaerraConfig(
   public static final int CACHE_CHUNKS_LIMIT =
       cacheEntries(HEAP_BYTES, 5, CHUNK_BYTES, MIN_CACHE_CHUNKS, 131_072);
 
+  private static final @NotNull Map<String, String> DEFAULT_LAYER_ICONS =
+      Map.of(SpawnMarkers.LAYER, "taerra:star", TownyTowns.LAYER, "taerra:castle");
   private static final @NotNull String WORLD_PERMISSION = "taerra.world.";
   private static final @NotNull String PLAYERS_PERMISSION = "taerra.players.";
   private static final @NotNull String LAYER_PERMISSION = "taerra.layer.";
@@ -58,7 +63,19 @@ public record TaerraConfig(
         new CopyOnWriteArrayList<>(file.getStringList("private-worlds")),
         new CopyOnWriteArrayList<>(file.getStringList("private-players")),
         new CopyOnWriteArrayList<>(file.getStringList("markers.private-layers")),
-        new ConcurrentHashMap<>(names(file.getConfigurationSection("world-names"))));
+        new ConcurrentHashMap<>(names(file.getConfigurationSection("world-names"))),
+        new ConcurrentHashMap<>(layerIcons(file.getMapList("markers.layer-icons"))));
+  }
+
+  static @NotNull Map<String, String> layerIcons(final @NotNull List<Map<?, ?>> entries) {
+    final @NotNull Map<String, String> icons = new HashMap<>();
+    for (final @NotNull Map<?, ?> entry : entries) {
+      if (entry.get("layer") instanceof final @NotNull String layer
+          && entry.get("icon") instanceof final @NotNull String icon) {
+        icons.put(layer, icon);
+      }
+    }
+    return icons;
   }
 
   public static int renderThreads(final @NotNull FileConfiguration file) {
@@ -162,6 +179,29 @@ public record TaerraConfig(
 
   public boolean layerPrivate(final @NotNull String layerId) {
     return this.privateLayers.contains(layerId);
+  }
+
+  public @Nullable String layerIcon(final @NotNull String layerId) {
+    return this.layerIcons.getOrDefault(layerId, DEFAULT_LAYER_ICONS.get(layerId));
+  }
+
+  public synchronized void setLayerIcon(
+      final @NotNull Plugin plugin, final @NotNull String layerId, final @Nullable String icon) {
+    if ((icon == null || icon.isEmpty()) && !DEFAULT_LAYER_ICONS.containsKey(layerId)) {
+      this.layerIcons.remove(layerId);
+    } else {
+      this.layerIcons.put(layerId, icon == null ? "" : icon);
+    }
+    plugin.getConfig().set("markers.layer-icons", layerIconEntries(this.layerIcons));
+    plugin.saveConfig();
+  }
+
+  static @NotNull List<Map<String, String>> layerIconEntries(
+      final @NotNull Map<String, String> icons) {
+    return new TreeMap<>(icons)
+        .entrySet().stream()
+            .map(entry -> Map.of("layer", entry.getKey(), "icon", entry.getValue()))
+            .toList();
   }
 
   public @NotNull Set<String> webPermissions() {

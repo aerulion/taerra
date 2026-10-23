@@ -66,6 +66,11 @@ class PlayerManager {
         this.render();
     }
 
+    own(world) {
+        const me = this.entries.get(accountManager.ownUuid())?.player;
+        return me && located(me) && Number.isFinite(me.y) && me.world === world ? me : null;
+    }
+
     setWorld(name) {
         this.world = name;
         const followed = this.entries.get(this.followed);

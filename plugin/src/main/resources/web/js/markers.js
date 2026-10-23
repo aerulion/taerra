@@ -1,6 +1,7 @@
 import {dates, numbers, plurals, t} from './i18n.js';
 import {accountManager} from './account.js';
 import {mapManager, pixelPath} from './map.js';
+import {iconStore} from './icons.js';
 import {element, menuItem} from './ui.js';
 import {wsManager} from './websocket.js';
 
@@ -17,24 +18,8 @@ const LOOKS = {
     gray: {halo: false, weight: 1, fill: .22, hoverFill: .45, ground: .16, wall: .28, wallLine: .6}
 };
 
-const PIN_OUTLINE = [[2, 0, 5, 1], [1, 1, 7, 1], [0, 2, 9, 5], [1, 7, 7, 1], [2, 8, 5, 1], [3, 9, 3, 1], [4, 10, 1, 1]];
-const PIN_BODY = [[2, 1, 5, 1], [1, 2, 7, 5], [2, 7, 5, 1], [3, 8, 3, 1], [4, 9, 1, 1]];
-const PIN_SHINE = [[2, 2, 2, 1], [2, 3, 1, 1]];
-const PIN_EYE = [[3, 3, 3, 3]];
-
-export const PIN_SVG = `<svg class="waypoint__pin" viewBox="0 0 9 11" width="18" height="22" aria-hidden="true">
-<path d="${pixelPath(PIN_OUTLINE)}" fill="#111"/><path d="${pixelPath(PIN_BODY)}" fill="currentColor"/>
-<path d="${pixelPath(PIN_SHINE)}" fill="#fff" fill-opacity=".45"/><path d="${pixelPath(PIN_EYE)}" fill="#fff"/></svg>`;
-
-const GEM_OUTLINE = [[4, 0, 1, 1], [3, 1, 3, 1], [2, 2, 5, 1], [1, 3, 7, 1], [0, 4, 9, 2], [1, 6, 7, 1], [2, 7, 5, 2], [3, 9, 3, 1], [4, 10, 1, 1]];
-const GEM_BODY = [[4, 1, 1, 1], [3, 2, 3, 1], [2, 3, 5, 1], [1, 4, 7, 2], [2, 6, 5, 1], [3, 7, 3, 2], [4, 9, 1, 1]];
-const GEM_SHINE = [[3, 2, 1, 1], [2, 3, 2, 1]];
 const DASHES = '6 4';
 const MUTED = .7;
-
-export const GEM_SVG = `<svg class="waypoint__pin" viewBox="0 0 9 11" width="18" height="22" aria-hidden="true">
-<path d="${pixelPath(GEM_OUTLINE)}" fill="#111"/><path d="${pixelPath(GEM_BODY)}" fill="currentColor"/>
-<path d="${pixelPath(GEM_SHINE)}" fill="#fff" fill-opacity=".6"/></svg>`;
 
 export const PLAYER_LAYER = {id: 'players', shown: true, markers: []};
 export const PERSONAL_LAYER = 'personal';
@@ -225,8 +210,8 @@ function chunkMarker(marker) {
     };
 }
 
-export function markerIcon(layer) {
-    return layer.personal ? GEM_SVG : PIN_SVG;
+export function markerBadge(layer, marker) {
+    return iconStore.badge(iconStore.resolve(marker.icon, layer.icon, layer.personal), marker.color, layer.personal);
 }
 
 function facts(marker, flat = false) {
@@ -292,6 +277,7 @@ class MarkerManager {
             }
         });
         map.on('moveend', () => this.cull());
+        iconStore.onChange(() => this.redraw());
         wsManager.on('layers', (message) => this.applySaved(message.layers ?? {}));
         wsManager.on('connect', () => void this.loadSaved());
     }
@@ -500,7 +486,7 @@ class MarkerManager {
             if (inView && !entry.drawn && performance.now() - started > DRAW_BUDGET_MS) {
                 unfinished = true;
             } else if (inView && !entry.drawn) {
-                entry.drawn = this.draw(entry.marker, entry.layer.personal);
+                entry.drawn = this.draw(entry.marker, entry.layer);
                 if (entry.layer.id !== 'regions' || entry.marker.label) {
                     entry.drawn?.bindPopup(() => this.popup(entry.layer, entry.marker), {className: 'marker-popup-frame'});
                     entry.drawn?.off('click', entry.drawn._openPopup, entry.drawn).on('click', togglePopup);
@@ -540,18 +526,19 @@ class MarkerManager {
         return L.latLngBounds(points.map(([x, y, z]) => mapManager.project(x, y, z)));
     }
 
-    draw(marker, personal) {
+    draw(marker, layer) {
+        const personal = layer.personal;
         const color = marker.color;
         const dashArray = personal ? DASHES : null;
         switch (marker.type) {
             case 'point': {
                 const [x, y, z] = marker.position;
                 const position = mapManager.project(x, y, z);
-                const pin = L.marker(position, {pane: 'waypoints', riseOnHover: true});
+                const point = L.marker(position, {pane: 'waypoints', riseOnHover: true});
                 if (marker.label) {
-                    pin.on('add', () => pin.getElement()?.setAttribute('aria-label', marker.label));
+                    point.on('add', () => point.getElement()?.setAttribute('aria-label', marker.label));
                 }
-                return pin.setIcon(this.pin(marker, pin, personal ? GEM_SVG : PIN_SVG));
+                return point.setIcon(this.badgeIcon(marker, point, markerBadge(layer, marker), personal));
             }
             case 'line': {
                 const points = (marker.smooth ? spline(marker.points) : marker.points)
@@ -690,7 +677,8 @@ class MarkerManager {
         return layer;
     }
 
-    pin(marker, pin, svg) {
+    badgeIcon(marker, point, svg, personal) {
+        const [width, height] = personal ? [28, 34] : [24, 30];
         const body = element('div', 'waypoint');
         body.style.color = marker.color;
         body.innerHTML = svg;
@@ -698,15 +686,15 @@ class MarkerManager {
             const label = element('span', 'waypoint__label', marker.label);
             body.prepend(label);
             this.labels.push({
-                marker: pin,
+                marker: point,
                 box: (map) => {
-                    const tip = map.latLngToContainerPoint(pin.getLatLng());
+                    const tip = map.latLngToContainerPoint(point.getLatLng());
                     label.measured ||= label.offsetWidth;
                     label.tall ||= label.offsetHeight;
                     return {
                         left: tip.x - label.measured / 2,
                         right: tip.x + label.measured / 2,
-                        top: tip.y - 26 - label.tall,
+                        top: tip.y - height - 4 - label.tall,
                         bottom: tip.y
                     };
                 },
@@ -716,9 +704,9 @@ class MarkerManager {
         return L.divIcon({
             className: 'waypoint-icon',
             html: body,
-            iconSize: [18, 22],
-            iconAnchor: [9, 22],
-            popupAnchor: [0, marker.label ? -42 : -24]
+            iconSize: [width, height],
+            iconAnchor: [width / 2, height],
+            popupAnchor: [0, marker.label ? -height - 20 : -height - 2]
         });
     }
 
@@ -729,9 +717,20 @@ class MarkerManager {
         if (layer.personal) {
             layerLabel.prepend(personalIcon());
         }
-        content.append(layerLabel,
+        const heading = [layerLabel,
             element('strong', 'title marker-popup__title', marker.label ?? marker.id),
-            element('span', 'mono marker-popup__facts', facts(marker, layer.id === 'regions')));
+            element('span', 'mono marker-popup__facts', facts(marker, layer.id === 'regions'))];
+        if (marker.type === 'point') {
+            const badge = element('span', 'marker-popup__badge');
+            badge.innerHTML = markerBadge(layer, marker);
+            const text = element('div', 'marker-popup__heading');
+            text.append(...heading);
+            const head = element('div', 'marker-popup__head');
+            head.append(badge, text);
+            content.append(head);
+        } else {
+            content.append(...heading);
+        }
         if (marker.discovered) {
             content.append(element('span', 'marker-popup__discovered',
                 t('region.discovered', {date: dates.format(new Date(marker.discovered))})));
@@ -746,47 +745,48 @@ class MarkerManager {
             }
             content.append(rows);
         }
-        const actions = this.waypointActions(layer, marker);
-        if (actions.childElementCount > 0) {
-            content.append(actions);
-        }
+        content.append(...this.waypointActions(layer, marker).filter(group => group.childElementCount > 0));
         return content;
     }
 
     waypointActions(layer, marker) {
-        const actions = element('div', 'menu__group');
+        const groups = [element('div', 'menu__group'), element('div', 'menu__group'), element('div', 'menu__group')];
         const point = marker.type === 'point';
         const [x, y, z] = point ? marker.position.map(Math.floor) : [];
         const personal = layer.id === PERSONAL_LAYER;
         const waypoint = {
             world: this.world, x, y, z, name: marker.label, color: marker.color, personal,
             group: layer.id === 'waypoints' || personal ? '' : layer.label, previous: marker.label, id: marker.id,
-            description: marker.description ?? '',
+            description: marker.description ?? '', icon: marker.icon ?? '',
             ...(point ? {} : {
                 type: marker.type, smooth: marker.smooth,
                 points: marker.type === 'area' ? marker.points.map(([px, pz]) => [px, null, pz]) : marker.points
             })
         };
-        const action = (name, label) => {
-            actions.append(menuItem(name, t(label), (button) => this.onWaypoint?.(name, waypoint, button)));
+        const action = (group, name, label, icon = name) => {
+            groups[group].append(menuItem(icon, t(label), (button) => this.onWaypoint?.(name, waypoint, button)));
         };
+        if (point) {
+            action(0, 'coordinates', 'menu.coordinates', 'copy');
+            action(0, 'link', 'waypoint.link');
+        }
         if (point && accountManager.usesMod()) {
-            action('navigate', 'waypoint.navigate');
+            action(1, 'navigate', 'waypoint.navigate');
         }
         if (point && isWaypointLayer(layer) && accountManager.canTeleport()) {
-            action('teleport', 'waypoint.teleport');
-        }
-        if (point) {
-            action('link', 'waypoint.link');
+            action(1, 'teleport', 'waypoint.teleport');
         }
         if (isWaypointLayer(layer) && (personal ? accountManager.canKeepPersonal()
             : marker.id.startsWith('waypoint:') && accountManager.canEditMarkers())) {
             if (point) {
-                action('move', 'waypoint.move');
+                action(2, 'move', 'waypoint.move');
+                if (this.me?.(this.world)) {
+                    action(2, 'here', 'waypoint.here');
+                }
             }
-            action('edit', 'waypoint.editShort');
+            action(2, 'edit', 'waypoint.editShort');
         }
-        return actions;
+        return groups;
     }
 
     layerLabel(layer) {

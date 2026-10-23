@@ -1,6 +1,6 @@
-import {t} from './i18n.js';
+import {MAC, t} from './i18n.js';
 import {mapManager} from './map.js';
-import {markerIcon, markerManager} from './markers.js';
+import {markerBadge, markerManager} from './markers.js';
 import {element} from './ui.js';
 import {avatar, located, playerManager} from './players.js';
 
@@ -9,7 +9,6 @@ const $ = (id) => document.getElementById(id);
 const LIMIT = 30;
 const KINDS = ['place', 'player', 'marker', 'world'];
 const COORDINATES = /^(-?\d+(?:\.\d+)?)(?:[\s,]+(-?\d+(?:\.\d+)?))?[\s,]+(-?\d+(?:\.\d+)?)$/;
-const MAC = /Mac|iPhone|iPad/.test(navigator.platform);
 
 const fold = (text) => text.normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase();
 
@@ -128,7 +127,7 @@ class SearchPalette {
                 icon.classList.toggle('marker-icon--personal', Boolean(layer.personal));
                 icon.style.setProperty('--marker', marker.color);
                 if (marker.type === 'point') {
-                    icon.innerHTML = markerIcon(layer);
+                    icon.innerHTML = markerBadge(layer, marker);
                 }
                 return icon;
             },

@@ -34,6 +34,12 @@
 </head>
 <body>
 <svg aria-hidden="true" height="0" style="position: absolute" width="0">
+    <filter id="icon-dark">
+        <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
+    </filter>
+    <filter id="icon-light">
+        <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0"/>
+    </filter>
     <filter color-interpolation-filters="sRGB" id="stone-gray">
         <feColorMatrix in="SourceGraphic" result="luma"
                        values=".2126 .7152 .0722 0 0  .2126 .7152 .0722 0 0  .2126 .7152 .0722 0 0  0 0 0 1 0"/>
@@ -103,6 +109,9 @@
             <div class="menu__group">
                 <button aria-keyshortcuts="W" class="menu__item" data-i18n="manager.title" data-icon="pin" hidden
                         id="manager-open" type="button">My waypoints
+                </button>
+                <button class="menu__item" data-i18n="icons.title" data-icon="image" hidden id="icons-open"
+                        type="button">Map icons
                 </button>
                 <button class="menu__item" data-i18n="regions.title" data-icon="map" hidden id="regions-open"
                         type="button">Regions
@@ -411,6 +420,14 @@
         </header>
 
         <div class="dialog__body stack">
+            <div class="field" id="waypoint-position-field">
+                <span class="label" data-i18n="waypoint.position">Position</span>
+                <div class="position-field">
+                    <span class="mono" id="waypoint-position"></span>
+                    <button class="btn btn--small" data-i18n="waypoint.here" data-i18n-title="waypoint.hereHint"
+                            data-icon="here" hidden id="waypoint-here" type="button">Move to me</button>
+                </div>
+            </div>
             <div class="field">
                 <label class="label" data-i18n="waypoint.name" for="waypoint-name">Name</label>
                 <input autocomplete="off" class="input" id="waypoint-name" maxlength="32" spellcheck="false"
@@ -440,6 +457,15 @@
                         </span>
                     </label>
                 </div>
+            </div>
+
+            <div class="field" id="waypoint-icon-field">
+                <span class="label" data-i18n="waypoint.icon" id="waypoint-icon-label">Icon</span>
+                <button aria-labelledby="waypoint-icon-label waypoint-icon-name" class="input icon-field"
+                        id="waypoint-icon" type="button">
+                    <span class="icon-field__image" id="waypoint-icon-image"></span>
+                    <span id="waypoint-icon-name"></span>
+                </button>
             </div>
 
             <div aria-labelledby="waypoint-color-label" class="field" role="group">
@@ -579,6 +605,109 @@
         <button class="btn btn--primary" id="manager-export" type="button"></button>
         <input accept=".json,application/json" hidden id="manager-file" type="file">
     </footer>
+</dialog>
+
+<dialog aria-labelledby="icons-title" class="dialog dialog--m" id="icons">
+    <header class="dialog__header">
+        <h2 class="title" data-i18n="icons.title" id="icons-title">Map icons</h2>
+        <span class="badge" id="icons-count"></span>
+        <button aria-label="Close" class="icon-btn" data-close data-i18n-label="manager.close" data-icon="close"
+                type="button"></button>
+    </header>
+    <div class="dialog__tools">
+        <input aria-label="Filter" autocomplete="off" class="input" data-i18n-label="manager.filter"
+               id="icons-filter" spellcheck="false" type="search">
+        <button class="btn" data-i18n="icons.draw" id="icons-draw" type="button">Draw…</button>
+        <button class="btn btn--primary" data-i18n="icons.upload" id="icons-upload" type="button">Upload…</button>
+        <input accept="image/png" hidden id="icons-file" multiple type="file">
+        <input accept="image/png" hidden id="icons-replace-file" type="file">
+    </div>
+    <p class="hint icons__hint" data-i18n="icons.hint">8 × 8 pixel PNGs. Pure white or pure black ones switch between
+        white and black to stay readable on any color. Everyone who places waypoints can pick them.</p>
+    <div class="dialog__body">
+        <ul class="list" id="icons-list"></ul>
+        <p class="empty" hidden id="icons-empty"></p>
+    </div>
+    <footer class="dialog__footer">
+        <p class="note" id="icons-status" role="status"></p>
+    </footer>
+</dialog>
+
+<dialog aria-labelledby="icon-editor-title" class="dialog" id="icon-editor">
+    <form class="dialog__form" id="icon-editor-form" novalidate>
+        <header class="dialog__header">
+            <h2 class="title" id="icon-editor-title"></h2>
+            <button aria-label="Close" class="icon-btn" data-close data-i18n-label="manager.close" data-icon="close"
+                    type="button"></button>
+        </header>
+        <div class="dialog__body stack">
+            <div class="field" id="icon-editor-name-field">
+                <label class="label" data-i18n="waypoint.name" for="icon-editor-name">Name</label>
+                <input autocomplete="off" class="input" id="icon-editor-name" maxlength="32" spellcheck="false"
+                       type="text">
+            </div>
+            <div class="icon-editor">
+                <div aria-label="Pixels" class="icon-editor__grid" data-i18n-label="iconEditor.pixels"
+                     id="icon-editor-grid" role="group"></div>
+                <div class="icon-editor__side">
+                    <div class="icon-editor__previews" id="icon-editor-previews"></div>
+                    <p class="hint" data-i18n="iconEditor.tint" hidden id="icon-editor-tint">Turns black or white
+                        with the waypoint's color.</p>
+                </div>
+            </div>
+            <div class="icon-editor__tools">
+                <div aria-label="Tool" class="segmented" data-i18n-label="iconEditor.tool" role="group">
+                    <button aria-pressed="true" class="btn btn--small" data-i18n="iconEditor.draw"
+                            data-tool="draw" type="button">Draw
+                    </button>
+                    <button aria-pressed="false" class="btn btn--small" data-i18n="iconEditor.erase"
+                            data-tool="erase" type="button">Erase
+                    </button>
+                </div>
+                <div class="icon-editor__history">
+                    <div class="segmented" role="group">
+                        <button aria-keyshortcuts="Control+Z" aria-label="Undo" class="btn btn--small btn--icon"
+                                data-i18n-label="selection.undo" data-i18n-title="selection.undo.tooltip"
+                                data-icon="undo" id="icon-editor-undo" type="button"></button>
+                        <button aria-keyshortcuts="Control+Shift+Z" aria-label="Redo"
+                                class="btn btn--small btn--icon" data-i18n-label="selection.redo"
+                                data-i18n-title="selection.redo.tooltip" data-icon="undo" id="icon-editor-redo"
+                                type="button"></button>
+                    </div>
+                    <button class="btn btn--small" data-i18n="iconEditor.clear" id="icon-editor-clear"
+                            type="button">Clear
+                    </button>
+                </div>
+            </div>
+            <p class="hint" data-i18n="iconEditor.hint">Left-click draws, right-click erases. Draw only in pure white
+                for an icon that stays readable on any color.</p>
+            <div aria-labelledby="icon-editor-color-label" class="field" role="group">
+                <span class="label" data-i18n="waypoint.color" id="icon-editor-color-label">Color</span>
+                <div class="color-picker" id="icon-editor-color"></div>
+            </div>
+            <p class="error" hidden id="icon-editor-error" role="alert"></p>
+        </div>
+        <footer class="dialog__footer">
+            <button class="btn" data-close data-i18n="waypoint.cancel" id="icon-editor-cancel" type="button">Cancel
+            </button>
+            <button class="btn btn--primary" data-i18n="waypoint.save" type="submit">Save</button>
+        </footer>
+    </form>
+</dialog>
+
+<dialog aria-labelledby="icon-chooser-title" class="dialog" id="icon-chooser">
+    <header class="dialog__header">
+        <h2 class="title" id="icon-chooser-title"></h2>
+        <button aria-label="Close" class="icon-btn" data-close data-i18n-label="manager.close" data-icon="close"
+                type="button"></button>
+    </header>
+    <div class="dialog__tools">
+        <input aria-label="Filter" autocomplete="off" class="input" data-i18n-label="manager.filter"
+               id="icon-chooser-filter" spellcheck="false" type="search">
+    </div>
+    <div class="dialog__body">
+        <div id="icon-chooser-grid"></div>
+    </div>
 </dialog>
 
 <dialog aria-labelledby="settings-title" class="dialog dialog--l" id="settings">

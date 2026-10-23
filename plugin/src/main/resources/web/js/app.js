@@ -1,5 +1,8 @@
 import {accountManager} from './account.js';
 import {copyText} from './clipboard.js';
+import {iconEditor} from './iconeditor.js';
+import {iconChooser, iconStore} from './icons.js';
+import {iconManager} from './iconmanager.js';
 import {waypointManager} from './manager.js';
 import {defaultLanguage, hashLanguage, language, LANGUAGES, numbers, setLanguage, t, translatePage} from './i18n.js';
 import {mapManager} from './map.js';
@@ -753,6 +756,7 @@ wsManager.on('connect', () => {
 translatePage();
 const accountReady = accountManager.initialize().catch(error => console.error('Failed to log in:', error));
 await mapManager.initialize();
+void iconStore.initialize();
 markerManager.initialize();
 regionManager.initialize();
 skyManager.initialize({
@@ -777,6 +781,9 @@ regionList.initialize({
     edit: (region) => currentWorld && chunkSelection.start(currentWorld.name, 'region', region)
 });
 settingsDialog.initialize();
+iconChooser.initialize();
+iconEditor.initialize();
+iconManager.initialize();
 chunkSelection.initialize();
 searchPalette.initialize({
     worlds: () => worlds,
@@ -794,6 +801,7 @@ playerManager.worldLabel = worldName;
 playerManager.onWorld = selectWorld;
 markerManager.onPlayers = () => playerManager.showAll();
 markerManager.onLayers = () => regionManager.redraw();
+markerManager.me = (world) => playerManager.own(world);
 markerManager.onWaypoint = async (action, waypoint, button) => {
     if (action === 'navigate') {
         mapManager.getMap().closePopup();
@@ -803,8 +811,8 @@ markerManager.onWaypoint = async (action, waypoint, button) => {
         });
         return;
     }
-    if (action === 'link') {
-        await copyText(placeLink(waypoint));
+    if (action === 'coordinates' || action === 'link') {
+        await copyText(action === 'coordinates' ? `${waypoint.x} ${waypoint.y} ${waypoint.z}` : placeLink(waypoint));
         button.textContent = t('menu.copied');
         button.classList.add('is-done');
         return;
@@ -818,6 +826,8 @@ markerManager.onWaypoint = async (action, waypoint, button) => {
     mapManager.getMap().closePopup();
     if (action === 'move') {
         waypointEditor.move(waypoint);
+    } else if (action === 'here') {
+        void waypointEditor.moveToMe(waypoint);
     } else if (waypoint.type) {
         chunkSelection.start(waypoint.world, waypoint.type, waypoint);
     } else {

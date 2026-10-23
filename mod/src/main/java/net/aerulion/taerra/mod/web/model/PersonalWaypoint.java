@@ -16,7 +16,8 @@ public record PersonalWaypoint(
     boolean smooth,
     @Nullable String color,
     @Nullable String description,
-    boolean hidden) {
+    boolean hidden,
+    @Nullable String icon) {
 
   public boolean point() {
     return this.type == null || this.type.equals("point");
@@ -55,6 +56,7 @@ public record PersonalWaypoint(
                 .map(at -> area ? Arrays.asList(at.getFirst(), null, at.getLast()) : at)
                 .toList(),
         this.smooth,
-        this.description == null ? "" : this.description);
+        this.description == null ? "" : this.description,
+        this.icon);
   }
 }

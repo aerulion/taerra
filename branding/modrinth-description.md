@@ -43,8 +43,8 @@ If something breaks or looks wrong, or you have an idea, please report it on [Gi
 - **Logins without passwords.** The map's login menu shows a short code: type `/taerra login <code>` in game and that browser logs in by itself. `/taerra login` on its own sends a link instead, and a browser that is logged in shows a QR code that logs in a phone. Browsers stay logged in for 30 days, codes and links work once, for five minutes, and players are told in game whenever a browser logs in as them. `/taerra devices`, the map's account menu and the mod list every device that is logged in and log out any one of them. There are no accounts to create and no passwords to leak. Banned players are logged out of the web map on their own, and `/taerra logout <player>` logs anyone out by hand, say after taking their permissions away.
 - **Private worlds and layers.** Keep a world or a layer hidden from everyone except logged-in players with the right permission. Or keep only where players in a world are private: everyone still sees who is online and in which world, and only staff see where. Players in worlds a viewer can't see are listed too, in an unknown world.
 - **Teleport from the map.** Logged-in players with permission right-click the map to teleport there.
-- **Waypoints, areas, and lines** in named groups and colors, private ones too, each with an optional description. Players with permission draw, move, and recolor them right on the map, in the browser or in game, with areas traced from selected chunks or clicked point by point, and lines straight or smooth. The mod shows waypoints as labels in the world itself.
-- **Waypoints of your own.** Every logged-in player can keep up to 100 waypoints, areas, and lines only they see, in the browser and in game. They are drawn as gems and dashed lines, so they never pass for the server's. A list of them, on the web map and in the mod, sorts by name or distance, filters by world, hides single ones from the map, and exports any of them to a JSON file to share or back up, which imports again by adding to yours or replacing them. When you die, a Last Death waypoint marks the spot, replacing the one before. Other plugins can show players their own markers the same way, like their homes.
+- **Waypoints, areas, and lines** in named groups and colors, private ones too, each with an optional description. Players with permission draw, move, and recolor them right on the map, in the browser or in game, with areas traced from selected chunks or clicked point by point, and lines straight or smooth. Every waypoint is a pixel badge in its color with an arrow pointing at the spot, edged in gold if it's a personal one, and an icon on it: 39 built in, any 8 × 8 PNG your staff upload or draw pixel by pixel on the web map or in the mod, or icons other plugins add. A layer can give its icon to every waypoint in it without one of its own. The mod shows waypoints as labels in the world itself, icons included.
+- **Waypoints of your own.** Every logged-in player can keep up to 100 waypoints, areas, and lines only they see, in the browser and in game. Without an icon of their own they show a gem, and their areas and lines are dashed, so they never pass for the server's. A list of them, on the web map and in the mod, sorts by name or distance, filters by world, hides single ones from the map, and exports any of them to a JSON file to share or back up, which imports again by adding to yours or replacing them. When you die, a Last Death waypoint marks the spot, replacing the one before. Other plugins can show players their own markers the same way, like their homes.
 - **Privacy built in.** Players in spectator mode, invisible or vanished, don't appear, and neither does anyone with `taerra.hide`. Staff with `taerra.see.hidden-players` still see them, marked as hidden, and staff with `taerra.see.fog` see through the fog of every region. Players who turned off server listings in their client show as an anonymous gray dot. Player heads are served by your server, so viewing the map never reveals a visitor's address to Mojang.
 - **One jar.** No external database, no CDN, and no separate admin panel: everything is configured in game, or on the settings page of the web map and the mod.
 - **A settings page** for staff with `taerra.config`, in the browser and in the mod: which worlds are on the map, their order and names, where each map ends, private worlds, layers and players, the built-in layers, the server name, the join hint, and how the renderer and its caches run. Every change applies right away, without a restart. Several staff can edit at once: the page shows who else has it open, and where, updates live as others save, and when two people changed the same setting, asks which to keep. Each setting shows who changed it last. The web server's port and address stay in game only, so the page can never cut itself off.
@@ -65,7 +65,7 @@ If something breaks or looks wrong, or you have an idea, please report it on [Gi
 - **PlotSquared:** claimed plots as a layer, each with its owners and members.
 - **World borders:** the vanilla world border and ChunkyBorder's borders as a layer.
 - **Chunky:** while Chunky pre-generates a world, TAERRA stays out of its way, then tells you when a full render is worth starting.
-- **dynmap:** bring your existing markers over as waypoints with `/taerra import dynmap`, each marker set becoming a waypoint group.
+- **dynmap:** bring your existing markers over as waypoints with `/taerra import dynmap`, each marker set becoming a waypoint group and each icon the closest built-in one.
 
 ![Speed](https://assets.corpium.net/taerra/section-speed.png?v=b9d65983)
 
@@ -107,7 +107,7 @@ Every setting can also be changed in game with `/taerra config`, or on the setti
 | `/taerra render cancel` | Stop a running render |
 | `/taerra render flush` | Drop every queued tile, unrendered changes included |
 | `/taerra limit <world> circle\|square\|rectangle …` | Set how much of a world the map shows |
-| `/taerra config …` | Change settings, enable, name, order and hide worlds, make layers private |
+| `/taerra config …` | Change settings, enable, name, order and hide worlds, make layers private or give them an icon |
 | `/taerra waypoint add\|remove …` | Add or remove waypoints |
 | `/taerra import dynmap <file>` | Import markers from dynmap |
 | `/taerra login [code]` | Log in to the web map |
@@ -138,6 +138,7 @@ Every setting can also be changed in game with `/taerra config`, or on the setti
 | `taerra.waypoint.private-groups` | op | Creating private waypoint groups |
 | `taerra.waypoint.personal` | everyone | Keeping waypoints only you see |
 | `taerra.waypoint.death` | everyone | Getting a personal waypoint where you last died |
+| `taerra.icon.edit` | op | Uploading, renaming, replacing and deleting the server's map icons |
 | `taerra.region.edit` | op | Drawing, naming, fogging and removing regions |
 | `taerra.region.reset` | op | Resetting who discovered a region, with `taerra.region.edit` |
 | `taerra.see.hidden-players` | op | Seeing hidden and anonymous players on the map |
