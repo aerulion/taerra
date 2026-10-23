@@ -74,7 +74,8 @@ public sealed interface WebMap permits WebMapImpl {
 
   void waypointGroups(Consumer<List<WaypointGroup>> then);
 
-  void saveWaypoint(Waypoint waypoint, boolean privateGroup, IntConsumer then);
+  void saveWaypoint(
+      Waypoint waypoint, boolean previousPersonal, boolean privateGroup, IntConsumer then);
 
   void deleteWaypoint(String world, String name, boolean personal, IntConsumer then);
 

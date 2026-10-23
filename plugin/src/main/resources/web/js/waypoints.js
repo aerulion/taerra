@@ -127,7 +127,6 @@ class WaypointEditor {
 
     renderGroups(groups, current) {
         this.groups = groups;
-        const {personal, previous} = this.target;
         const chip = (value, label, isPrivate) => {
             const wrapper = element('label', value === NEW_GROUP ? 'chip chip--new' : 'chip');
             const radio = document.createElement('input');
@@ -145,8 +144,8 @@ class WaypointEditor {
             wrapper.append(radio, text);
             return wrapper;
         };
-        const ownChip = (personal || !previous) && accountManager.canKeepPersonal();
-        const serverChips = !personal && accountManager.canEditMarkers();
+        const ownChip = accountManager.canKeepPersonal();
+        const serverChips = accountManager.canEditMarkers();
         $('waypoint-groups').replaceChildren(
             ...(ownChip ? [chip(PERSONAL, t('waypoint.personal'), false)] : []),
             ...(serverChips ? [
@@ -186,7 +185,7 @@ class WaypointEditor {
         this.renderGroups([], current);
         this.dialog.showModal();
         $('waypoint-name').focus();
-        if (personal || !accountManager.canEditMarkers()) {
+        if (!accountManager.canEditMarkers()) {
             return;
         }
         try {
@@ -233,7 +232,7 @@ class WaypointEditor {
             body: JSON.stringify({
                 name, color: this.hex, group: group || null, description: $('waypoint-description').value,
                 privateGroup: creating && $('waypoint-private').checked,
-                world, previous, personal,
+                world, previous, personal, previousPersonal: this.target.personal,
                 ...(points ? {type, points, smooth} : {x, y: Number.isFinite(y) ? y : null, z, icon: this.icon || null})
             })
         });

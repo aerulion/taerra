@@ -160,24 +160,35 @@ public final class WaypointEditor {
     return result;
   }
 
-  private @NotNull Result store(
+  @NotNull
+  Result store(
       final @NotNull Marker marker,
       final @NotNull Draft draft,
       final @Nullable String groupId,
       final @NotNull Author author) {
+    final boolean crossing =
+        draft.previous() != null && draft.previousPersonal() != draft.personal();
     if (draft.personal()) {
-      return switch (this.personal.save(author.uuid(), marker, draft.previous())) {
+      if (crossing && !mayEdit(author, draft.previous())) {
+        return Result.FORBIDDEN;
+      }
+      final PersonalWaypoints.@NotNull Result saved =
+          this.personal.save(author.uuid(), marker, crossing ? null : draft.previous());
+      if (saved == PersonalWaypoints.Result.SAVED && crossing) {
+        this.waypoints.remove(draft.previous());
+      }
+      return switch (saved) {
         case SAVED -> Result.SAVED;
         case TAKEN -> Result.TAKEN;
         case FULL -> Result.FULL;
         case FAILED -> Result.FAILED;
       };
     }
-    if (!mayEdit(author, draft.previous())) {
+    if (!mayEdit(author, crossing ? null : draft.previous())) {
       return Result.FORBIDDEN;
     }
     final boolean renamed =
-        draft.previous() == null || !draft.previous().equalsIgnoreCase(draft.name());
+        crossing || draft.previous() == null || !draft.previous().equalsIgnoreCase(draft.name());
     if (renamed && this.waypoints.names().stream().anyMatch(draft.name()::equalsIgnoreCase)) {
       return Result.TAKEN;
     }
@@ -188,7 +199,9 @@ public final class WaypointEditor {
       this.config.setLayerPrivate(this.plugin, groupId, true);
     }
     this.waypoints.add(marker, draft.group());
-    if (renamed && draft.previous() != null) {
+    if (crossing) {
+      this.personal.remove(author.uuid(), draft.previous());
+    } else if (renamed && draft.previous() != null) {
       this.waypoints.remove(draft.previous());
     }
     return Result.SAVED;
@@ -231,6 +244,7 @@ public final class WaypointEditor {
       boolean smooth,
       @Nullable String description,
       @Nullable String previous,
+      boolean previousPersonal,
       boolean personal,
       @Nullable NamespacedKey icon) {}
 }

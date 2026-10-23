@@ -2411,6 +2411,7 @@ public final class MapScreen extends Screen {
   private void saveMoved(final @NotNull Waypoint waypoint) {
     this.map.saveWaypoint(
         waypoint,
+        waypoint.personal(),
         false,
         status -> {
           if (status != 204) {

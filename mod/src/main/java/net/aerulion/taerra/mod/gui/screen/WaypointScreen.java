@@ -100,9 +100,8 @@ public final class WaypointScreen extends Screen {
         color != null && Colors.isHex(color)
             ? color.toLowerCase(Locale.ROOT)
             : Waypoint.DEFAULT_COLOR;
-    this.ownGroup =
-        account != null && account.personal() && (target.personal() || target.previous() == null);
-    this.serverGroups = account != null && account.markers() && !target.personal();
+    this.ownGroup = account != null && account.personal();
+    this.serverGroups = account != null && account.markers();
     this.group = this.ownGroup && target.previous() == null ? Waypoint.PERSONAL : target.group();
     this.description = target.description();
     this.icon = target.points() == null && target.icon() != null ? target.icon() : "";
@@ -373,6 +372,7 @@ public final class WaypointScreen extends Screen {
             group,
             this.description.strip(),
             this.target.points() == null && !this.icon.isEmpty() ? this.icon : null),
+        this.target.personal(),
         creating && this.privateGroup,
         status -> {
           if (status == 204) {

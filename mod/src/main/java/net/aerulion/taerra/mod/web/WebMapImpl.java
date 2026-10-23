@@ -275,6 +275,7 @@ public final class WebMapImpl implements WebMap {
   @Override
   public void saveWaypoint(
       final @NotNull Waypoint waypoint,
+      final boolean previousPersonal,
       final boolean privateGroup,
       final @NotNull IntConsumer then) {
     final @NotNull Map<String, Object> body = new HashMap<>();
@@ -304,6 +305,9 @@ public final class WebMapImpl implements WebMap {
     }
     if (waypoint.previous() != null) {
       body.put("previous", waypoint.previous());
+      if (previousPersonal != waypoint.personal()) {
+        body.put("previousPersonal", previousPersonal);
+      }
     }
     this.client.send("PUT", "/api/waypoints", body, refreshing(waypoint.world(), then));
   }

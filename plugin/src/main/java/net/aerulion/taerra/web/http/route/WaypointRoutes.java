@@ -111,7 +111,15 @@ public final class WaypointRoutes implements Routes {
       ctx.status(400).result("Invalid waypoint");
       return;
     }
+    final boolean previousPersonal =
+        request.previousPersonal() == null ? request.personal() : request.previousPersonal();
     if (request.personal() ? !viewer.canKeepPersonalMarkers() : !viewer.canEditMarkers()) {
+      ctx.status(403).result("Not allowed");
+      return;
+    }
+    if (request.previous() != null
+        && previousPersonal != request.personal()
+        && (previousPersonal ? !viewer.canKeepPersonalMarkers() : !viewer.canEditMarkers())) {
       ctx.status(403).result("Not allowed");
       return;
     }
@@ -154,6 +162,7 @@ public final class WaypointRoutes implements Routes {
             request.smooth(),
             request.description(),
             request.previous(),
+            previousPersonal,
             request.personal(),
             point ? icon : null);
     ctx.future(
@@ -337,5 +346,6 @@ public final class WaypointRoutes implements Routes {
       boolean smooth,
       @Nullable String description,
       boolean personal,
+      @Nullable Boolean previousPersonal,
       @Nullable String icon) {}
 }
