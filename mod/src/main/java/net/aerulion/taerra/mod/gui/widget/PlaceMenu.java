@@ -68,9 +68,13 @@ public final class PlaceMenu extends AbstractContainerEventHandler
       this.width = Math.max(this.width, font.width(item.getMessage()));
     }
     this.x =
-        (int) Math.clamp(mouseX + FRAME, left + FRAME, Math.max(left, right - this.width - FRAME));
+        (int)
+            Math.clamp(
+                mouseX + FRAME, left + FRAME, Math.max(left + FRAME, right - this.width - FRAME));
     this.y =
-        (int) Math.clamp(mouseY + FRAME, top + FRAME, Math.max(top, bottom - height() - FRAME));
+        (int)
+            Math.clamp(
+                mouseY + FRAME, top + FRAME, Math.max(top + FRAME, bottom - height() - FRAME));
     arrange();
   }
 
