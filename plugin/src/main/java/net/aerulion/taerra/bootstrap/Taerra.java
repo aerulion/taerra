@@ -7,6 +7,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import net.aerulion.taerra.api.TaerraApi;
+import net.aerulion.taerra.api.event.web.WebLoginEvent;
+import net.aerulion.taerra.api.event.web.WebLogoutEvent;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.chat.RenderFeedback;
 import net.aerulion.taerra.command.ConfigSubCommand;
@@ -71,6 +73,7 @@ import net.aerulion.taerra.storage.TileCache;
 import net.aerulion.taerra.storage.TileCacheImpl;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.storage.TileStorageImpl;
+import net.aerulion.taerra.util.Events;
 import net.aerulion.taerra.util.HexColors;
 import net.aerulion.taerra.util.Throwables;
 import net.aerulion.taerra.waypoint.DynmapImport;
@@ -233,6 +236,24 @@ public final class Taerra extends JavaPlugin {
           new MapWebSocketHandlerImpl(this, configuration, webSessions, webSettings);
       webSessions.onChange(webSocketHandler::revalidate);
       webSessions.onDevices(uuid -> webSocketHandler.sendTo(uuid, Map.of("type", "devices")));
+      webSessions.onLogin(
+          (session, game) ->
+              Events.fire(
+                  this,
+                  new WebLoginEvent(
+                      getServer().getOfflinePlayer(session.uuid()),
+                      game,
+                      session.device() == null ? null : session.device().browser(),
+                      session.device() == null ? null : session.device().os())));
+      webSessions.onLogout(
+          (session, game) ->
+              Events.fire(
+                  this,
+                  new WebLogoutEvent(
+                      getServer().getOfflinePlayer(session.uuid()),
+                      game,
+                      session.device() == null ? null : session.device().browser(),
+                      session.device() == null ? null : session.device().os())));
       WebGrants.start(this, configuration, webSessions);
       if (getServer().getPluginManager().isPluginEnabled("LuckPerms")) {
         LuckPermsGrants.start(this, configuration, webSessions);

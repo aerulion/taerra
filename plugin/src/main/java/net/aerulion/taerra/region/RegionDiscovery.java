@@ -4,9 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import net.aerulion.taerra.api.event.region.RegionDiscoverEvent;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.WorldKeys;
+import net.aerulion.taerra.util.Events;
 import net.aerulion.taerra.web.auth.ModHandshake;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -83,6 +85,9 @@ public final class RegionDiscovery {
                       }
                     }
                     discovered.accept(uuid, region.name());
+                    if (player != null) {
+                      Events.fire(plugin, new RegionDiscoverEvent(player, new RegionImpl(region)));
+                    }
                   });
         });
   }

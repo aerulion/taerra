@@ -6,9 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import net.aerulion.taerra.api.event.waypoint.WaypointChangeEvent;
+import net.aerulion.taerra.api.event.waypoint.WaypointCreateEvent;
+import net.aerulion.taerra.api.event.waypoint.WaypointDeleteEvent;
+import net.aerulion.taerra.api.event.waypoint.WaypointEvent;
 import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.PointMarker;
 import net.aerulion.taerra.marker.MarkerRegistryImpl;
@@ -17,6 +22,7 @@ import net.aerulion.taerra.marker.TestPlugins;
 import net.aerulion.taerra.player.PlayerFiles;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
+import org.bukkit.event.Event;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -43,6 +49,53 @@ class PersonalWaypointsTest {
       final @NotNull Path directory, final @NotNull MarkerRegistryImpl registry) {
     final @NotNull Plugin plugin = TestPlugins.in(directory.toFile());
     return new PersonalWaypoints(plugin, registry, new PlayerFiles(plugin));
+  }
+
+  static @NotNull List<String> describe(final @NotNull List<Event> events) {
+    return events.stream()
+        .map(
+            event -> {
+              final @NotNull WaypointEvent waypoint = (WaypointEvent) event;
+              final @NotNull String kind =
+                  switch (event) {
+                    case WaypointCreateEvent _ -> "create";
+                    case WaypointChangeEvent _ -> "change";
+                    case WaypointDeleteEvent _ -> "delete";
+                    default -> event.getEventName();
+                  };
+              return kind
+                  + " "
+                  + waypoint.waypoint().label()
+                  + " "
+                  + (waypoint.owner() == null ? "shared" : waypoint.owner().getUniqueId());
+            })
+        .toList();
+  }
+
+  @Test
+  @DisplayName(
+      "each change to a player's waypoints fires one event, a rename a delete and a create")
+  void firesEvents(final @TempDir Path directory) {
+    final @NotNull List<Event> fired = new ArrayList<>();
+    final @NotNull Plugin plugin = TestPlugins.in(directory.toFile(), fired);
+    final @NotNull PersonalWaypoints waypoints =
+        new PersonalWaypoints(plugin, new MarkerRegistryImpl(), new PlayerFiles(plugin));
+
+    waypoints.save(ALEX, point("Home", 1), null);
+    waypoints.save(ALEX, point("Home", 2), "Home");
+    waypoints.save(ALEX, point("Home", 2), "Home");
+    waypoints.setHidden(ALEX, List.of("Home"), true);
+    waypoints.save(ALEX, point("Base", 2), "Home");
+    waypoints.remove(ALEX, "Base");
+
+    assertEquals(
+        List.of(
+            "create Home " + ALEX,
+            "change Home " + ALEX,
+            "delete Home " + ALEX,
+            "create Base " + ALEX,
+            "delete Base " + ALEX),
+        describe(fired));
   }
 
   @Test

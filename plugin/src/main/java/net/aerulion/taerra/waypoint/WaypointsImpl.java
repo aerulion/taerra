@@ -10,9 +10,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.logging.Level;
+import net.aerulion.taerra.api.event.waypoint.WaypointChangeEvent;
+import net.aerulion.taerra.api.event.waypoint.WaypointCreateEvent;
+import net.aerulion.taerra.api.event.waypoint.WaypointDeleteEvent;
 import net.aerulion.taerra.api.marker.AreaMarker;
 import net.aerulion.taerra.api.marker.LineMarker;
 import net.aerulion.taerra.api.marker.Marker;
@@ -21,11 +25,13 @@ import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.api.marker.PointMarker;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.util.AtomicFiles;
+import net.aerulion.taerra.util.Events;
 import net.aerulion.taerra.util.HexColors;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.event.Event;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -209,14 +215,16 @@ public final class WaypointsImpl implements Waypoints {
       final @NotNull Location location,
       final @NotNull Color color,
       final @Nullable String group) {
-    place(name, location, color, null, group);
+    final @Nullable Event event = place(name, location, color, null, group);
     save();
+    fire(event);
   }
 
   @Override
   public synchronized void add(final @NotNull Marker marker, final @Nullable String group) {
-    place(marker, group);
+    final @Nullable Event event = place(marker, group);
     save();
+    fire(event);
   }
 
   @Override
@@ -229,30 +237,36 @@ public final class WaypointsImpl implements Waypoints {
 
   @Override
   public synchronized void addAll(final @NotNull Collection<Waypoint> waypoints) {
+    final @NotNull List<Event> events = new ArrayList<>();
     for (final @NotNull Waypoint waypoint : waypoints) {
-      place(
-          waypoint.name(),
-          waypoint.location(),
-          waypoint.color(),
-          waypoint.icon(),
-          waypoint.group());
+      events.add(
+          place(
+              waypoint.name(),
+              waypoint.location(),
+              waypoint.color(),
+              waypoint.icon(),
+              waypoint.group()));
     }
     save();
+    events.forEach(this::fire);
   }
 
   @Override
   public synchronized boolean remove(final @NotNull String name) {
-    boolean removed = false;
+    final @NotNull List<Marker> removed = new ArrayList<>();
     for (final @NotNull MarkerLayer waypointLayer : layers()) {
-      if (waypointLayer.remove(id(name)) != null) {
-        removed = true;
+      final @Nullable Marker marker = waypointLayer.remove(id(name));
+      if (marker != null) {
+        removed.add(marker);
         dropIfEmpty(waypointLayer);
       }
     }
-    if (removed) {
-      save();
+    if (removed.isEmpty()) {
+      return false;
     }
-    return removed;
+    save();
+    removed.forEach(marker -> fire(new WaypointDeleteEvent(marker, null)));
+    return true;
   }
 
   @Override
@@ -280,13 +294,13 @@ public final class WaypointsImpl implements Waypoints {
         .toList();
   }
 
-  private void place(
+  private @Nullable Event place(
       final @NotNull String name,
       final @NotNull Location location,
       final @NotNull Color color,
       final @Nullable NamespacedKey icon,
       final @Nullable String group) {
-    place(
+    return place(
         Marker.point(
                 id(name),
                 location.getWorld().getKey(),
@@ -298,7 +312,13 @@ public final class WaypointsImpl implements Waypoints {
         group);
   }
 
-  private void place(final @NotNull Marker marker, final @Nullable String group) {
+  private @Nullable Event place(final @NotNull Marker marker, final @Nullable String group) {
+    final @Nullable Marker previous =
+        layers().stream()
+            .map(waypointLayer -> waypointLayer.get(marker.id()))
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse(null);
     final @NotNull MarkerLayer target = layer(group);
     for (final @NotNull MarkerLayer waypointLayer : layers()) {
       if (waypointLayer != target) {
@@ -307,6 +327,15 @@ public final class WaypointsImpl implements Waypoints {
       }
     }
     target.set(marker);
+    return previous == null
+        ? new WaypointCreateEvent(marker, null)
+        : previous.equals(marker) ? null : new WaypointChangeEvent(previous, marker, null);
+  }
+
+  private void fire(final @Nullable Event event) {
+    if (event != null) {
+      Events.fire(this.plugin, event);
+    }
   }
 
   private @Nullable String group(final @NotNull String name) {

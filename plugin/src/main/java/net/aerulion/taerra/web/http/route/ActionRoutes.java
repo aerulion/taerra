@@ -97,8 +97,8 @@ public final class ActionRoutes implements Routes {
                         ctx.status(
                             switch (outcome) {
                               case TELEPORTED -> 204;
-                              case OFFLINE, REFUSED -> 409;
-                              case FORBIDDEN -> 403;
+                              case OFFLINE -> 409;
+                              case FORBIDDEN, REFUSED -> 403;
                               case OUTSIDE_BORDER -> 400;
                               case FAILED -> 500;
                             })));

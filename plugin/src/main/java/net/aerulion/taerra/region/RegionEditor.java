@@ -8,10 +8,16 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import net.aerulion.taerra.api.event.region.RegionChangeEvent;
+import net.aerulion.taerra.api.event.region.RegionCreateEvent;
+import net.aerulion.taerra.api.event.region.RegionDeleteEvent;
+import net.aerulion.taerra.api.event.region.RegionResetEvent;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.rendering.RenderService;
+import net.aerulion.taerra.util.Events;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.event.Event;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -94,7 +100,14 @@ public final class RegionEditor {
                         fog,
                         discoverable,
                         painted);
-            return apply(world, region, rendered(previous, region), () -> this.regions.put(region));
+            final @Nullable Event event =
+                previous == null
+                    ? new RegionCreateEvent(new RegionImpl(region))
+                    : previous.equals(region)
+                        ? null
+                        : new RegionChangeEvent(new RegionImpl(previous), new RegionImpl(region));
+            return apply(
+                world, region, rendered(previous, region), () -> this.regions.put(region), event);
           }
         });
   }
@@ -112,7 +125,8 @@ public final class RegionEditor {
                 world,
                 region,
                 region.fog().fogged() ? region.chunks() : Set.of(),
-                () -> this.regions.remove(id));
+                () -> this.regions.remove(id),
+                new RegionDeleteEvent(new RegionImpl(region)));
           }
         });
   }
@@ -122,8 +136,10 @@ public final class RegionEditor {
     if (region == null) {
       return false;
     }
-    this.regions.put(region.withReset(System.currentTimeMillis()));
+    final @NotNull MapRegion reset = region.withReset(System.currentTimeMillis());
+    this.regions.put(reset);
     this.changed.run();
+    Events.fire(this.plugin, new RegionResetEvent(new RegionImpl(reset)));
     return true;
   }
 
@@ -131,11 +147,15 @@ public final class RegionEditor {
       final @NotNull World world,
       final @NotNull MapRegion region,
       final @NotNull Set<Long> rendered,
-      final @NotNull Runnable apply) {
+      final @NotNull Runnable apply,
+      final @Nullable Event event) {
     final @NotNull Runnable applyAndNotify =
         () -> {
           apply.run();
           this.changed.run();
+          if (event != null) {
+            Events.fire(this.plugin, event);
+          }
         };
     if (rendered.isEmpty()) {
       applyAndNotify.run();

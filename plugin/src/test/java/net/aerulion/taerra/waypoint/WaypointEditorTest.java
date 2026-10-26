@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,6 +17,7 @@ import net.aerulion.taerra.player.PlayerFiles;
 import net.aerulion.taerra.player.Preferences;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
+import org.bukkit.event.Event;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -32,13 +34,14 @@ class WaypointEditorTest {
 
   @TempDir Path directory;
 
+  private final @NotNull List<Event> fired = new ArrayList<>();
   private PersonalWaypoints personal;
   private WaypointsImpl waypoints;
   private WaypointEditor editor;
 
   @BeforeEach
   void setUp() {
-    final @NotNull Plugin plugin = TestPlugins.in(this.directory.toFile());
+    final @NotNull Plugin plugin = TestPlugins.in(this.directory.toFile(), this.fired);
     final @NotNull MarkerRegistryImpl registry = new MarkerRegistryImpl();
     final @NotNull TaerraConfig config =
         new TaerraConfig(
@@ -112,6 +115,34 @@ class WaypointEditorTest {
     assertEquals(WaypointEditor.Result.SAVED, move("Base", true));
     assertTrue(this.waypoints.names().isEmpty());
     assertEquals(1, this.personal.all(ALEX).size());
+  }
+
+  @Test
+  @DisplayName(
+      "a personal waypoint moved to the shared ones is created there and deleted for its owner")
+  void moveFiresEvents() {
+    this.personal.save(ALEX, point(PersonalWaypoints.markerId("Home"), "Home"), null);
+    this.fired.clear();
+
+    assertEquals(WaypointEditor.Result.SAVED, move("Home", false));
+    assertEquals(
+        List.of("create Home shared", "delete Home " + ALEX),
+        PersonalWaypointsTest.describe(this.fired));
+  }
+
+  @Test
+  @DisplayName("shared waypoints fire one event per change, none for a group move or a no-op")
+  void sharedFiresEvents() {
+    final @NotNull Marker base = point(Waypoints.markerId("Base"), "Base");
+    this.waypoints.add(base, null);
+    this.waypoints.add(base, "Builds");
+    this.waypoints.add(base.withColor(Color.RED), "Builds");
+    this.waypoints.remove("Base");
+    this.waypoints.remove("Base");
+
+    assertEquals(
+        List.of("create Base shared", "change Base shared", "delete Base shared"),
+        PersonalWaypointsTest.describe(this.fired));
   }
 
   @Test

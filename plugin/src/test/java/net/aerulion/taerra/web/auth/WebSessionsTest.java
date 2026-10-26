@@ -63,6 +63,38 @@ class WebSessionsTest {
   }
 
   @Test
+  @DisplayName("every session reports its login and logout, the mod's in-game one marked as such")
+  void reportsLoginsAndLogouts() {
+    final @NotNull WebSessions sessions = sessions();
+    final @NotNull List<String> seen = new ArrayList<>();
+    sessions.onLogin((session, game) -> seen.add("in " + game));
+    sessions.onLogout((session, game) -> seen.add("out " + game));
+
+    final WebSessions.@Nullable Login login =
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), PHONE);
+    assertNotNull(login);
+    sessions.end(sessions.open(PLAYER, "Steve", SKIN));
+    sessions.end(login.token());
+    sessions.end(login.token());
+    assertEquals(List.of("in false", "in true", "out true", "out false"), seen);
+
+    seen.clear();
+    sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), PHONE);
+    sessions.open(PLAYER, "Steve", SKIN);
+    assertEquals(2, sessions.endAll(PLAYER));
+    assertEquals(List.of("in false", "in true"), seen.subList(0, 2));
+    assertEquals(Set.of("out false", "out true"), Set.copyOf(seen.subList(2, 4)));
+
+    seen.clear();
+    for (int i = 0; i <= 10; i++) {
+      sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), PHONE);
+    }
+    assertEquals(11, seen.stream().filter("in false"::equals).count());
+    assertEquals(
+        List.of("out false"), seen.stream().filter(line -> line.startsWith("out")).toList());
+  }
+
+  @Test
   @DisplayName("a flood of pairing codes pushes out the oldest instead of refusing new ones")
   void pairingFloodDropsOldest() {
     final @NotNull WebSessions sessions = sessions();

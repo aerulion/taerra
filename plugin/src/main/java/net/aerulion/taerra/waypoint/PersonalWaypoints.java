@@ -4,12 +4,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import net.aerulion.taerra.api.event.waypoint.WaypointChangeEvent;
+import net.aerulion.taerra.api.event.waypoint.WaypointCreateEvent;
+import net.aerulion.taerra.api.event.waypoint.WaypointDeleteEvent;
 import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.MarkerIcons;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
@@ -17,9 +21,11 @@ import net.aerulion.taerra.api.marker.PlayerMarkerLayer;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.player.PlayerFiles;
+import net.aerulion.taerra.util.Events;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -190,10 +196,30 @@ public final class PersonalWaypoints implements Listener {
   }
 
   private boolean write(final @NotNull UUID player, final @NotNull List<Saved> saved) {
+    final @NotNull Map<String, Marker> before = new HashMap<>();
+    all(player).forEach(known -> before.put(known.marker().id(), known.marker()));
     if (!this.files.updateNow(player, data -> data.withWaypoints(saved))) {
       return false;
     }
     this.layer.refresh(player);
+    final @NotNull Map<String, Marker> after = new LinkedHashMap<>();
+    saved.forEach(now -> after.put(now.marker().id(), now.marker()));
+    final @NotNull OfflinePlayer owner = this.plugin.getServer().getOfflinePlayer(player);
+    before.forEach(
+        (id, was) -> {
+          if (!after.containsKey(id)) {
+            Events.fire(this.plugin, new WaypointDeleteEvent(was, owner));
+          }
+        });
+    after.forEach(
+        (id, now) -> {
+          final @Nullable Marker was = before.get(id);
+          if (was == null) {
+            Events.fire(this.plugin, new WaypointCreateEvent(now, owner));
+          } else if (!was.equals(now)) {
+            Events.fire(this.plugin, new WaypointChangeEvent(was, now, owner));
+          }
+        });
     return true;
   }
 

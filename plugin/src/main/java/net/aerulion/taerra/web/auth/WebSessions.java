@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,6 +59,8 @@ public final class WebSessions {
   private long seenSaved;
   private @NotNull Runnable onChange = () -> {};
   private @NotNull Consumer<UUID> onDevices = uuid -> {};
+  private @NotNull BiConsumer<Session, Boolean> onLogin = (session, game) -> {};
+  private @NotNull BiConsumer<Session, Boolean> onLogout = (session, game) -> {};
 
   public WebSessions(final @NotNull File file, final @NotNull Logger logger) {
     super();
@@ -87,6 +90,14 @@ public final class WebSessions {
 
   public synchronized void onDevices(final @NotNull Consumer<UUID> listener) {
     this.onDevices = listener;
+  }
+
+  public synchronized void onLogin(final @NotNull BiConsumer<Session, Boolean> listener) {
+    this.onLogin = listener;
+  }
+
+  public synchronized void onLogout(final @NotNull BiConsumer<Session, Boolean> listener) {
+    this.onLogout = listener;
   }
 
   public synchronized void load() {
@@ -180,20 +191,25 @@ public final class WebSessions {
     final @NotNull Session session =
         new Session(who.uuid(), who.name(), who.skin(), expires, now, device);
     final @NotNull String key = hash(token);
-    this.sessions.entrySet().stream()
-        .filter(
-            entry ->
-                entry.getValue().uuid().equals(who.uuid())
-                    && !this.unsaved.contains(entry.getKey()))
-        .sorted(Comparator.comparingLong(entry -> -entry.getValue().expires()))
-        .skip(MAX_SESSIONS - 1)
-        .map(Map.Entry::getKey)
-        .toList()
-        .forEach(this.sessions::remove);
+    final @NotNull List<Session> evicted =
+        this.sessions.entrySet().stream()
+            .filter(
+                entry ->
+                    entry.getValue().uuid().equals(who.uuid())
+                        && !this.unsaved.contains(entry.getKey()))
+            .sorted(Comparator.comparingLong(entry -> -entry.getValue().expires()))
+            .skip(MAX_SESSIONS - 1)
+            .map(Map.Entry::getKey)
+            .toList()
+            .stream()
+            .map(this.sessions::remove)
+            .toList();
     this.sessions.put(key, session);
     this.seen.put(key, now);
     save();
     this.onDevices.accept(who.uuid());
+    evicted.forEach(ended -> this.onLogout.accept(ended, false));
+    this.onLogin.accept(session, false);
     return new Login(token, session);
   }
 
@@ -267,11 +283,13 @@ public final class WebSessions {
     final @NotNull String token = token();
     final @NotNull String key = hash(token);
     final long now = System.currentTimeMillis();
-    this.sessions.put(
-        key, new Session(uuid, name, skin, now + SESSION_LIFETIME.toMillis(), now, null));
+    final @NotNull Session session =
+        new Session(uuid, name, skin, now + SESSION_LIFETIME.toMillis(), now, null);
+    this.sessions.put(key, session);
     this.seen.put(key, now);
     this.unsaved.add(key);
     this.onDevices.accept(uuid);
+    this.onLogin.accept(session, true);
     return token;
   }
 
@@ -333,10 +351,11 @@ public final class WebSessions {
     if (key == null) {
       return false;
     }
-    this.sessions.remove(key);
+    final @NotNull Session ended = this.sessions.remove(key);
     save();
     this.onChange.run();
     this.onDevices.accept(uuid);
+    this.onLogout.accept(ended, false);
     return true;
   }
 
@@ -395,11 +414,13 @@ public final class WebSessions {
     final @NotNull String key = hash(token);
     final @Nullable Session ended = this.sessions.remove(key);
     if (ended != null) {
-      if (!this.unsaved.remove(key)) {
+      final boolean game = this.unsaved.remove(key);
+      if (!game) {
         save();
       }
       this.onChange.run();
       this.onDevices.accept(ended.uuid());
+      this.onLogout.accept(ended, game);
     }
   }
 
@@ -408,14 +429,21 @@ public final class WebSessions {
     this.pairings
         .values()
         .removeIf(pairing -> pairing.who() != null && pairing.who().uuid().equals(uuid));
-    final int before = this.sessions.size();
-    this.sessions.values().removeIf(session -> session.uuid().equals(uuid));
-    final int ended = before - this.sessions.size();
-    if (ended > 0) {
+    final @NotNull Map<String, Session> ended = new HashMap<>();
+    this.sessions.forEach(
+        (key, session) -> {
+          if (session.uuid().equals(uuid)) {
+            ended.put(key, session);
+          }
+        });
+    if (!ended.isEmpty()) {
+      final @NotNull Set<String> game = new HashSet<>(this.unsaved);
+      this.sessions.keySet().removeAll(ended.keySet());
       save();
       this.onChange.run();
+      ended.forEach((key, session) -> this.onLogout.accept(session, game.contains(key)));
     }
-    return ended;
+    return ended.size();
   }
 
   private void save() {

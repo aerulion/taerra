@@ -10,7 +10,7 @@ One map, rendered on your server: in the browser, and in game.
 | Directory      | Part                                                                          |
 |----------------|-------------------------------------------------------------------------------|
 | `plugin/`      | The Paper plugin: renders the tiles, serves the web map                       |
-| `api/`         | The API other plugins add markers and layers and report block changes through |
+| `api/`         | The API other plugins add markers and layers and report block changes through, and its events |
 | `mod/`         | The Fabric mod: map screen and minimap, a viewer only                         |
 | `tools/mcdata` | Generates `block_data.json` and `colormaps.json`                              |
 | `branding/`    | Renders the logo and store images from the map tiles                          |
@@ -180,6 +180,19 @@ repositories {
 
 dependencies {
   compileOnly("net.aerulion", "taerra-api", "412-a1b2c3d")
+}
+```
+
+TAERRA also fires Bukkit events, in `net.aerulion.taerra.api.event`: a player discovering a region, regions and
+waypoints being created, changed or deleted, web map logins and logouts, and teleports from the map, which a listener
+can cancel. Listen to them like any other event:
+
+``` java
+@EventHandler
+public void onDiscover(final RegionDiscoverEvent event) {
+  if (event.region().name().equals("Old Town")) {
+    event.player().getInventory().addItem(new ItemStack(Material.EMERALD, 5));
+  }
 }
 ```
 

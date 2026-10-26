@@ -2,6 +2,7 @@ package net.aerulion.taerra.world;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import net.aerulion.taerra.api.event.web.WebTeleportEvent;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.permission.TaerraPermission;
@@ -52,26 +53,27 @@ public final class Teleports {
               }
               WorldPositions.clearY(world, x, y, z)
                   .thenCompose(
-                      feet ->
-                          player
-                              .teleportAsync(
-                                  new Location(
-                                      world,
-                                      x + .5,
-                                      feet,
-                                      z + .5,
-                                      player.getYaw(),
-                                      player.getPitch()),
-                                  PlayerTeleportEvent.TeleportCause.PLUGIN)
-                              .thenApply(
-                                  teleported -> {
-                                    if (teleported && announce) {
-                                      player.sendMessage(
-                                          Messages.webTeleport(
-                                              x + " " + feet + " " + z, WorldKeys.id(world)));
-                                    }
-                                    return teleported ? Outcome.TELEPORTED : Outcome.REFUSED;
-                                  }))
+                      feet -> {
+                        final @NotNull Location to =
+                            new Location(
+                                world, x + .5, feet, z + .5, player.getYaw(), player.getPitch());
+                        final @NotNull WebTeleportEvent event = new WebTeleportEvent(player, to);
+                        this.plugin.getServer().getPluginManager().callEvent(event);
+                        if (event.isCancelled()) {
+                          return CompletableFuture.completedFuture(Outcome.REFUSED);
+                        }
+                        return player
+                            .teleportAsync(to, PlayerTeleportEvent.TeleportCause.PLUGIN)
+                            .thenApply(
+                                teleported -> {
+                                  if (teleported && announce) {
+                                    player.sendMessage(
+                                        Messages.webTeleport(
+                                            x + " " + feet + " " + z, WorldKeys.id(world)));
+                                  }
+                                  return teleported ? Outcome.TELEPORTED : Outcome.REFUSED;
+                                });
+                      })
                   .whenComplete(
                       (outcome, error) ->
                           result.complete(error == null ? outcome : Outcome.FAILED));

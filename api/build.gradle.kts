@@ -47,7 +47,8 @@ publishing {
             from(components["java"])
             pom {
                 name = "TAERRA API"
-                description = "API for adding markers and layers to the TAERRA web map."
+                description =
+                    "API for adding markers and layers to the TAERRA web map, and its events."
                 url = "https://taerra.dev"
                 licenses {
                     license {
