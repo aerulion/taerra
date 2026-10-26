@@ -44,6 +44,7 @@ runs:
         BASE_SHA: ${{ inputs.base }}
         RELEASE_TAGS: ${{ inputs.release-tags }}
         FORCE: ${{ inputs.force }}
+        ACTION_PATH: ${{ github.action_path }}
       run: |
         set -euo pipefail
 
@@ -83,23 +84,20 @@ runs:
           return 1
         }
 
+        source "${ACTION_PATH}/streams.sh"
+
         stream_changed() {
-          local stream="$1" base="$2" file
+          local stream="$1" base="$2" files file
+          # --no-renames lists a moved file under both paths, so a move between streams counts for both.
+          if ! files="$(git diff --name-only --no-renames "${base}...HEAD")"; then
+            echo "::warning::Could not diff ${stream} against ${base}, treating it as changed." >&2
+            return 0
+          fi
           while IFS= read -r file; do
-            case "${file}" in
-              '' | *.md) ;;
-              site/* | .github/actions/build-site/* | .github/workflows/site.yml | branding/ingame/* | branding/images/youtube/*)
-                if [ "${stream}" = 'site' ]; then return 0; fi ;;
-              branding/* | .github/*) ;;
-              plugin/src/main/resources/web/fonts/QuinqueFive-Regular.woff2 | plugin/src/main/resources/web/favicon.ico \
-                | plugin/src/main/resources/web/images/*)
-                if [ "${stream}" != 'mod' ]; then return 0; fi ;;
-              mod/*) if [ "${stream}" = 'mod' ]; then return 0; fi ;;
-              gradle/* | build-logic/* | settings.gradle.kts | build.gradle.kts | gradle.properties | gradlew | gradlew.bat)
-                if [ "${stream}" != 'site' ]; then return 0; fi ;;
-              *) if [ "${stream}" = 'plugin' ]; then return 0; fi ;;
-            esac
-          done < <(git diff --name-only "${base}...HEAD")
+            if in_stream "${stream}" "${file}"; then
+              return 0
+            fi
+          done <<< "${files}"
           return 1
         }
 

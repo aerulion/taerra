@@ -15,13 +15,24 @@ audience="${AUDIENCE:-contributors}"
 cd "$(git rev-parse --show-toplevel)"
 
 case "${prefix}" in
-  plugin-) paths=( '.' ':(exclude)mod' ':(exclude)branding' ':(exclude)site' ':(exclude).github' ':(exclude)*.md' ) ;;
-  mod-) paths=( 'mod' 'gradle' 'build-logic' 'settings.gradle.kts' 'build.gradle.kts' 'gradle.properties' 'gradlew' 'gradlew.bat' ':(exclude)*.md' ) ;;
+  plugin- | mod-) stream="${prefix%-}" ;;
   *)
     echo "::error::Unknown tag prefix '${prefix}'." >&2
     exit 1
     ;;
 esac
+
+source .github/actions/classify-changes/streams.sh
+
+touches_stream() {
+  local file
+  while IFS= read -r file; do
+    if in_stream "${stream}" "${file}"; then
+      return 0
+    fi
+  done < <(git diff-tree --root --no-commit-id --name-only -r --no-renames "$1")
+  return 1
+}
 
 if [ -z "${previous}" ]; then
   previous="$(git describe --tags --abbrev=0 --match "${prefix}*" --exclude "${tag}" HEAD 2>/dev/null || true)"
@@ -50,7 +61,11 @@ if [ -z "${previous_commit}" ]; then
 fi
 
 head_commit="$(git rev-parse HEAD)"
-commits="$(git log --no-merges --format='%H%x09%an%x09%s' "${previous_commit}..HEAD" -- "${paths[@]}")"
+commits="$(git log --no-merges --format='%H%x09%an%x09%s' "${previous_commit}..HEAD" | while IFS= read -r line; do
+  if touches_stream "${line%%	*}"; then
+    printf '%s\n' "${line}"
+  fi
+done)"
 
 maximum=300
 total="$(grep -c . <<< "${commits}" || true)"
@@ -108,6 +123,11 @@ heading_of() {
   esac
 }
 
+sections='feat fix perf refactor docs test build ci deps chore revert other'
+if [ "${audience}" = 'players' ]; then
+  sections='feat fix perf'
+fi
+
 entries=''
 credits=''
 count=0
@@ -130,13 +150,14 @@ while IFS=$'\t' read -r sha name subject; do
   else
     line="${line} by ${credit} in ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${sha}"
   fi
-  entries="${entries}$(section_of "${type}")	${line}"$'\n'
-  credits="${credits}${credit}"$'\n'
+  section="$(section_of "${type}")"
+  entries="${entries}${section}	${line}"$'\n'
+  if [[ " ${sections} " == *" ${section} "* ]]; then
+    credits="${credits}${credit}"$'\n'
+  fi
 done <<< "${commits}"
 
-sections='feat fix perf refactor docs test build ci deps chore revert other'
 if [ "${audience}" = 'players' ]; then
-  sections='feat fix perf'
   if ! grep -qE '^(feat|fix|perf)	' <<< "${entries}"; then
     count=0
     printf 'Internal improvements only.\n\n'
