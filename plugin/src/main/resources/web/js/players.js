@@ -2,7 +2,7 @@ import {accountManager, FALLBACK_AVATAR} from './account.js';
 import {numbers, t} from './i18n.js';
 import {mapManager, pixelPath} from './map.js';
 import {markerManager, PLAYER_LAYER} from './markers.js';
-import {element, menuItem} from './ui.js';
+import {element, menuItem, replay} from './ui.js';
 import {navigationManager} from './navigation.js';
 
 const GLIDE_MILLIS = 1000;
@@ -114,6 +114,9 @@ class PlayerManager {
                 && !document.hidden) {
                 this.glide(entry);
             } else {
+                if (existing && located(previous) && player.world === previous.world) {
+                    replay(entry.body);
+                }
                 this.place(entry);
             }
             if (located(player)) {
@@ -164,7 +167,11 @@ class PlayerManager {
         if (rows.length !== this.list.children.length || rows.some((row, i) => this.list.children[i] !== row)) {
             this.list.replaceChildren(...rows);
         }
-        this.count.textContent = numbers.format(rows.length);
+        const count = numbers.format(rows.length);
+        if (this.count.textContent !== count) {
+            this.count.textContent = count;
+            replay(this.count);
+        }
         this.empty.hidden = rows.length > 0;
     }
 
@@ -223,6 +230,16 @@ class PlayerManager {
         });
         entry.row = document.createElement('li');
         entry.row.append(entry.button);
+        const spot = (on) => {
+            entry.body.classList.toggle('is-spotted', on);
+            entry.button.classList.toggle('is-spotted', on);
+            entry.marker.setZIndexOffset(on ? 1000 : 0);
+        };
+        entry.button.addEventListener('pointerenter', (event) => event.pointerType === 'mouse' && spot(true));
+        entry.button.addEventListener('pointerleave', () => spot(false));
+        entry.button.addEventListener('focus', () => spot(true));
+        entry.button.addEventListener('blur', () => spot(false));
+        entry.marker.on('mouseover', () => spot(true)).on('mouseout', () => spot(false));
 
         this.entries.set(player.uuid, entry);
         return entry;

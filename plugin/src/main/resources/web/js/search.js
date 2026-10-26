@@ -10,6 +10,8 @@ const LIMIT = 30;
 const KINDS = ['place', 'player', 'marker', 'world'];
 const COORDINATES = /^(-?\d+(?:\.\d+)?)(?:[\s,]+(-?\d+(?:\.\d+)?))?[\s,]+(-?\d+(?:\.\d+)?)$/;
 
+const SEPARATOR = /[\s_.,:'&()#!?+-]/;
+
 const fold = (text) => text.normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase();
 
 function score(label, query) {
@@ -17,10 +19,28 @@ function score(label, query) {
     if (text.startsWith(query)) {
         return 0;
     }
-    if (text.split(/[\s_.,:'&()#!?+-]+/).some(word => word.startsWith(query))) {
+    if (text.split(new RegExp(`${SEPARATOR.source}+`)).some(word => word.startsWith(query))) {
         return 1;
     }
     return text.includes(query) ? 2 : -1;
+}
+
+function marked(label, query) {
+    const name = element('span', 'row__name');
+    const text = fold(label);
+    const first = query && text.length === label.length ? text.indexOf(query) : -1;
+    let at = first;
+    while (at > 0 && !SEPARATOR.test(text[at - 1])) {
+        at = text.indexOf(query, at + 1);
+    }
+    at = at < 0 ? first : at;
+    if (at < 0) {
+        name.textContent = label;
+    } else {
+        name.append(label.slice(0, at), element('mark', 'search__match', label.slice(at, at + query.length)),
+            label.slice(at + query.length));
+    }
+    return name;
 }
 
 function center(marker) {
@@ -185,7 +205,7 @@ class SearchPalette {
             row.setAttribute('role', 'option');
             row.append(result.icon?.() ?? element('span', 'marker-icon marker-icon--place'));
             const text = element('span', 'row__text');
-            text.append(element('span', 'row__name', result.label));
+            text.append(result.kind === 'place' ? element('span', 'row__name', result.label) : marked(result.label, query));
             if (result.detail) {
                 text.append(element('span', 'row__meta', result.detail));
             }

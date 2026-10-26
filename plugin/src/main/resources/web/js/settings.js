@@ -2,7 +2,7 @@ import {accountManager, FALLBACK_AVATAR} from './account.js';
 import {language, numbers, plurals, t} from './i18n.js';
 import {iconChooser, iconStore, MARKER} from './icons.js';
 import {privateIcon} from './markers.js';
-import {armed, disarm, element, iconButton, switchInput} from './ui.js';
+import {armed, disarm, element, iconButton, slide, switchInput} from './ui.js';
 import {wsManager} from './websocket.js';
 
 const $ = (id) => document.getElementById(id);
@@ -474,6 +474,7 @@ class SettingsDialog {
                 }
                 link.setAttribute('aria-current', String(now));
             });
+            slide(nav, links[sections.indexOf(current)]);
         };
         this.highlight();
     }

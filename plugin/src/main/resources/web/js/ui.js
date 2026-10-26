@@ -58,15 +58,50 @@ export function disarm(node) {
     }
 }
 
+export function replay(node) {
+    node.style.animation = 'none';
+    void node.offsetWidth;
+    node.style.animation = '';
+}
+
+export function slide(container, target) {
+    if (!target) {
+        return;
+    }
+    container.style.setProperty('--slide-x', `${target.offsetLeft}px`);
+    container.style.setProperty('--slide-y', `${target.offsetTop}px`);
+    container.style.setProperty('--slide-w', `${target.offsetWidth}px`);
+    container.style.setProperty('--slide-h', `${target.offsetHeight}px`);
+    if (!container.classList.contains('is-sliding')) {
+        requestAnimationFrame(() => container.classList.add('is-sliding'));
+    }
+}
+
+export function haptic() {
+    navigator.vibrate?.(10);
+}
+
 export function switchInput(field, checked, label, onChange) {
     const wrap = element('span', 'switch');
     const input = element('input', 'switch__input');
     input.type = 'checkbox';
     input.role = 'switch';
+    input.setAttribute('switch', '');
     input.checked = checked;
     input.dataset.field = field;
     input.setAttribute('aria-label', label);
-    input.addEventListener('change', () => onChange(input.checked));
+    input.addEventListener('change', () => {
+        onChange(input.checked);
+        const replaced = !input.isConnected && document.querySelector(`.switch__input[data-field="${CSS.escape(field)}"]`);
+        if (replaced && replaced.checked === input.checked) {
+            const track = replaced.nextElementSibling;
+            track.classList.add('is-instant');
+            replaced.checked = !input.checked;
+            void track.offsetWidth;
+            track.classList.remove('is-instant');
+            replaced.checked = input.checked;
+        }
+    });
     wrap.append(input, element('span', 'switch__track'));
     return {wrap, input};
 }

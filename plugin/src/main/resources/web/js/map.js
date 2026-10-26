@@ -450,7 +450,10 @@ class MapManager {
     }
 
     updateCompass() {
-        this.needle.style.rotate = `${this.screenBearing(180)}deg`;
+        const target = this.screenBearing(180);
+        const current = this.needleAngle ?? target;
+        this.needleAngle = current + ((target - current) % 360 + 540) % 360 - 180;
+        this.needle.style.rotate = `${this.needleAngle}deg`;
     }
 
     setWorld(world) {
@@ -818,6 +821,13 @@ class MapManager {
         const x = Math.floor(latLng.lng * scale);
         const z = Math.floor(-latLng.lat * scale);
         return {x, y: this.currentWorld ? this.surfaceHeightAt(x, z) : undefined, z};
+    }
+
+    mark(x, z, y) {
+        const icon = L.divIcon({className: 'map-mark', iconSize: [64, 64]});
+        const mark = L.marker(this.blockToLatLng(x, z, y), {icon, interactive: false, keyboard: false})
+            .addTo(this.map);
+        mark.getElement().addEventListener('animationend', (event) => !event.pseudoElement && mark.remove());
     }
 
     centerOnBlock(x, z, zoom, y) {

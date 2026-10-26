@@ -26,6 +26,18 @@
     src: url("../fonts/AzeretMono.woff2") format("woff2");
 }
 
+@property --fade-start {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+@property --fade-end {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
 @layer base {
     :root {
         color-scheme: dark;
@@ -85,6 +97,11 @@
         --raised: 0 4px 12px rgb(0 0 0 / .4);
         --slab-shadow: inset 0 2px rgb(255 255 255 / .08), 0 8px 24px rgb(0 0 0 / .5);
         --backdrop: rgb(0 0 0 / .55);
+        --glass: rgb(49 50 51 / .93);
+        --glass-blur: blur(12px);
+        --ease-out: cubic-bezier(.22, 1, .36, 1);
+        --ease-spring: cubic-bezier(.3, 1.4, .5, 1);
+        --hover: background-color .15s, border-color .15s, color .15s;
 
         --safe-top: env(safe-area-inset-top, 0px);
         --topbar-h: calc(56px + var(--safe-top));
@@ -118,6 +135,12 @@
         border-radius: 0;
         font: inherit;
         color: inherit;
+        caret-color: var(--accent-hi);
+    }
+
+    ::selection {
+        background: var(--accent);
+        color: var(--white);
     }
 
     input[type="search"] {
@@ -171,6 +194,83 @@
         border: var(--edge);
         box-shadow: var(--slab-shadow);
         color: var(--white);
+    }
+
+    @supports (backdrop-filter: blur(1px)) {
+        .slab, .menu, .toolbar, .map-btn, .leaflet-bar a, .panel__toggle {
+            background-color: var(--glass);
+            backdrop-filter: var(--glass-blur);
+        }
+    }
+
+    .menu[popover], .dialog, .dialog::backdrop {
+        transition: opacity .2s, translate .25s var(--ease-out), scale .25s var(--ease-out),
+            display .25s allow-discrete, overlay .25s allow-discrete;
+    }
+
+    .menu[popover]:not(:popover-open) {
+        opacity: 0;
+        translate: 0 -6px;
+        scale: .98;
+    }
+
+    .dialog:not([open]) {
+        opacity: 0;
+        translate: 0 8px;
+        scale: .98;
+    }
+
+    .dialog::backdrop {
+        backdrop-filter: blur(3px);
+    }
+
+    .dialog:not([open])::backdrop {
+        opacity: 0;
+    }
+
+    @starting-style {
+        .menu[popover]:popover-open {
+            opacity: 0;
+            translate: 0 -6px;
+            scale: .98;
+        }
+
+        .dialog[open] {
+            opacity: 0;
+            translate: 0 12px;
+            scale: .97;
+        }
+
+        .dialog[open]::backdrop {
+            opacity: 0;
+        }
+    }
+
+    .context-menu {
+        animation: menu-in .18s var(--ease-out);
+    }
+
+    @keyframes menu-in {
+        from {
+            opacity: 0;
+            translate: 0 -6px;
+            scale: .98;
+        }
+    }
+
+    @keyframes rise {
+        from {
+            opacity: 0;
+            translate: var(--rise-from, 0 16px);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, ::before, ::after, ::backdrop {
+            animation-duration: .01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: .01ms !important;
+        }
     }
 
     .title {
@@ -308,6 +408,7 @@
         white-space: nowrap;
         cursor: pointer;
         box-shadow: inset 0 calc(-1 * var(--depth)) var(--lip), inset 2px 2px var(--shine);
+        transition: var(--hover);
     }
 
     .btn:hover:not(:disabled) {
@@ -315,6 +416,7 @@
     }
 
     .btn:active:not(:disabled),
+    .btn.is-keyed:not(:disabled),
     .btn[aria-pressed="true"] {
         padding-bottom: 0;
         box-shadow: inset 0 var(--depth) var(--press);
@@ -323,12 +425,23 @@
     .btn--primary {
         --lip: var(--accent-lo);
         --shine: rgb(255 255 255 / .2);
+        --sheen: linear-gradient(105deg, transparent 42%, rgb(255 255 255 / .22) 42% 48%, transparent 48% 51%, rgb(255 255 255 / .22) 51% 53%, transparent 53%);
         background: var(--accent);
         color: var(--white);
     }
 
     .btn--primary:hover:not(:disabled) {
-        background: var(--accent-hi);
+        background: var(--sheen) 120% 0 / 250% 100% no-repeat var(--accent-hi);
+        animation: sheen .7s var(--ease-out);
+    }
+
+    @keyframes sheen {
+        from {
+            background-position: 120% 0;
+        }
+        to {
+            background-position: -20% 0;
+        }
     }
 
     .btn--quiet,
@@ -378,9 +491,13 @@
     }
 
     .segmented {
+        --count: 2;
+        --at: 0;
+        position: relative;
         display: grid;
         grid-auto-columns: 1fr;
         grid-auto-flow: column;
+        isolation: isolate;
     }
 
     .segmented > .btn + .btn {
@@ -391,6 +508,36 @@
         --press: var(--accent-lo);
         background: var(--accent);
         color: var(--white);
+    }
+
+    .segmented:has(> :nth-child(3)) {
+        --count: 3;
+    }
+
+    .segmented:has(> :nth-child(2)[aria-pressed="true"]) {
+        --at: 1;
+    }
+
+    .segmented:has(> :nth-child(3)[aria-pressed="true"]) {
+        --at: 2;
+    }
+
+    .segmented:has(> [aria-pressed="true"])::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 calc(var(--at) * 100% / var(--count) - min(var(--at), 1) * 2px);
+        z-index: -1;
+        width: calc(100% / var(--count) + min(var(--at), 1) * 2px);
+        background: var(--accent);
+        border: var(--edge);
+        box-shadow: inset 0 3px var(--accent-lo);
+        transition: left .32s var(--ease-spring), width .32s var(--ease-spring);
+    }
+
+    .segmented > .btn[aria-pressed="true"]:not(:disabled) {
+        background: transparent;
+        border-color: transparent;
+        box-shadow: none;
     }
 
     .btn,
@@ -409,6 +556,7 @@
         border: 0;
         color: var(--stone-200);
         cursor: pointer;
+        transition: var(--hover);
     }
 
     .icon-btn:is(:hover, :focus-visible):not(:disabled) {
@@ -457,6 +605,7 @@
         box-shadow: var(--well);
         color: var(--white);
         font: 600 var(--text-l) var(--font-body);
+        transition: var(--hover);
     }
 
     .input::placeholder {
@@ -532,10 +681,11 @@
         width: 18px;
         height: 18px;
         margin: 0;
-        background: var(--stone-900);
+        background: var(--stone-900) center / 0 no-repeat;
         border: var(--edge);
         box-shadow: var(--well);
         cursor: pointer;
+        transition: background-color .15s, background-size .25s var(--ease-spring);
     }
 
     .checkbox:checked {
@@ -625,7 +775,12 @@
         background: var(--stone-100);
         border: 2px solid var(--stone-950);
         box-shadow: inset 0 -3px rgb(0 0 0 / .25), inset 2px 2px rgb(255 255 255 / .5);
-        transition: transform .15s;
+        transition: transform .28s var(--ease-spring), background-color .15s;
+    }
+
+    .switch__track.is-instant,
+    .switch__track.is-instant::after {
+        transition: none;
     }
 
     .switch__input:checked + .switch__track {
@@ -687,6 +842,7 @@
         font-size: var(--text-m);
         font-weight: 700;
         cursor: pointer;
+        transition: var(--hover);
     }
 
     .chip:hover .chip__label {
@@ -727,6 +883,7 @@
         border: 0;
         color: inherit;
         text-align: left;
+        transition: var(--hover);
     }
 
     .row--action {
@@ -802,6 +959,7 @@
         font: 600 var(--text-m) var(--font-body);
         text-align: left;
         cursor: pointer;
+        transition: var(--hover);
     }
 
     .menu__item:is(:hover, :focus-visible) {
@@ -824,6 +982,19 @@
     .menu__item.is-done {
         --icon-color: currentColor;
         color: var(--green);
+    }
+
+    .menu__item.is-done::before,
+    .account-pair.is-copied::before,
+    .btn[data-icon="check"]::before,
+    .about__version [data-icon="check"]::before {
+        animation: pop .35s var(--ease-spring);
+    }
+
+    @keyframes pop {
+        from {
+            scale: 0;
+        }
     }
 
     .menu__item.is-failed {
@@ -1080,6 +1251,7 @@
         font: 700 var(--text-l)/1 var(--font-display);
         box-shadow: inset 2px 2px rgb(255 255 255 / .1), inset 0 -4px var(--stone-800), var(--raised);
         cursor: pointer;
+        transition: var(--hover);
     }
 
     .map-btn:hover:not(:disabled),
@@ -1089,6 +1261,7 @@
     }
 
     .map-btn:active:not(:disabled),
+    .map-btn.is-keyed:not(:disabled),
     .leaflet-bar a:active {
         padding: var(--space-2) 0 0;
         box-shadow: inset 0 4px rgb(0 0 0 / .3), var(--raised);
@@ -1128,7 +1301,8 @@
         --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M0 0h6v1H0zM0 1h1v5H0zM5 1h1v1H5zM1 5h1v1H1zM2 2h6v1H2zM2 7h6v1H2zM2 3h1v4H2zM7 3h1v4H7z'/></svg>");
     }
 
-    [data-icon="check"] {
+    [data-icon="check"],
+    .menu__item.is-done:is([data-icon="copy"], [data-icon="link"]) {
         --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path d='M6 1h2v1H6zM5 2h2v1H5zM4 3h2v1H4zM0 3h2v1H0zM3 4h2v1H3zM1 4h2v1H1zM2 5h2v1H2z'/></svg>");
     }
 
@@ -1306,12 +1480,34 @@
     }
 
     .worlds {
+        position: relative;
         display: flex;
         flex: 1 1 0;
         align-self: stretch;
         gap: var(--space-2);
         min-width: 0;
         overflow: hidden;
+    }
+
+    .worlds::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: var(--slide-w, 0);
+        height: 4px;
+        background: var(--accent-hi);
+        box-shadow: inset 0 -2px var(--accent), 0 0 16px rgb(212 115 47 / .55);
+        translate: var(--slide-x, 0) 0;
+        pointer-events: none;
+    }
+
+    .worlds.is-sliding::after {
+        transition: translate .32s var(--ease-spring), width .32s var(--ease-spring);
+    }
+
+    .worlds.is-compact::after {
+        display: none;
     }
 
     .worlds.is-compact .world-tab:not(.world-switch),
@@ -1354,6 +1550,12 @@
         position: absolute;
         inset: auto 0 0;
         height: 4px;
+        scale: 0 1;
+        transition: scale .3s var(--ease-out), background-color .15s;
+    }
+
+    .world-tab {
+        transition: var(--hover);
     }
 
     .world-tab:hover {
@@ -1362,6 +1564,7 @@
 
     .world-tab:hover::after {
         background: var(--stone-500);
+        scale: 1;
     }
 
     .world-tab[aria-current="true"],
@@ -1376,10 +1579,14 @@
         color: var(--stone-100);
     }
 
-    .world-tab[aria-current="true"]::after,
     .world-switch::after {
         background: var(--accent-hi);
-        box-shadow: inset 0 -2px var(--accent);
+        box-shadow: inset 0 -2px var(--accent), 0 0 16px rgb(212 115 47 / .55);
+        scale: 1;
+    }
+
+    .world-tab[aria-current="true"]:not(.world-switch)::after {
+        visibility: hidden;
     }
 
     .world-switch {
@@ -1442,6 +1649,16 @@
 
     .status__dot[data-state="connected"] {
         background: var(--green);
+        animation: live 2.8s var(--ease-out) infinite;
+    }
+
+    @keyframes live {
+        from {
+            box-shadow: 0 0 0 2px var(--stone-900), 0 0 0 2px rgb(82 165 53 / .7);
+        }
+        60%, to {
+            box-shadow: 0 0 0 2px var(--stone-900), 0 0 0 9px rgb(82 165 53 / 0);
+        }
     }
 
     .status__dot[data-state="disconnected"] {
@@ -1646,7 +1863,7 @@
         display: flex;
         flex-direction: column;
         pointer-events: none;
-        transition: transform .2s ease;
+        transition: transform .35s var(--ease-out);
     }
 
     .panel > * {
@@ -1672,7 +1889,7 @@
         color: var(--stone-100);
         cursor: pointer;
         box-shadow: inset 2px 2px rgb(255 255 255 / .1);
-        transition: transform .2s ease;
+        transition: transform .35s var(--ease-out), var(--hover);
     }
 
     .panel__toggle::before {
@@ -1701,6 +1918,108 @@
         overflow-y: auto;
     }
 
+    @supports (animation-timeline: scroll()) {
+        .panel__body::before,
+        .panel__body::after {
+            content: "";
+            position: sticky;
+            z-index: 1;
+            flex: none;
+            height: var(--space-6);
+            pointer-events: none;
+            opacity: 0;
+            animation: fade-edge linear both;
+            animation-timeline: scroll(nearest);
+        }
+
+        .panel__body::before {
+            top: 0;
+            margin-bottom: calc(-1 * var(--space-6));
+            background: linear-gradient(var(--stone-700), transparent);
+            animation-range: 0 var(--space-6);
+        }
+
+        .panel__body::after {
+            bottom: 0;
+            margin-top: calc(-1 * var(--space-6));
+            background: linear-gradient(transparent, var(--stone-700));
+            animation-direction: reverse;
+            animation-range: calc(100% - var(--space-6)) 100%;
+        }
+
+        .dialog__body,
+        .search__results {
+            mask-image: linear-gradient(transparent, #000 var(--fade-start), #000 calc(100% - var(--fade-end)), transparent);
+            animation: fade-start linear both, fade-end linear both;
+            animation-timeline: scroll(self);
+            animation-range: 0 var(--space-6), calc(100% - var(--space-6)) 100%;
+        }
+    }
+
+    @keyframes fade-edge {
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes fade-start {
+        to {
+            --fade-start: var(--space-6);
+        }
+    }
+
+    @keyframes fade-end {
+        from {
+            --fade-end: var(--space-6);
+        }
+    }
+
+    :root:not(.is-ready) :is(.panel > *, .leaflet-control-container .leaflet-control, .hud) {
+        visibility: hidden;
+    }
+
+    .is-ready :is(.panel > *, .panel__section, .leaflet-control-container .leaflet-control, .hud) {
+        animation: rise .6s var(--ease-out) calc(var(--order, 0) * 60ms) backwards;
+    }
+
+    .is-ready .panel > * {
+        --rise-from: -32px 0;
+    }
+
+    .is-ready .panel__section {
+        --rise-from: -12px 0;
+    }
+
+    .panel__section:nth-child(2) {
+        --order: 1;
+    }
+
+    .panel__section:nth-child(3) {
+        --order: 2;
+    }
+
+    .panel__section:nth-child(4) {
+        --order: 3;
+    }
+
+    .is-ready .leaflet-control-container .leaflet-control {
+        --rise-from: 32px 0;
+        --order: 1;
+    }
+
+    .leaflet-control-container .leaflet-control + .leaflet-control {
+        --order: 2;
+    }
+
+    .leaflet-control-container .leaflet-control + .leaflet-control + .leaflet-control {
+        --order: 3;
+    }
+
+    .is-ready .hud {
+        --rise-from: 0 16px;
+        --order: 4;
+    }
+
     .panel__section {
         display: grid;
         gap: var(--space-4);
@@ -1726,9 +2045,64 @@
     .rotation output {
         display: grid;
         place-items: center;
+        overflow: clip;
         background: var(--stone-900);
         font: 600 var(--text-l) var(--font-mono);
         text-transform: capitalize;
+    }
+
+    .rotation output > span {
+        display: inline-block;
+    }
+
+    .rotation output > .is-from-left {
+        --from: -20px;
+        animation: turn-in .32s var(--ease-spring);
+    }
+
+    .rotation output > .is-from-right {
+        --from: 20px;
+        animation: turn-in .32s var(--ease-spring);
+    }
+
+    @keyframes turn-in {
+        from {
+            opacity: 0;
+            translate: var(--from) 0;
+        }
+    }
+
+    .tooltip {
+        inset: auto;
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin: 0;
+        padding: var(--space-2) var(--space-3);
+        overflow: visible;
+        background: var(--stone-900);
+        border: var(--edge);
+        box-shadow: var(--raised);
+        color: var(--stone-100);
+        font: 600 var(--text-s)/1 var(--font-body);
+        white-space: nowrap;
+        pointer-events: none;
+        animation: tooltip-in .15s var(--ease-out);
+    }
+
+    .tooltip:not(:popover-open) {
+        display: none;
+    }
+
+    .tooltip > span {
+        margin-right: var(--space-1);
+    }
+
+    @keyframes tooltip-in {
+        from {
+            opacity: 0;
+            translate: 0 -3px;
+        }
     }
 
     .render-what {
@@ -1785,6 +2159,10 @@
     .player.is-hidden img {
         border-style: dashed;
         opacity: .55;
+    }
+
+    .player.is-spotted:not(:disabled, [aria-pressed="true"]) {
+        background: var(--stone-600);
     }
 
     .player.is-elsewhere {
@@ -1954,6 +2332,25 @@
         font: inherit;
     }
 
+    #player-count {
+        animation: bump .4s var(--ease-spring);
+    }
+
+    @keyframes bump {
+        40% {
+            scale: 1.35;
+        }
+    }
+
+    #map::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 450;
+        box-shadow: inset 0 0 120px rgb(0 0 0 / .35), inset 0 12px 16px -12px rgb(0 0 0 / .6);
+        pointer-events: none;
+    }
+
     #map[data-environment="NETHER"] {
         --void: #170909;
     }
@@ -2019,6 +2416,7 @@
     .compass__needle {
         shape-rendering: crispEdges;
         filter: drop-shadow(1px 1px 0 rgb(0 0 0 / .5));
+        transition: rotate .7s var(--ease-spring);
     }
 
     .sky {
@@ -2130,6 +2528,23 @@
     .leaflet-popup-content-wrapper {
         padding: 0;
         border: var(--edge);
+        transform-origin: 50% 100%;
+        animation: popup-in .24s var(--ease-spring);
+    }
+
+    @supports (backdrop-filter: blur(1px)) {
+        .leaflet-popup-content-wrapper {
+            background: var(--glass);
+            backdrop-filter: var(--glass-blur);
+        }
+    }
+
+    @keyframes popup-in {
+        from {
+            opacity: 0;
+            translate: 0 8px;
+            scale: .94;
+        }
     }
 
     .leaflet-popup-content {
@@ -2330,12 +2745,20 @@
         pointer-events: none;
     }
 
+    .waypoint__label {
+        transition: opacity .15s, translate .2s var(--ease-out), visibility .2s;
+    }
+
     .waypoint__label.is-hidden {
         visibility: hidden;
+        opacity: 0;
+        translate: -50% 4px;
     }
 
     .waypoint-icon:hover .waypoint__label {
         visibility: visible;
+        opacity: 1;
+        translate: -50% 0;
     }
 
     .leaflet-tooltip.marker-tooltip::before {
@@ -2380,6 +2803,26 @@
         position: relative;
         width: 28px;
         height: 28px;
+        transition: translate .25s var(--ease-spring);
+        animation: arrive .5s var(--ease-out);
+    }
+
+    .player-marker__body.is-spotted {
+        translate: 0 -4px;
+    }
+
+    @keyframes arrive {
+        from {
+            opacity: 0;
+            scale: .2;
+        }
+        55% {
+            opacity: 1;
+            scale: 1.2;
+        }
+        75% {
+            scale: .95;
+        }
     }
 
     .player-marker img {
@@ -2390,6 +2833,58 @@
         border: 2px solid var(--player-color, var(--white));
         box-shadow: 0 2px 0 1px rgb(0 0 0 / .5);
         image-rendering: pixelated;
+        transition: box-shadow .25s;
+    }
+
+    .player-marker__body.is-spotted img {
+        box-shadow: 0 6px 0 1px rgb(0 0 0 / .35);
+    }
+
+    .player-marker__body.is-spotted::after {
+        animation-duration: .9s;
+    }
+
+    .map-mark {
+        pointer-events: none;
+        animation: mark-life 1.2s linear forwards;
+    }
+
+    .map-mark::before,
+    .map-mark::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        margin: auto;
+        border: 2px solid var(--accent-hi);
+        box-shadow: 0 0 0 2px rgb(0 0 0 / .45);
+        animation: mark-ring 1s var(--ease-out) both;
+    }
+
+    .map-mark::after {
+        border-color: var(--white);
+        animation-delay: .15s;
+    }
+
+    @keyframes mark-life {
+        80% {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+
+    @keyframes mark-ring {
+        from {
+            width: 8px;
+            height: 8px;
+            opacity: 1;
+        }
+        to {
+            width: 64px;
+            height: 64px;
+            opacity: 0;
+        }
     }
 
     .player-marker__facing {
@@ -2423,6 +2918,34 @@
 
     .player-marker.is-followed img {
         outline: 2px solid var(--white);
+    }
+
+    .player-marker__body::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 2px solid var(--player-color, var(--white));
+        opacity: 0;
+        pointer-events: none;
+        animation: ping 3.2s var(--ease-out) infinite;
+    }
+
+    .player-marker.is-followed .player-marker__body::after {
+        animation-duration: 1.6s;
+    }
+
+    .player-marker__body.is-hidden::after {
+        display: none;
+    }
+
+    @keyframes ping {
+        from {
+            opacity: .8;
+        }
+        50%, to {
+            opacity: 0;
+            scale: 1.9;
+        }
     }
 
     .navigation__icon,
@@ -2848,6 +3371,17 @@
 
     .search__result .tag {
         margin-left: auto;
+    }
+
+    .search__match {
+        background: none;
+        color: var(--accent-hi);
+    }
+
+    .search__result[aria-selected="true"] .search__match {
+        color: var(--white);
+        text-decoration: underline 2px;
+        text-underline-offset: 3px;
     }
 
     .search__result[aria-selected="true"] .tag {
@@ -3379,6 +3913,7 @@
     }
 
     .settings__nav {
+        position: relative;
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
@@ -3388,7 +3923,25 @@
         border-right: var(--divider);
     }
 
+    .settings__nav::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: var(--slide-w, 0);
+        height: var(--slide-h, 0);
+        background: var(--accent-lo);
+        box-shadow: inset 4px 0 var(--accent-hi);
+        translate: var(--slide-x, 0) var(--slide-y, 0);
+        pointer-events: none;
+    }
+
+    .settings__nav.is-sliding::before {
+        transition: translate .32s var(--ease-spring), width .32s var(--ease-spring), height .32s var(--ease-spring);
+    }
+
     .settings__link {
+        position: relative;
         display: flex;
         align-items: center;
         gap: var(--space-3);
@@ -3403,16 +3956,14 @@
         cursor: pointer;
     }
 
-    .settings__link:is(:hover, :focus-visible) {
+    .settings__link:is(:hover, :focus-visible):not([aria-current="true"]) {
         background: var(--stone-700);
         color: var(--white);
         outline: none;
     }
 
     .settings__link[aria-current="true"] {
-        background: var(--accent-lo);
         color: var(--white);
-        box-shadow: inset 4px 0 var(--accent-hi);
     }
 
     .settings__body {
@@ -3871,7 +4422,7 @@
             min-height: var(--control-s);
         }
 
-        .settings__link[aria-current="true"] {
+        .settings__nav::before {
             box-shadow: inset 0 -3px var(--accent-hi);
         }
 

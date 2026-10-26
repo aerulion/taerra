@@ -4,7 +4,7 @@ import {iconEditor} from './iconeditor.js';
 import {iconChooser, iconStore} from './icons.js';
 import {iconManager} from './iconmanager.js';
 import {waypointManager} from './manager.js';
-import {defaultLanguage, hashLanguage, language, LANGUAGES, numbers, setLanguage, t, translatePage} from './i18n.js';
+import {defaultLanguage, hashLanguage, language, LANGUAGES, MAC, numbers, setLanguage, t, translatePage} from './i18n.js';
 import {mapManager} from './map.js';
 import {navigationManager} from './navigation.js';
 import {setupOffline} from './offline.js';
@@ -17,7 +17,7 @@ import {skyManager} from './sky.js';
 import {chunkSelection} from './selection.js';
 import {waypointEditor} from './waypoints.js';
 import {regionEditor, regionList} from './regioneditor.js';
-import {armed, element, modal} from './ui.js';
+import {armed, element, haptic, modal, slide} from './ui.js';
 import {wsManager} from './websocket.js';
 
 let serverName = document.getElementById('server-name').textContent;
@@ -97,6 +97,7 @@ function fitWorlds() {
     if (crowded()) {
         $('server-name').classList.add('is-crowded');
     }
+    slide(nav, nav.querySelector('.world-tab[aria-current="true"]:not(.world-switch)'));
 }
 
 new ResizeObserver(fitWorlds).observe($('world-list'));
@@ -322,6 +323,7 @@ function setupViewControls() {
         const spawn = currentWorld?.spawn;
         if (spawn) {
             mapManager.centerOnBlock(spawn.x, spawn.z, Math.max(mapManager.getMap().getZoom(), 2));
+            mapManager.mark(spawn.x, spawn.z);
         }
     });
 
@@ -334,6 +336,7 @@ function setupViewControls() {
     const rotate = (turn) => {
         mapManager.setRotation(mapManager.getRotation() + turn);
         syncViewControls();
+        $('rotation-readout').firstChild.classList.add(turn > 0 ? 'is-from-left' : 'is-from-right');
     };
     for (const button of $('rotation-controls').querySelectorAll('button')) {
         button.addEventListener('click', () => rotate(Number(button.dataset.turn)));
@@ -352,7 +355,7 @@ function syncViewControls() {
     $('compass').title = compassLabel;
     $('compass').setAttribute('aria-label', compassLabel);
     const direction = t(`direction.${mapManager.getRotation()}`);
-    $('rotation-readout').textContent = direction;
+    $('rotation-readout').replaceChildren(element('span', '', direction));
     $('rotation-readout').title = t('view.facing', {direction});
     $('rotation-readout').setAttribute('aria-label', t('view.facing', {direction}));
     playerManager.reposition();
@@ -392,7 +395,11 @@ function setupDialogs() {
         await copyText(debugInfo());
         clearTimeout(debugTimer);
         $('about-debug').textContent = t('menu.copied');
-        debugTimer = setTimeout(() => $('about-debug').textContent = t('about.debug'), 1500);
+        $('about-debug').dataset.icon = 'check';
+        debugTimer = setTimeout(() => {
+            $('about-debug').textContent = t('about.debug');
+            delete $('about-debug').dataset.icon;
+        }, 1500);
     });
 }
 
@@ -422,6 +429,19 @@ function setupPanel() {
     });
 }
 
+function setupHaptics() {
+    document.addEventListener('change', (event) => {
+        if (event.target.matches('.switch__input, .checkbox')) {
+            haptic();
+        }
+    });
+    document.addEventListener('click', (event) => {
+        if (event.target.closest?.('.segmented > .btn:not([aria-pressed="true"], :disabled)')) {
+            haptic();
+        }
+    }, true);
+}
+
 function setupShortcuts() {
     document.addEventListener('keydown', (event) => {
         if (event.ctrlKey || event.metaKey || event.altKey || event.repeat || event.key.length !== 1 ||
@@ -433,8 +453,74 @@ function setupShortcuts() {
         if (button) {
             event.preventDefault();
             button.click();
+            button.classList.add('is-keyed');
+            setTimeout(() => button.classList.remove('is-keyed'), 150);
         }
     });
+}
+
+function keycaps(combo) {
+    if (combo === 'Shift+?') {
+        return ['?'];
+    }
+    return combo.split('+').map(key => key === 'Shift' ? t('hint.key.shift')
+        : key === 'Control' || key === 'Meta' ? t(MAC ? 'key.command' : 'key.control') : key);
+}
+
+function setupTooltips() {
+    const tip = element('div', 'tooltip');
+    tip.popover = 'manual';
+    tip.setAttribute('aria-hidden', 'true');
+    document.body.append(tip);
+    let target = null;
+    let timer = 0;
+    const hide = () => {
+        clearTimeout(timer);
+        if (target?.dataset.tip !== undefined) {
+            if (!target.title) {
+                target.title = target.dataset.tip;
+            }
+            delete target.dataset.tip;
+        }
+        target = null;
+        if (tip.matches(':popover-open')) {
+            tip.hidePopover();
+        }
+    };
+    const show = (node, delay) => {
+        hide();
+        target = node;
+        if (node.title) {
+            node.dataset.tip = node.title;
+            node.removeAttribute('title');
+        }
+        timer = setTimeout(() => {
+            const label = (node.dataset.tip ?? node.getAttribute('aria-label') ?? node.textContent)
+                .replace(/\s*\([^()]*\)$/, '').trim();
+            tip.replaceChildren(element('span', '', label),
+                ...keycaps(node.getAttribute('aria-keyshortcuts')).map(key => element('kbd', '', key)));
+            tip.showPopover();
+            const box = node.getBoundingClientRect();
+            const {width, height} = tip.getBoundingClientRect();
+            const below = box.bottom + 8 + height <= innerHeight;
+            tip.style.left = `${Math.min(Math.max(8, box.left + (box.width - width) / 2), innerWidth - width - 8)}px`;
+            tip.style.top = `${below ? box.bottom + 8 : box.top - height - 8}px`;
+        }, delay);
+    };
+    document.addEventListener('pointerover', (event) => {
+        const node = event.pointerType === 'mouse' ? event.target.closest?.('[aria-keyshortcuts]') : null;
+        if (node !== target) {
+            node ? show(node, 500) : hide();
+        }
+    });
+    document.addEventListener('focusin', (event) => {
+        if (event.target.matches?.('[aria-keyshortcuts]:focus-visible')) {
+            show(event.target, 0);
+        }
+    });
+    document.addEventListener('focusout', (event) => event.target === target && hide());
+    document.addEventListener('pointerdown', hide, true);
+    document.addEventListener('keydown', hide, true);
 }
 
 function formatDuration(millis) {
@@ -530,6 +616,9 @@ async function teleportButton(button, {world, x, y, z}) {
     }
     button.disabled = false;
     const done = response?.ok === true;
+    if (done && world === currentWorld?.name) {
+        mapManager.mark(x, z, Number.isFinite(y) ? y : undefined);
+    }
     button.textContent = t(done ? 'menu.teleported' : response?.status === 409 ? 'menu.offline' : 'menu.failed');
     button.classList.add(done ? 'is-done' : 'is-failed');
     return done;
@@ -559,6 +648,7 @@ function setupContextMenu() {
         if (!currentWorld) {
             return;
         }
+        haptic();
         block = mapManager.latLngToBlock(event.latlng);
         const exact = Number.isFinite(block.y);
         $('context-menu-title').textContent = exact ? `${block.x}, ${block.y}, ${block.z}` : `${block.x}, ${block.z}`;
@@ -841,11 +931,13 @@ setupOffline();
 setupViewControls();
 setupContextMenu();
 setupShortcuts();
+setupHaptics();
+setupTooltips();
 setupMapStyle();
 setupLayers();
 await accountReady;
 wsManager.connect();
-await loadWorlds();
+await loadWorlds().finally(() => document.documentElement.classList.add('is-ready'));
 await Promise.all([loadPlayers(), loadSky()]);
 let hashTimer = 0;
 mapManager.getMap().on('moveend', () => {
