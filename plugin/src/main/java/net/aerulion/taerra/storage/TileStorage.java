@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import net.aerulion.taerra.model.MapView;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.rendering.sample.FogView;
 import org.jetbrains.annotations.NotNull;
@@ -26,6 +27,8 @@ public sealed interface TileStorage permits TileStorageImpl {
   boolean deleteTile(@NotNull TileCoordinate coord);
 
   boolean deleteLayer(@NotNull TileCoordinate coord, @NotNull FogView layer);
+
+  void deleteView(@NotNull String worldName, @NotNull MapView view) throws IOException;
 
   @NotNull
   List<FogView> layers(@NotNull TileCoordinate coord);

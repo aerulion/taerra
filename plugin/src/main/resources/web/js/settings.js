@@ -14,6 +14,7 @@ const ORDER = 'order';
 const SECTIONS = [
     ['worlds', []],
     ['limits', []],
+    ['views', []],
     ['map', ['web.name', 'web.public-url', 'join-hint.interval-days']],
     ['layers', ['markers.spawn.enabled', 'markers.spawn.shown-by-default', 'markers.worldborder.enabled', 'markers.worldborder.shown-by-default', 'markers.worldguard.enabled',
         'markers.worldguard.shown-by-default', 'markers.towny.enabled', 'markers.towny.shown-by-default',
@@ -38,6 +39,10 @@ const outOfRange = (setting, value) => setting?.kind === 'number'
 const SHAPES = ['none', 'circle', 'square', 'rectangle'];
 const MAX_COORDINATE = 30_000_000;
 const isLimit = (field) => field.startsWith('world:') && field.endsWith(':limit');
+const isViews = (field) => field.startsWith('world:') && field.endsWith(':views');
+const VIEWS = {both: ['top_down', 'isometric'], top_down: ['top_down'], isometric: ['isometric']};
+const viewsOf = (value) => VIEWS[value] ?? VIEWS.both;
+const addsView = (before, after) => viewsOf(after).some(view => !viewsOf(before).includes(view));
 const limit = (shape, minX, minZ, maxX, maxZ) => shape === 'none' ? {shape} : {shape, minX, minZ, maxX, maxZ};
 const coordinate = (text) => /^-?\d+$/.test(text.trim()) ? Number(text) : null;
 
@@ -358,6 +363,9 @@ class SettingsDialog {
         if (isLimit(field)) {
             return this.describeLimit(value);
         }
+        if (isViews(field)) {
+            return t(`settings.views.${value in VIEWS ? value : 'both'}`);
+        }
         if (typeof value === 'boolean') {
             return t(value ? 'settings.on' : 'settings.off');
         }
@@ -400,9 +408,10 @@ class SettingsDialog {
         const selection = focused && typeof active.selectionStart === 'number'
             ? [active.selectionStart, active.selectionEnd] : null;
         const sections = SECTIONS.map(([name, keys]) => {
-            if (name === 'limits') {
+            if (name === 'limits' || name === 'views') {
                 return this.section(name, this.display.filter(id => this.draft[worldField(id, 'enabled')] === true)
-                    .map(id => this.world(id)).filter(Boolean).flatMap(world => this.limitRow(world)));
+                    .map(id => this.world(id)).filter(Boolean)
+                    .flatMap(world => name === 'limits' ? this.limitRow(world) : this.viewsRow(world)));
             }
             if (name === 'worlds') {
                 return this.section(name, [this.conflict(ORDER), this.worldList()].filter(Boolean));
@@ -785,6 +794,55 @@ class SettingsDialog {
         return conflict ? [row, conflict] : [row];
     }
 
+    viewsRow(world) {
+        const field = worldField(world.id, 'views');
+        const value = this.draft[field] ?? 'both';
+        const before = this.base[field] ?? 'both';
+        const row = element('div', 'row settings__row settings__views');
+        row.dataset.fields = field;
+        row.title = this.changedBy(field);
+        row.classList.toggle('is-conflict', this.conflicts.has(field));
+        row.classList.toggle('is-changed', value !== before);
+        const name = this.draft[worldField(world.id, 'name')] || world.defaultName;
+        const text = element('span', 'row__text');
+        text.append(element('span', 'settings__label', name), element('code', 'hint', world.id));
+        const effects = [
+            ...viewsOf(before).filter(view => !viewsOf(value).includes(view))
+                .map(view => t(`settings.views.drops.${view}`)),
+            ...(addsView(before, value) ? [t('settings.views.renders')] : [])
+        ];
+        if (effects.length) {
+            text.append(element('span', 'hint settings__effect', effects.join(' ')));
+        }
+        const group = element('div', 'segmented settings__segmented');
+        group.dataset.views = field;
+        group.setAttribute('role', 'group');
+        group.setAttribute('aria-label', `${name}: ${t('settings.world.views')}`);
+        for (const option of Object.keys(VIEWS)) {
+            const button = element('button', 'btn btn--small', t(`settings.views.${option}`));
+            button.type = 'button';
+            button.dataset.field = `${field}:${option}`;
+            button.setAttribute('aria-pressed', String(option === value));
+            button.addEventListener('click', () => {
+                const from = Object.keys(VIEWS).indexOf(this.draft[field] ?? 'both');
+                this.set(field, option);
+                this.render();
+                const next = this.dialog.querySelector(`[data-views="${CSS.escape(field)}"]`);
+                if (next && from >= 0) {
+                    next.classList.add('is-instant');
+                    next.style.setProperty('--at', String(from));
+                    void next.offsetWidth;
+                    next.classList.remove('is-instant');
+                    next.style.removeProperty('--at');
+                }
+            });
+            group.append(button);
+        }
+        row.append(text, group);
+        const conflict = this.conflict(field);
+        return conflict ? [row, conflict] : [row];
+    }
+
     move(id, by, direction) {
         const index = this.display.indexOf(id);
         const target = index + by;
@@ -879,7 +937,10 @@ class SettingsDialog {
             const id = bad.slice('world:'.length, bad.lastIndexOf(':'));
             return t('settings.limitInvalid', {world: this.draft[worldField(id, 'name')] || this.world(id)?.defaultName || id});
         }
-        return limits.length > 1 ? t('settings.limitOne') : null;
+        const renders = limits.length + fields.filter(field => isViews(field)
+            && this.draft[worldField(field.slice('world:'.length, field.lastIndexOf(':')), 'enabled')] === true
+            && addsView(this.base[field], changes[field])).length;
+        return renders > 1 ? t('settings.limitOne') : null;
     }
 
     updateStatus() {
@@ -931,9 +992,12 @@ class SettingsDialog {
         const body = response && (response.status === 200 || response.status === 409)
             ? await response.json().catch(() => null) : null;
         if (response?.status === 200 && body) {
+            const before = this.base;
             this.base = {...this.base, ...structuredClone(changes)};
             this.rebase(body);
-            this.showStatus(t(Object.keys(changes).some(isLimit) ? 'settings.savedLimit' : 'settings.saved'), 'is-done');
+            const views = Object.keys(changes).some(field => isViews(field) && addsView(before[field], changes[field]));
+            this.showStatus(t(Object.keys(changes).some(isLimit) ? 'settings.savedLimit'
+                : views ? 'settings.savedViews' : 'settings.saved'), 'is-done');
             return;
         }
         if (response?.status === 409 && body) {

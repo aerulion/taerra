@@ -23,9 +23,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.MapView;
+import net.aerulion.taerra.model.MapViews;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
 import net.aerulion.taerra.model.WorldKeys;
@@ -78,6 +80,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
   private final @NotNull RenderQueue renderQueue;
   private final @NotNull TileUpdateBroadcaster tileUpdateBroadcaster;
   private final @NotNull MapRegions regions;
+  private final @NotNull TaerraConfig config;
   private final @NotNull ThreadPoolExecutor baseExecutorService;
   private final @NotNull ThreadPoolExecutor zoomExecutorService;
   private final @NotNull ScheduledExecutorService scheduler;
@@ -108,6 +111,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       final @NotNull RenderQueue renderQueue,
       final @NotNull TileUpdateBroadcaster tileUpdateBroadcaster,
       final @NotNull MapRegions regions,
+      final @NotNull TaerraConfig config,
       final int threadCount) {
     super();
     this.plugin = plugin;
@@ -119,6 +123,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     this.renderQueue = renderQueue;
     this.tileUpdateBroadcaster = tileUpdateBroadcaster;
     this.regions = regions;
+    this.config = config;
     this.depths = new PyramidDepths(storage::tilesAt);
     this.manualRenders = new ManualRenderCoordinator(renderQueue, isoTileService, this::depth);
 
@@ -166,6 +171,16 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     this.running.set(true);
     this.stopping.set(false);
     this.startTimeMillis = System.currentTimeMillis();
+    this.config
+        .worldViews()
+        .forEach(
+            (world, views) -> {
+              for (final @NotNull MapView view : MapView.values()) {
+                if (!views.shows(view)) {
+                  dropView(world, view);
+                }
+              }
+            });
 
     this.scheduler.scheduleWithFixedDelay(
         this::dispatchSafely, 0L, DISPATCH_INTERVAL_MS, TimeUnit.MILLISECONDS);
@@ -367,6 +382,13 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
         return;
       }
 
+      final @NotNull MapView view = tileCoordinates.getFirst().view();
+      final @NotNull MapViews views = this.config.views(WorldKeys.id(world));
+      if (!views.shows(view) && (view == MapView.ISOMETRIC || priority.isLive())) {
+        finishTiles(tileCoordinates, priority);
+        return;
+      }
+
       this.manualRenders.markDispatched(tileCoordinates);
 
       final @NotNull List<RenderedTile> renderedTiles;
@@ -381,8 +403,10 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       final int refreshedChunks = this.columnsCache.refreshChanged(world, regrounded);
       if (!regrounded.isEmpty()) {
         final @NotNull Set<TileCoordinate> fogged =
-            new HashSet<>(this.isoTileService.tilesShowing(world, regrounded, false));
-        for (final long chunk : regrounded) {
+            views.shows(MapView.ISOMETRIC)
+                ? new HashSet<>(this.isoTileService.tilesShowing(world, regrounded, false))
+                : new HashSet<>();
+        for (final long chunk : views.shows(MapView.TOP_DOWN) ? regrounded : LongSet.of()) {
           fogged.add(
               TileCoordinate.topDown(
                   WorldKeys.id(world),
@@ -395,7 +419,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       }
       final long refreshNanos = System.nanoTime() - refreshStartedAt;
 
-      if (tileCoordinates.getFirst().view() == MapView.ISOMETRIC) {
+      if (view == MapView.ISOMETRIC) {
         final long renderStartedAt = System.nanoTime();
         layers = this.isoTileService.renderBatch(world, tileCoordinates);
         renderedTiles = layers.stream().filter(tile -> tile.layer().base()).toList();
@@ -407,24 +431,38 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
           final @NotNull CachedChunkColumnsSource source =
               this.columnsCache.sourceFor(world, provider, FogView.BASE);
           final long renderStartedAt = System.nanoTime();
-          renderedTiles = this.topDownRenderer.renderBatch(source, tileCoordinates);
+          renderedTiles =
+              views.shows(view)
+                  ? this.topDownRenderer.renderBatch(source, tileCoordinates)
+                  : List.of();
           layers = new ArrayList<>(renderedTiles);
-          layers.addAll(
-              FogLayers.topDown(
-                  world,
-                  provider,
-                  this.regions,
-                  this.columnsCache,
-                  this.topDownRenderer,
-                  renderedTiles));
+          if (views.shows(view)) {
+            layers.addAll(
+                FogLayers.topDown(
+                    world,
+                    provider,
+                    this.regions,
+                    this.columnsCache,
+                    this.topDownRenderer,
+                    renderedTiles));
+          }
           final long batchNanos = System.nanoTime() - renderStartedAt;
           sampleNanos = source.sampleNanos();
           renderTilesNanos = Math.max(0L, batchNanos - sampleNanos);
           chunkReadNanos = provider.chunkReadNanos();
           chunksRead = provider.chunksRead();
 
-          this.manualRenders.queueIsometricCoverage(
-              world, tileCoordinates, renderedTiles, source, priority, cancels);
+          if (views.shows(MapView.ISOMETRIC)) {
+            this.manualRenders.queueIsometricCoverage(
+                world,
+                tileCoordinates,
+                views.shows(view)
+                    ? renderedTiles.stream().map(RenderedTile::coordinate).toList()
+                    : tileCoordinates,
+                source,
+                priority,
+                cancels);
+          }
         }
         if (priority.isLive()) {
           this.liveRecorder.recordBatch(
@@ -460,12 +498,12 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       final @NotNull Set<TileCoordinate> produced =
           renderedTiles.stream().map(RenderedTile::coordinate).collect(Collectors.toSet());
       for (final @NotNull TileCoordinate coordinate : tileCoordinates) {
-        if (!produced.contains(coordinate) && deleteStoredTile(coordinate)) {
+        if (views.shows(view) && !produced.contains(coordinate) && deleteStoredTile(coordinate)) {
           pyramidChanged(coordinate);
         }
       }
 
-      if (priority.isLive() || tileCoordinates.getFirst().view() == MapView.ISOMETRIC) {
+      if (priority.isLive() || view == MapView.ISOMETRIC || !views.shows(view)) {
         finishTiles(tileCoordinates, priority);
       } else {
         for (final @NotNull TileCoordinate coordinate : tileCoordinates) {
@@ -717,6 +755,9 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       final @NotNull FogView layer,
       final @NotNull BufferedImage image)
       throws Exception {
+    if (!this.config.views(coord.world()).shows(coord.view())) {
+      return;
+    }
     final boolean created = layer.base() && !this.storage.tileFile(coord).exists();
     final boolean changed = this.storage.saveTile(coord, layer, image);
     this.cache.put(coord, layer, image);
@@ -768,6 +809,22 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       this.plugin
           .getLogger()
           .log(Level.WARNING, "Failed to delete the region layers of " + worldName, e);
+    }
+  }
+
+  @Override
+  public void dropView(final @NotNull String worldName, final @NotNull MapView view) {
+    try {
+      this.storage.deleteView(worldName, view);
+    } catch (final IOException e) {
+      this.plugin
+          .getLogger()
+          .log(Level.WARNING, "Failed to delete the " + view.id() + " tiles of " + worldName, e);
+    }
+    this.cache.clear();
+    for (final @NotNull MapRotation rotation :
+        view.rotated() ? MapRotation.values() : new MapRotation[] {MapRotation.R0}) {
+      resizePyramid(new TileCoordinate(worldName, view, rotation, 0, 0, 0));
     }
   }
 

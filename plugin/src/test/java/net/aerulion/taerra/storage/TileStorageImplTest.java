@@ -48,21 +48,50 @@ class TileStorageImplTest {
 
   @TempDir Path folder;
 
+  private Plugin plugin() {
+    final File dataFolder = this.folder.toFile();
+    return (Plugin)
+        Proxy.newProxyInstance(
+            Plugin.class.getClassLoader(),
+            new Class<?>[] {Plugin.class},
+            (proxy, method, args) ->
+                switch (method.getName()) {
+                  case "getDataFolder" -> dataFolder;
+                  case "getLogger" -> Logger.getLogger("test");
+                  default -> throw new UnsupportedOperationException(method.getName());
+                });
+  }
+
+  @Test
+  @DisplayName("deleting a view of a world leaves its other view and other worlds alone")
+  void deletesView() throws IOException {
+    final TileStorageImpl storage = new TileStorageImpl(plugin(), 64);
+    final BufferedImage image = ImageUtils.createEmptyTile(4);
+    final TileCoordinate top = TileCoordinate.topDown("minecraft:overworld", 0, 1, 2);
+    final TileCoordinate iso =
+        TileCoordinate.isometric("minecraft:overworld", MapRotation.ofIndex(2), 0, 1, 2);
+    final TileCoordinate other =
+        TileCoordinate.isometric("minecraft:the_end", MapRotation.ofIndex(2), 0, 1, 2);
+    storage.saveTile(top, image);
+    storage.saveTile(iso, image);
+    storage.saveTile(other, image);
+
+    storage.deleteView("minecraft:overworld", MapView.ISOMETRIC);
+    storage.deleteView("minecraft:nether", MapView.ISOMETRIC);
+
+    assertFalse(storage.tileFile(iso).exists());
+    assertEquals(List.of(), storage.tilesAt(iso));
+    assertTrue(storage.readEncodedTile(iso).isEmpty());
+    assertTrue(storage.tileFile(top).exists());
+    assertTrue(storage.tileFile(other).exists());
+    storage.saveTile(iso, image);
+    assertEquals(List.of(iso), storage.tilesAt(iso));
+  }
+
   @Test
   @DisplayName("fog layers sit beside their tile, are listed, and go when the tile goes")
   void storesLayers() throws IOException {
-    final File dataFolder = this.folder.toFile();
-    final Plugin plugin =
-        (Plugin)
-            Proxy.newProxyInstance(
-                Plugin.class.getClassLoader(),
-                new Class<?>[] {Plugin.class},
-                (proxy, method, args) ->
-                    switch (method.getName()) {
-                      case "getDataFolder" -> dataFolder;
-                      case "getLogger" -> Logger.getLogger("test");
-                      default -> throw new UnsupportedOperationException(method.getName());
-                    });
+    final Plugin plugin = plugin();
     final TileStorageImpl storage = new TileStorageImpl(plugin, 64);
     final TileCoordinate tile = TileCoordinate.topDown("minecraft:overworld", 0, 3, 12);
     final BufferedImage image = ImageUtils.createEmptyTile(4);

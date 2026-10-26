@@ -12,6 +12,8 @@ import java.util.logging.Level;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.ChunkCoordinate;
+import net.aerulion.taerra.model.MapView;
+import net.aerulion.taerra.model.MapViews;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
 import net.aerulion.taerra.model.WorldKeys;
@@ -83,6 +85,29 @@ public final class RenderService {
         world,
         () -> this.limits.set(WorldKeys.id(world), limit),
         listener -> scanFull(world, listener));
+  }
+
+  public @Nullable Start views(final @NotNull World world, final @NotNull MapViews views) {
+    if (rendering() != null) {
+      return new Refused(Refusal.BUSY);
+    }
+    final @NotNull String worldName = WorldKeys.id(world);
+    final @NotNull MapViews before = this.config.views(worldName);
+    final @NotNull Runnable apply =
+        () -> {
+          this.config.setViews(this.plugin, worldName, views);
+          for (final @NotNull MapView view : before.views()) {
+            if (!views.shows(view)) {
+              this.generator.dropView(worldName, view);
+            }
+          }
+        };
+    if (!this.config.worldEnabled(worldName) || before.views().containsAll(views.views())) {
+      apply.run();
+      return null;
+    }
+    return start(
+        TileGeneratorService.FULL_RENDER, world, apply, listener -> scanFull(world, listener));
   }
 
   public @NotNull Start radius(
@@ -158,7 +183,9 @@ public final class RenderService {
               Math.floorDiv(blockZ, TileGeometry.TILE_SIZE)));
     }
     final @NotNull List<TileCoordinate> isometric =
-        this.isoTiles.tilesShowing(world, chunks, terrain);
+        this.config.views(worldName).shows(MapView.ISOMETRIC)
+            ? this.isoTiles.tilesShowing(world, chunks, terrain)
+            : List.of();
     return start(
         mode,
         world,

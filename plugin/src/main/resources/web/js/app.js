@@ -121,12 +121,14 @@ async function selectWorld(name) {
 
     chunkSelection.stop();
     mapManager.setWorld(world);
+    setViewMode(mapManager.isIsometric() ? 'iso' : 'top');
     playerManager.setWorld(world.name);
     skyManager.setWorld(world.name);
     navigationManager.setWorld(world.name);
     wsManager.subscribe(world.name);
     void markerManager.load(world.name);
     void regionManager.load(world.name);
+    syncViewControls();
 }
 
 async function loadPlayers() {
@@ -222,6 +224,10 @@ async function refreshWorlds() {
     currentWorld = worlds.find(world => world.name === currentWorld?.name) ?? null;
     mapManager.setDepth(currentWorld?.depth);
     mapManager.setBounds(currentWorld?.bounds);
+    if (currentWorld) {
+        setViewMode(mapManager.isIsometric() ? 'iso' : 'top');
+        syncViewControls();
+    }
     if (worlds.length === 0) {
         $('world-list').textContent = t('worlds.none');
         return;
@@ -283,7 +289,7 @@ async function applyHash() {
         return false;
     }
     await selectWorld(world.name);
-    mapManager.setViewMode(params.get('view') === 'iso' ? 'iso' : 'top');
+    setViewMode(params.get('view') === 'iso' ? 'iso' : 'top');
     if (params.has('r')) {
         mapManager.setRotation(Number(params.get('r')));
     }
@@ -329,7 +335,7 @@ function setupViewControls() {
 
     for (const button of $('view-mode-buttons').querySelectorAll('button')) {
         button.addEventListener('click', () => {
-            mapManager.setViewMode(button.dataset.view);
+            setViewMode(button.dataset.view);
             syncViewControls();
         });
     }
@@ -345,9 +351,22 @@ function setupViewControls() {
     syncViewControls();
 }
 
+function shownViews() {
+    return currentWorld?.views ?? ['top_down', 'isometric'];
+}
+
+function setViewMode(mode) {
+    const views = shownViews();
+    const wanted = mode === 'iso' ? 'isometric' : 'top_down';
+    mapManager.setViewMode(views.includes(wanted) ? mode : views.includes('isometric') ? 'iso' : 'top');
+}
+
 function syncViewControls() {
     for (const button of $('view-mode-buttons').querySelectorAll('button')) {
+        const view = button.dataset.view === 'iso' ? 'isometric' : 'top_down';
         button.setAttribute('aria-pressed', String((button.dataset.view === 'iso') === mapManager.isIsometric()));
+        button.disabled = !shownViews().includes(view);
+        button.title = button.disabled ? t('view.unavailable', {view: button.textContent.trim()}) : '';
     }
     $('rotation-controls').hidden = !mapManager.isIsometric();
     const compassLabel = mapManager.isIsometric() ? t('compass.rotate') : t('compass');

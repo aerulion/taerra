@@ -15,11 +15,14 @@ import java.util.List;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.chat.Messages;
+import net.aerulion.taerra.chat.RenderFeedback;
 import net.aerulion.taerra.config.ConfigEditor;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.icon.MarkerIconsImpl;
+import net.aerulion.taerra.model.MapViews;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.permission.TaerraPermission;
+import net.aerulion.taerra.rendering.RenderService;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
@@ -27,6 +30,7 @@ import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class ConfigSubCommand implements TaerraSubCommand {
 
@@ -46,17 +50,20 @@ public final class ConfigSubCommand implements TaerraSubCommand {
   private final @NotNull TaerraConfig config;
   private final @NotNull MarkerRegistry markers;
   private final @NotNull MarkerIconsImpl icons;
+  private final @NotNull RenderFeedback renderFeedback;
 
   public ConfigSubCommand(
       final @NotNull ConfigEditor editor,
       final @NotNull TaerraConfig config,
       final @NotNull MarkerRegistry markers,
-      final @NotNull MarkerIconsImpl icons) {
+      final @NotNull MarkerIconsImpl icons,
+      final @NotNull RenderFeedback renderFeedback) {
     super();
     this.editor = editor;
     this.config = config;
     this.markers = markers;
     this.icons = icons;
+    this.renderFeedback = renderFeedback;
   }
 
   private static @NotNull Component listRow(
@@ -82,6 +89,10 @@ public final class ConfigSubCommand implements TaerraSubCommand {
 
   @Override
   public @NotNull LiteralArgumentBuilder<CommandSourceStack> command() {
+    final @NotNull LiteralArgumentBuilder<CommandSourceStack> views = Commands.literal("views");
+    for (final @NotNull MapViews shown : MapViews.values()) {
+      views.then(Commands.literal(shown.id()).executes(context -> setViews(context, shown)));
+    }
     final @NotNull LiteralArgumentBuilder<CommandSourceStack> builder =
         builder()
             .executes(this::list)
@@ -120,7 +131,8 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                                     .then(
                                         Commands.argument(
                                                 "position", IntegerArgumentType.integer(1))
-                                            .executes(this::moveWorld)))))
+                                            .executes(this::moveWorld)))
+                            .then(views)))
             .then(
                 Commands.literal("layer")
                     .then(
@@ -348,6 +360,21 @@ public final class ConfigSubCommand implements TaerraSubCommand {
           case UNKNOWN_LAYER -> Messages.error("config.unknown_layer", Messages.value(layerId));
           case UNKNOWN_ICON -> Messages.error("config.unknown_icon", Messages.value(icon));
         });
+    return SUCCESS;
+  }
+
+  private int setViews(
+      final @NotNull CommandContext<CommandSourceStack> context, final @NotNull MapViews views) {
+    final @NotNull World world = context.getArgument("world", World.class);
+    final @NotNull String worldName = WorldKeys.id(world);
+    final @NotNull Component shown = Messages.tr("config.views." + views.id());
+    final RenderService.@Nullable Start start = this.editor.setViews(world, views, who(context));
+    if (start == null) {
+      feedback(context, Messages.success("config.world_views", Messages.world(worldName), shown));
+    } else {
+      this.renderFeedback.report(
+          sender(context), worldName, Messages.tr("render.what.views", shown), start);
+    }
     return SUCCESS;
   }
 

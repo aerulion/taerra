@@ -7,8 +7,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +30,8 @@ import org.jetbrains.annotations.Nullable;
 
 public final class TileStorageImpl implements TileStorage {
 
+  private static final @NotNull String DELETED = ".deleted";
+
   private final @NotNull Plugin plugin;
   private final @NotNull File dataDirectory;
   private final @NotNull Cache<LayerKey, EncodedTile> encodedTiles;
@@ -38,7 +42,15 @@ public final class TileStorageImpl implements TileStorage {
     this.plugin = plugin;
     this.dataDirectory = plugin.getDataFolder();
     for (final @NotNull MapView view : MapView.values()) {
-      new File(this.dataDirectory, view.directoryName()).mkdirs();
+      final @NotNull File directory = new File(this.dataDirectory, view.directoryName());
+      directory.mkdirs();
+      final @Nullable File @Nullable [] deleted =
+          directory.listFiles(file -> file.getName().endsWith(DELETED));
+      for (final @Nullable File trash : deleted == null ? new File[0] : deleted) {
+        if (trash != null) {
+          deleteLater(trash.toPath());
+        }
+      }
     }
     this.encodedTiles = Caffeine.newBuilder().maximumSize(Math.max(64, maxEncodedTiles)).build();
     this.layers = Caffeine.newBuilder().maximumSize(Math.max(64, maxEncodedTiles)).build();
@@ -177,6 +189,50 @@ public final class TileStorageImpl implements TileStorage {
         stored.remove(layer);
       }
     }
+  }
+
+  @Override
+  public void deleteView(final @NotNull String worldName, final @NotNull MapView view)
+      throws IOException {
+    final @NotNull Path directory =
+        this.dataDirectory
+            .toPath()
+            .resolve(view.directoryName())
+            .resolve(sanitizeWorldName(worldName));
+    try {
+      if (Files.isDirectory(directory)) {
+        final @NotNull Path trash =
+            directory.resolveSibling(
+                directory.getFileName() + "-" + System.currentTimeMillis() + DELETED);
+        Files.move(directory, trash, StandardCopyOption.ATOMIC_MOVE);
+        deleteLater(trash);
+      }
+    } finally {
+      this.encodedTiles
+          .asMap()
+          .keySet()
+          .removeIf(key -> key.coord().view() == view && key.coord().world().equals(worldName));
+      this.layers.invalidateAll();
+    }
+  }
+
+  private void deleteLater(final @NotNull Path trash) {
+    Thread.ofPlatform()
+        .name("Taerra-Delete")
+        .daemon()
+        .start(
+            () -> {
+              try (final @NotNull Stream<Path> paths = Files.walk(trash)) {
+                for (final @NotNull Path path :
+                    (Iterable<Path>) paths.sorted(Comparator.reverseOrder())::iterator) {
+                  Files.deleteIfExists(path);
+                }
+              } catch (final IOException e) {
+                this.plugin
+                    .getLogger()
+                    .warning("Failed to delete old tiles in " + trash + ": " + e.getMessage());
+              }
+            });
   }
 
   @Override

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.MapRotation;
+import net.aerulion.taerra.model.MapView;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.region.MapRegions;
@@ -98,6 +99,11 @@ public final class WorldList {
               worldData.put("environment", world.getEnvironment().name());
               worldData.put("private", this.taerraConfig.worldPrivate(WorldKeys.id(world)));
               worldData.put("layered", this.regions.anyFogged(WorldKeys.id(world)));
+              worldData.put(
+                  "views",
+                  this.taerraConfig.views(WorldKeys.id(world)).views().stream()
+                      .map(MapView::id)
+                      .toList());
               worldData.put(
                   "depth",
                   Map.of(

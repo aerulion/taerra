@@ -74,6 +74,7 @@ class TaerraConfigTest {
             new CopyOnWriteArrayList<>(),
             new CopyOnWriteArrayList<>(),
             new ConcurrentHashMap<>(),
+            new ConcurrentHashMap<>(),
             new ConcurrentHashMap<>());
 
     assertEquals("taerra:star", config.layerIcon("spawn"));

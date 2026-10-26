@@ -12,6 +12,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.aerulion.taerra.integration.TownyTowns;
+import net.aerulion.taerra.model.MapViews;
 import net.aerulion.taerra.world.SpawnMarkers;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -32,7 +33,8 @@ public record TaerraConfig(
     @NotNull CopyOnWriteArrayList<String> privatePlayers,
     @NotNull CopyOnWriteArrayList<String> privateLayers,
     @NotNull Map<String, String> worldNames,
-    @NotNull Map<String, String> layerIcons) {
+    @NotNull Map<String, String> layerIcons,
+    @NotNull Map<String, MapViews> worldViews) {
 
   private static final long HEAP_BYTES = Runtime.getRuntime().maxMemory();
   private static final long TILE_BYTES = 256L << 10;
@@ -64,7 +66,21 @@ public record TaerraConfig(
         new CopyOnWriteArrayList<>(file.getStringList("private-players")),
         new CopyOnWriteArrayList<>(file.getStringList("markers.private-layers")),
         new ConcurrentHashMap<>(names(file.getConfigurationSection("world-names"))),
-        new ConcurrentHashMap<>(layerIcons(file.getMapList("markers.layer-icons"))));
+        new ConcurrentHashMap<>(layerIcons(file.getMapList("markers.layer-icons"))),
+        new ConcurrentHashMap<>(viewsOf(file.getConfigurationSection("world-views"))));
+  }
+
+  static @NotNull Map<String, MapViews> viewsOf(final @Nullable ConfigurationSection section) {
+    final @NotNull Map<String, MapViews> views = new HashMap<>();
+    if (section != null) {
+      for (final @NotNull String world : section.getKeys(false)) {
+        final @Nullable MapViews shown = MapViews.parse(section.getString(world));
+        if (shown != null && shown != MapViews.BOTH) {
+          views.put(world, shown);
+        }
+      }
+    }
+    return views;
   }
 
   static @NotNull Map<String, String> layerIcons(final @NotNull List<Map<?, ?>> entries) {
@@ -284,6 +300,25 @@ public record TaerraConfig(
       this.worldNames.put(worldName, name);
     }
     plugin.getConfig().set("world-names", new TreeMap<>(this.worldNames));
+    plugin.saveConfig();
+  }
+
+  public @NotNull MapViews views(final @NotNull String worldName) {
+    return this.worldViews.getOrDefault(worldName, MapViews.BOTH);
+  }
+
+  public synchronized void setViews(
+      final @NotNull Plugin plugin,
+      final @NotNull String worldName,
+      final @NotNull MapViews views) {
+    if (views == MapViews.BOTH) {
+      this.worldViews.remove(worldName);
+    } else {
+      this.worldViews.put(worldName, views);
+    }
+    final @NotNull Map<String, String> ids = new TreeMap<>();
+    this.worldViews.forEach((world, shown) -> ids.put(world, shown.id()));
+    plugin.getConfig().set("world-views", ids);
     plugin.saveConfig();
   }
 

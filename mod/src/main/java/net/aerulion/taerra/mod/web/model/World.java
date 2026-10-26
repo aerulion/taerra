@@ -1,6 +1,7 @@
 package net.aerulion.taerra.mod.web.model;
 
 import com.google.gson.annotations.SerializedName;
+import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
@@ -13,7 +14,12 @@ public record World(
     @SerializedName("private") boolean restricted,
     Depth depth,
     @Nullable Bounds bounds,
-    Spawn spawn) {
+    Spawn spawn,
+    @Nullable List<String> views) {
+
+  public boolean shows(final boolean isometric) {
+    return this.views == null || this.views.contains(isometric ? "isometric" : "top_down");
+  }
 
   public int minZoom(final @NotNull MapConfig config, final boolean isometric, final int rotation) {
     return isometric

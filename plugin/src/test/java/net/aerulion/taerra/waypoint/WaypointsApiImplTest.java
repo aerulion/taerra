@@ -54,6 +54,7 @@ class WaypointsApiImplTest {
             new CopyOnWriteArrayList<>(),
             new CopyOnWriteArrayList<>(),
             new ConcurrentHashMap<>(),
+            new ConcurrentHashMap<>(),
             new ConcurrentHashMap<>());
     this.api =
         new WaypointsApiImpl(

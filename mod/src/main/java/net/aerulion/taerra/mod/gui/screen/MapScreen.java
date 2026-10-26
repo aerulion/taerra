@@ -458,6 +458,7 @@ public final class MapScreen extends Screen {
 
     final @NotNull LinearLayout footer =
         this.layout.addToFooter(LinearLayout.horizontal().spacing(6));
+    fitView();
     final @Nullable World world = this.map.world(this.view.world());
     this.worldButton = null;
     if (this.selection != null) {
@@ -478,7 +479,7 @@ public final class MapScreen extends Screen {
                 .width(BUTTON_WIDTH)
                 .build();
         view.add(this.worldButton);
-        view.add(
+        final @NotNull Button switchView =
             Button.builder(
                     viewName(this.view.isometric() ? this.view.rotation() : TOP_DOWN),
                     _ -> {
@@ -487,7 +488,9 @@ public final class MapScreen extends Screen {
                     })
                 .tooltip(Tooltip.create(viewTooltip()))
                 .width(BUTTON_WIDTH)
-                .build());
+                .build();
+        switchView.active = world.shows(!this.view.isometric());
+        view.add(switchView);
         final @NotNull IconButton left =
             iconButton(
                 20,
@@ -933,8 +936,18 @@ public final class MapScreen extends Screen {
     }
   }
 
+  private void fitView() {
+    final @Nullable World world = this.map.world(this.view.world());
+    final @Nullable MapConfig config = this.map.config();
+    if (world != null && config != null && !world.shows(this.view.isometric())) {
+      this.view.setView(config, !this.view.isometric(), this.view.rotation());
+      syncCompass();
+    }
+  }
+
   private void switchWorld(final @NotNull String world) {
     this.view.setWorld(world);
+    fitView();
     this.moving = null;
     this.selection = null;
     this.stroking = false;
@@ -1074,7 +1087,8 @@ public final class MapScreen extends Screen {
 
   private void setView(final int selected) {
     final @Nullable MapConfig config = this.map.config();
-    if (config != null) {
+    final @Nullable World world = this.map.world(this.view.world());
+    if (config != null && (world == null || world.shows(selected != TOP_DOWN))) {
       closeMenu();
       this.view.setView(config, selected != TOP_DOWN, Math.max(selected, 0));
       syncCompass();

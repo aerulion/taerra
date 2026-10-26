@@ -286,6 +286,7 @@ public final class Taerra extends JavaPlugin {
               renderQueue,
               tileUpdateBroadcaster,
               regions,
+              configuration,
               configuration.renderThreads());
       this.generatorService = generatorService;
 
@@ -530,7 +531,7 @@ public final class Taerra extends JavaPlugin {
             new RenderSubCommand(renders, renderFeedback, exports),
             new LimitSubCommand(configEditor, renderFeedback, worldLimits),
             new WaypointSubCommand(waypoints),
-            new ConfigSubCommand(configEditor, configuration, markers, icons),
+            new ConfigSubCommand(configEditor, configuration, markers, icons, renderFeedback),
             new ImportSubCommand(new DynmapImport(this, waypoints)),
             new LoginSubCommand(webSettings, configuration, webSessions),
             new LogoutSubCommand(webSessions),

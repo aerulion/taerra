@@ -54,6 +54,7 @@ import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -65,6 +66,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   private static final Pattern NOT_DIGIT = Pattern.compile("\\D");
   private static final Pattern NOT_COORDINATE = Pattern.compile("[^0-9-]");
   private static final List<String> SHAPES = List.of("none", "circle", "square", "rectangle");
+  private static final List<String> VIEWS = List.of("both", "top_down", "isometric");
   private static final int MAX_COORDINATE = 30_000_000;
   private static final String ORDER = "order";
   private static final int ROW_WIDTH = 380;
@@ -86,6 +88,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       List.of(
           new Section("worlds", List.of()),
           new Section("limits", List.of()),
+          new Section("views", List.of()),
           new Section("map", List.of("web.name", "web.public-url", "join-hint.interval-days")),
           new Section(
               "layers",
@@ -259,6 +262,24 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
 
   private static boolean isLimit(final @NotNull String field) {
     return field.startsWith("world:") && field.endsWith(":limit");
+  }
+
+  private static boolean isViews(final @NotNull String field) {
+    return field.startsWith("world:") && field.endsWith(":views");
+  }
+
+  private static @NotNull String viewsOf(final @Nullable JsonElement value) {
+    final @NotNull String views = string(value);
+    return VIEWS.contains(views) ? views : "both";
+  }
+
+  private static @NotNull List<String> partsOf(final @NotNull String views) {
+    return views.equals("both") ? List.of("top_down", "isometric") : List.of(views);
+  }
+
+  private static boolean addsView(
+      final @Nullable JsonElement before, final @Nullable JsonElement after) {
+    return !partsOf(viewsOf(before)).containsAll(partsOf(viewsOf(after)));
   }
 
   private static @NotNull String shapeOf(final @Nullable JsonElement value) {
@@ -832,6 +853,9 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     if (isLimit(field)) {
       return describeLimit(value);
     }
+    if (isViews(field)) {
+      return Component.translatable("taerra.settings.views." + viewsOf(value));
+    }
     if (field.startsWith("layer-icon:")) {
       final @Nullable MapIcon icon = this.map.icon(string(value));
       return icon == null ? Component.translatable("taerra.icons.default") : icon.displayName();
@@ -900,7 +924,20 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
             worldName(field.substring("world:".length(), field.lastIndexOf(':'))));
       }
     }
-    return limits.size() > 1 ? Component.translatable("taerra.settings.limit_one") : null;
+    final long renders =
+        limits.size()
+            + changes.keySet().stream()
+                .filter(
+                    field ->
+                        isViews(field)
+                            && on(
+                                this.draft.get(
+                                    worldField(
+                                        field.substring("world:".length(), field.lastIndexOf(':')),
+                                        "enabled")))
+                            && addsView(this.base.get(field), changes.get(field)))
+                .count();
+    return renders > 1 ? Component.translatable("taerra.settings.limit_one") : null;
   }
 
   private void updateStatus() {
@@ -957,6 +994,15 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     final @NotNull JsonObject body = new JsonObject();
     body.addProperty("base", this.view.revision());
     body.add("changes", changes);
+    final @NotNull String saved =
+        changes.keySet().stream().anyMatch(ServerSettingsScreen::isLimit)
+            ? "taerra.settings.saved_limit"
+            : changes.keySet().stream()
+                    .anyMatch(
+                        field ->
+                            isViews(field) && addsView(this.base.get(field), changes.get(field)))
+                ? "taerra.settings.saved_views"
+                : "taerra.settings.saved";
     this.saving = true;
     updateStatus();
     this.map.saveSettings(
@@ -973,12 +1019,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           if (status == 200 && next != null) {
             changes.entrySet().forEach(entry -> this.base.put(entry.getKey(), entry.getValue()));
             rebase(next);
-            timedStatus(
-                Component.translatable(
-                    changes.keySet().stream().anyMatch(ServerSettingsScreen::isLimit)
-                        ? "taerra.settings.saved_limit"
-                        : "taerra.settings.saved"),
-                GREEN);
+            timedStatus(Component.translatable(saved), GREEN);
             updateStatus();
             return;
           }
@@ -1103,6 +1144,15 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           if (world != null && on(ServerSettingsScreen.this.draft.get(worldField(id, "enabled")))) {
             add(new LimitRow(world));
             conflict(worldField(id, "limit"));
+          }
+        }
+      }
+      if (section.id().equals("views")) {
+        for (final @NotNull String id : ServerSettingsScreen.this.display) {
+          final ServerSettings.@Nullable WorldInfo world = world(id);
+          if (world != null && on(ServerSettingsScreen.this.draft.get(worldField(id, "enabled")))) {
+            add(new ViewsRow(world));
+            conflict(worldField(id, "views"));
           }
         }
       }
@@ -1898,6 +1948,100 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
         box.extractRenderState(graphics, mouseX, mouseY, partialTick);
         x += box.getWidth() + 10;
       }
+    }
+  }
+
+  private final class ViewsRow extends Row {
+
+    private final ServerSettings.@NotNull WorldInfo world;
+    private final @NotNull String field;
+    private final @NotNull CycleButton<String> views;
+    private final @NotNull List<FormattedCharSequence> effect;
+
+    private ViewsRow(final ServerSettings.@NotNull WorldInfo world) {
+      this.world = world;
+      this.field = worldField(world.id(), "views");
+      final @Nullable JsonElement before = ServerSettingsScreen.this.base.get(this.field);
+      final @NotNull String current = viewsOf(ServerSettingsScreen.this.draft.get(this.field));
+      this.views =
+          CycleButton.builder(
+                  (String views) -> Component.translatable("taerra.settings.views." + views),
+                  current)
+              .withValues(VIEWS)
+              .displayOnlyValue()
+              .create(
+                  0,
+                  0,
+                  CONTROL_WIDTH,
+                  20,
+                  Component.translatable("taerra.settings.world.views"),
+                  (_, views) -> {
+                    set(this.field, new JsonPrimitive(views));
+                    refill();
+                  });
+      final @NotNull MutableComponent effect = Component.empty();
+      for (final @NotNull String view : partsOf(viewsOf(before))) {
+        if (!partsOf(current).contains(view)) {
+          effect.append(Component.translatable("taerra.settings.views.drops." + view)).append(" ");
+        }
+      }
+      if (addsView(before, new JsonPrimitive(current))) {
+        effect.append(Component.translatable("taerra.settings.views.renders"));
+      }
+      this.effect =
+          effect.getString().isEmpty()
+              ? List.of()
+              : Minecraft.getInstance().font.split(effect, rowWidth() - 12);
+    }
+
+    @Override
+    int height() {
+      return this.effect.isEmpty() ? 30 : 32 + this.effect.size() * 10;
+    }
+
+    @Override
+    @NotNull
+    List<String> fields() {
+      return List.of(this.field);
+    }
+
+    @Override
+    public @NotNull List<? extends GuiEventListener> children() {
+      return List.of(this.views);
+    }
+
+    @Override
+    public @NotNull List<? extends NarratableEntry> narratables() {
+      return List.of(this.views);
+    }
+
+    @Override
+    public void extractContent(
+        final @NotNull GuiGraphicsExtractor graphics,
+        final int mouseX,
+        final int mouseY,
+        final boolean hovered,
+        final float partialTick) {
+      slab(graphics, 0, hovered, mouseX, mouseY);
+      final @NotNull Font font = Minecraft.getInstance().font;
+      final int left = getContentX() + 4;
+      final int room = getContentRight() - 6 - this.views.getWidth() - 8 - left;
+      final @NotNull String name = worldName(this.world.id());
+      graphics.text(
+          font,
+          font.width(name) <= room
+              ? name
+              : font.plainSubstrByWidth(name, room - font.width("…")) + "…",
+          left,
+          getY() + 6,
+          0xFFFFFFFF,
+          true);
+      graphics.text(font, this.world.id(), left, getY() + 17, MUTED, false);
+      for (int i = 0; i < this.effect.size(); i++) {
+        graphics.text(font, this.effect.get(i), left, getY() + 30 + i * 10, ACCENT, false);
+      }
+      this.views.setPosition(getContentRight() - 6 - this.views.getWidth(), getY() + 5);
+      this.views.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
   }
 

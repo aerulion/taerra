@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.limit.WorldLimits;
+import net.aerulion.taerra.model.MapViews;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.model.WorldLimit;
 import net.aerulion.taerra.rendering.RenderService;
@@ -68,6 +69,7 @@ public final class ConfigEditor {
   public static final @NotNull String LAYER_ICON = "layer-icon:";
   public static final @NotNull String ORDER = "order";
   public static final @NotNull String LIMIT = "limit";
+  public static final @NotNull String VIEWS = "views";
   private static final long TRACK_INTERVAL_TICKS = 20L;
   private static final int MAX_COORDINATE = 30_000_000;
   private static final @NotNull Pattern CONTROL = Pattern.compile("\\p{Cntrl}");
@@ -198,6 +200,10 @@ public final class ConfigEditor {
         : null;
   }
 
+  private static @NotNull MapViews views(final @Nullable Object normalized) {
+    return Objects.requireNonNullElse(MapViews.parse((String) normalized), MapViews.BOTH);
+  }
+
   private static boolean same(final @Nullable Object a, final @Nullable Object b) {
     return Objects.equals(a, b);
   }
@@ -306,6 +312,15 @@ public final class ConfigEditor {
     return start;
   }
 
+  public RenderService.@Nullable Start setViews(
+      final @NotNull World world, final @NotNull MapViews views, final @NotNull String who) {
+    final RenderService.@Nullable Start start = this.renders.views(world, views);
+    if (!(start instanceof RenderService.Refused)) {
+      track(who);
+    }
+    return start;
+  }
+
   public @NotNull CompletableFuture<View> view() {
     return onMainThread(this::viewNow);
   }
@@ -406,8 +421,27 @@ public final class ConfigEditor {
         next.keySet().stream()
             .filter(field -> field.startsWith(WORLD) && field.endsWith(":" + LIMIT))
             .toList();
-    if (limitFields.size() > 1) {
-      return new Invalid(limitFields.get(1));
+    final @NotNull List<String> viewFields =
+        next.keySet().stream()
+            .filter(field -> field.startsWith(WORLD) && field.endsWith(":" + VIEWS))
+            .toList();
+    final @NotNull List<String> renderFields = new ArrayList<>(limitFields);
+    viewFields.stream()
+        .filter(
+            field ->
+                (next.get(worldField(worldOf(field), "enabled")) instanceof final Boolean on
+                        ? on
+                        : this.config.worldEnabled(worldOf(field)))
+                    && !this.config
+                        .views(worldOf(field))
+                        .views()
+                        .containsAll(views(next.get(field)).views()))
+        .forEach(renderFields::add);
+    if (renderFields.size() > 1) {
+      return new Invalid(renderFields.get(1));
+    }
+    if (!viewFields.isEmpty() && this.renders.rendering() != null) {
+      return new Busy(viewFields.getFirst(), viewNow());
     }
     for (final @NotNull String field : limitFields) {
       final @NotNull String world = worldOf(field);
@@ -441,7 +475,7 @@ public final class ConfigEditor {
     boolean worlds = false;
     for (final Map.@NotNull Entry<String, Object> change : next.entrySet()) {
       final @NotNull String field = change.getKey();
-      if (!field.startsWith(WORLD) || limitFields.contains(field)) {
+      if (!field.startsWith(WORLD) || limitFields.contains(field) || viewFields.contains(field)) {
         continue;
       }
       worlds = true;
@@ -481,6 +515,12 @@ public final class ConfigEditor {
     }
     if (worlds) {
       this.config.setWorlds(this.plugin, order, hidden, hiddenPlayers, names);
+    }
+    for (final @NotNull String field : viewFields) {
+      final @Nullable World world = WorldKeys.resolve(worldOf(field));
+      if (world != null) {
+        this.renders.views(world, views(next.get(field)));
+      }
     }
     for (final @NotNull String field : limitFields) {
       final @Nullable World world = WorldKeys.resolve(worldOf(field));
@@ -546,6 +586,13 @@ public final class ConfigEditor {
       if (field.endsWith(":" + LIMIT)) {
         return WorldKeys.resolve(world) == null ? null : normalizeLimit(value);
       }
+      if (field.endsWith(":" + VIEWS)) {
+        return WorldKeys.resolve(world) != null
+                && value instanceof final @NotNull String id
+                && MapViews.parse(id) != null
+            ? id
+            : null;
+      }
       return field.endsWith(":name")
           ? value instanceof final @NotNull String name ? worldName(world, name) : null
           : value instanceof Boolean ? value : null;
@@ -577,6 +624,7 @@ public final class ConfigEditor {
       values.put(worldField(world, "players"), this.config.playersPrivate(world));
       values.put(worldField(world, "name"), this.config.worldNames().getOrDefault(world, ""));
       values.put(worldField(world, LIMIT), limitValue(this.limits.get(world)));
+      values.put(worldField(world, VIEWS), this.config.views(world).id());
     }
     values.put(ORDER, List.copyOf(this.config.enabledWorlds()));
     for (final @NotNull LayerInfo layer : layers()) {

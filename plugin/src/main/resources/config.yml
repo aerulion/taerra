@@ -53,6 +53,12 @@ worlds: [ ]
 # order on the map, set with /taerra config world <world> position <number>
 world-names: { }
 
+# Worlds rendering only one of the two map views, to save disk space, by dimension key, like
+#   minecraft:the_nether: top_down
+# top_down or isometric; worlds not listed render both. Set in game with
+# /taerra config world <world> views <both|top_down|isometric>
+world-views: { }
+
 # Worlds only logged-in viewers with taerra.world.<world> see, the colon swapped for a dot:
 # minecraft:the_end needs taerra.world.minecraft.the_end. Players log in with /taerra login.
 # Set in game with /taerra config world <world> private

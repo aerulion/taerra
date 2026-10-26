@@ -16,7 +16,6 @@ import net.aerulion.taerra.rendering.session.CompletedRender;
 import net.aerulion.taerra.rendering.session.ManualRenderSession;
 import net.aerulion.taerra.rendering.session.ManualRenderSessionSnapshot;
 import net.aerulion.taerra.rendering.session.RenderHistory;
-import net.aerulion.taerra.rendering.tile.RenderedTile;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -130,7 +129,7 @@ final class ManualRenderCoordinator {
   void queueIsometricCoverage(
       final @NotNull World world,
       final @NotNull List<TileCoordinate> batch,
-      final @NotNull List<RenderedTile> renderedTiles,
+      final @NotNull List<TileCoordinate> sampled,
       final @NotNull ChunkColumnsSource source,
       final @NotNull RenderPriority priority,
       final int cancelsAtStart) {
@@ -138,8 +137,7 @@ final class ManualRenderCoordinator {
     final int measured =
         session.isActive() ? (int) batch.stream().filter(session::owns).count() : 0;
     if (measured > 0) {
-      final @NotNull List<TileCoordinate> covered =
-          renderedTiles.stream().map(RenderedTile::coordinate).filter(session::owns).toList();
+      final @NotNull List<TileCoordinate> covered = sampled.stream().filter(session::owns).toList();
       final @NotNull List<TileCoordinate> fresh =
           session.addIsometricCoverage(
               measured,
@@ -152,10 +150,7 @@ final class ManualRenderCoordinator {
       return;
     }
     final @NotNull List<TileCoordinate> orphans =
-        renderedTiles.stream()
-            .map(RenderedTile::coordinate)
-            .filter(tile -> !session.isActive() || !session.owns(tile))
-            .toList();
+        sampled.stream().filter(tile -> !session.isActive() || !session.owns(tile)).toList();
     if (!orphans.isEmpty()) {
       this.renderQueue.enqueueAll(
           this.isoTileService.tilesCovering(world, orphans, source, null),

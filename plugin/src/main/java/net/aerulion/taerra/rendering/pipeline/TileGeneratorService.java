@@ -1,5 +1,6 @@
 package net.aerulion.taerra.rendering.pipeline;
 
+import net.aerulion.taerra.model.MapView;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.rendering.region.RegionScanProgress;
 import net.aerulion.taerra.rendering.region.RegionScanResult;
@@ -51,4 +52,6 @@ public sealed interface TileGeneratorService permits TileGeneratorServiceImpl {
   void setThreads(int configuredThreads);
 
   void dropUnusedLayers(@NotNull String worldName);
+
+  void dropView(@NotNull String worldName, @NotNull MapView view);
 }

@@ -138,7 +138,8 @@ public final class Minimap implements HudElement {
       return false;
     }
     this.view.setWorld(Dimensions.current());
-    return map.world(this.view.world()) != null;
+    final @Nullable World world = map.world(this.view.world());
+    return world != null && world.shows(false);
   }
 
   @Override

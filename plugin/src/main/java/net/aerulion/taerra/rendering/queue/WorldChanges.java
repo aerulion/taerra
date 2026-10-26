@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.ChunkCoordinate;
+import net.aerulion.taerra.model.MapView;
+import net.aerulion.taerra.model.MapViews;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
 import net.aerulion.taerra.model.WorldKeys;
@@ -80,6 +82,7 @@ public final class WorldChanges {
       return;
     }
 
+    final @NotNull MapViews views = this.config.views(worldName);
     final @NotNull Set<TileCoordinate> tiles = new HashSet<>();
     final @NotNull Long2LongOpenHashMap spans = new Long2LongOpenHashMap();
     for (final @NotNull Block block : blocks) {
@@ -90,7 +93,8 @@ public final class WorldChanges {
           (kept, added) ->
               (long) Math.min((int) (kept >> 32), (int) (added >> 32)) << 32
                   | Math.max((int) kept, (int) added) & 0xFFFFFFFFL);
-      if (isVisibleFromAbove(world, block.getX(), block.getY(), block.getZ())) {
+      if (views.shows(MapView.TOP_DOWN)
+          && isVisibleFromAbove(world, block.getX(), block.getY(), block.getZ())) {
         collectColumn(tiles, worldName, block.getX(), block.getZ());
       }
     }
@@ -99,9 +103,11 @@ public final class WorldChanges {
       final int chunkZ = ChunkCoordinate.keyZ(entry.getLongKey());
       final int lowest = (int) (entry.getLongValue() >> 32);
       final int highest = (int) entry.getLongValue();
-      tiles.addAll(this.isoTiles.invalidateChunk(world, chunkX, chunkZ, lowest));
-      if (highest != lowest) {
-        tiles.addAll(this.isoTiles.invalidateChunk(world, chunkX, chunkZ, highest));
+      if (views.shows(MapView.ISOMETRIC)) {
+        tiles.addAll(this.isoTiles.invalidateChunk(world, chunkX, chunkZ, lowest));
+        if (highest != lowest) {
+          tiles.addAll(this.isoTiles.invalidateChunk(world, chunkX, chunkZ, highest));
+        }
       }
       this.columns.markChanged(worldName, chunkX, chunkZ);
     }
@@ -113,14 +119,19 @@ public final class WorldChanges {
       return;
     }
 
+    final @NotNull MapViews views = this.config.views(WorldKeys.id(world));
     final @NotNull Set<TileCoordinate> tiles = new HashSet<>();
-    tiles.addAll(this.isoTiles.invalidateChunk(world, chunkX, chunkZ, null));
+    if (views.shows(MapView.ISOMETRIC)) {
+      tiles.addAll(this.isoTiles.invalidateChunk(world, chunkX, chunkZ, null));
+    }
     this.columns.markChanged(WorldKeys.id(world), chunkX, chunkZ);
 
-    final int minBlockX = chunkX * 16;
-    final int minBlockZ = chunkZ * 16;
-    collectColumn(tiles, WorldKeys.id(world), minBlockX, minBlockZ);
-    collectColumn(tiles, WorldKeys.id(world), minBlockX + 15, minBlockZ + 15);
+    if (views.shows(MapView.TOP_DOWN)) {
+      final int minBlockX = chunkX * 16;
+      final int minBlockZ = chunkZ * 16;
+      collectColumn(tiles, WorldKeys.id(world), minBlockX, minBlockZ);
+      collectColumn(tiles, WorldKeys.id(world), minBlockX + 15, minBlockZ + 15);
+    }
     this.buffer.add(tiles);
   }
 }
