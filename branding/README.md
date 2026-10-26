@@ -66,10 +66,11 @@ curtain to close. `aerulion/mark.svg`, `Tektur-Bold.woff2` and `IBMPlexMono-Regu
 come from the aerulion.github.io brand folder.
 
 `modrinth-description.md` is the Modrinth project description. Its showreel is embedded by its YouTube ID. Every paragraph and list item in it is one line, never
-wrapped: Modrinth renders hard line breaks inconsistently. Its images are hosted
-under <https://assets.corpium.net/taerra/>, each by its file name: upload `description-header.png` and every
-`section-*.png` there after regenerating them. Every run also gives those URLs in the description a `?v=` of the file's content, so
-Modrinth's image proxy fetches a changed image anew: paste the description into Modrinth again after uploading.
+wrapped: Modrinth renders hard line breaks inconsistently. Its images are the
+committed `images/modrinth/` files on `main`, linked through raw.githubusercontent.com, which Modrinth shows without its
+image proxy. Its showreel is wrapped in a `<p>` so it gets a paragraph's margins like the images: Modrinth's own CSS sets
+every embed's width, which no attribute changes. Every run also gives those URLs in the description a `?v=` of the
+file's content, so browsers fetch a changed image anew: push the images, then paste the description into Modrinth again.
 `python3 branding/generate.py none` only does that, rendering nothing.
 
 The `view` layout is a picture and nothing else, for taerra.dev to set its own copy over: `python3 branding/generate.py site/`

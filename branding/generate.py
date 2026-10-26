@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 HERE = Path(__file__).resolve().parent
-ASSETS = "https://assets.corpium.net/taerra/"
+ASSETS = "https://raw.githubusercontent.com/aerulion/taerra/main/branding/images/modrinth/"
 CHROMES = (
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
