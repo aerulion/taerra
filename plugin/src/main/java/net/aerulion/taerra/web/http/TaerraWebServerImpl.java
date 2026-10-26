@@ -68,6 +68,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private volatile boolean running;
   private @Nullable BukkitTask progressTask;
   private @Nullable BukkitTask worldsTask;
+  private final @NotNull TileStorage tileStorage;
 
   public TaerraWebServerImpl(
       final @NotNull Plugin plugin,
@@ -95,6 +96,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     this.plugin = plugin;
     this.taerraConfig = taerraConfig;
     this.web = web;
+    this.tileStorage = tileStorage;
     this.wsHandler = wsHandler;
     this.generatorService = generatorService;
     this.markers = markers;
@@ -246,7 +248,8 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private void publishProgress() {
     try {
       final @NotNull Map<String, Object> progress =
-          RenderStatsPayloadSerializer.progress(this.generatorService.statusSnapshot());
+          RenderStatsPayloadSerializer.progress(
+              this.generatorService.statusSnapshot(), this.tileStorage.move());
       final @NotNull Map<String, Object> withoutWorld = new LinkedHashMap<>(progress);
       withoutWorld.remove("render");
       this.wsHandler.publishProgress(

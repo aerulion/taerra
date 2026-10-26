@@ -56,6 +56,14 @@ public final class RenderProgressOverlay {
           remaining = remaining(render.remainingMillis());
         }
       }
+    } else if (progress.move() != null) {
+      final Progress.@NotNull Move move = progress.move();
+      percent = Math.clamp(move.percent(), 0, 100);
+      title =
+          Component.translatable(
+              "taerra.render.moving",
+              Component.translatable("taerra.settings.storage.type." + move.to()));
+      detail = Component.translatable("taerra.render.moved", move.done(), move.total());
     } else if (pending > 0) {
       title = Component.translatable("taerra.render.updating");
       detail = Component.translatable("taerra.render.changes", pending);

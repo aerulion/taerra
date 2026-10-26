@@ -9,6 +9,7 @@ import net.aerulion.taerra.model.MapView;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.rendering.sample.FogView;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public sealed interface TileStorage permits TileStorageImpl {
 
@@ -70,6 +71,9 @@ public sealed interface TileStorage permits TileStorageImpl {
 
   boolean moving();
 
+  @Nullable
+  Move move();
+
   @NotNull
   Prepared prepare(@NotNull StorageSettings settings) throws IOException;
 
@@ -78,6 +82,13 @@ public sealed interface TileStorage permits TileStorageImpl {
   void resume(@NotNull Set<String> worlds);
 
   void close();
+
+  record Move(@NotNull String to, long done, long total) {
+
+    public double percent() {
+      return this.total <= 0 ? 0 : Math.min(100, this.done * 100.0 / this.total);
+    }
+  }
 
   enum Saved {
     CREATED,

@@ -32,6 +32,8 @@ sealed interface TileStore permits FileTileStore, SqlTileStore {
 
   void forEach(@NotNull Set<String> worlds, @NotNull Visitor visitor) throws IOException;
 
+  long count(@NotNull Set<String> worlds) throws IOException;
+
   void touch(@NotNull TileCoordinate coord, @NotNull FogView layer) throws IOException;
 
   boolean delete(@NotNull TileCoordinate coord, @NotNull FogView layer) throws IOException;

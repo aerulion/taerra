@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 import net.aerulion.taerra.model.MapRotation;
@@ -136,6 +137,24 @@ abstract class TileStorageContract {
       assertThrows(
           IOException.class,
           () -> store.touch(TileCoordinate.topDown("minecraft:overworld", 0, 9, 9), FogView.BASE));
+    } finally {
+      store.close();
+    }
+  }
+
+  @Test
+  @DisplayName("counting counts the tiles, layers and picks of the given worlds only")
+  void countsTiles() throws IOException {
+    final TileStorageImpl storage = open();
+    final TileCoordinate tile = TileCoordinate.topDown("minecraft:overworld", 0, 1, 1);
+    storage.saveTile(tile, ImageUtils.createEmptyTile(4));
+    storage.saveTile(tile, FogView.body(SEVEN), ImageUtils.createEmptyTile(4));
+    storage.savePick(tile, new byte[] {1});
+    storage.saveTile(
+        TileCoordinate.topDown("minecraft:the_end", 0, 1, 1), ImageUtils.createEmptyTile(4));
+    final TileStore store = store();
+    try {
+      assertEquals(3, store.count(Set.of("minecraft:overworld")));
     } finally {
       store.close();
     }

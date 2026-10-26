@@ -37,6 +37,7 @@ public final class TileStorageImpl implements TileStorage {
   private volatile @NotNull StorageSettings settings;
   private final @NotNull Set<Record> dropped = ConcurrentHashMap.newKeySet();
   private volatile boolean closed;
+  private volatile @Nullable Move move;
 
   TileStorageImpl(
       final @NotNull TileStore store,
@@ -97,6 +98,11 @@ public final class TileStorageImpl implements TileStorage {
   }
 
   @Override
+  public @Nullable Move move() {
+    return this.move;
+  }
+
+  @Override
   public @NotNull Prepared prepare(final @NotNull StorageSettings settings) throws IOException {
     return new Prepared(store(settings, this.dataDirectory, this.logger), settings);
   }
@@ -146,9 +152,17 @@ public final class TileStorageImpl implements TileStorage {
               final int[] copied = {0};
               while (!this.closed) {
                 try {
+                  if (!worlds.isEmpty()) {
+                    this.move = new Move(target.type(), 0, from.count(worlds));
+                  }
+                  final long[] done = {0};
                   from.forEach(
                       worlds,
                       (coord, layer, kind, data, modified) -> {
+                        final @Nullable Move moving = this.move;
+                        if (moving != null) {
+                          this.move = new Move(moving.to(), ++done[0], moving.total());
+                        }
                         synchronized (this.dropped) {
                           if (!dropped(coord, layer)
                               && to.writeIfNewer(coord, layer, kind, data, modified)) {
@@ -186,6 +200,7 @@ public final class TileStorageImpl implements TileStorage {
                   }
                 }
               }
+              this.move = null;
               if (this.closed) {
                 return;
               }

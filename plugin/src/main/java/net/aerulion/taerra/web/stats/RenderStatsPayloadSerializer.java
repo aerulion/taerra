@@ -5,7 +5,9 @@ import java.util.Map;
 import net.aerulion.taerra.rendering.pipeline.RenderStatusSnapshot;
 import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
 import net.aerulion.taerra.rendering.session.ManualRenderSessionSnapshot;
+import net.aerulion.taerra.storage.TileStorage;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class RenderStatsPayloadSerializer {
 
@@ -14,7 +16,7 @@ public final class RenderStatsPayloadSerializer {
   }
 
   public static @NotNull Map<String, Object> progress(
-      final @NotNull RenderStatusSnapshot snapshot) {
+      final @NotNull RenderStatusSnapshot snapshot, final TileStorage.@Nullable Move move) {
     final @NotNull Map<String, Object> payload = new LinkedHashMap<>();
     payload.put("type", "progress");
     payload.put("queued", snapshot.totalQueuedTiles());
@@ -39,6 +41,19 @@ public final class RenderStatsPayloadSerializer {
           "scanning".equals(session.phase()) ? session.regionPercent() : session.percent());
       render.put("remainingMillis", session.hasEstimate() ? session.remainingMillis() : null);
       payload.put("render", render);
+    }
+    if (move != null) {
+      payload.put(
+          "move",
+          Map.of(
+              "to",
+              move.to(),
+              "done",
+              move.done(),
+              "total",
+              move.total(),
+              "percent",
+              move.percent()));
     }
     return payload;
   }

@@ -209,6 +209,29 @@ final class FileTileStore implements TileStore {
   }
 
   @Override
+  public long count(final @NotNull Set<String> worlds) throws IOException {
+    long count = 0;
+    for (final @NotNull MapView view : MapView.values()) {
+      for (final @NotNull String world : worlds) {
+        final @NotNull Path directory = worldDirectory(world, view);
+        if (Files.isDirectory(directory)) {
+          try (final @NotNull Stream<Path> paths = Files.walk(directory)) {
+            count +=
+                paths
+                    .map(path -> path.getFileName().toString())
+                    .filter(
+                        name ->
+                            name.endsWith(Kind.TILE.extension)
+                                || name.endsWith(Kind.PICK.extension))
+                    .count();
+          }
+        }
+      }
+    }
+    return count;
+  }
+
+  @Override
   public void touch(final @NotNull TileCoordinate coord, final @NotNull FogView layer)
       throws IOException {
     Files.setLastModifiedTime(

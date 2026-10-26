@@ -322,6 +322,25 @@ final class SqlTileStore implements TileStore {
   }
 
   @Override
+  public long count(final @NotNull Set<String> worlds) throws IOException {
+    long count = 0;
+    for (final Map.@NotNull Entry<MapKey, UUID> map : Map.copyOf(this.maps).entrySet()) {
+      if (worlds.contains(map.getKey().world())) {
+        count +=
+            run(
+                () ->
+                    this.queries
+                        .query("select count(*) as count from taerra_tiles where map_id = ?")
+                        .single(Call.of().bind(bytes(map.getValue())))
+                        .map(row -> row.getLong("count"))
+                        .first()
+                        .orElse(0L));
+      }
+    }
+    return count;
+  }
+
+  @Override
   public void touch(final @NotNull TileCoordinate coord, final @NotNull FogView layer)
       throws IOException {
     final @Nullable UUID map = map(coord.world(), coord.view());

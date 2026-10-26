@@ -148,6 +148,8 @@
   "taerra.render.area": "Rendering part of %s",
   "taerra.render.changes": "Redrawing %s changed areas",
   "taerra.render.drawing": "Drawing %s of %s tiles",
+  "taerra.render.moving": "Moving tiles to %s",
+  "taerra.render.moved": "Moved %s of %s tiles",
   "taerra.render.full": "Rendering %s",
   "taerra.render.remaining.hours": "About %s h %s min left",
   "taerra.render.remaining.minutes": "About %s min left",

@@ -3,6 +3,7 @@ package net.aerulion.taerra.storage;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.image.BufferedImage;
@@ -102,6 +103,7 @@ abstract class SqlTileStoreContract extends TileStorageContract {
 
     storage.move(storage.prepare(settings()), Set.of("minecraft:overworld", "minecraft:the_end"));
     awaitMoved(storage);
+    assertNull(storage.move());
 
     final TileStorageImpl moved = open();
     assertTrue(moved.lastModified(top) > 0);

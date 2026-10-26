@@ -148,6 +148,8 @@
   "taerra.render.area": "Bereich von %s wird gerendert",
   "taerra.render.changes": "%s geänderte Bereiche werden neu gezeichnet",
   "taerra.render.drawing": "%s von %s Kacheln gezeichnet",
+  "taerra.render.moving": "Kacheln ziehen nach %s um",
+  "taerra.render.moved": "%s von %s Kacheln umgezogen",
   "taerra.render.full": "%s wird gerendert",
   "taerra.render.remaining.hours": "Noch etwa %s h %s min",
   "taerra.render.remaining.minutes": "Noch etwa %s min",

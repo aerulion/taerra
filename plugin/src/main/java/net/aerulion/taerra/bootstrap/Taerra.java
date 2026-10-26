@@ -534,7 +534,8 @@ public final class Taerra extends JavaPlugin {
     TaerraCommands.register(
         this,
         List.of(
-            new StatusSubCommand(generatorService, tileCache, isoTileService, chunkColumnsCache),
+            new StatusSubCommand(
+                generatorService, tileCache, isoTileService, chunkColumnsCache, tileStorage),
             new RenderSubCommand(renders, renderFeedback, exports),
             new LimitSubCommand(configEditor, renderFeedback, worldLimits),
             new WaypointSubCommand(waypoints),
