@@ -25,11 +25,15 @@ import net.aerulion.taerra.model.MapViews;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.model.WorldLimit;
 import net.aerulion.taerra.rendering.RenderService;
+import net.aerulion.taerra.storage.StorageSettings;
+import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.util.Names;
+import net.aerulion.taerra.util.Throwables;
 import net.aerulion.taerra.waypoint.Waypoints;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -61,9 +65,17 @@ public final class ConfigEditor {
           Setting.toggle("markers.worldborder.enabled"),
           Setting.toggle("markers.worldborder.shown-by-default"),
           Setting.toggle("markers.loaded-chunks.enabled"),
-          Setting.toggle("markers.loaded-chunks.shown-by-default"));
+          Setting.toggle("markers.loaded-chunks.shown-by-default"),
+          Setting.choice("storage.type", StorageSettings.FILES, "mariadb", "mysql"),
+          Setting.text("storage.database.host", true),
+          Setting.number("storage.database.port", 1, 65535, true),
+          Setting.text("storage.database.name", true),
+          Setting.text("storage.database.user", true),
+          Setting.secret("storage.database.password"));
 
   public static final @NotNull String SETTING = "setting:";
+  public static final @NotNull String STORAGE = "storage.";
+  public static final @NotNull String MASK = "********";
   public static final @NotNull String WORLD = "world:";
   public static final @NotNull String LAYER = "layer:";
   public static final @NotNull String LAYER_ICON = "layer-icon:";
@@ -84,6 +96,7 @@ public final class ConfigEditor {
   private final @NotNull Runnable layersChanged;
   private final @NotNull LongConsumer published;
   private final @NotNull Predicate<String> iconExists;
+  private final @NotNull TileStorage tileStorage;
   private final @NotNull SettingsRevisions revisions = new SettingsRevisions();
 
   public ConfigEditor(
@@ -96,7 +109,8 @@ public final class ConfigEditor {
       final @NotNull Consumer<Set<String>> applied,
       final @NotNull Runnable layersChanged,
       final @NotNull LongConsumer published,
-      final @NotNull Predicate<String> iconExists) {
+      final @NotNull Predicate<String> iconExists,
+      final @NotNull TileStorage tileStorage) {
     super();
     this.plugin = plugin;
     this.config = config;
@@ -108,6 +122,7 @@ public final class ConfigEditor {
     this.layersChanged = layersChanged;
     this.published = published;
     this.iconExists = iconExists;
+    this.tileStorage = tileStorage;
   }
 
   public static @Nullable Setting setting(final @NotNull String key) {
@@ -210,12 +225,27 @@ public final class ConfigEditor {
 
   public void start() {
     this.revisions.seed(values(), System.currentTimeMillis());
+    this.tileStorage.resume(Set.copyOf(worldIds()));
     Bukkit.getScheduler()
         .runTaskTimer(this.plugin, () -> track(null), TRACK_INTERVAL_TICKS, TRACK_INTERVAL_TICKS);
   }
 
   public @Nullable Object get(final @NotNull String key) {
-    return this.plugin.getConfig().get(key);
+    final @Nullable Object value = this.plugin.getConfig().get(key);
+    final @Nullable Setting setting = setting(key);
+    return setting == null || setting.kind() != Kind.SECRET
+        ? value
+        : value == null || String.valueOf(value).isEmpty() ? "" : MASK;
+  }
+
+  public @NotNull StorageSettings storage() {
+    return this.tileStorage.settings();
+  }
+
+  public @NotNull CompletableFuture<Outcome> setStorage(
+      final @NotNull String key, final @NotNull Object given, final @NotNull String who) {
+    return apply(
+        this.revisions.revision(), Map.of(SETTING + key, "\"\"".equals(given) ? "" : given), who);
   }
 
   public @NotNull Change set(
@@ -327,7 +357,81 @@ public final class ConfigEditor {
 
   public @NotNull CompletableFuture<Outcome> apply(
       final long base, final @NotNull Map<String, Object> changes, final @NotNull String who) {
-    return onMainThread(() -> applyNow(base, changes, who));
+    return onMainThread(
+            () -> {
+              final @Nullable StorageSettings target = storageTarget(changes);
+              return target == null
+                  ? new Step(applyNow(base, changes, who, null), null)
+                  : new Step(
+                      storageBusy() ? new Busy(SETTING + "storage.type", viewNow()) : null, target);
+            })
+        .thenCompose(
+            step ->
+                step.outcome() != null
+                    ? CompletableFuture.completedFuture(step.outcome())
+                    : prepare(Objects.requireNonNull(step.target()))
+                        .handle(
+                            (prepared, error) ->
+                                onMainThread(
+                                    () ->
+                                        error != null
+                                            ? new Unreachable(
+                                                SETTING + "storage.type", reason(error))
+                                            : applyNow(base, changes, who, prepared)))
+                        .thenCompose(outcome -> outcome));
+  }
+
+  private record Step(@Nullable Outcome outcome, @Nullable StorageSettings target) {}
+
+  private static @NotNull String reason(final @NotNull Throwable error) {
+    @NotNull Throwable root = error;
+    while (root.getCause() != null) {
+      root = root.getCause();
+    }
+    return Throwables.describe(root);
+  }
+
+  private boolean storageBusy() {
+    return this.renders.rendering() != null || this.tileStorage.moving();
+  }
+
+  private @NotNull CompletableFuture<TileStorage.Prepared> prepare(
+      final @NotNull StorageSettings target) {
+    final @NotNull CompletableFuture<TileStorage.Prepared> prepared = new CompletableFuture<>();
+    Thread.ofPlatform()
+        .name("Taerra-Storage")
+        .daemon()
+        .start(
+            () -> {
+              try {
+                prepared.complete(this.tileStorage.prepare(target));
+              } catch (final Exception e) {
+                prepared.completeExceptionally(e);
+              }
+            });
+    return prepared;
+  }
+
+  private @Nullable StorageSettings storageTarget(final @NotNull Map<String, Object> changes) {
+    final @NotNull YamlConfiguration merged = new YamlConfiguration();
+    boolean touched = false;
+    for (final @NotNull Setting setting : SETTINGS) {
+      if (!setting.key().startsWith(STORAGE)) {
+        continue;
+      }
+      merged.set(setting.key(), this.plugin.getConfig().get(setting.key()));
+      final @Nullable Object change = changes.get(SETTING + setting.key());
+      final @Nullable Object value = change == null ? null : valid(setting.key(), change);
+      if (value != null && !MASK.equals(value)) {
+        merged.set(setting.key(), value);
+        touched = true;
+      }
+    }
+    if (!touched) {
+      return null;
+    }
+    final @NotNull StorageSettings target = StorageSettings.of(merged);
+    return target.equals(this.tileStorage.settings()) ? null : target;
   }
 
   private void track(final @Nullable String who) {
@@ -362,7 +466,8 @@ public final class ConfigEditor {
                         setting.kind().name().toLowerCase(Locale.ROOT),
                         setting.editable(),
                         setting.kind() == Kind.NUMBER ? setting.min() : null,
-                        setting.kind() == Kind.NUMBER ? setting.max() : null))
+                        setting.kind() == Kind.NUMBER ? setting.max() : null,
+                        setting.kind() == Kind.CHOICE ? setting.options() : null))
             .toList();
     final @NotNull List<WorldInfo> worlds =
         worldIds().stream()
@@ -390,7 +495,24 @@ public final class ConfigEditor {
   }
 
   private @NotNull Outcome applyNow(
-      final long base, final @NotNull Map<String, Object> changes, final @NotNull String who) {
+      final long base,
+      final @NotNull Map<String, Object> changes,
+      final @NotNull String who,
+      final TileStorage.@Nullable Prepared prepared) {
+    try {
+      return applyChecked(base, changes, who, prepared);
+    } finally {
+      if (prepared != null) {
+        prepared.discard();
+      }
+    }
+  }
+
+  private @NotNull Outcome applyChecked(
+      final long base,
+      final @NotNull Map<String, Object> changes,
+      final @NotNull String who,
+      final TileStorage.@Nullable Prepared prepared) {
     final @NotNull Map<String, Object> current = values();
     final @NotNull Map<String, Object> next = new LinkedHashMap<>();
     for (final Map.@NotNull Entry<String, Object> change : changes.entrySet()) {
@@ -454,6 +576,11 @@ public final class ConfigEditor {
         return new Busy(field, viewNow());
       }
     }
+    final @Nullable StorageSettings target = storageTarget(changes);
+    if (target != null
+        && (prepared == null || !target.equals(prepared.settings()) || storageBusy())) {
+      return new Busy(SETTING + "storage.type", viewNow());
+    }
 
     final @NotNull Set<String> written = new LinkedHashSet<>();
     next.forEach(
@@ -466,6 +593,9 @@ public final class ConfigEditor {
     if (!written.isEmpty()) {
       this.plugin.saveConfig();
       this.applied.accept(written);
+    }
+    if (target != null) {
+      this.tileStorage.move(prepared, Set.copyOf(worldIds()));
     }
 
     final @NotNull List<String> enabled = new ArrayList<>(this.config.enabledWorlds());
@@ -550,7 +680,15 @@ public final class ConfigEditor {
     }
 
     next.forEach(
-        (field, value) -> this.plugin.getLogger().info(who + " set " + field + " to " + value));
+        (field, value) ->
+            this.plugin
+                .getLogger()
+                .info(
+                    who
+                        + " set "
+                        + field
+                        + " to "
+                        + (field.equals(SETTING + "storage.database.password") ? MASK : value)));
     track(who);
     return new Applied(viewNow());
   }
@@ -615,7 +753,7 @@ public final class ConfigEditor {
           switch (setting.kind()) {
             case NUMBER -> value instanceof final Number number ? number.intValue() : null;
             case TOGGLE -> Boolean.TRUE.equals(value);
-            case TEXT -> value == null ? "" : String.valueOf(value);
+            case TEXT, CHOICE, SECRET -> value == null ? "" : String.valueOf(value);
           });
     }
     for (final @NotNull String world : worldIds()) {
@@ -685,6 +823,14 @@ public final class ConfigEditor {
               ? number.intValue()
               : null;
       case TOGGLE -> value instanceof Boolean ? value : null;
+      case CHOICE ->
+          value instanceof final @NotNull String text && setting.options().contains(text)
+              ? text
+              : null;
+      case SECRET ->
+          value instanceof final @NotNull String text && !CONTROL.matcher(text).find()
+              ? text
+              : null;
       case TEXT -> {
         if (!(value instanceof final @NotNull String text) || CONTROL.matcher(text).find()) {
           yield null;
@@ -716,25 +862,41 @@ public final class ConfigEditor {
   public enum Kind {
     NUMBER,
     TOGGLE,
-    TEXT
+    TEXT,
+    CHOICE,
+    SECRET
   }
 
-  public sealed interface Outcome permits Applied, Conflicted, Invalid, Busy {}
+  public sealed interface Outcome permits Applied, Conflicted, Invalid, Busy, Unreachable {}
 
   public record Setting(
-      @NotNull String key, @NotNull Kind kind, int min, int max, boolean editable) {
+      @NotNull String key,
+      @NotNull Kind kind,
+      int min,
+      int max,
+      boolean editable,
+      @NotNull List<String> options) {
 
     private static @NotNull Setting number(
         final @NotNull String key, final int min, final int max, final boolean editable) {
-      return new Setting(key, Kind.NUMBER, min, max, editable);
+      return new Setting(key, Kind.NUMBER, min, max, editable, List.of());
     }
 
     private static @NotNull Setting text(final @NotNull String key, final boolean editable) {
-      return new Setting(key, Kind.TEXT, 0, 0, editable);
+      return new Setting(key, Kind.TEXT, 0, 0, editable, List.of());
     }
 
     private static @NotNull Setting toggle(final @NotNull String key) {
-      return new Setting(key, Kind.TOGGLE, 0, 0, true);
+      return new Setting(key, Kind.TOGGLE, 0, 0, true, List.of());
+    }
+
+    private static @NotNull Setting choice(
+        final @NotNull String key, final @NotNull String @NotNull ... options) {
+      return new Setting(key, Kind.CHOICE, 0, 0, true, List.of(options));
+    }
+
+    private static @NotNull Setting secret(final @NotNull String key) {
+      return new Setting(key, Kind.SECRET, 0, 0, true, List.of());
     }
   }
 
@@ -746,7 +908,8 @@ public final class ConfigEditor {
       @NotNull String kind,
       boolean editable,
       @Nullable Integer min,
-      @Nullable Integer max) {}
+      @Nullable Integer max,
+      @Nullable List<String> options) {}
 
   public record WorldInfo(
       @NotNull String id, @NotNull String defaultName, @Nullable String environment) {}
@@ -772,4 +935,6 @@ public final class ConfigEditor {
   public record Invalid(@NotNull String field) implements Outcome {}
 
   public record Busy(@NotNull String field, @NotNull View view) implements Outcome {}
+
+  public record Unreachable(@NotNull String field, @NotNull String reason) implements Outcome {}
 }

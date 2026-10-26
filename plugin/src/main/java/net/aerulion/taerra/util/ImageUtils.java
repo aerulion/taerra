@@ -7,9 +7,7 @@ import java.awt.image.DataBufferInt;
 import java.awt.image.IndexColorModel;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.zip.CRC32;
@@ -262,11 +260,8 @@ public final class ImageUtils {
     into[offset + 3] = (byte) value;
   }
 
-  public static @Nullable BufferedImage loadPNG(final @NotNull File file) throws IOException {
-    if (!file.exists()) {
-      return null;
-    }
-    return ImageIO.read(new ByteArrayInputStream(Files.readAllBytes(file.toPath())));
+  public static @Nullable BufferedImage loadPNG(final byte @NotNull [] data) throws IOException {
+    return ImageIO.read(new ByteArrayInputStream(data));
   }
 
   public static @NotNull BufferedImage combineTiles(

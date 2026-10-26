@@ -110,6 +110,8 @@ public final class SettingsRoutes implements Routes {
                         }
                         case ConfigEditor.Invalid(final String field) ->
                             ctx.status(400).json(Map.of("invalid", field));
+                        case ConfigEditor.Unreachable(final String field, final String reason) ->
+                            ctx.status(400).json(Map.of("invalid", field, "unreachable", reason));
                         case ConfigEditor.Busy(
                                 final String field,
                                 final ConfigEditor.View view) -> {

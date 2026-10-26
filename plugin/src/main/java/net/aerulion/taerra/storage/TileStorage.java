@@ -1,10 +1,10 @@
 package net.aerulion.taerra.storage;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import net.aerulion.taerra.model.MapView;
 import net.aerulion.taerra.model.TileCoordinate;
 import net.aerulion.taerra.rendering.sample.FogView;
@@ -13,14 +13,10 @@ import org.jetbrains.annotations.NotNull;
 public sealed interface TileStorage permits TileStorageImpl {
 
   @NotNull
-  File tileFile(@NotNull TileCoordinate coord);
+  Saved saveTile(@NotNull TileCoordinate coord, @NotNull BufferedImage image) throws IOException;
 
   @NotNull
-  File tileFile(@NotNull TileCoordinate coord, @NotNull FogView layer);
-
-  boolean saveTile(@NotNull TileCoordinate coord, @NotNull BufferedImage image) throws IOException;
-
-  boolean saveTile(
+  Saved saveTile(
       @NotNull TileCoordinate coord, @NotNull FogView layer, @NotNull BufferedImage image)
       throws IOException;
 
@@ -65,5 +61,53 @@ public sealed interface TileStorage permits TileStorageImpl {
   @NotNull
   Optional<byte[]> readPick(@NotNull TileCoordinate coord, @NotNull FogView layer);
 
+  long lastModified(@NotNull TileCoordinate coord) throws IOException;
+
   void resize(int maxEncodedTiles);
+
+  @NotNull
+  StorageSettings settings();
+
+  boolean moving();
+
+  @NotNull
+  Prepared prepare(@NotNull StorageSettings settings) throws IOException;
+
+  void move(@NotNull Prepared prepared, @NotNull Set<String> worlds);
+
+  void resume(@NotNull Set<String> worlds);
+
+  void close();
+
+  enum Saved {
+    CREATED,
+    CHANGED,
+    UNCHANGED;
+
+    public boolean changed() {
+      return this != UNCHANGED;
+    }
+  }
+
+  final class Prepared {
+
+    final @NotNull TileStore store;
+    final @NotNull StorageSettings settings;
+    volatile boolean moved;
+
+    Prepared(final @NotNull TileStore store, final @NotNull StorageSettings settings) {
+      this.store = store;
+      this.settings = settings;
+    }
+
+    public @NotNull StorageSettings settings() {
+      return this.settings;
+    }
+
+    public void discard() {
+      if (!this.moved) {
+        this.store.close();
+      }
+    }
+  }
 }

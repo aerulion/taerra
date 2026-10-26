@@ -15,7 +15,12 @@ public record ServerSettings(
     @Nullable List<Editor> editors) {
 
   public record SettingInfo(
-      String key, String kind, boolean editable, @Nullable Integer min, @Nullable Integer max) {}
+      String key,
+      String kind,
+      boolean editable,
+      @Nullable Integer min,
+      @Nullable Integer max,
+      @Nullable List<String> options) {}
 
   public record WorldInfo(String id, String defaultName, @Nullable String environment) {}
 
