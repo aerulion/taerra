@@ -55,6 +55,7 @@ import net.minecraft.locale.Language;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -114,7 +115,17 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                   "rendering.render-threads",
                   "cache.max-tiles",
                   "cache.max-chunks")),
+          new Section(
+              "storage",
+              List.of(
+                  "storage.type",
+                  "storage.database.host",
+                  "storage.database.port",
+                  "storage.database.name",
+                  "storage.database.user",
+                  "storage.database.password")),
           new Section("web", List.of("web.port", "web.host")));
+  private static final String STORAGE_TYPE = "setting:storage.type";
 
   private final @NotNull Screen parent;
   private final @NotNull WebMap map;
@@ -262,6 +273,10 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
 
   private static boolean isLimit(final @NotNull String field) {
     return field.startsWith("world:") && field.endsWith(":limit");
+  }
+
+  private static boolean isStorage(final @NotNull String field) {
+    return field.startsWith("setting:storage.");
   }
 
   private static boolean isViews(final @NotNull String field) {
@@ -545,7 +560,21 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           MUTED);
     }
     final int footerTop = this.height - this.layout.getFooterHeight();
-    graphics.centeredText(this.font, this.status, this.width / 2, footerTop + 4, this.statusColor);
+    final int room = this.width - 16;
+    final boolean cut = this.font.width(this.status) > room;
+    graphics.centeredText(
+        this.font,
+        cut
+            ? Component.literal(
+                this.font.plainSubstrByWidth(this.status.getString(), room - this.font.width("…"))
+                    + "…")
+            : this.status,
+        this.width / 2,
+        footerTop + 4,
+        this.statusColor);
+    if (cut && mouseY >= footerTop + 2 && mouseY < footerTop + 14) {
+      graphics.setTooltipForNextFrame(this.font, this.font.split(this.status, 320), mouseX, mouseY);
+    }
     extractEditors(graphics, mouseX, mouseY, footerTop);
   }
 
@@ -1002,7 +1031,9 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                         field ->
                             isViews(field) && addsView(this.base.get(field), changes.get(field)))
                 ? "taerra.settings.saved_views"
-                : "taerra.settings.saved";
+                : changes.keySet().stream().anyMatch(ServerSettingsScreen::isStorage)
+                    ? "taerra.settings.saved_storage"
+                    : "taerra.settings.saved";
     this.saving = true;
     updateStatus();
     this.map.saveSettings(
@@ -1025,24 +1056,33 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           }
           if (status == 409 && next != null) {
             rebase(next);
-            if (JsonParser.parseString(response).getAsJsonObject().has("busy")) {
-              setStatus(Component.translatable("taerra.settings.limit_busy"), RED);
+            final @NotNull JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+            if (json.has("busy")) {
+              setStatus(
+                  Component.translatable(
+                      isStorage(json.get("busy").getAsString())
+                          ? "taerra.settings.storage_busy"
+                          : "taerra.settings.limit_busy"),
+                  RED);
             }
             return;
           }
           if (status == 400) {
             @Nullable String invalid = null;
+            @Nullable String unreachable = null;
             try {
-              invalid =
+              final @NotNull JsonObject json =
                   JsonParser.parseString(Objects.requireNonNullElse(response, "{}"))
-                      .getAsJsonObject()
-                      .get("invalid")
-                      .getAsString();
+                      .getAsJsonObject();
+              invalid = json.get("invalid").getAsString();
+              unreachable = json.has("unreachable") ? json.get("unreachable").getAsString() : null;
             } catch (final RuntimeException ignored) {
             }
             setStatus(
-                Component.translatable(
-                    "taerra.settings.invalid", label(Objects.requireNonNullElse(invalid, ""))),
+                unreachable != null
+                    ? Component.translatable("taerra.settings.storage_failed", unreachable)
+                    : Component.translatable(
+                        "taerra.settings.invalid", label(Objects.requireNonNullElse(invalid, ""))),
                 RED);
           } else {
             setStatus(
@@ -1416,9 +1456,11 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     private final @Nullable AbstractWidget control;
     private final @Nullable Component unit;
     private final @Nullable String parent;
+    private final boolean database;
 
     private SettingRow(final ServerSettings.@NotNull SettingInfo setting) {
       this.setting = setting;
+      this.database = setting.key().startsWith("storage.database.");
       this.field = settingField(setting.key());
       this.parent =
           setting.key().endsWith(".shown-by-default")
@@ -1441,8 +1483,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       this.hint =
           hintText == null
               ? List.of()
-              : font.split(
-                  hintText, rowWidth() - controlWidth - 24 - (this.parent == null ? 0 : INDENT));
+              : font.split(hintText, rowWidth() - controlWidth - 24 - (sub() ? INDENT : 0));
     }
 
     private @Nullable AbstractWidget control(final @NotNull Font font) {
@@ -1464,6 +1505,46 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                       set(this.field, new JsonPrimitive(on));
                       refill();
                     });
+        case "choice" ->
+            CycleButton.builder(
+                    (String option) ->
+                        Component.translatable(
+                            "taerra.settings." + this.setting.key() + "." + option),
+                    string(value))
+                .withValues(Objects.requireNonNullElse(this.setting.options(), List.of()))
+                .displayOnlyValue()
+                .create(
+                    0,
+                    0,
+                    100,
+                    20,
+                    this.label,
+                    (_, option) -> {
+                      set(this.field, new JsonPrimitive(option));
+                      refill();
+                    });
+        case "secret" -> {
+          final @Nullable JsonElement stored = ServerSettingsScreen.this.base.get(this.field);
+          final @NotNull EditBox box = new EditBox(font, CONTROL_WIDTH, 18, this.label);
+          box.setMaxLength(256);
+          box.setValue(same(value, stored) ? "" : string(value));
+          box.setHint(
+              (string(stored).isEmpty()
+                      ? Component.translatable("taerra.settings.not_set")
+                      : Component.literal("********"))
+                  .withStyle(ChatFormatting.DARK_GRAY));
+          box.addFormatter(
+              (text, _) -> FormattedCharSequence.forward("*".repeat(text.length()), Style.EMPTY));
+          box.setResponder(
+              text ->
+                  set(
+                      this.field,
+                      text.isEmpty()
+                          ? Objects.requireNonNullElse(stored, new JsonPrimitive(""))
+                          : new JsonPrimitive(text)));
+          ServerSettingsScreen.this.boxes.put(this.field, box);
+          yield box;
+        }
         case "number" -> {
           final @NotNull EditBox box = new EditBox(font, 64, 18, this.label);
           box.setMaxLength(9);
@@ -1484,7 +1565,12 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
         default -> {
           final boolean name = this.setting.key().equals("web.name");
           final @NotNull Component placeholder =
-              Component.literal(name ? "TAERRA" : "https://map.example.com")
+              Component.literal(
+                      name
+                          ? "TAERRA"
+                          : this.setting.key().equals("web.public-url")
+                              ? "https://map.example.com"
+                              : "")
                   .withStyle(ChatFormatting.DARK_GRAY);
           final @NotNull EditBox box =
               new EditBox(
@@ -1503,6 +1589,10 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           yield box;
         }
       };
+    }
+
+    private boolean sub() {
+      return this.parent != null || this.database;
     }
 
     private boolean invalidNow() {
@@ -1539,14 +1629,16 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
         final int mouseY,
         final boolean hovered,
         final float partialTick) {
-      final int indent = this.parent == null ? 0 : INDENT;
+      final int indent = sub() ? INDENT : 0;
       final boolean inactive =
-          this.parent != null && !on(ServerSettingsScreen.this.draft.get(this.parent));
+          this.parent != null && !on(ServerSettingsScreen.this.draft.get(this.parent))
+              || this.database
+                  && "files".equals(string(ServerSettingsScreen.this.draft.get(STORAGE_TYPE)));
       if (this.control != null) {
         this.control.active = !inactive;
       }
       slab(graphics, indent, hovered && this.control != null && !inactive, mouseX, mouseY);
-      if (this.parent != null) {
+      if (sub()) {
         graphics.fill(
             getX() + indent, getY() + 1, getX() + indent + 2, getY() + getHeight() - 1, 0xFF48494A);
       }

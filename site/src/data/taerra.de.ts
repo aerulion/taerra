@@ -161,7 +161,7 @@ export const de: Copy = {
                     },
                     {
                         title: 'Eine Jar, live eingerichtet',
-                        text: 'Keine externe Datenbank, kein CDN, kein Webserver einzurichten. Dein Team ändert Welten, ihre Reihenfolge, Namen und Grenzen, private Ebenen, den Servernamen und den Renderer auf einer Einstellungsseite im Browser oder im Spiel, gemeinsam und ohne Neustart, oder mit /taerra config.'
+                        text: 'Keine Datenbank nötig, kein CDN, kein Webserver einzurichten. Dein Team ändert Welten, ihre Reihenfolge, Namen und Grenzen, private Ebenen, den Servernamen und den Renderer auf einer Einstellungsseite im Browser oder im Spiel, gemeinsam und ohne Neustart, oder mit /taerra config.'
                     },
                     {
                         title: 'Alles durchsuchen',

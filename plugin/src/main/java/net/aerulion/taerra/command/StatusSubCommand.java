@@ -18,9 +18,11 @@ import net.aerulion.taerra.rendering.session.ManualRenderSessionSnapshot;
 import net.aerulion.taerra.rendering.session.ManualRenderTimingSnapshot;
 import net.aerulion.taerra.storage.TileCache;
 import net.aerulion.taerra.storage.TileCacheStats;
+import net.aerulion.taerra.storage.TileStorage;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class StatusSubCommand implements TaerraSubCommand {
 
@@ -28,13 +30,16 @@ public final class StatusSubCommand implements TaerraSubCommand {
   private final @NotNull TileCache tileCache;
   private final @NotNull IsoTileService isoTileService;
   private final @NotNull ChunkColumnsCache chunkColumnsCache;
+  private final @NotNull TileStorage tileStorage;
 
   public StatusSubCommand(
       final @NotNull TileGeneratorService generator,
       final @NotNull TileCache tileCache,
       final @NotNull IsoTileService isoTileService,
-      final @NotNull ChunkColumnsCache chunkColumnsCache) {
+      final @NotNull ChunkColumnsCache chunkColumnsCache,
+      final @NotNull TileStorage tileStorage) {
     super();
+    this.tileStorage = tileStorage;
     this.generator = generator;
     this.tileCache = tileCache;
     this.isoTileService = isoTileService;
@@ -205,6 +210,18 @@ public final class StatusSubCommand implements TaerraSubCommand {
               lines.add(renderer(snapshot));
               if (snapshot.manualRenderSession().active()) {
                 addManualRender(lines, snapshot.manualRenderSession());
+              }
+              final TileStorage.@Nullable Move move = this.tileStorage.move();
+              if (move != null) {
+                lines.add(
+                    Messages.row(
+                        "status.move",
+                        Messages.value(move.to()),
+                        progress(move.percent() / 100.0),
+                        Messages.tr(
+                            "status.tiles_moved",
+                            Messages.value(move.done()),
+                            Messages.value(move.total()))));
               }
               lines.add(tiles(snapshot));
               final @NotNull LiveRenderTiming live = this.generator.liveTiming();

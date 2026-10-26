@@ -553,10 +553,10 @@ function worldName(name) {
     return world ? worldLabel(world) : name;
 }
 
-function renderProgress({render, queued = 0, inFlight = 0}) {
+function renderProgress({render, move, queued = 0, inFlight = 0}) {
     renderingWorld = render?.world ?? null;
     const pending = queued + inFlight;
-    $('render-section').hidden = !render && pending === 0;
+    $('render-section').hidden = !render && !move && pending === 0;
     const bar = $('render-bar').parentElement;
 
     if (render) {
@@ -587,6 +587,19 @@ function renderProgress({render, queued = 0, inFlight = 0}) {
             }
         }
         $('render-detail').textContent = detail;
+    } else if (move) {
+        const percent = Math.max(0, Math.min(100, move.percent ?? 0));
+        $('render-title').textContent = t('render.moving');
+        $('render-what').hidden = false;
+        $('render-what').textContent = t('render.moveTo', {storage: t(`settings.storage.type.${move.to}`)});
+        $('render-percent').hidden = false;
+        $('render-percent').textContent = `${Math.floor(percent)}%`;
+        bar.classList.remove('is-indeterminate');
+        $('render-bar').style.width = `${percent}%`;
+        $('render-detail').textContent = t('render.moved', {
+            done: numbers.format(move.done),
+            total: numbers.format(move.total)
+        });
     } else {
         $('render-title').textContent = t('render.updating');
         $('render-what').hidden = true;

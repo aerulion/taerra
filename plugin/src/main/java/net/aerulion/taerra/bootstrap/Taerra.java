@@ -114,6 +114,7 @@ public final class Taerra extends JavaPlugin {
   private static final long WEB_RESTART_DELAY = 20L;
 
   private @Nullable TileCache tileCache;
+  private @Nullable TileStorage tileStorage;
   private @Nullable RenderQueue renderQueue;
   private @Nullable TileGeneratorService generatorService;
   private @Nullable TaerraWebServer webServer;
@@ -136,6 +137,7 @@ public final class Taerra extends JavaPlugin {
     final @Nullable TileGeneratorService generatorService = this.generatorService;
     final @Nullable RenderQueue renderQueue = this.renderQueue;
     final @Nullable TileCache tileCache = this.tileCache;
+    final @Nullable TileStorage tileStorage = this.tileStorage;
     final @Nullable Translator translations = this.translations;
     final @Nullable PlayerFiles playerFiles = this.playerFiles;
     if (playerBroadcaster != null) {
@@ -165,6 +167,9 @@ public final class Taerra extends JavaPlugin {
     }
     if (tileCache != null) {
       tileCache.clear();
+    }
+    if (tileStorage != null) {
+      shutdownStep("close the tile storage", tileStorage::close);
     }
     if (playerFiles != null) {
       shutdownStep("save player data", playerFiles::saveAll);
@@ -218,7 +223,8 @@ public final class Taerra extends JavaPlugin {
       Fluids.reportUnhandled(this);
 
       final @NotNull TileStorage tileStorage =
-          new TileStorageImpl(this, configuration.maxCacheTiles());
+          TileStorageImpl.open(this, configuration.maxCacheTiles());
+      this.tileStorage = tileStorage;
       final @NotNull TileCache tileCache =
           new TileCacheImpl(tileStorage, configuration.maxCacheTiles());
       this.tileCache = tileCache;
@@ -354,7 +360,8 @@ public final class Taerra extends JavaPlugin {
               revision ->
                   webSocketHandler.broadcastToConfigurers(
                       "{\"type\":\"settings\",\"revision\":" + revision + "}"),
-              icons::exists);
+              icons::exists,
+              tileStorage);
       configEditor.start();
       final @NotNull RegionEditor regionEditor =
           new RegionEditor(
@@ -527,7 +534,8 @@ public final class Taerra extends JavaPlugin {
     TaerraCommands.register(
         this,
         List.of(
-            new StatusSubCommand(generatorService, tileCache, isoTileService, chunkColumnsCache),
+            new StatusSubCommand(
+                generatorService, tileCache, isoTileService, chunkColumnsCache, tileStorage),
             new RenderSubCommand(renders, renderFeedback, exports),
             new LimitSubCommand(configEditor, renderFeedback, worldLimits),
             new WaypointSubCommand(waypoints),

@@ -23,6 +23,10 @@ val runtimeLibraries =
         libs.caffeine,
         libs.javalin.core,
         libs.jackson.databind,
+        libs.sadu.datasource,
+        libs.sadu.queries,
+        libs.sadu.mariadb,
+        libs.mariadb.client,
     )
 
 val bundled =
@@ -39,6 +43,9 @@ dependencies {
     bundled(project(":api"))
     compileOnly(libs.jetbrains.annotations)
     testImplementation(libs.junit.launcher)
+    testImplementation(libs.testcontainers.mariadb)
+    testImplementation(libs.testcontainers.mysql)
+    testImplementation(libs.testcontainers.junit)
     runtimeLibraries.forEach { implementation(it) }
 
     compileOnly(libs.worldguard.core) { isTransitive = false }

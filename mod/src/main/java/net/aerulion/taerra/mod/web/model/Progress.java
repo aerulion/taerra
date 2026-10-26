@@ -2,7 +2,7 @@ package net.aerulion.taerra.mod.web.model;
 
 import org.jetbrains.annotations.Nullable;
 
-public record Progress(@Nullable Render render, int queued, int inFlight) {
+public record Progress(@Nullable Render render, @Nullable Move move, int queued, int inFlight) {
 
   public record Render(
       String world,
@@ -14,4 +14,6 @@ public record Progress(@Nullable Render render, int queued, int inFlight) {
       long totalTiles,
       double percent,
       @Nullable Long remainingMillis) {}
+
+  public record Move(String to, long done, long total, double percent) {}
 }

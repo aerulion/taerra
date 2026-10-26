@@ -47,6 +47,8 @@ the lot, then runs the full build, so what it leaves behind is what the pipeline
 | `:plugin:runDevBundleServer` | Paper in `run/`, with WorldEdit, WorldGuard, Chunky, LuckPerms |
 | `:mod:runClient`             | A Minecraft client with the mod loaded                         |
 | `runDev`                     | Both at once: offline-mode server, client joins as `TaerraDev` |
+| `startDevDatabases`          | MariaDB on 3316 and MySQL on 3317 in Docker, all `taerra`      |
+| `stopDevDatabases`           | Stop them, keeping their tiles; `removeDevDatabases` drops them |
 | `installGitHooks`            | Point git at `.githooks` (any build does this)                 |
 
 ## Versions

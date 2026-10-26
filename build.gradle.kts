@@ -8,6 +8,29 @@ plugins {
 
 repositories { mavenCentral() }
 
+object Docker {
+    fun run(vararg arguments: String): Pair<Int, String> {
+        val process = ProcessBuilder(listOf("docker") + arguments).redirectErrorStream(true).start()
+        val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
+        return process.waitFor() to output
+    }
+
+    fun require(vararg arguments: String): String {
+        val (exitCode, output) = run(*arguments)
+        if (exitCode != 0) {
+            throw GradleException("docker ${arguments.joinToString(" ")} failed:\n$output")
+        }
+        return output
+    }
+}
+
+// container, image, host port, client binary, environment prefix
+val devDatabases =
+    listOf(
+        listOf("taerra-dev-mariadb", "mariadb:11.4", "3316", "mariadb", "MARIADB"),
+        listOf("taerra-dev-mysql", "mysql:8.4", "3317", "mysql", "MYSQL"),
+    )
+
 spotless {
     kotlinGradle {
         target("**/*.gradle.kts")
@@ -67,6 +90,85 @@ tasks {
         group = "taerra"
         description = "Starts the dev server and a client that joins it."
         dependsOn(":plugin:runDevBundleServer", ":mod:runClient")
+    }
+
+    register("startDevDatabases") {
+        group = "taerra"
+        description =
+            "Starts a MariaDB and a MySQL in Docker for switching the dev server's tile storage."
+        val databases = devDatabases
+        doLast {
+            if (Docker.run("version").first != 0) {
+                throw GradleException("Docker is not running, so the dev databases can't start.")
+            }
+            for ((container, image, port, _, prefix) in databases) {
+                val (exitCode, running) =
+                    Docker.run("inspect", "-f", "{{.State.Running}}", container)
+                when {
+                    exitCode != 0 ->
+                        Docker.require(
+                            "run",
+                            "--detach",
+                            "--name",
+                            container,
+                            "--publish",
+                            "$port:3306",
+                            "--env",
+                            "${prefix}_DATABASE=taerra",
+                            "--env",
+                            "${prefix}_USER=taerra",
+                            "--env",
+                            "${prefix}_PASSWORD=taerra",
+                            "--env",
+                            "${prefix}_ROOT_PASSWORD=taerra",
+                            image,
+                        )
+                    running != "true" -> Docker.require("start", container)
+                }
+            }
+            for ((container, image, port, client) in databases) {
+                val deadline = System.currentTimeMillis() + 120_000
+                while (
+                    Docker.run(
+                            "exec",
+                            container,
+                            client,
+                            "--host=127.0.0.1",
+                            "--user=taerra",
+                            "--password=taerra",
+                            "--execute=select 1",
+                            "taerra",
+                        )
+                        .first != 0
+                ) {
+                    if (System.currentTimeMillis() > deadline) {
+                        throw GradleException(
+                            "$container didn't come up in two minutes, see docker logs $container"
+                        )
+                    }
+                    Thread.sleep(1000)
+                }
+                logger.lifecycle("${image.substringBefore(':')} is up on localhost:$port")
+            }
+            logger.lifecycle(
+                "Under Tile storage in the settings: host localhost, port 3316 for MariaDB or " +
+                    "3317 for MySQL, database, user and password taerra."
+            )
+        }
+    }
+
+    register("stopDevDatabases") {
+        group = "taerra"
+        description = "Stops the dev databases, keeping their tiles for the next start."
+        val containers = devDatabases.map { it[0] }
+        doLast { containers.forEach { Docker.run("stop", it) } }
+    }
+
+    register("removeDevDatabases") {
+        group = "taerra"
+        description = "Removes the dev databases and every tile in them."
+        val containers = devDatabases.map { it[0] }
+        doLast { containers.forEach { Docker.run("rm", "--force", "--volumes", it) } }
     }
 
     register("printVersion") {

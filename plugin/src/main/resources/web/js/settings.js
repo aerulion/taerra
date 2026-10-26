@@ -23,6 +23,8 @@ const SECTIONS = [
         'markers.loaded-chunks.enabled',
         'markers.loaded-chunks.shown-by-default']],
     ['rendering', ['rendering.update-interval', 'rendering.render-threads', 'cache.max-tiles', 'cache.max-chunks']],
+    ['storage', ['storage.type', 'storage.database.host', 'storage.database.port', 'storage.database.name',
+        'storage.database.user', 'storage.database.password']],
     ['web', ['web.port', 'web.host']]
 ];
 const ago = new Intl.RelativeTimeFormat(language, {numeric: 'auto'});
@@ -40,6 +42,8 @@ const SHAPES = ['none', 'circle', 'square', 'rectangle'];
 const MAX_COORDINATE = 30_000_000;
 const isLimit = (field) => field.startsWith('world:') && field.endsWith(':limit');
 const isViews = (field) => field.startsWith('world:') && field.endsWith(':views');
+const isStorage = (field) => field.startsWith('setting:storage.');
+const STORAGE_TYPE = 'setting:storage.type';
 const VIEWS = {both: ['top_down', 'isometric'], top_down: ['top_down'], isometric: ['isometric']};
 const viewsOf = (value) => VIEWS[value] ?? VIEWS.both;
 const addsView = (before, after) => viewsOf(after).some(view => !viewsOf(before).includes(view));
@@ -557,6 +561,7 @@ class SettingsDialog {
     field(setting) {
         const field = settingField(setting.key);
         const value = this.draft[field];
+        const database = setting.key.startsWith('storage.database.');
         const row = element(setting.kind === 'toggle' ? 'label' : 'div',
             setting.kind === 'toggle' ? 'row row--action settings__row' : 'row settings__row');
         row.dataset.fields = field;
@@ -598,6 +603,23 @@ class SettingsDialog {
                 input.disabled ||= off;
             }
             row.append(wrap);
+        } else if (setting.kind === 'choice' && setting.editable) {
+            const group = element('div', 'segmented settings__segmented');
+            group.setAttribute('role', 'group');
+            group.setAttribute('aria-label', this.label(field));
+            for (const option of setting.options ?? []) {
+                const button = element('button', 'btn btn--small', translated(`settings.${setting.key}.${option}`, option));
+                button.type = 'button';
+                button.dataset.field = `${field}:${option}`;
+                button.setAttribute('aria-pressed', String(option === value));
+                button.addEventListener('click', () => {
+                    this.set(field, option);
+                    this.render();
+                    this.dialog.querySelector(`[data-field="${CSS.escape(`${field}:${option}`)}"]`)?.focus();
+                });
+                group.append(button);
+            }
+            row.append(group);
         } else if (!setting.editable) {
             const shown = String(value ?? '');
             const box = element('code', 'settings__value', shown || t('settings.notSet'));
@@ -631,6 +653,17 @@ class SettingsDialog {
                     box.append(element('span', 'settings__unit', unit));
                 }
                 row.append(box);
+            } else if (setting.kind === 'secret') {
+                input.type = 'password';
+                input.autocomplete = 'new-password';
+                input.classList.add('settings__input--wide');
+                input.placeholder = this.base[field] ? '••••••••' : t('settings.notSet');
+                input.value = same(value, this.base[field]) ? '' : value ?? '';
+                input.addEventListener('input', () => {
+                    this.set(field, input.value === '' ? this.base[field] : input.value);
+                    row.classList.toggle('is-changed', !same(this.draft[field], this.base[field]));
+                });
+                row.append(input);
             } else {
                 input.type = setting.key === 'web.public-url' ? 'url' : 'text';
                 input.classList.add('settings__input--wide');
@@ -648,6 +681,12 @@ class SettingsDialog {
                 });
                 row.append(input);
             }
+        }
+        if (database) {
+            const off = this.draft[STORAGE_TYPE] === 'files';
+            row.classList.add('settings__row--sub');
+            row.classList.toggle('is-inactive', off);
+            row.querySelectorAll('input').forEach(input => input.disabled ||= off);
         }
         if (conflict) {
             rows.push(conflict);
@@ -997,13 +1036,14 @@ class SettingsDialog {
             this.rebase(body);
             const views = Object.keys(changes).some(field => isViews(field) && addsView(before[field], changes[field]));
             this.showStatus(t(Object.keys(changes).some(isLimit) ? 'settings.savedLimit'
-                : views ? 'settings.savedViews' : 'settings.saved'), 'is-done');
+                : views ? 'settings.savedViews'
+                    : Object.keys(changes).some(isStorage) ? 'settings.savedStorage' : 'settings.saved'), 'is-done');
             return;
         }
         if (response?.status === 409 && body) {
             this.rebase(body);
             if (body.busy) {
-                this.showStatus(t('settings.limitBusy'), 'is-failed');
+                this.showStatus(t(isStorage(body.busy) ? 'settings.storageBusy' : 'settings.limitBusy'), 'is-failed');
             } else {
                 this.updateStatus();
             }
@@ -1011,7 +1051,9 @@ class SettingsDialog {
         }
         if (response?.status === 400) {
             const invalid = await response.json().catch(() => null);
-            this.showStatus(t('settings.invalid', {name: this.label(invalid?.invalid ?? '')}), 'is-failed');
+            this.showStatus(invalid?.unreachable
+                ? t('settings.storageFailed', {reason: invalid.unreachable})
+                : t('settings.invalid', {name: this.label(invalid?.invalid ?? '')}), 'is-failed');
         } else {
             this.showStatus(t(response?.status === 401 || response?.status === 403
                 ? 'settings.denied' : 'settings.failed'), 'is-failed');

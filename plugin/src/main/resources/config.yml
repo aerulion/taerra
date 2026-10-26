@@ -43,6 +43,21 @@ cache:
   # not: raising it speeds up renders of large areas for the memory it costs.
   max-chunks: 0
 
+# Where tiles are kept: files in this folder, or a MariaDB or MySQL database, for hosts that limit disk
+# space but not databases. Changed in game or on the settings page, the new storage is opened first,
+# and only if that works, every tile moves there in the background while the map stays complete;
+# files are deleted once moved, a database is left as it was. Set the password on the settings page
+# or here: a /taerra config command shows up in the server log.
+storage:
+  # files, mariadb or mysql
+  type: files
+  database:
+    host: localhost
+    port: 3306
+    name: taerra
+    user: ""
+    password: ""
+
 # Worlds to render, by dimension key. None by default: enable them in game with
 # /taerra config world <world> enable
 worlds: [ ]

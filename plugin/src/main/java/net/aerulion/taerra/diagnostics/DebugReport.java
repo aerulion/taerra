@@ -109,6 +109,7 @@ public final class DebugReport {
             + this.web.port()
             + (publicUrl.isEmpty() ? ", no public URL" : ", public URL set")
             + (subpath(publicUrl) ? ", under a subpath" : ""));
+    lines.add("Storage: " + this.plugin.getConfig().getString("storage.type", "files"));
     lines.add("Worlds: " + this.configuration.enabledWorlds().size() + " on the map");
     lines.add(
         String.format(

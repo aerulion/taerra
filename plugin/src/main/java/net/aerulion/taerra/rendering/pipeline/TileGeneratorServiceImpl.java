@@ -728,7 +728,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
           this.storage.tilesOlderThan(render.worldName(), cutoff);
       int removed = 0;
       for (final @NotNull TileCoordinate tile : stale) {
-        if (this.storage.tileFile(tile).lastModified() < cutoff && deleteStoredTile(tile)) {
+        if (this.storage.lastModified(tile) < cutoff && deleteStoredTile(tile)) {
           enqueueParentTile(tile, RenderPriority.FULL_RENDER_ZOOM_PARENT);
           removed++;
         }
@@ -758,13 +758,12 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     if (!this.config.views(coord.world()).shows(coord.view())) {
       return;
     }
-    final boolean created = layer.base() && !this.storage.tileFile(coord).exists();
-    final boolean changed = this.storage.saveTile(coord, layer, image);
+    final TileStorage.@NotNull Saved saved = this.storage.saveTile(coord, layer, image);
     this.cache.put(coord, layer, image);
-    if (changed) {
+    if (saved.changed()) {
       this.tileUpdateBroadcaster.tileUpdated(coord);
     }
-    if (created) {
+    if (layer.base() && saved == TileStorage.Saved.CREATED) {
       this.depths.extend(coord);
       pyramidChanged(coord);
     }

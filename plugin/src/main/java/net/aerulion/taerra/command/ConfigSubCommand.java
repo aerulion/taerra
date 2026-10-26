@@ -23,6 +23,7 @@ import net.aerulion.taerra.model.MapViews;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.permission.TaerraPermission;
 import net.aerulion.taerra.rendering.RenderService;
+import net.aerulion.taerra.storage.StorageSettings;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
@@ -42,7 +43,8 @@ public final class ConfigSubCommand implements TaerraSubCommand {
     return switch (setting.kind()) {
       case NUMBER -> IntegerArgumentType.integer(setting.min(), setting.max());
       case TOGGLE -> BoolArgumentType.bool();
-      case TEXT -> StringArgumentType.greedyString();
+      case TEXT, SECRET -> StringArgumentType.greedyString();
+      case CHOICE -> StringArgumentType.word();
     };
   }
 
@@ -194,6 +196,13 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                     .executes(context -> show(context, setting.key()))
                     .then(
                         Commands.argument("value", type(setting))
+                            .suggests(
+                                setting.options().isEmpty()
+                                    ? null
+                                    : (context, suggestions) -> {
+                                      setting.options().forEach(suggestions::suggest);
+                                      return suggestions.buildFuture();
+                                    })
                             .executes(
                                 context ->
                                     set(
@@ -251,6 +260,9 @@ public final class ConfigSubCommand implements TaerraSubCommand {
       final @NotNull CommandContext<CommandSourceStack> context,
       final @NotNull String key,
       final @NotNull Object given) {
+    if (key.startsWith(ConfigEditor.STORAGE)) {
+      return setStorage(context, key, given);
+    }
     final ConfigEditor.@NotNull Change change = this.editor.set(key, given, who(context));
     feedback(
         context,
@@ -262,6 +274,39 @@ public final class ConfigSubCommand implements TaerraSubCommand {
           case APPLIED ->
               Messages.success("config.set", Messages.value(key), Messages.value(change.value()));
         });
+    return SUCCESS;
+  }
+
+  private int setStorage(
+      final @NotNull CommandContext<CommandSourceStack> context,
+      final @NotNull String key,
+      final @NotNull Object given) {
+    final @NotNull StorageSettings before = this.editor.storage();
+    this.editor
+        .setStorage(key, given, who(context))
+        .thenAccept(
+            outcome ->
+                feedback(
+                    context,
+                    switch (outcome) {
+                      case ConfigEditor.Applied _ ->
+                          this.editor.storage().equals(before)
+                              ? Messages.success(
+                                  "config.set",
+                                  Messages.value(key),
+                                  Messages.value(this.editor.get(key)))
+                              : Messages.success(
+                                  "config.set_storage",
+                                  Messages.value(key),
+                                  Messages.value(this.editor.get(key)),
+                                  Messages.value(this.editor.storage().toString()));
+                      case ConfigEditor.Unreachable(final String _, final String reason) ->
+                          Messages.error("config.storage_failed", Messages.value(reason));
+                      case ConfigEditor.Invalid _ ->
+                          Messages.error("config.storage_invalid", Messages.value(key));
+                      case ConfigEditor.Busy _, ConfigEditor.Conflicted _ ->
+                          Messages.error("config.storage_busy");
+                    }));
     return SUCCESS;
   }
 
