@@ -110,8 +110,9 @@ const rows = await Promise.all(
         const count = dialog.querySelector('.count')!;
         const caption = dialog.querySelector('.caption')!;
         let current = 0;
+        const still = matchMedia('(prefers-reduced-motion: reduce)');
 
-        const show = (index: number) => {
+        const show = (index: number, direction = 0) => {
             current = (index + links.length) % links.length;
             const link = links[current];
             const thumbnail = link.querySelector('img')!;
@@ -132,6 +133,12 @@ const rows = await Promise.all(
             );
             count.textContent = `${current + 1} / ${links.length}`;
             caption.textContent = link.dataset.caption!;
+            if (direction && !still.matches) {
+                image.animate(
+                    {translate: [`${direction * 32}px 0`, '0 0'], opacity: [0, 1]},
+                    {duration: 350, easing: 'cubic-bezier(0.3, 1.4, 0.5, 1)'}
+                );
+            }
         };
 
         links.forEach((link, index) =>
@@ -142,22 +149,22 @@ const rows = await Promise.all(
                 dialog.focus();
             })
         );
-        dialog.querySelector('.prev')!.addEventListener('click', () => show(current - 1));
-        dialog.querySelector('.next')!.addEventListener('click', () => show(current + 1));
+        dialog.querySelector('.prev')!.addEventListener('click', () => show(current - 1, -1));
+        dialog.querySelector('.next')!.addEventListener('click', () => show(current + 1, 1));
         dialog.querySelector('.close')!.addEventListener('click', () => dialog.close());
         dialog.addEventListener('click', (event) => {
             if (event.target === dialog || event.target === dialog.querySelector('figure')) dialog.close();
         });
         document.addEventListener('keydown', (event) => {
             if (!dialog.open) return;
-            if (event.key === 'ArrowLeft') show(current - 1);
-            if (event.key === 'ArrowRight') show(current + 1);
+            if (event.key === 'ArrowLeft') show(current - 1, -1);
+            if (event.key === 'ArrowRight') show(current + 1, 1);
         });
         let touchX = 0;
         dialog.addEventListener('touchstart', (event) => (touchX = event.touches[0].clientX), {passive: true});
         dialog.addEventListener('touchend', (event) => {
             const distance = event.changedTouches[0].clientX - touchX;
-            if (Math.abs(distance) > 48) show(current + (distance < 0 ? 1 : -1));
+            if (Math.abs(distance) > 48) show(current + (distance < 0 ? 1 : -1), distance < 0 ? 1 : -1);
         });
         dialog.addEventListener('close', () => links[current].focus());
     }

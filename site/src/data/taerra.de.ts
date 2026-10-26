@@ -21,6 +21,11 @@ export const de: Copy = {
         download: 'Download'
     },
 
+    clipboard: {
+        copy: 'Kopieren',
+        copied: 'Kopiert'
+    },
+
     hero: {
         kicker: 'Paper + Fabric',
         title: ['Deine Welt, ', 'live', ' in 3D'] as Marked,

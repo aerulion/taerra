@@ -72,6 +72,11 @@ const en = {
         download: 'Download'
     },
 
+    clipboard: {
+        copy: 'Copy',
+        copied: 'Copied'
+    },
+
     hero: {
         kicker: 'Paper + Fabric',
         title: ['Your world, ', 'live', ' in 3D'] as Marked,

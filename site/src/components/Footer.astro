@@ -127,6 +127,10 @@ const nav = [
         color: var(--white);
     }
 
+    ul a:hover .slot {
+        translate: 0 -2px;
+    }
+
     .slot {
         display: grid;
         place-items: center;
@@ -134,6 +138,7 @@ const nav = [
         height: 16px;
         flex: none;
         color: var(--white);
+        transition: translate 0.25s var(--ease-spring);
     }
 
     .slot :global(.icon) {

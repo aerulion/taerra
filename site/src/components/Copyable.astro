@@ -1,0 +1,124 @@
+---
+import CopyIcon from '../icons/copy.svg';
+import CheckIcon from '../icons/check.svg';
+import {copy} from '../data/taerra';
+
+interface Props {
+    text: string;
+}
+
+const {text} = Astro.props;
+const {clipboard} = copy(Astro.currentLocale);
+---
+
+<span class="copyable">
+    <code>{text}</code>
+    <button
+        class="copy"
+        type="button"
+        title={clipboard.copy}
+        aria-label={`${clipboard.copy}: ${text}`}
+        data-text={text}
+        data-copied={clipboard.copied}
+    >
+        <CopyIcon class="idle" aria-hidden="true" />
+        <CheckIcon class="done" aria-hidden="true" />
+    </button>
+</span>
+
+<script>
+    for (const button of document.querySelectorAll<HTMLButtonElement>('.copyable .copy')) {
+        const idle = button.title;
+        let timer = 0;
+        button.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(button.dataset.text!);
+            } catch {
+                return;
+            }
+            navigator.vibrate?.(10);
+            clearTimeout(timer);
+            button.classList.add('is-copied');
+            button.title = button.dataset.copied!;
+            timer = window.setTimeout(() => {
+                button.classList.remove('is-copied');
+                button.title = idle;
+            }, 1500);
+        });
+    }
+</script>
+
+<style>
+    .copyable {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    code {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .copy {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        margin-left: auto;
+        padding: 0;
+        background: none;
+        border: 0;
+        color: var(--stone-200);
+        cursor: pointer;
+        transition:
+            background-color 0.15s ease,
+            color 0.15s ease,
+            opacity 0.15s ease;
+    }
+
+    .copy:hover {
+        background: var(--stone-700);
+        color: var(--white);
+    }
+
+    .copy :global(svg) {
+        grid-area: 1 / 1;
+        width: 14px;
+        height: 14px;
+    }
+
+    .done,
+    .is-copied .idle {
+        display: none;
+    }
+
+    .is-copied {
+        color: var(--accent-hi);
+    }
+
+    .is-copied .done {
+        display: block;
+        animation: pop 0.35s var(--ease-spring);
+    }
+
+    @keyframes pop {
+        from {
+            scale: 0;
+        }
+    }
+
+    @media (hover: hover) {
+        .copy {
+            opacity: 0;
+        }
+
+        :global(:is(li, tr):hover) .copy,
+        .copy:focus-visible,
+        .copy.is-copied {
+            opacity: 1;
+        }
+    }
+</style>

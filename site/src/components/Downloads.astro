@@ -261,15 +261,61 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
 </main>
 
 <script>
+    const filter = document.querySelector<HTMLElement>('.filter');
+    const place = () => {
+        const label = filter?.querySelector<HTMLElement>('label:has(:checked)');
+        if (!filter || !label) return;
+        filter.style.setProperty('--thumb-x', `${label.offsetLeft}px`);
+        filter.style.setProperty('--thumb-y', `${label.offsetTop}px`);
+        filter.style.setProperty('--thumb-w', `${label.offsetWidth}px`);
+        filter.style.setProperty('--thumb-h', `${label.offsetHeight}px`);
+        if (!filter.classList.contains('is-placed')) {
+            filter.classList.add('is-placed');
+            requestAnimationFrame(() => filter.classList.add('is-sliding'));
+        }
+    };
+    filter?.addEventListener('change', () => {
+        place();
+        navigator.vibrate?.(10);
+    });
+    if (filter) new ResizeObserver(place).observe(filter);
+
     const reveal = () => {
         const entry = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
         if (!entry?.classList.contains('entry')) return;
         const all = document.querySelector<HTMLInputElement>('input[name="part"][value="all"]');
         if (all) all.checked = true;
+        place();
         entry.querySelector('details')?.setAttribute('open', '');
     };
+    place();
     reveal();
     addEventListener('hashchange', reveal);
+
+    const still = matchMedia('(prefers-reduced-motion: reduce)');
+    for (const details of document.querySelectorAll<HTMLDetailsElement>('.entry details')) {
+        const summary = details.querySelector('summary')!;
+        summary.addEventListener('click', (event) => {
+            if (still.matches) return;
+            event.preventDefault();
+            const open = (details.dataset.state ?? (details.open ? 'open' : 'closed')) === 'closed';
+            const from = details.offsetHeight;
+            details.getAnimations().forEach((animation) => animation.cancel());
+            details.dataset.state = open ? 'open' : 'closed';
+            details.open = false;
+            const closed = details.offsetHeight;
+            details.open = true;
+            const to = open ? details.offsetHeight : closed;
+            const animation = details.animate(
+                {height: [`${from}px`, `${to}px`]},
+                {duration: 350, easing: 'cubic-bezier(0.22, 1, 0.36, 1)'}
+            );
+            animation.addEventListener('finish', () => {
+                details.open = open;
+                delete details.dataset.state;
+            });
+        });
+    }
 </script>
 
 <style>
@@ -433,6 +479,16 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
         height: 16px;
     }
 
+    .get .btn:hover :global(svg) {
+        animation: nudge 0.5s var(--ease-spring);
+    }
+
+    @keyframes nudge {
+        40% {
+            translate: 0 3px;
+        }
+    }
+
     .card .btn {
         min-height: 52px;
         padding-inline: 24px;
@@ -519,6 +575,7 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
     }
 
     .filter {
+        position: relative;
         display: inline-flex;
         flex-wrap: wrap;
         gap: 4px;
@@ -554,6 +611,36 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
         box-shadow:
             inset 0 -3px var(--accent-lo),
             inset 2px 2px rgb(255 255 255 / 0.2);
+    }
+
+    .filter label {
+        position: relative;
+    }
+
+    .filter.is-placed::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: var(--thumb-w);
+        height: var(--thumb-h);
+        background: var(--accent);
+        box-shadow:
+            inset 0 -3px var(--accent-lo),
+            inset 2px 2px rgb(255 255 255 / 0.2);
+        translate: var(--thumb-x) var(--thumb-y);
+        pointer-events: none;
+    }
+
+    .filter.is-sliding::before {
+        transition:
+            translate 0.32s var(--ease-spring),
+            width 0.32s var(--ease-spring);
+    }
+
+    .filter.is-placed label:has(:checked) {
+        background: none;
+        box-shadow: none;
     }
 
     .filter label:has(:focus-visible) {
@@ -596,6 +683,18 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
 
     .entry:target {
         border-color: var(--accent);
+        animation: target 1.6s var(--ease-out);
+    }
+
+    @keyframes target {
+        from,
+        20% {
+            background: var(--accent-lo);
+        }
+    }
+
+    details[data-state] {
+        overflow: clip;
     }
 
     .build {
@@ -687,7 +786,7 @@ const [creditBefore, creditLink, creditAfter] = t.credit;
         transition: rotate 0.2s var(--ease-out);
     }
 
-    details[open] summary::before {
+    details[open]:not([data-state='closed']) summary::before {
         rotate: 90deg;
     }
 

@@ -50,6 +50,46 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
             location.href = select.selectedOptions[0].dataset.href! + location.hash;
         });
     }
+
+    for (const nav of document.querySelectorAll<HTMLElement>('header nav')) {
+        const links = [...nav.querySelectorAll('a')];
+        const sections = links.map((link) =>
+            link.pathname === location.pathname ? document.getElementById(link.hash.slice(1)) : null
+        );
+        let hovered: HTMLAnchorElement | null = null;
+        let frame = 0;
+        const place = () => {
+            frame = 0;
+            const line = innerHeight * 0.3;
+            let index = sections.findLastIndex((section) => section && section.getBoundingClientRect().top <= line);
+            if (index === sections.length - 1 && (sections[index]?.getBoundingClientRect().bottom ?? 0) < line) {
+                index = -1;
+            }
+            const current = links[index] ?? null;
+            links.forEach((link) => link.toggleAttribute('data-current', link === current));
+            const target = hovered ?? current;
+            nav.classList.toggle('is-marked', Boolean(target));
+            if (target) {
+                nav.style.setProperty('--bar-x', `${target.offsetLeft}px`);
+                nav.style.setProperty('--bar-w', `${target.offsetWidth}px`);
+            }
+        };
+        const schedule = () => (frame ||= requestAnimationFrame(place));
+        links.forEach((link) =>
+            link.addEventListener('pointerenter', () => {
+                hovered = link;
+                schedule();
+            })
+        );
+        nav.addEventListener('pointerleave', () => {
+            hovered = null;
+            schedule();
+        });
+        addEventListener('scroll', schedule, {passive: true});
+        addEventListener('resize', schedule);
+        place();
+        requestAnimationFrame(() => nav.classList.add('is-sliding'));
+    }
 </script>
 
 <style>
@@ -59,6 +99,13 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
         z-index: 10;
         background: var(--black);
         border-bottom: 1px solid var(--stone-700);
+    }
+
+    @supports (backdrop-filter: blur(1px)) {
+        header {
+            background: rgb(0 0 0 / 0.88);
+            backdrop-filter: blur(12px);
+        }
     }
 
     .bar {
@@ -78,18 +125,46 @@ const download = getRelativeLocaleUrl(Astro.currentLocale ?? 'en', 'download/');
     }
 
     nav {
+        position: relative;
         display: flex;
         gap: 28px;
         margin-left: auto;
+    }
+
+    nav::after {
+        content: '';
+        position: absolute;
+        bottom: -6px;
+        left: 0;
+        width: var(--bar-w, 0);
+        height: 3px;
+        background: var(--accent-hi);
+        box-shadow: 0 0 12px rgb(212 115 47 / 0.55);
+        opacity: 0;
+        translate: var(--bar-x, 0) 0;
+        pointer-events: none;
+    }
+
+    nav.is-marked::after {
+        opacity: 1;
+    }
+
+    nav.is-sliding::after {
+        transition:
+            translate 0.32s var(--ease-spring),
+            width 0.32s var(--ease-spring),
+            opacity 0.2s ease;
     }
 
     nav a {
         color: var(--stone-100);
         font-weight: 600;
         text-decoration: none;
+        transition: color 0.15s ease;
     }
 
-    nav a:hover {
+    nav a:hover,
+    nav a[data-current] {
         color: var(--white);
     }
 
