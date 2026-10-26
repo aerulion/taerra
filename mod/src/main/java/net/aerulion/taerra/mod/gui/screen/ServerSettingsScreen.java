@@ -560,7 +560,21 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           MUTED);
     }
     final int footerTop = this.height - this.layout.getFooterHeight();
-    graphics.centeredText(this.font, this.status, this.width / 2, footerTop + 4, this.statusColor);
+    final int room = this.width - 16;
+    final boolean cut = this.font.width(this.status) > room;
+    graphics.centeredText(
+        this.font,
+        cut
+            ? Component.literal(
+                this.font.plainSubstrByWidth(this.status.getString(), room - this.font.width("…"))
+                    + "…")
+            : this.status,
+        this.width / 2,
+        footerTop + 4,
+        this.statusColor);
+    if (cut && mouseY >= footerTop + 2 && mouseY < footerTop + 14) {
+      graphics.setTooltipForNextFrame(this.font, this.font.split(this.status, 320), mouseX, mouseY);
+    }
     extractEditors(graphics, mouseX, mouseY, footerTop);
   }
 
