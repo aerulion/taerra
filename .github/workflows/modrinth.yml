@@ -140,9 +140,9 @@ jobs:
 
               dependencies='[]'
               if [ "${loader}" = 'fabric' ]; then
-                dependencies="$(jq -nc \
-                  --arg api "$(modrinth "${api}/project/fabric-api" | jq -r '.id')" \
-                  --arg menu "$(modrinth "${api}/project/modmenu" | jq -r '.id')" \
+                fabric_api="$(modrinth "${api}/project/fabric-api" | jq -r '.id')"
+                mod_menu="$(modrinth "${api}/project/modmenu" | jq -r '.id')"
+                dependencies="$(jq -nc --arg api "${fabric_api}" --arg menu "${mod_menu}" \
                   '[{project_id: $api, dependency_type: "required"}, {project_id: $menu, dependency_type: "optional"}]')"
               fi
 

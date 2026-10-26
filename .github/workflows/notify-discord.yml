@@ -9,8 +9,8 @@ on:
         type: string
       description:
         description: >-
-          The embed text, Markdown. Headings become bold lines, since embeds do not render them, and anything past
-          Discord's 4096 characters is cut.
+          The embed text, Markdown. Headings become bold lines, since embeds do not render them, and a text past
+          Discord's 4096 characters is split over several messages.
         required: true
         type: string
       url:
@@ -61,27 +61,45 @@ jobs:
           fi
 
           DESCRIPTION="$(sed -E 's/^#{1,6}[[:space:]]+(.*)$/**\1**/' <<< "${DESCRIPTION}")"
-          if [ "${#DESCRIPTION}" -gt 4096 ]; then
-            DESCRIPTION="${DESCRIPTION:0:4090}"$'\n…'
-          fi
-          # allowed_mentions stops an @everyone in a commit subject from pinging the whole server.
-          payload="$(jq -nc --arg username "${USERNAME}" --arg icon "${ICON}" --arg title "${TITLE}" \
-            --arg description "${DESCRIPTION}" --arg url "${URL}" '{
-              username: $username,
-              allowed_mentions: {parse: []},
-              embeds: [{
-                title: $title[0:256],
-                description: $description,
-                color: 5416245
-              } + (if $url == "" then {} else {url: $url} end)
-                + (if $icon == "" then {} else {thumbnail: {url: $icon}} end)]
-            } + (if $icon == "" then {} else {avatar_url: $icon} end)')"
 
-          curl --silent --show-error --fail-with-body \
-            --retry 3 --retry-connrefused --max-time 30 \
-            --header 'Content-Type: application/json' \
-            --user-agent 'Taerra-Release-Pipeline' \
-            --data "${payload}" \
-            "https://discord.com/api/webhooks/${WEBHOOK_ID}/${WEBHOOK_TOKEN}"
+          # Embeds hold 4096 characters, so a longer text goes out in several messages, split between lines.
+          limit=4000
+          chunks=()
+          chunk=''
+          while IFS= read -r line; do
+            line="${line:0:${limit}}"
+            if [ -n "${chunk}" ] && [ $((${#chunk} + 1 + ${#line})) -gt "${limit}" ]; then
+              chunks+=("${chunk}")
+              chunk="${line}"
+            else
+              chunk="${chunk:+${chunk}$'\n'}${line}"
+            fi
+          done <<< "${DESCRIPTION}"
+          chunks+=("${chunk}")
 
-          echo "Notification sent."
+          first=true
+          for chunk in "${chunks[@]}"; do
+            if [ "${first}" = 'false' ]; then
+              sleep 1
+            fi
+            # allowed_mentions stops an @everyone in a commit subject from pinging the whole server.
+            payload="$(jq -nc --arg username "${USERNAME}" --arg icon "${ICON}" --arg title "${TITLE}" \
+              --arg description "${chunk}" --arg url "${URL}" --argjson first "${first}" '{
+                username: $username,
+                allowed_mentions: {parse: []},
+                embeds: [{description: $description, color: 5416245}
+                  + (if $first then {title: $title[0:256]} else {} end)
+                  + (if $first and $url != "" then {url: $url} else {} end)
+                  + (if $first and $icon != "" then {thumbnail: {url: $icon}} else {} end)]
+              } + (if $icon == "" then {} else {avatar_url: $icon} end)')"
+
+            curl --silent --show-error --fail-with-body \
+              --retry 3 --retry-connrefused --max-time 30 \
+              --header 'Content-Type: application/json' \
+              --user-agent 'Taerra-Release-Pipeline' \
+              --data "${payload}" \
+              "https://discord.com/api/webhooks/${WEBHOOK_ID}/${WEBHOOK_TOKEN}"
+            first=false
+          done
+
+          echo "Notification sent as ${#chunks[@]} message(s)."

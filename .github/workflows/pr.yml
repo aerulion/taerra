@@ -33,6 +33,9 @@ jobs:
       mod: ${{ steps.detect.outputs.mod }}
       site: ${{ steps.detect.outputs.site }}
       any: ${{ steps.detect.outputs.any }}
+      build: >-
+        ${{ steps.detect.outputs.plugin == 'true' || steps.detect.outputs.mod == 'true'
+        || steps.workflow.outputs.changed == 'true' }}
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v7
@@ -46,6 +49,17 @@ jobs:
         uses: ./.github/actions/classify-changes
         with:
           base: ${{ github.event.pull_request.base.sha }}
+
+      - name: 🔍 Check the build workflow
+        id: workflow
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git diff --quiet "${BASE}...HEAD" -- .github/workflows/build.yml; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
 
   commit-messages:
     name: 📝 Check commit messages
@@ -122,7 +136,7 @@ jobs:
   build:
     name: 🛡️ Validation
     needs: changes
-    if: needs.changes.outputs.plugin == 'true' || needs.changes.outputs.mod == 'true'
+    if: needs.changes.outputs.build == 'true'
     permissions:
       contents: read
       packages: write
