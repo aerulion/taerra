@@ -45,6 +45,7 @@ import net.aerulion.taerra.region.RegionDiscoveries;
 import net.aerulion.taerra.region.RegionDiscovery;
 import net.aerulion.taerra.region.RegionEditor;
 import net.aerulion.taerra.region.RegionVisibility;
+import net.aerulion.taerra.region.RegionsImpl;
 import net.aerulion.taerra.rendering.RenderService;
 import net.aerulion.taerra.rendering.block.Fluids;
 import net.aerulion.taerra.rendering.color.BiomeTintMapperImpl;
@@ -412,7 +413,8 @@ public final class Taerra extends JavaPlugin {
           .getServicesManager()
           .register(
               TaerraApi.class,
-              new TaerraApiImpl(this, markers, icons, worldChanges),
+              new TaerraApiImpl(
+                  this, markers, icons, new RegionsImpl(regions, discoveries), worldChanges),
               this,
               ServicePriority.Normal);
       liveSettings.startLayers();

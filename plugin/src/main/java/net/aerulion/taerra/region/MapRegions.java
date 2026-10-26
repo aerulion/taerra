@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -173,6 +174,10 @@ public final class MapRegions {
 
   public @Nullable MapRegion get(final @NotNull UUID id) {
     return this.snapshot.byId().get(id);
+  }
+
+  public @NotNull Collection<MapRegion> all() {
+    return this.snapshot.byId().values();
   }
 
   public int index(final @NotNull UUID id) {

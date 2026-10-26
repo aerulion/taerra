@@ -3,6 +3,7 @@ package net.aerulion.taerra.api;
 import java.util.Collection;
 import net.aerulion.taerra.api.marker.MarkerIcons;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
+import net.aerulion.taerra.api.region.Regions;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -46,6 +47,14 @@ public interface TaerraApi {
    */
   @NotNull
   MarkerIcons icons();
+
+  /**
+   * Returns the map's regions, and which players discovered them.
+   *
+   * @return the regions
+   */
+  @NotNull
+  Regions regions();
 
   /**
    * Tells the map that blocks changed in a way no Bukkit event reports, such as a plugin writing

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import net.aerulion.taerra.api.TaerraApi;
 import net.aerulion.taerra.api.marker.MarkerIcons;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
+import net.aerulion.taerra.api.region.Regions;
 import net.aerulion.taerra.rendering.queue.WorldChanges;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -17,6 +18,7 @@ record TaerraApiImpl(
     @NotNull Plugin plugin,
     @NotNull MarkerRegistry markers,
     @NotNull MarkerIcons icons,
+    @NotNull Regions regions,
     @NotNull WorldChanges changes)
     implements TaerraApi {
 
