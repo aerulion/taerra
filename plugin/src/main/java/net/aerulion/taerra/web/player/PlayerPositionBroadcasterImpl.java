@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
+import net.aerulion.taerra.api.player.MapPlayers;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.limit.WorldLimits;
 import net.aerulion.taerra.model.WorldKeys;
@@ -34,6 +35,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
   private final @NotNull TaerraConfig config;
   private final @NotNull MapWebSocketHandler wsHandler;
   private final @NotNull WorldLimits limits;
+  private final @NotNull MapPlayers players;
   private final @NotNull RegionVisibility visibility;
   private final @NotNull ObjectMapper mapper;
   private final @NotNull String anonymousSalt = UUID.randomUUID().toString();
@@ -46,13 +48,15 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
       final @NotNull TaerraConfig config,
       final @NotNull MapWebSocketHandler wsHandler,
       final @NotNull WorldLimits limits,
-      final @NotNull RegionVisibility visibility) {
+      final @NotNull RegionVisibility visibility,
+      final @NotNull MapPlayers players) {
     super();
     this.plugin = plugin;
     this.config = config;
     this.wsHandler = wsHandler;
     this.limits = limits;
     this.visibility = visibility;
+    this.players = players;
     this.mapper = new ObjectMapper();
   }
 
@@ -155,7 +159,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
       final @Nullable WorldLimit limit = this.limits.get(worldName);
       final @Nullable MapRegion region =
           enabled ? this.visibility.regions().foggedAt(worldName, x >> 4, z >> 4) : null;
-      final boolean included = PlayerMapPayloadSerializer.shouldIncludePlayer(player);
+      final boolean included = !this.players.hidden(player);
       final @NotNull Map<String, Object> data = PlayerMapPayloadSerializer.serialize(player);
       try {
         final @NotNull Views full = views(data, included, player);

@@ -185,8 +185,8 @@ dependencies {
 
 TAERRA also fires Bukkit events, in `net.aerulion.taerra.api.event`: a player discovering a region, regions and
 waypoints being created, changed or deleted, web map logins and logouts, and teleports from the map, which a listener
-can cancel. Listen to them like any other event, and look regions up, and whether a player discovered one, through
-`TaerraApi.get().regions()`:
+can cancel. Listen to them like any other event. `TaerraApi.get()` also looks regions up and lets players discover
+them, reads and sets waypoints, guides players to a place, hides players from the map and builds links into it:
 
 ``` java
 @EventHandler

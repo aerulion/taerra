@@ -2,8 +2,6 @@ package net.aerulion.taerra.web.http.route;
 
 import io.javalin.config.RoutesConfig;
 import io.javalin.http.Context;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.OptionalInt;
 import java.util.UUID;
 import net.aerulion.taerra.config.TaerraConfig;
@@ -13,7 +11,6 @@ import net.aerulion.taerra.util.HexColors;
 import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.http.Requests;
-import net.aerulion.taerra.web.socket.MapWebSocketHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,18 +18,15 @@ public final class NavigationRoutes implements Routes {
 
   private final @NotNull Requests requests;
   private final @NotNull TaerraConfig taerraConfig;
-  private final @NotNull MapWebSocketHandler wsHandler;
   private final @NotNull Preferences preferences;
 
   public NavigationRoutes(
       final @NotNull Requests requests,
       final @NotNull TaerraConfig taerraConfig,
-      final @NotNull MapWebSocketHandler wsHandler,
       final @NotNull Preferences preferences) {
     super();
     this.requests = requests;
     this.taerraConfig = taerraConfig;
-    this.wsHandler = wsHandler;
     this.preferences = preferences;
   }
 
@@ -105,7 +99,6 @@ public final class NavigationRoutes implements Routes {
             HexColors.format(color.getAsInt()),
             request.player());
     this.preferences.navigate(viewer.uuid(), target);
-    publishNavigation(viewer.uuid(), target);
     ctx.status(204);
   }
 
@@ -116,15 +109,7 @@ public final class NavigationRoutes implements Routes {
       return;
     }
     this.preferences.navigate(viewer.uuid(), null);
-    publishNavigation(viewer.uuid(), null);
     ctx.status(204);
-  }
-
-  private void publishNavigation(final @NotNull UUID player, final @Nullable Navigation target) {
-    final @NotNull Map<String, Object> message = new HashMap<>();
-    message.put("type", "navigation");
-    message.put("target", target);
-    this.wsHandler.sendTo(player, message);
   }
 
   private record NavigationTarget(

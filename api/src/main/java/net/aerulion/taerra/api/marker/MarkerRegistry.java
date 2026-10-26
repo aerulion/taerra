@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The map's marker layers.
+ * The map's marker layers. Get it from {@link net.aerulion.taerra.api.TaerraApi#markers()}.
  *
  * <p>A layer belongs to the plugin that created it and is removed with all its markers when that
  * plugin disables. All methods are thread safe.

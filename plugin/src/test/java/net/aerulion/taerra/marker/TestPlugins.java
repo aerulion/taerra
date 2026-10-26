@@ -6,8 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
+import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
+import org.bukkit.World;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
@@ -44,6 +47,7 @@ public final class TestPlugins {
       final @NotNull File dataFolder,
       final @NotNull List<Event> fired,
       final @NotNull Plugin... enabled) {
+    final @NotNull YamlConfiguration config = new YamlConfiguration();
     final @NotNull BukkitScheduler scheduler =
         (BukkitScheduler)
             Proxy.newProxyInstance(
@@ -88,11 +92,26 @@ public final class TestPlugins {
                 switch (method.getName()) {
                   case "getName", "toString" -> "TAERRA";
                   case "getDataFolder" -> dataFolder;
+                  case "getConfig" -> config;
                   case "getLogger" -> Logger.getLogger("test");
                   case "getServer" -> server;
                   case "isEnabled" -> true;
                   case "getResource" ->
                       TestPlugins.class.getClassLoader().getResourceAsStream((String) args[0]);
+                  case "equals" -> proxy == args[0];
+                  case "hashCode" -> System.identityHashCode(proxy);
+                  default -> throw new UnsupportedOperationException(method.getName());
+                });
+  }
+
+  public static @NotNull World world(final @NotNull NamespacedKey key) {
+    return (World)
+        Proxy.newProxyInstance(
+            World.class.getClassLoader(),
+            new Class<?>[] {World.class},
+            (proxy, method, args) ->
+                switch (method.getName()) {
+                  case "getKey" -> key;
                   case "equals" -> proxy == args[0];
                   case "hashCode" -> System.identityHashCode(proxy);
                   default -> throw new UnsupportedOperationException(method.getName());

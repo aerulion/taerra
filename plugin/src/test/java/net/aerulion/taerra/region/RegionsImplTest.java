@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.UUID;
@@ -33,7 +34,7 @@ class RegionsImplTest {
     final @NotNull MapRegions regions = new MapRegions(plugin);
     final @NotNull RegionDiscoveries discoveries =
         new RegionDiscoveries(new PlayerFiles(plugin), regions);
-    final @NotNull RegionsImpl api = new RegionsImpl(regions, discoveries);
+    final @NotNull RegionsImpl api = new RegionsImpl(regions, discoveries, discoveries::discover);
     final @NotNull MapRegion town =
         MapRegionsTest.region(UUID.randomUUID(), "Town", RegionFog.HIDE, ChunkCoordinate.key(0, 0));
     regions.put(town);
@@ -55,5 +56,28 @@ class RegionsImplTest {
     assertNull(api.get(town.id()));
     assertNull(api.discoveredAt(ALEX, found));
     assertTrue(api.all().isEmpty());
+  }
+
+  @Test
+  @DisplayName("a plugin discovers a discoverable region once, and never one that is not")
+  void pluginDiscovers() {
+    final @NotNull Plugin plugin = TestPlugins.in(this.folder.toFile());
+    final @NotNull MapRegions regions = new MapRegions(plugin);
+    final @NotNull RegionDiscoveries discoveries =
+        new RegionDiscoveries(new PlayerFiles(plugin), regions);
+    final @NotNull RegionsImpl api = new RegionsImpl(regions, discoveries, discoveries::discover);
+    final @NotNull MapRegion town =
+        MapRegionsTest.region(UUID.randomUUID(), "Town", RegionFog.HIDE, ChunkCoordinate.key(0, 0));
+    final @NotNull MapRegion closed =
+        town.with("Closed", 0, RegionFog.HIDE, false, new LongOpenHashSet(new long[] {1L}));
+    regions.put(town);
+
+    final @NotNull Region found = new RegionImpl(town);
+    assertTrue(api.discover(ALEX, found));
+    assertFalse(api.discover(ALEX, found));
+    assertTrue(api.discovered(ALEX, found));
+
+    regions.put(closed);
+    assertFalse(api.discover(UUID.randomUUID(), found));
   }
 }

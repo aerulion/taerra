@@ -75,4 +75,19 @@ public interface Regions {
    */
   @Nullable
   Instant discoveredAt(@NotNull UUID player, @NotNull Region region);
+
+  /**
+   * Lets a player discover a region without walking into it, for example when a quest reveals it.
+   * It is the same as walking in: the region clears for them on the map and, if they are online,
+   * TAERRA plays its sound and shows its toast or chat line for a named region, and {@link
+   * net.aerulion.taerra.api.event.region.RegionDiscoverEvent} fires with the cause {@code PLUGIN}.
+   * Like {@link #discovered(UUID, Region)}, the first call for an offline player may read their
+   * data from disk.
+   *
+   * @param player the player's UUID
+   * @param region the region; only its id counts, so an older snapshot of it works too
+   * @return {@code true} if the player discovered it now, {@code false} if they already had, or the
+   *     region is gone or not {@link Region#discoverable() discoverable}
+   */
+  boolean discover(@NotNull UUID player, @NotNull Region region);
 }

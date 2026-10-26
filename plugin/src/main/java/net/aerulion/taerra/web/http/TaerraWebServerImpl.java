@@ -121,7 +121,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
             new AccountRoutes(plugin, requests, sessions, web, avatars, preferences),
             new WaypointRoutes(
                 plugin, requests, taerraConfig, waypoints, personalWaypoints, waypointEditor),
-            new NavigationRoutes(requests, taerraConfig, wsHandler, preferences),
+            new NavigationRoutes(requests, taerraConfig, preferences),
             new LayerRoutes(requests, wsHandler, preferences),
             new ActionRoutes(
                 plugin, requests, taerraConfig, modHandshake, teleports, renders, renderFeedback),

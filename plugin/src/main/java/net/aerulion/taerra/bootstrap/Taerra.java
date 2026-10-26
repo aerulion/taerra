@@ -1,12 +1,14 @@
 package net.aerulion.taerra.bootstrap;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import net.aerulion.taerra.api.TaerraApi;
+import net.aerulion.taerra.api.event.region.RegionDiscoverEvent;
 import net.aerulion.taerra.api.event.web.WebLoginEvent;
 import net.aerulion.taerra.api.event.web.WebLogoutEvent;
 import net.aerulion.taerra.chat.Messages;
@@ -38,6 +40,7 @@ import net.aerulion.taerra.listener.world.WorldChangeListener;
 import net.aerulion.taerra.marker.MarkerRegistryImpl;
 import net.aerulion.taerra.marker.MarkerRegistryInternal;
 import net.aerulion.taerra.permission.TaerraPermission;
+import net.aerulion.taerra.player.NavigationImpl;
 import net.aerulion.taerra.player.PlayerFiles;
 import net.aerulion.taerra.player.Preferences;
 import net.aerulion.taerra.region.MapRegions;
@@ -81,6 +84,7 @@ import net.aerulion.taerra.waypoint.DynmapImport;
 import net.aerulion.taerra.waypoint.PersonalWaypoints;
 import net.aerulion.taerra.waypoint.WaypointEditor;
 import net.aerulion.taerra.waypoint.Waypoints;
+import net.aerulion.taerra.waypoint.WaypointsApiImpl;
 import net.aerulion.taerra.waypoint.WaypointsImpl;
 import net.aerulion.taerra.web.auth.ModHandshake;
 import net.aerulion.taerra.web.auth.WebGrants;
@@ -88,6 +92,7 @@ import net.aerulion.taerra.web.auth.WebSessions;
 import net.aerulion.taerra.web.http.TaerraWebServer;
 import net.aerulion.taerra.web.http.TaerraWebServerImpl;
 import net.aerulion.taerra.web.marker.RegionMarkers;
+import net.aerulion.taerra.web.player.MapPlayersImpl;
 import net.aerulion.taerra.web.player.PlayerPositionBroadcaster;
 import net.aerulion.taerra.web.player.PlayerPositionBroadcasterImpl;
 import net.aerulion.taerra.web.socket.MapWebSocketHandler;
@@ -291,9 +296,11 @@ public final class Taerra extends JavaPlugin {
       icons.load();
       icons.onChange(() -> webSocketHandler.broadcast("{\"type\":\"icons\"}"));
       getServer().getPluginManager().registerEvents(icons, this);
+      final @NotNull MapPlayersImpl mapPlayers = new MapPlayersImpl();
+      getServer().getPluginManager().registerEvents(mapPlayers, this);
       final @NotNull PlayerPositionBroadcaster playerBroadcaster =
           new PlayerPositionBroadcasterImpl(
-              this, configuration, webSocketHandler, worldLimits, regionVisibility);
+              this, configuration, webSocketHandler, worldLimits, regionVisibility, mapPlayers);
       this.playerBroadcaster = playerBroadcaster;
       final @NotNull WaypointsImpl waypoints = new WaypointsImpl(this, markers, configuration);
       waypoints.load();
@@ -352,6 +359,13 @@ public final class Taerra extends JavaPlugin {
           new RegionEditor(
               this, regions, renders, () -> webSocketHandler.broadcast("{\"type\":\"regions\"}"));
       final @NotNull Preferences preferences = new Preferences(playerFiles);
+      preferences.onNavigation(
+          (player, target) -> {
+            final @NotNull Map<String, Object> message = new HashMap<>();
+            message.put("type", "navigation");
+            message.put("target", target);
+            webSocketHandler.sendTo(player, message);
+          });
       preferences.onWaypointColor(
           (player, rgb) ->
               webSocketHandler.sendTo(
@@ -409,28 +423,42 @@ public final class Taerra extends JavaPlugin {
 
       playerBroadcaster.start();
 
+      final @NotNull RegionDiscovery regionDiscovery =
+          new RegionDiscovery(
+              this,
+              configuration,
+              regions,
+              discoveries,
+              modHandshake,
+              (uuid, name) ->
+                  webSocketHandler.sendTo(
+                      uuid,
+                      name.isEmpty()
+                          ? Map.of("type", "regions")
+                          : Map.of("type", "regions", "discovered", name)));
       getServer()
           .getServicesManager()
           .register(
               TaerraApi.class,
               new TaerraApiImpl(
-                  this, markers, icons, new RegionsImpl(regions, discoveries), worldChanges),
+                  this,
+                  markers,
+                  icons,
+                  new RegionsImpl(
+                      regions,
+                      discoveries,
+                      (uuid, region) ->
+                          regionDiscovery.discover(uuid, region, RegionDiscoverEvent.Cause.PLUGIN)),
+                  new WaypointsApiImpl(this, waypoints, personalWaypoints),
+                  new NavigationImpl(preferences),
+                  mapPlayers,
+                  webSettings,
+                  worldChanges),
               this,
               ServicePriority.Normal);
       liveSettings.startLayers();
       markers.layer(this, RegionMarkers.LAYER, RegionMarkers.LABEL, true);
-      RegionDiscovery.start(
-          this,
-          configuration,
-          regions,
-          discoveries,
-          modHandshake,
-          (uuid, name) ->
-              webSocketHandler.sendTo(
-                  uuid,
-                  name.isEmpty()
-                      ? Map.of("type", "regions")
-                      : Map.of("type", "regions", "discovered", name)));
+      regionDiscovery.start();
 
       registerCommands(
           generatorService,

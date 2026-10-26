@@ -288,7 +288,7 @@ async function applyHash() {
         mapManager.setRotation(Number(params.get('r')));
     }
     syncViewControls();
-    const [x, z, zoom] = ['x', 'z', 'zoom'].map(key => Number(params.get(key)));
+    const [x, z, zoom] = ['x', 'z', 'zoom'].map(key => params.has(key) ? Number(params.get(key)) : NaN);
     if (Number.isFinite(x) && Number.isFinite(z)) {
         const y = params.has('y') ? Number(params.get('y')) : undefined;
         mapManager.centerOnBlock(x, z, Number.isFinite(zoom) ? zoom : undefined, y);

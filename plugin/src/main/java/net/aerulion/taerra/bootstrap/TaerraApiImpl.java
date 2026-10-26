@@ -1,5 +1,7 @@
 package net.aerulion.taerra.bootstrap;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -7,20 +9,60 @@ import java.util.stream.Collectors;
 import net.aerulion.taerra.api.TaerraApi;
 import net.aerulion.taerra.api.marker.MarkerIcons;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
+import net.aerulion.taerra.api.navigation.Navigation;
+import net.aerulion.taerra.api.player.MapPlayers;
 import net.aerulion.taerra.api.region.Regions;
+import net.aerulion.taerra.api.waypoint.Waypoints;
+import net.aerulion.taerra.config.WebSettings;
+import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.rendering.queue.WorldChanges;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 record TaerraApiImpl(
     @NotNull Plugin plugin,
     @NotNull MarkerRegistry markers,
     @NotNull MarkerIcons icons,
     @NotNull Regions regions,
+    @NotNull Waypoints waypoints,
+    @NotNull Navigation navigation,
+    @NotNull MapPlayers players,
+    @NotNull WebSettings web,
     @NotNull WorldChanges changes)
     implements TaerraApi {
+
+  private static @NotNull String encoded(final @NotNull String value) {
+    return URLEncoder.encode(value, StandardCharsets.UTF_8);
+  }
+
+  @Override
+  public @NotNull String mapUrl() {
+    return this.web.baseUrl();
+  }
+
+  @Override
+  public @NotNull String mapUrl(final @NotNull World world) {
+    return mapUrl() + "/#world=" + encoded(WorldKeys.id(world));
+  }
+
+  @Override
+  public @NotNull String mapUrl(final @NotNull Location location) {
+    final @Nullable World world = location.getWorld();
+    if (world == null) {
+      throw new IllegalArgumentException("The location has no world");
+    }
+    return mapUrl(world)
+        + "&x="
+        + location.getBlockX()
+        + "&z="
+        + location.getBlockZ()
+        + "&y="
+        + location.getBlockY();
+  }
 
   @Override
   public void blocksChanged(final @NotNull Collection<? extends Block> blocks) {

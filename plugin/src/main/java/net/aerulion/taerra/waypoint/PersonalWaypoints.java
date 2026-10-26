@@ -40,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
 public final class PersonalWaypoints implements Listener {
 
   public static final String LAYER = "personal";
-  public static final int MAX = 100;
+  public static final int MAX = net.aerulion.taerra.api.waypoint.Waypoints.MAX_PERSONAL;
   private static final String PREFIX = "personal:";
   private static final String DEATH = "taerra.waypoint.death";
   private static final Color DEATH_COLOR = Color.fromRGB(0xE34A4A);

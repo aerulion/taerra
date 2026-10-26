@@ -83,6 +83,9 @@ public sealed interface Waypoints permits WaypointsImpl {
   List<String> names();
 
   @NotNull
+  List<Marker> all();
+
+  @NotNull
   List<Group> groups();
 
   record Group(@NotNull String id, @NotNull String label) {}

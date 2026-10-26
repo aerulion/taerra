@@ -280,10 +280,12 @@ public final class WaypointsImpl implements Waypoints {
 
   @Override
   public @NotNull List<String> names() {
-    return layers().stream()
-        .flatMap(waypointLayer -> placed(waypointLayer).stream())
-        .map(Marker::label)
-        .toList();
+    return all().stream().map(Marker::label).toList();
+  }
+
+  @Override
+  public @NotNull List<Marker> all() {
+    return layers().stream().flatMap(waypointLayer -> placed(waypointLayer).stream()).toList();
   }
 
   @Override

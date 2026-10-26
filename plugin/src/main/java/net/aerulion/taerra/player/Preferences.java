@@ -17,6 +17,7 @@ public final class Preferences {
 
   private final @NotNull PlayerFiles files;
   private @NotNull BiConsumer<UUID, Integer> waypointColorChanged = (player, rgb) -> {};
+  private @NotNull BiConsumer<UUID, Navigation> navigationChanged = (player, target) -> {};
 
   public Preferences(final @NotNull PlayerFiles files) {
     super();
@@ -31,10 +32,15 @@ public final class Preferences {
     return this.files.get(player).navigation();
   }
 
+  public void onNavigation(final @NotNull BiConsumer<UUID, Navigation> changed) {
+    this.navigationChanged = changed;
+  }
+
   public void navigate(final @NotNull UUID player, final @Nullable Navigation target) {
     this.files.update(
         player,
         data -> Objects.equals(data.navigation(), target) ? data : data.withNavigation(target));
+    this.navigationChanged.accept(player, target);
   }
 
   public @Nullable Integer waypointColor(final @NotNull UUID player) {

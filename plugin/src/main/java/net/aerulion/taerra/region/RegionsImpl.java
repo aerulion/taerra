@@ -3,6 +3,7 @@ package net.aerulion.taerra.region;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.function.BiPredicate;
 import net.aerulion.taerra.api.region.Region;
 import net.aerulion.taerra.api.region.Regions;
 import net.aerulion.taerra.model.WorldKeys;
@@ -11,7 +12,10 @@ import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record RegionsImpl(@NotNull MapRegions regions, @NotNull RegionDiscoveries discoveries)
+public record RegionsImpl(
+    @NotNull MapRegions regions,
+    @NotNull RegionDiscoveries discoveries,
+    @NotNull BiPredicate<UUID, MapRegion> discover)
     implements Regions {
 
   @Override
@@ -51,5 +55,11 @@ public record RegionsImpl(@NotNull MapRegions regions, @NotNull RegionDiscoverie
     final @Nullable MapRegion current = this.regions.get(region.id());
     final long at = current == null ? 0L : this.discoveries.discoveredAt(player, current);
     return at > 0L ? Instant.ofEpochMilli(at) : null;
+  }
+
+  @Override
+  public boolean discover(final @NotNull UUID player, final @NotNull Region region) {
+    final @Nullable MapRegion current = this.regions.get(region.id());
+    return current != null && current.discoverable() && this.discover.test(player, current);
   }
 }
