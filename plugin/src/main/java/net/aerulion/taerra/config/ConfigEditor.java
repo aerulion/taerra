@@ -388,7 +388,10 @@ public final class ConfigEditor {
     while (root.getCause() != null) {
       root = root.getCause();
     }
-    return Throwables.describe(root);
+    final @Nullable String message = root.getMessage();
+    return message == null || message.isBlank()
+        ? Throwables.describe(root)
+        : message.replaceFirst("^\\(conn=\\d+\\) ", "");
   }
 
   private boolean storageBusy() {
