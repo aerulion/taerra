@@ -424,10 +424,14 @@ class MarkerManager {
     }
 
     showPending() {
-        const layer = this.pending && this.layers.find(candidate => candidate.id === this.pending.layerId);
-        if (layer && !this.isShown(layer)) {
-            this.setShown(layer, true);
-            this.renderControls();
+        const layer = this.pending && !this.pending.shown
+            && this.layers.find(candidate => candidate.id === this.pending.layerId);
+        if (layer) {
+            this.pending.shown = true;
+            if (!this.isShown(layer)) {
+                this.setShown(layer, true);
+                this.renderControls();
+            }
         }
     }
 
