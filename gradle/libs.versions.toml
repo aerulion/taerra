@@ -1,6 +1,6 @@
 [versions]
 java = "25"
-paper = "26.3.build.157-beta"
+paper = "26.3.build.224-stable"
 adventure = "5.2.0"
 annotations = "26.1.0"
 caffeine = "3.3.1"
