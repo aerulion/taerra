@@ -210,6 +210,10 @@ function chunkMarker(marker) {
     };
 }
 
+function drawKey(layer, marker) {
+    return JSON.stringify([layer.id, layer.icon, layer.personal, {...marker, groundKey: undefined}]);
+}
+
 export function markerBadge(layer, marker) {
     return iconStore.badge(iconStore.resolve(marker.icon, layer.icon, layer.personal), marker.color, layer.personal);
 }
@@ -360,7 +364,7 @@ class MarkerManager {
     setLayers(layers) {
         this.layers = layers;
         this.showPending();
-        this.redraw();
+        this.redraw(true);
         this.renderControls();
         this.onLayers?.();
     }
@@ -478,30 +482,52 @@ class MarkerManager {
         this.redraw();
     }
 
-    redraw() {
-        this.groups.forEach(group => group.remove());
-        this.groups.clear();
-        this.labels = [];
+    redraw(keep = false) {
+        const previous = this.entries;
+        const kept = new Map(keep ? previous.filter(entry => entry.drawn).map(entry => [entry.key, entry]) : []);
+        const groups = this.groups;
+        this.groups = new Map();
         this.entries = [];
         for (const layer of this.layers) {
-            const group = L.layerGroup();
+            const group = (keep && groups.get(layer.id)) || L.layerGroup();
+            if (keep) {
+                groups.delete(layer.id);
+            }
             this.groups.set(layer.id, group);
             if (this.isShown(layer)) {
                 group.addTo(mapManager.getMap());
+            } else {
+                group.remove();
             }
             for (const marker of layer.markers) {
                 if (marker.id === this.hidden) {
                     continue;
                 }
-                this.entries.push({
-                    layer,
-                    marker,
-                    reach: this.reach(marker),
-                    rough: !this.grounds.has(groundKey(marker)),
-                    drawn: null
-                });
+                const key = drawKey(layer, marker);
+                const entry = kept.get(key);
+                if (entry) {
+                    kept.delete(key);
+                    entry.layer = layer;
+                    entry.marker = marker;
+                    this.entries.push(entry);
+                } else {
+                    this.entries.push({
+                        key,
+                        layer,
+                        marker,
+                        reach: this.reach(marker),
+                        rough: !this.grounds.has(groundKey(marker)),
+                        drawn: null
+                    });
+                }
             }
         }
+        groups.forEach(group => group.remove());
+        const current = new Set(this.entries);
+        const drawn = new Set(this.entries.map(entry => entry.drawn));
+        previous.filter(entry => entry.drawn && !current.has(entry))
+            .forEach(entry => this.groups.get(entry.layer.id)?.removeLayer(entry.drawn));
+        this.labels = this.labels.filter(label => drawn.has(label.marker));
         this.cull();
     }
 
