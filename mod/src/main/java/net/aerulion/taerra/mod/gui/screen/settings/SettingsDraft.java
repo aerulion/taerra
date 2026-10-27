@@ -9,6 +9,7 @@ import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.sameOrde
 import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.worldField;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import net.aerulion.taerra.mod.web.model.ServerSettings;
 import org.jetbrains.annotations.NotNull;
@@ -82,16 +84,18 @@ public final class SettingsDraft {
       }
     }
     this.view = next;
+    final @NotNull JsonElement theirs =
+        Objects.requireNonNullElse(now.get(ORDER), JsonNull.INSTANCE);
     if (same(this.draft.get(ORDER), this.base.get(ORDER))) {
-      if (!sameOrder(this.draft.get(ORDER), now.get(ORDER))) {
+      if (!sameOrder(this.draft.get(ORDER), theirs)) {
         changed.add(ORDER);
       }
-      this.draft.put(ORDER, now.get(ORDER).deepCopy());
+      this.draft.put(ORDER, theirs.deepCopy());
       this.conflicts.remove(ORDER);
-    } else if (same(this.draft.get(ORDER), now.get(ORDER))) {
+    } else if (same(this.draft.get(ORDER), theirs)) {
       this.conflicts.remove(ORDER);
-    } else if (!sameOrder(this.base.get(ORDER), now.get(ORDER))) {
-      this.conflicts.put(ORDER, new Conflict(now.get(ORDER).deepCopy(), author(next, ORDER)));
+    } else if (!sameOrder(this.base.get(ORDER), theirs)) {
+      this.conflicts.put(ORDER, new Conflict(theirs.deepCopy(), author(next, ORDER)));
     }
     arrange(ids(this.draft.get(ORDER)));
     fixOrder();

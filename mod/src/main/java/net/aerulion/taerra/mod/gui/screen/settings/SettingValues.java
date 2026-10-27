@@ -21,6 +21,8 @@ public final class SettingValues {
   public static final List<String> VIEWS = List.of("both", "top_down", "isometric");
   private static final Pattern SCALE = Pattern.compile("(\\d{1,5})(px|blocks?)");
   private static final int MAX_COORDINATE = 30_000_000;
+  private static final int MIN_SCALE = -12;
+  private static final int MAX_SCALE = 8;
 
   private SettingValues() {}
 
@@ -118,7 +120,8 @@ public final class SettingValues {
       return null;
     }
     final int exponent = Integer.numberOfTrailingZeros(Integer.parseInt(matcher.group(1)));
-    return matcher.group(2).equals("px") ? exponent : -exponent;
+    final int scale = matcher.group(2).equals("px") ? exponent : -exponent;
+    return scale >= MIN_SCALE && scale <= MAX_SCALE ? scale : null;
   }
 
   public static @NotNull String scaleText(final @Nullable Integer scale) {
@@ -186,7 +189,10 @@ public final class SettingValues {
   public static boolean badLimit(final @Nullable JsonElement value) {
     final @NotNull String shape = shapeOf(value);
     if (shape.equals("none")) {
-      return false;
+      return value != null
+          && value.isJsonObject()
+          && value.getAsJsonObject().get("shape") instanceof final JsonPrimitive given
+          && !given.getAsString().equals("none");
     }
     final @Nullable Integer minX = bound(value, "minX");
     final @Nullable Integer minZ = bound(value, "minZ");
@@ -200,7 +206,11 @@ public final class SettingValues {
       return true;
     }
     final int width = maxX - minX;
-    return width < 0 || maxZ - minZ < 0 || (!shape.equals("rectangle") && width < 2);
+    final int depth = maxZ - minZ;
+    if (width < 0 || depth < 0) {
+      return true;
+    }
+    return !shape.equals("rectangle") && (width != depth || width < 2 || width % 2 != 0);
   }
 
   public static @NotNull JsonObject reshape(
