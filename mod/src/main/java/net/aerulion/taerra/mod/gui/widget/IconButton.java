@@ -5,6 +5,7 @@ import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 
 public final class IconButton extends AbstractButton {
@@ -23,7 +24,7 @@ public final class IconButton extends AbstractButton {
   public static final String[] REDO = mirrored(UNDO);
 
   private static final int COLOR = 0xFFFFFFFF;
-  private static final int INACTIVE = 0xFFA0A0A0;
+  private static final int INACTIVE = CommonColors.LIGHT_GRAY;
   private static final int SHADOW = 0xFF3F3F3F;
 
   private final String[] icon;

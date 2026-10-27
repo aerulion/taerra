@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -90,9 +91,9 @@ public final class RenderProgressOverlay {
           font, (int) Math.floor(percent) + "%", left + BAR_WIDTH + 4, below - 2, 0xFFFFFFFF, true);
       below += 8;
     }
-    graphics.centeredText(font, detail, middle, below, 0xFFA0A0A0);
+    graphics.centeredText(font, detail, middle, below, CommonColors.LIGHT_GRAY);
     if (remaining != null) {
-      graphics.centeredText(font, remaining, middle, below + 10, 0xFFA0A0A0);
+      graphics.centeredText(font, remaining, middle, below + 10, CommonColors.LIGHT_GRAY);
     }
   }
 

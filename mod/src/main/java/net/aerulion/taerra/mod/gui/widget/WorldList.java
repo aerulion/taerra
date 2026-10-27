@@ -17,6 +17,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -189,7 +190,7 @@ public final class WorldList extends PanelList<WorldList.Row> {
             sky.clock(),
             right - font.width(sky.clock()),
             getContentYMiddle() - 4,
-            0xFFA0A0A0,
+            CommonColors.LIGHT_GRAY,
             true);
         SkyButton.drawGlyph(
             graphics,

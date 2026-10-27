@@ -22,6 +22,7 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -124,7 +125,7 @@ public final class RegionListScreen extends Screen {
               this.query.isBlank() ? "taerra.regions.none" : "taerra.waypoints.no_match"),
           this.width / 2,
           TOOLS_Y + 40,
-          0xFFA0A0A0);
+          CommonColors.LIGHT_GRAY);
     }
   }
 

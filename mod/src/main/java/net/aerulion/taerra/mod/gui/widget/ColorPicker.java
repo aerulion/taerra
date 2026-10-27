@@ -8,6 +8,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 
 public final class ColorPicker extends AbstractWidget {
@@ -17,7 +18,7 @@ public final class ColorPicker extends AbstractWidget {
   private static final int HUE_HEIGHT = 6;
   private static final double STEP = .02;
   private static final double MAX_HUE = 359;
-  private static final int BORDER = 0xFFA0A0A0;
+  private static final int BORDER = CommonColors.LIGHT_GRAY;
 
   private final Consumer<String> onChange;
   private double hue;

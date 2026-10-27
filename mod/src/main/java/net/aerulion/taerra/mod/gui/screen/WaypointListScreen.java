@@ -49,6 +49,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -612,7 +613,7 @@ public final class WaypointListScreen extends Screen {
           Component.translatable("taerra.waypoints.loading"),
           this.width / 2,
           this.height / 2 - 4,
-          0xFFA0A0A0);
+          CommonColors.LIGHT_GRAY);
     } else if (this.list != null && this.list.children().isEmpty()) {
       graphics.centeredText(
           this.font,
@@ -620,7 +621,7 @@ public final class WaypointListScreen extends Screen {
               this.waypoints.isEmpty() ? "taerra.waypoints.none" : "taerra.waypoints.no_match"),
           this.width / 2,
           this.height / 2 - 4,
-          0xFFA0A0A0);
+          CommonColors.LIGHT_GRAY);
     }
     if (this.status != null && System.currentTimeMillis() < this.statusUntil) {
       graphics.centeredText(

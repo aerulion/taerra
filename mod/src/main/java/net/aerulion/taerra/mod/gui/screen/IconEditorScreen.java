@@ -36,6 +36,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -437,7 +438,12 @@ public final class IconEditorScreen extends Screen {
         final float partialTick) {
       final int x = getX();
       final int y = getY();
-      graphics.fill(x, y, x + getWidth(), y + getHeight(), isFocused() ? 0xFFFFFFFF : 0xFFA0A0A0);
+      graphics.fill(
+          x,
+          y,
+          x + getWidth(),
+          y + getHeight(),
+          isFocused() ? CommonColors.WHITE : CommonColors.LIGHT_GRAY);
       graphics.fill(x + 1, y + 1, x + getWidth() - 1, y + getHeight() - 1, 0xFF3A3A3C);
       final int hovered = isHovered() ? cellAt(mouseX, mouseY) : -1;
       for (int i = 0; i < IconEditorScreen.this.pixels.length; i++) {

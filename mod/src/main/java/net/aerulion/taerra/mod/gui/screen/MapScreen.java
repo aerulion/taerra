@@ -65,6 +65,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.CommonColors;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -1245,20 +1246,20 @@ public final class MapScreen extends Screen {
           Component.translatable("taerra.unreachable.detail", this.map.base()),
           middle,
           center,
-          0xFFA0A0A0);
+          CommonColors.LIGHT_GRAY);
       graphics.centeredText(
           this.font,
           Component.translatable("taerra.unreachable.hint"),
           middle,
           center + 12,
-          0xFFA0A0A0);
+          CommonColors.LIGHT_GRAY);
     } else if (this.map.world(this.view.world()) == null || config == null) {
       graphics.centeredText(
           this.font,
           Component.translatable("taerra.map.loading"),
           middle,
           (top + bottom) / 2,
-          0xFFA0A0A0);
+          CommonColors.LIGHT_GRAY);
     } else {
       RenderProgressOverlay.draw(
           graphics, this.font, this.map.progress(), this::worldName, middle, top);
@@ -1343,7 +1344,7 @@ public final class MapScreen extends Screen {
           reconnecting,
           right - 6 - this.font.width(reconnecting),
           bottom - 12,
-          0xFFA0A0A0,
+          CommonColors.LIGHT_GRAY,
           true);
     }
   }

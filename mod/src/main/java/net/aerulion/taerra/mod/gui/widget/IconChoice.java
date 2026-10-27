@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,7 +47,7 @@ public final class IconChoice extends AbstractButton {
     final boolean bare = getWidth() < 40;
     final int left = bare ? getX() + (getWidth() - ICON) / 2 : getX() + 6;
     final int top = getY() + (getHeight() - ICON) / 2;
-    final int color = this.active ? 0xFFFFFFFF : 0xFFA0A0A0;
+    final int color = this.active ? CommonColors.WHITE : CommonColors.LIGHT_GRAY;
     final @Nullable Identifier icon = this.icon.get();
     if (icon != null) {
       graphics.blit(

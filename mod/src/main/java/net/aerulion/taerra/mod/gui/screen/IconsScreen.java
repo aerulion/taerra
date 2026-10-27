@@ -32,6 +32,7 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -193,7 +194,7 @@ public final class IconsScreen extends Screen implements WebMapListener {
               uploads().isEmpty() ? "taerra.icons.none" : "taerra.icons.no_match"),
           this.width / 2,
           TOOLS_Y + 52,
-          0xFFA0A0A0);
+          CommonColors.LIGHT_GRAY);
     }
     graphics.centeredText(this.font, this.status, this.width / 2, this.height - 42, 0xFFFFFFFF);
   }

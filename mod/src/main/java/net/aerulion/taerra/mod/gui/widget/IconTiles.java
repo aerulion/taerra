@@ -17,6 +17,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -103,7 +104,7 @@ public final class IconTiles extends AbstractWidget {
           y + 1,
           x + TILE - 1,
           y + TILE - 1,
-          picked ? 0xFFFFFFFF : hovered ? 0xFFA0A0A0 : 0xFF000000);
+          picked ? CommonColors.WHITE : hovered ? CommonColors.LIGHT_GRAY : CommonColors.BLACK);
       graphics.fill(x + 2, y + 2, x + TILE - 2, y + TILE - 2, picked ? 0xFF48494A : 0xFF1E1E1F);
       final @Nullable Identifier texture =
           id.isEmpty() ? this.fallback.get() : MapIcons.icon(this.map, id);

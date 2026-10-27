@@ -8,6 +8,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
 import net.minecraft.world.item.DyeColor;
 import org.jetbrains.annotations.NotNull;
 
@@ -47,7 +48,7 @@ public final class DyeSwatches extends AbstractWidget {
           y,
           x + SWATCH - 1,
           y + ROW - 1,
-          chosen ? 0xFFFFFFFF : hovered ? 0xFFA0A0A0 : 0xFF000000);
+          chosen ? CommonColors.WHITE : hovered ? CommonColors.LIGHT_GRAY : CommonColors.BLACK);
       graphics.fill(
           x + 1, y + 1, x + SWATCH - 2, y + ROW - 2, 0xFF000000 | dyes[i].getTextureDiffuseColor());
       if (hovered) {

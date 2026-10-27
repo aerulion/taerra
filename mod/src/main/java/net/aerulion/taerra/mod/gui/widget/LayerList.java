@@ -16,6 +16,7 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -121,7 +122,7 @@ public final class LayerList extends ContainerObjectSelectionList<LayerList.Entr
           this.count,
           getContentRight() - font.width(this.count),
           getContentYMiddle() - 4,
-          0xFFA0A0A0,
+          CommonColors.LIGHT_GRAY,
           true);
     }
 

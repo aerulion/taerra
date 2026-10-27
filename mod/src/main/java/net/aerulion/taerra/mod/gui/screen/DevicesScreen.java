@@ -15,6 +15,7 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -109,7 +110,7 @@ public final class DevicesScreen extends Screen {
               this.loaded ? "taerra.devices.unavailable" : "taerra.devices.loading"),
           this.width / 2,
           this.height / 2 - 4,
-          0xFFA0A0A0);
+          CommonColors.LIGHT_GRAY);
     }
   }
 
@@ -171,7 +172,13 @@ public final class DevicesScreen extends Screen {
         final @NotNull Font font = Minecraft.getInstance().font;
         final int top = getContentYMiddle() - font.lineHeight;
         graphics.text(font, this.name, getContentX(), top, 0xFFFFFFFF, true);
-        graphics.text(font, this.seen, getContentX(), top + font.lineHeight + 1, 0xFFA0A0A0, true);
+        graphics.text(
+            font,
+            this.seen,
+            getContentX(),
+            top + font.lineHeight + 1,
+            CommonColors.LIGHT_GRAY,
+            true);
         if (this.logout != null) {
           this.logout.setPosition(
               getContentRight() - BUTTON_WIDTH, getContentYMiddle() - this.logout.getHeight() / 2);

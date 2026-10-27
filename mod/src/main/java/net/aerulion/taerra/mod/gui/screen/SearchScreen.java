@@ -30,6 +30,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -302,7 +303,7 @@ public final class SearchScreen extends Screen {
           Component.translatable("taerra.search.empty"),
           this.width / 2,
           TOP + 34,
-          0xFFA0A0A0);
+          CommonColors.LIGHT_GRAY);
     }
   }
 
@@ -406,7 +407,7 @@ public final class SearchScreen extends Screen {
           final int tagWidth = font.width(tag) + 6;
           final int tagX = getContentRight() - 2 - tagWidth;
           graphics.fill(tagX, y + 2, tagX + tagWidth, y + 14, 0xFF1E1E1F);
-          graphics.text(font, tag, tagX + 3, y + 4, 0xFFA0A0A0, false);
+          graphics.text(font, tag, tagX + 3, y + 4, CommonColors.LIGHT_GRAY, false);
           room -= tagWidth + 6;
         }
         final int line = this.result.detail() == null ? y + 4 : y;
@@ -423,7 +424,7 @@ public final class SearchScreen extends Screen {
               font.substrByWidth(this.result.detail(), room).getString(),
               x + 20,
               y + 9,
-              0xFFA0A0A0,
+              CommonColors.LIGHT_GRAY,
               false);
         }
       }
