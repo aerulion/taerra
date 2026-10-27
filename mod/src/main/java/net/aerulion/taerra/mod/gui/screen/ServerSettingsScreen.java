@@ -1,7 +1,34 @@
 package net.aerulion.taerra.mod.gui.screen;
 
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.ORDER;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.SHAPES;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.VIEWS;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.addsView;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.badLimit;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.bound;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.ids;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.isLimit;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.isStorage;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.isViews;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.layerField;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.layerIconField;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.layerScaleField;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.limit;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.on;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.outOfRange;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.parseScale;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.partsOf;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.reshape;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.same;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.scaleText;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.settingField;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.shapeOf;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.string;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.viewsOf;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.worldField;
+import static net.aerulion.taerra.mod.gui.screen.settings.SettingValues.worldOf;
+
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
@@ -10,15 +37,15 @@ import com.google.gson.JsonPrimitive;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.aerulion.taerra.mod.gui.screen.settings.SettingValues;
+import net.aerulion.taerra.mod.gui.screen.settings.SettingsDraft;
 import net.aerulion.taerra.mod.gui.widget.IconChoice;
 import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.map.Projection;
@@ -61,6 +88,7 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.util.CommonColors;
 import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,11 +99,6 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   private static final Pattern NOT_NAME = Pattern.compile("[^\\p{L}\\p{N} _.,:'&()#!?+-]");
   private static final Pattern NOT_DIGIT = Pattern.compile("\\D");
   private static final Pattern NOT_COORDINATE = Pattern.compile("[^0-9-]");
-  private static final Pattern SCALE = Pattern.compile("(\\d{1,5})(px|blocks?)");
-  private static final List<String> SHAPES = List.of("none", "circle", "square", "rectangle");
-  private static final List<String> VIEWS = List.of("both", "top_down", "isometric");
-  private static final int MAX_COORDINATE = 30_000_000;
-  private static final String ORDER = "order";
   private static final int ROW_WIDTH = 380;
   private static final int TAB_PADDING = 20;
   private static final int CONTROL_WIDTH = 120;
@@ -83,12 +106,12 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   private static final int INDENT = 14;
   private static final int SLAB = 0x66000000;
   private static final int SLAB_HOVER = 0x80000000;
-  private static final int MUTED = 0xFFA0A0A0;
+  private static final int MUTED = CommonColors.LIGHT_GRAY;
   private static final int ACCENT = 0xFFD4732F;
   private static final int GOLD = 0xFFFFCF3F;
   private static final int GREEN = 0xFF52A535;
   private static final int RED = 0xFFE34A4A;
-  private static final int TEXT = 0xFFE0E0E0;
+  private static final int TEXT = CommonColors.TEXT_GRAY;
   private static final long STATUS_MILLIS = 6000;
   private static final long FLASH_MILLIS = 1800;
   private static final List<Section> SECTIONS =
@@ -139,18 +162,14 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   private final TabManager tabManager =
       new TabManager(this::addRenderableWidget, this::removeWidget);
   private final List<SectionTab> tabs = new ArrayList<>();
-  private final Map<String, JsonElement> base = new LinkedHashMap<>();
-  private final Map<String, JsonElement> draft = new LinkedHashMap<>();
-  private final Map<String, Conflict> conflicts = new LinkedHashMap<>();
+  private final SettingsDraft draft = new SettingsDraft();
   private final Map<String, Long> flashing = new HashMap<>();
   private final Map<String, EditBox> boxes = new HashMap<>();
-  private final List<String> display = new ArrayList<>();
   private List<ServerSettings.Editor> editors = List.of();
   private @Nullable MenuTabBar bar;
   private @Nullable Button save;
   private @Nullable Button cancel;
   private boolean discardArmed;
-  private @Nullable ServerSettings view;
   private boolean loaded;
   private boolean saving;
   private boolean refreshing;
@@ -187,42 +206,6 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     };
   }
 
-  private static @NotNull String settingField(final @NotNull String key) {
-    return "setting:" + key;
-  }
-
-  private static @NotNull String worldField(final @NotNull String id, final @NotNull String part) {
-    return "world:" + id + ":" + part;
-  }
-
-  private static @NotNull String layerField(final @NotNull String id) {
-    return "layer:" + id;
-  }
-
-  private static @NotNull String layerIconField(final @NotNull String id) {
-    return "layer-icon:" + id;
-  }
-
-  private static @NotNull String layerScaleField(final @NotNull String id) {
-    return "layer-scale:" + id;
-  }
-
-  private static @Nullable Integer parseScale(final @NotNull String text) {
-    final @NotNull Matcher matcher = SCALE.matcher(text);
-    if (!matcher.matches() || Integer.bitCount(Integer.parseInt(matcher.group(1))) != 1) {
-      return null;
-    }
-    final int exponent = Integer.numberOfTrailingZeros(Integer.parseInt(matcher.group(1)));
-    return matcher.group(2).equals("px") ? exponent : -exponent;
-  }
-
-  private static @NotNull String scaleText(final @Nullable Integer scale) {
-    if (scale == null) {
-      return "";
-    }
-    return scale >= 0 ? (1 << scale) + "px" : (1 << -scale) + "blocks";
-  }
-
   private static @NotNull Component describeScale(final @Nullable Integer scale) {
     if (scale == null) {
       return Component.translatable("taerra.settings.layer_scale.always");
@@ -230,51 +213,6 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     return scale >= 0
         ? Component.translatable("taerra.settings.layer_scale.pixels", 1 << scale)
         : Component.translatable("taerra.settings.layer_scale.blocks", 1 << -scale);
-  }
-
-  private static boolean same(final @Nullable JsonElement a, final @Nullable JsonElement b) {
-    return Objects.equals(a == null ? JsonNull.INSTANCE : a, b == null ? JsonNull.INSTANCE : b);
-  }
-
-  private static @NotNull List<String> ids(final @Nullable JsonElement order) {
-    final @NotNull List<String> ids = new ArrayList<>();
-    if (order != null && order.isJsonArray()) {
-      order.getAsJsonArray().forEach(id -> ids.add(id.getAsString()));
-    }
-    return ids;
-  }
-
-  private static @NotNull JsonArray array(final @NotNull List<String> ids) {
-    final @NotNull JsonArray array = new JsonArray();
-    ids.forEach(array::add);
-    return array;
-  }
-
-  private static boolean sameOrder(final @Nullable JsonElement a, final @Nullable JsonElement b) {
-    final @NotNull List<String> first = ids(a);
-    final @NotNull List<String> second = ids(b);
-    return first.stream()
-        .filter(second::contains)
-        .toList()
-        .equals(second.stream().filter(first::contains).toList());
-  }
-
-  private static boolean on(final @Nullable JsonElement value) {
-    return value != null
-        && value.isJsonPrimitive()
-        && value.getAsJsonPrimitive().isBoolean()
-        && value.getAsBoolean();
-  }
-
-  private static @NotNull String string(final @Nullable JsonElement value) {
-    return value == null || value.isJsonNull() ? "" : value.getAsString();
-  }
-
-  private static @Nullable String author(
-      final @NotNull ServerSettings next, final @NotNull String field) {
-    final ServerSettings.@Nullable Author author =
-        next.authors() == null ? null : next.authors().get(field);
-    return author == null ? null : author.name();
   }
 
   private static void clean(
@@ -290,123 +228,6 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
             box.setValue(clean);
           }
         });
-  }
-
-  private static boolean outOfRange(
-      final ServerSettings.@Nullable SettingInfo setting, final @Nullable JsonElement value) {
-    if (setting == null || !setting.kind().equals("number")) {
-      return false;
-    }
-    if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) {
-      return true;
-    }
-    final double number = value.getAsDouble();
-    return number != Math.rint(number)
-        || setting.min() != null && number < setting.min()
-        || setting.max() != null && number > setting.max();
-  }
-
-  private static boolean isLimit(final @NotNull String field) {
-    return field.startsWith("world:") && field.endsWith(":limit");
-  }
-
-  private static boolean isStorage(final @NotNull String field) {
-    return field.startsWith("setting:storage.");
-  }
-
-  private static boolean isViews(final @NotNull String field) {
-    return field.startsWith("world:") && field.endsWith(":views");
-  }
-
-  private static @NotNull String viewsOf(final @Nullable JsonElement value) {
-    final @NotNull String views = string(value);
-    return VIEWS.contains(views) ? views : "both";
-  }
-
-  private static @NotNull List<String> partsOf(final @NotNull String views) {
-    return views.equals("both") ? List.of("top_down", "isometric") : List.of(views);
-  }
-
-  private static boolean addsView(
-      final @Nullable JsonElement before, final @Nullable JsonElement after) {
-    return !partsOf(viewsOf(before)).containsAll(partsOf(viewsOf(after)));
-  }
-
-  private static @NotNull String shapeOf(final @Nullable JsonElement value) {
-    return value != null
-            && value.isJsonObject()
-            && value.getAsJsonObject().get("shape") instanceof final JsonPrimitive shape
-            && SHAPES.contains(shape.getAsString())
-        ? shape.getAsString()
-        : "none";
-  }
-
-  private static @Nullable Integer bound(
-      final @Nullable JsonElement value, final @NotNull String key) {
-    if (value == null || !value.isJsonObject()) {
-      return null;
-    }
-    final @Nullable JsonElement bound = value.getAsJsonObject().get(key);
-    return bound != null
-            && bound.isJsonPrimitive()
-            && bound.getAsJsonPrimitive().isNumber()
-            && bound.getAsDouble() == Math.rint(bound.getAsDouble())
-        ? bound.getAsInt()
-        : null;
-  }
-
-  private static @NotNull JsonObject limit(
-      final @NotNull String shape,
-      final @Nullable Integer minX,
-      final @Nullable Integer minZ,
-      final @Nullable Integer maxX,
-      final @Nullable Integer maxZ) {
-    final @NotNull JsonObject value = new JsonObject();
-    value.addProperty("shape", shape);
-    if (!shape.equals("none")) {
-      final @NotNull String[] keys = {"minX", "minZ", "maxX", "maxZ"};
-      final @Nullable Integer[] bounds = {minX, minZ, maxX, maxZ};
-      for (int i = 0; i < keys.length; i++) {
-        value.add(keys[i], bounds[i] == null ? JsonNull.INSTANCE : new JsonPrimitive(bounds[i]));
-      }
-    }
-    return value;
-  }
-
-  private static boolean badLimit(final @Nullable JsonElement value) {
-    final @NotNull String shape = shapeOf(value);
-    if (shape.equals("none")) {
-      return false;
-    }
-    final @Nullable Integer minX = bound(value, "minX");
-    final @Nullable Integer minZ = bound(value, "minZ");
-    final @Nullable Integer maxX = bound(value, "maxX");
-    final @Nullable Integer maxZ = bound(value, "maxZ");
-    if (minX == null || minZ == null || maxX == null || maxZ == null) {
-      return true;
-    }
-    if (Math.max(Math.max(Math.abs(minX), Math.abs(minZ)), Math.max(Math.abs(maxX), Math.abs(maxZ)))
-        > MAX_COORDINATE) {
-      return true;
-    }
-    final int width = maxX - minX;
-    return width < 0 || maxZ - minZ < 0 || (!shape.equals("rectangle") && width < 2);
-  }
-
-  private static @NotNull JsonObject reshape(
-      final @Nullable JsonElement value, final @NotNull String shape) {
-    final boolean known = !shapeOf(value).equals("none") && !badLimit(value);
-    final int minX = known ? Objects.requireNonNull(bound(value, "minX")) : -1000;
-    final int minZ = known ? Objects.requireNonNull(bound(value, "minZ")) : -1000;
-    final int maxX = known ? Objects.requireNonNull(bound(value, "maxX")) : 1000;
-    final int maxZ = known ? Objects.requireNonNull(bound(value, "maxZ")) : 1000;
-    if (!shape.equals("circle") && !shape.equals("square")) {
-      return limit(shape, minX, minZ, maxX, maxZ);
-    }
-    final int radius = Math.max(1, Math.round(Math.max(maxX - minX, maxZ - minZ) / 2f));
-    final int x = Math.floorDiv(minX + maxX, 2);
-    final int z = Math.floorDiv(minZ + maxZ, 2);
-    return limit(shape, x - radius, z - radius, x + radius, z + radius);
   }
 
   private static @Nullable Integer coordinate(final @NotNull String text) {
@@ -532,7 +353,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
 
   @Override
   public void onClose() {
-    if (!this.discardArmed && !changes().isEmpty()) {
+    if (!this.discardArmed && !this.draft.changes().isEmpty()) {
       this.discardArmed = true;
       updateCancel();
       return;
@@ -563,7 +384,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
 
   @Override
   public void settingsChanged(final long revision) {
-    if (this.view != null && revision > this.view.revision()) {
+    if (this.draft.view() != null && revision > this.draft.view().revision()) {
       refresh();
     }
   }
@@ -585,7 +406,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       this.status = Component.empty();
       updateStatus();
     }
-    if (!this.loaded || this.view == null) {
+    if (!this.loaded || this.draft.view() == null) {
       graphics.centeredText(
           this.font,
           Component.translatable(
@@ -662,19 +483,12 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       return;
     }
     accept(next);
-    this.base.clear();
-    this.draft.clear();
-    this.conflicts.clear();
-    next.values().entrySet().forEach(entry -> this.base.put(entry.getKey(), entry.getValue()));
-    this.base.forEach((field, value) -> this.draft.put(field, value.deepCopy()));
-    this.display.clear();
-    arrange(ids(this.draft.get(ORDER)));
+    this.draft.open(next);
     refill();
     updateStatus();
   }
 
   private void accept(final @NotNull ServerSettings next) {
-    this.view = next;
     this.editors = next.editors() == null ? List.of() : List.copyOf(next.editors());
   }
 
@@ -687,7 +501,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     this.map.settings(
         next -> {
           this.refreshing = false;
-          if (next != null && this.view != null) {
+          if (next != null && this.draft.view() != null) {
             rebase(next);
           }
           if (this.refreshAgain) {
@@ -698,51 +512,8 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   }
 
   private void rebase(final @NotNull ServerSettings next) {
-    final @NotNull Map<String, JsonElement> now = new LinkedHashMap<>();
-    next.values().entrySet().forEach(entry -> now.put(entry.getKey(), entry.getValue()));
-    final @NotNull Set<String> fields = new LinkedHashSet<>(this.base.keySet());
-    fields.addAll(now.keySet());
-    fields.addAll(this.draft.keySet());
-    final @NotNull Set<String> changed = new LinkedHashSet<>();
-    for (final @NotNull String field : fields) {
-      if (!now.containsKey(field)) {
-        this.draft.remove(field);
-        this.conflicts.remove(field);
-        continue;
-      }
-      if (field.equals(ORDER)) {
-        continue;
-      }
-      final @Nullable JsonElement mine = this.draft.get(field);
-      final boolean touched = this.draft.containsKey(field) && !same(mine, this.base.get(field));
-      if (!touched) {
-        if (this.base.containsKey(field) && !same(mine, now.get(field))) {
-          changed.add(field);
-        }
-        this.draft.put(field, now.get(field).deepCopy());
-        this.conflicts.remove(field);
-      } else if (same(mine, now.get(field))) {
-        this.conflicts.remove(field);
-      } else if (!same(this.base.get(field), now.get(field))) {
-        this.conflicts.put(field, new Conflict(now.get(field).deepCopy(), author(next, field)));
-      }
-    }
+    final @NotNull Set<String> changed = this.draft.rebase(next);
     accept(next);
-    if (same(this.draft.get(ORDER), this.base.get(ORDER))) {
-      if (!sameOrder(this.draft.get(ORDER), now.get(ORDER))) {
-        changed.add(ORDER);
-      }
-      this.draft.put(ORDER, now.get(ORDER).deepCopy());
-      this.conflicts.remove(ORDER);
-    } else if (same(this.draft.get(ORDER), now.get(ORDER))) {
-      this.conflicts.remove(ORDER);
-    } else if (!sameOrder(this.base.get(ORDER), now.get(ORDER))) {
-      this.conflicts.put(ORDER, new Conflict(now.get(ORDER).deepCopy(), author(next, ORDER)));
-    }
-    arrange(ids(this.draft.get(ORDER)));
-    fixOrder();
-    this.base.clear();
-    this.base.putAll(now);
     final long until = System.currentTimeMillis() + FLASH_MILLIS;
     changed.forEach(field -> this.flashing.put(field, until));
     refill();
@@ -750,7 +521,9 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       final @NotNull Set<String> names = new LinkedHashSet<>();
       changed.forEach(
           field -> {
-            final @Nullable String name = author(next, field);
+            final ServerSettings.@Nullable Author author =
+                next.authors() == null ? null : next.authors().get(field);
+            final @Nullable String name = author == null ? null : author.name();
             if (name != null) {
               names.add(name);
             }
@@ -771,38 +544,8 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     updateStatus();
   }
 
-  private void arrange(final @NotNull List<String> order) {
-    if (this.view == null) {
-      return;
-    }
-    final @NotNull Set<String> known = new LinkedHashSet<>();
-    this.view.worlds().forEach(world -> known.add(world.id()));
-    final @NotNull List<String> wanted = order.stream().filter(known::contains).toList();
-    final @NotNull List<String> queue = new ArrayList<>(wanted);
-    final @NotNull LinkedHashSet<String> next = new LinkedHashSet<>();
-    for (final @NotNull String id : this.display) {
-      if (known.contains(id)) {
-        next.add(wanted.contains(id) ? queue.removeFirst() : id);
-      }
-    }
-    next.addAll(queue);
-    next.addAll(known);
-    this.display.clear();
-    this.display.addAll(next);
-  }
-
-  private void fixOrder() {
-    this.draft.put(
-        ORDER,
-        array(
-            this.display.stream()
-                .filter(id -> on(this.draft.get(worldField(id, "enabled"))))
-                .toList()));
-  }
-
   private void set(final @NotNull String field, final @NotNull JsonElement value) {
-    this.draft.put(field, value);
-    this.conflicts.remove(field);
+    this.draft.set(field, value);
     disarm();
     updateStatus();
   }
@@ -850,27 +593,9 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     return focus;
   }
 
-  private ServerSettings.@Nullable SettingInfo setting(final @NotNull String key) {
-    return this.view == null
-        ? null
-        : this.view.settings().stream()
-            .filter(setting -> setting.key().equals(key))
-            .findFirst()
-            .orElse(null);
-  }
-
-  private ServerSettings.@Nullable WorldInfo world(final @NotNull String id) {
-    return this.view == null
-        ? null
-        : this.view.worlds().stream()
-            .filter(world -> world.id().equals(id))
-            .findFirst()
-            .orElse(null);
-  }
-
   private @NotNull String worldName(final @NotNull String id) {
-    final @NotNull String name = string(this.draft.get(worldField(id, "name")));
-    final ServerSettings.@Nullable WorldInfo world = world(id);
+    final @NotNull String name = string(this.draft.value(worldField(id, "name")));
+    final ServerSettings.@Nullable WorldInfo world = this.draft.world(id);
     return !name.isBlank() ? name : world == null ? id : world.defaultName();
   }
 
@@ -879,7 +604,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       return Component.translatable("taerra.settings.order");
     }
     if (field.startsWith("world:")) {
-      final @NotNull String id = field.substring("world:".length(), field.lastIndexOf(':'));
+      final @NotNull String id = worldOf(field);
       return Component.literal(worldName(id) + ": ")
           .append(
               Component.translatable(
@@ -900,9 +625,9 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     if (field.startsWith("layer:")) {
       final @NotNull String id = field.substring("layer:".length());
       final @NotNull String label =
-          this.view == null
+          this.draft.view() == null
               ? id
-              : this.view.layers().stream()
+              : this.draft.view().layers().stream()
                   .filter(layer -> layer.id().equals(id))
                   .map(ServerSettings.LayerInfo::label)
                   .findFirst()
@@ -948,38 +673,20 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
 
   private @Nullable Component changedBy(final @NotNull String field) {
     final ServerSettings.@Nullable Author author =
-        this.view == null || this.view.authors() == null ? null : this.view.authors().get(field);
+        this.draft.view() == null || this.draft.view().authors() == null
+            ? null
+            : this.draft.view().authors().get(field);
     return author == null || author.name() == null
         ? null
         : Component.translatable("taerra.settings.changed_by", author.name(), since(author.at()));
   }
 
-  private @NotNull JsonObject changes() {
-    final @NotNull JsonObject changes = new JsonObject();
-    this.draft.forEach(
-        (field, value) -> {
-          if (field.equals(ORDER)) {
-            if (!same(value, this.base.get(ORDER))) {
-              changes.add(ORDER, value);
-            }
-            return;
-          }
-          if (same(value, this.base.get(field))) {
-            return;
-          }
-          final ServerSettings.@Nullable SettingInfo setting =
-              field.startsWith("setting:") ? setting(field.substring("setting:".length())) : null;
-          if (setting == null || setting.editable()) {
-            changes.add(field, value);
-          }
-        });
-    return changes;
-  }
-
   private @Nullable Component problem(final @NotNull JsonObject changes) {
     for (final @NotNull String field : changes.keySet()) {
       final ServerSettings.@Nullable SettingInfo setting =
-          field.startsWith("setting:") ? setting(field.substring("setting:".length())) : null;
+          field.startsWith("setting:")
+              ? this.draft.setting(field.substring("setting:".length()))
+              : null;
       if (setting != null && outOfRange(setting, changes.get(field))) {
         return Component.translatable(
             "taerra.settings.range",
@@ -989,12 +696,10 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       }
     }
     final @NotNull List<String> limits =
-        changes.keySet().stream().filter(ServerSettingsScreen::isLimit).toList();
+        changes.keySet().stream().filter(SettingValues::isLimit).toList();
     for (final @NotNull String field : limits) {
       if (badLimit(changes.get(field))) {
-        return Component.translatable(
-            "taerra.settings.limit_invalid",
-            worldName(field.substring("world:".length(), field.lastIndexOf(':'))));
+        return Component.translatable("taerra.settings.limit_invalid", worldName(worldOf(field)));
       }
     }
     final long renders =
@@ -1003,32 +708,27 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                 .filter(
                     field ->
                         isViews(field)
-                            && on(
-                                this.draft.get(
-                                    worldField(
-                                        field.substring("world:".length(), field.lastIndexOf(':')),
-                                        "enabled")))
-                            && addsView(this.base.get(field), changes.get(field)))
+                            && on(this.draft.value(worldField(worldOf(field), "enabled")))
+                            && addsView(this.draft.saved(field), changes.get(field)))
                 .count();
     return renders > 1 ? Component.translatable("taerra.settings.limit_one") : null;
   }
 
   private void updateStatus() {
-    final @NotNull JsonObject pending = changes();
-    final int count =
-        pending.size()
-            - (pending.has(ORDER) && sameOrder(pending.get(ORDER), this.base.get(ORDER)) ? 1 : 0);
+    final @NotNull JsonObject pending = this.draft.changes();
+    final int count = this.draft.pending(pending);
     final @Nullable Component problem = problem(pending);
     if (this.save != null) {
-      this.save.active = count > 0 && this.conflicts.isEmpty() && problem == null && !this.saving;
+      this.save.active =
+          count > 0 && this.draft.conflicts() == 0 && problem == null && !this.saving;
     }
-    if (!this.conflicts.isEmpty()) {
+    if (this.draft.conflicts() > 0) {
       setStatus(
           Component.translatable(
-              this.conflicts.size() == 1
+              this.draft.conflicts() == 1
                   ? "taerra.settings.conflicts.one"
                   : "taerra.settings.conflicts.other",
-              this.conflicts.size()),
+              this.draft.conflicts()),
           GOLD);
     } else if (problem != null) {
       setStatus(problem, GOLD);
@@ -1055,27 +755,27 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   }
 
   private void save() {
-    final @NotNull JsonObject changes = changes();
+    final @NotNull JsonObject changes = this.draft.changes();
     if (changes.isEmpty()
         || this.saving
-        || !this.conflicts.isEmpty()
+        || this.draft.conflicts() > 0
         || problem(changes) != null
-        || this.view == null) {
+        || this.draft.view() == null) {
       return;
     }
     disarm();
     final @NotNull JsonObject body = new JsonObject();
-    body.addProperty("base", this.view.revision());
+    body.addProperty("base", this.draft.view().revision());
     body.add("changes", changes);
     final @NotNull String saved =
-        changes.keySet().stream().anyMatch(ServerSettingsScreen::isLimit)
+        changes.keySet().stream().anyMatch(SettingValues::isLimit)
             ? "taerra.settings.saved_limit"
             : changes.keySet().stream()
                     .anyMatch(
                         field ->
-                            isViews(field) && addsView(this.base.get(field), changes.get(field)))
+                            isViews(field) && addsView(this.draft.saved(field), changes.get(field)))
                 ? "taerra.settings.saved_views"
-                : changes.keySet().stream().anyMatch(ServerSettingsScreen::isStorage)
+                : changes.keySet().stream().anyMatch(SettingValues::isStorage)
                     ? "taerra.settings.saved_storage"
                     : "taerra.settings.saved";
     this.saving = true;
@@ -1092,7 +792,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
             }
           }
           if (status == 200 && next != null) {
-            changes.entrySet().forEach(entry -> this.base.put(entry.getKey(), entry.getValue()));
+            this.draft.saved(changes);
             rebase(next);
             timedStatus(Component.translatable(saved), GREEN);
             updateStatus();
@@ -1144,8 +844,6 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
 
   private record Section(@NotNull String id, @NotNull List<String> keys) {}
 
-  private record Conflict(@NotNull JsonElement theirs, @Nullable String by) {}
-
   private final class SectionTab implements Tab {
 
     private final @NotNull Section section;
@@ -1196,7 +894,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     private void fill(final @NotNull Section section) {
       final double scroll = scrollAmount();
       clearEntries();
-      final @Nullable ServerSettings view = ServerSettingsScreen.this.view;
+      final @Nullable ServerSettings view = ServerSettingsScreen.this.draft.view();
       if (view == null) {
         return;
       }
@@ -1207,15 +905,16 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       }
       if (section.id().equals("worlds")) {
         conflict(ORDER);
-        final @NotNull List<String> display = ServerSettingsScreen.this.display;
+        final @NotNull List<String> display = ServerSettingsScreen.this.draft.display();
         int rank = 0;
         for (int index = 0; index < display.size(); index++) {
-          final ServerSettings.@Nullable WorldInfo world = world(display.get(index));
+          final ServerSettings.@Nullable WorldInfo world =
+              ServerSettingsScreen.this.draft.world(display.get(index));
           if (world == null) {
             continue;
           }
           final boolean on =
-              on(ServerSettingsScreen.this.draft.get(worldField(world.id(), "enabled")));
+              on(ServerSettingsScreen.this.draft.value(worldField(world.id(), "enabled")));
           add(new WorldRow(world, index, display.size(), on ? ++rank : 0));
           for (final @NotNull String part : List.of("enabled", "private", "players", "name")) {
             conflict(worldField(world.id(), part));
@@ -1223,25 +922,30 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
         }
       }
       if (section.id().equals("limits")) {
-        for (final @NotNull String id : ServerSettingsScreen.this.display) {
-          final ServerSettings.@Nullable WorldInfo world = world(id);
-          if (world != null && on(ServerSettingsScreen.this.draft.get(worldField(id, "enabled")))) {
+        for (final @NotNull String id : ServerSettingsScreen.this.draft.display()) {
+          final ServerSettings.@Nullable WorldInfo world =
+              ServerSettingsScreen.this.draft.world(id);
+          if (world != null
+              && on(ServerSettingsScreen.this.draft.value(worldField(id, "enabled")))) {
             add(new LimitRow(world));
             conflict(worldField(id, "limit"));
           }
         }
       }
       if (section.id().equals("views")) {
-        for (final @NotNull String id : ServerSettingsScreen.this.display) {
-          final ServerSettings.@Nullable WorldInfo world = world(id);
-          if (world != null && on(ServerSettingsScreen.this.draft.get(worldField(id, "enabled")))) {
+        for (final @NotNull String id : ServerSettingsScreen.this.draft.display()) {
+          final ServerSettings.@Nullable WorldInfo world =
+              ServerSettingsScreen.this.draft.world(id);
+          if (world != null
+              && on(ServerSettingsScreen.this.draft.value(worldField(id, "enabled")))) {
             add(new ViewsRow(world));
             conflict(worldField(id, "views"));
           }
         }
       }
       for (final @NotNull String key : section.keys()) {
-        final ServerSettings.@Nullable SettingInfo setting = setting(key);
+        final ServerSettings.@Nullable SettingInfo setting =
+            ServerSettingsScreen.this.draft.setting(key);
         if (setting != null) {
           add(new SettingRow(setting));
           conflict(settingField(key));
@@ -1260,7 +964,8 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     }
 
     private void conflict(final @NotNull String field) {
-      final @Nullable Conflict conflict = ServerSettingsScreen.this.conflicts.get(field);
+      final SettingsDraft.@Nullable Conflict conflict =
+          ServerSettingsScreen.this.draft.conflict(field);
       if (conflict != null) {
         add(new ConflictRow(field, conflict));
       }
@@ -1309,15 +1014,16 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
         final int alpha = (int) (0x70 * Math.min(1.0, (until - now) / (double) FLASH_MILLIS * 1.6));
         graphics.fill(left, top, right, bottom, (alpha << 24) | 0x5E2A0A);
       }
-      if (fields().stream().anyMatch(ServerSettingsScreen.this.conflicts::containsKey)) {
+      if (fields().stream()
+          .anyMatch(field -> ServerSettingsScreen.this.draft.conflict(field) != null)) {
         graphics.outline(left, top, right - left, bottom - top, GOLD);
       }
       if (fields().stream()
           .anyMatch(
               field ->
                   !same(
-                      ServerSettingsScreen.this.draft.get(field),
-                      ServerSettingsScreen.this.base.get(field)))) {
+                      ServerSettingsScreen.this.draft.value(field),
+                      ServerSettingsScreen.this.draft.saved(field)))) {
         graphics.fill(right - 2, top, right, bottom, ACCENT);
       }
       if (hovered) {
@@ -1404,7 +1110,8 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     private final @NotNull Button theirs;
     private final @NotNull Button mine;
 
-    private ConflictRow(final @NotNull String field, final @NotNull Conflict conflict) {
+    private ConflictRow(
+        final @NotNull String field, final SettingsDraft.@NotNull Conflict conflict) {
       this.field = field;
       final @NotNull Component who =
           conflict.by() == null
@@ -1424,14 +1131,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           Button.builder(
                   Component.translatable("taerra.settings.use_theirs"),
                   _ -> {
-                    ServerSettingsScreen.this.draft.put(field, conflict.theirs().deepCopy());
-                    ServerSettingsScreen.this.conflicts.remove(field);
-                    if (field.equals(ORDER)) {
-                      arrange(ids(conflict.theirs()));
-                    }
-                    if (field.equals(ORDER) || field.endsWith(":enabled")) {
-                      fixOrder();
-                    }
+                    ServerSettingsScreen.this.draft.useTheirs(field);
                     refill();
                     updateStatus();
                   })
@@ -1441,7 +1141,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           Button.builder(
                   Component.translatable("taerra.settings.keep_mine"),
                   _ -> {
-                    ServerSettingsScreen.this.conflicts.remove(field);
+                    ServerSettingsScreen.this.draft.keepMine(field);
                     refill();
                     updateStatus();
                   })
@@ -1532,7 +1232,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     }
 
     private @Nullable AbstractWidget control(final @NotNull Font font) {
-      final @Nullable JsonElement value = ServerSettingsScreen.this.draft.get(this.field);
+      final @Nullable JsonElement value = ServerSettingsScreen.this.draft.value(this.field);
       if (!this.setting.editable()) {
         return null;
       }
@@ -1569,7 +1269,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                       refill();
                     });
         case "secret" -> {
-          final @Nullable JsonElement stored = ServerSettingsScreen.this.base.get(this.field);
+          final @Nullable JsonElement stored = ServerSettingsScreen.this.draft.saved(this.field);
           final @NotNull EditBox box = new EditBox(font, CONTROL_WIDTH, 18, this.label);
           box.setMaxLength(256);
           box.setValue(same(value, stored) ? "" : string(value));
@@ -1641,8 +1341,8 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     }
 
     private boolean invalidNow() {
-      final @Nullable JsonElement value = ServerSettingsScreen.this.draft.get(this.field);
-      return !same(value, ServerSettingsScreen.this.base.get(this.field))
+      final @Nullable JsonElement value = ServerSettingsScreen.this.draft.value(this.field);
+      return !same(value, ServerSettingsScreen.this.draft.saved(this.field))
           && outOfRange(this.setting, value);
     }
 
@@ -1676,9 +1376,9 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
         final float partialTick) {
       final int indent = sub() ? INDENT : 0;
       final boolean inactive =
-          this.parent != null && !on(ServerSettingsScreen.this.draft.get(this.parent))
+          this.parent != null && !on(ServerSettingsScreen.this.draft.value(this.parent))
               || this.database
-                  && "files".equals(string(ServerSettingsScreen.this.draft.get(STORAGE_TYPE)));
+                  && "files".equals(string(ServerSettingsScreen.this.draft.value(STORAGE_TYPE)));
       if (this.control != null) {
         this.control.active = !inactive;
       }
@@ -1699,7 +1399,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       final int right = getContentRight() - 6;
       final int middle = getY() + getHeight() / 2;
       if (this.control == null) {
-        final @NotNull String value = string(ServerSettingsScreen.this.draft.get(this.field));
+        final @NotNull String value = string(ServerSettingsScreen.this.draft.value(this.field));
         final @NotNull Component shown =
             value.isEmpty()
                 ? Component.translatable("taerra.settings.not_set").withStyle(ChatFormatting.ITALIC)
@@ -1750,7 +1450,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
               18,
               Component.translatable("taerra.settings.world_name", world.defaultName()));
       this.name.setMaxLength(32);
-      this.name.setValue(string(ServerSettingsScreen.this.draft.get(nameField)));
+      this.name.setValue(string(ServerSettingsScreen.this.draft.value(nameField)));
       this.name.setHint(Component.literal(world.defaultName()).withStyle(ChatFormatting.DARK_GRAY));
       clean(this.name, NOT_NAME, text -> set(nameField, new JsonPrimitive(text)));
       ServerSettingsScreen.this.boxes.put(nameField, this.name);
@@ -1759,7 +1459,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           CycleButton.booleanBuilder(
                   Component.translatable("taerra.settings.on_map").withStyle(ChatFormatting.GREEN),
                   Component.translatable("taerra.settings.off_map").withStyle(ChatFormatting.GRAY),
-                  on(ServerSettingsScreen.this.draft.get(enabledField)))
+                  on(ServerSettingsScreen.this.draft.value(enabledField)))
               .displayOnlyValue()
               .create(
                   0,
@@ -1769,7 +1469,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                   Component.translatable("taerra.settings.on_map"),
                   (_, on) -> {
                     set(enabledField, new JsonPrimitive(on));
-                    fixOrder();
+                    ServerSettingsScreen.this.draft.fixOrder();
                     refill();
                   });
       final @NotNull String privateField = worldField(world.id(), "private");
@@ -1777,7 +1477,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           CycleButton.booleanBuilder(
                   Component.translatable("taerra.settings.private").withStyle(ChatFormatting.GOLD),
                   Component.translatable("taerra.settings.public"),
-                  on(ServerSettingsScreen.this.draft.get(privateField)))
+                  on(ServerSettingsScreen.this.draft.value(privateField)))
               .displayOnlyValue()
               .create(
                   0,
@@ -1795,7 +1495,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                   Component.translatable("taerra.settings.players_private")
                       .withStyle(ChatFormatting.GOLD),
                   Component.translatable("taerra.settings.players_public"),
-                  on(ServerSettingsScreen.this.draft.get(playersField)))
+                  on(ServerSettingsScreen.this.draft.value(playersField)))
               .displayOnlyValue()
               .withTooltip(
                   _ ->
@@ -1828,11 +1528,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     }
 
     private void move(final int by) {
-      final @NotNull List<String> display = ServerSettingsScreen.this.display;
-      final int target = this.index + by;
-      display.set(this.index, display.set(target, display.get(this.index)));
-      fixOrder();
-      ServerSettingsScreen.this.conflicts.remove(ORDER);
+      ServerSettingsScreen.this.draft.move(this.index, by);
       updateStatus();
       refill();
     }
@@ -1932,7 +1628,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     private LimitRow(final ServerSettings.@NotNull WorldInfo world) {
       this.world = world;
       this.field = worldField(world.id(), "limit");
-      final @Nullable JsonElement value = ServerSettingsScreen.this.draft.get(this.field);
+      final @Nullable JsonElement value = ServerSettingsScreen.this.draft.value(this.field);
       final @NotNull String current = shapeOf(value);
       final @NotNull Font font = Minecraft.getInstance().font;
       this.shape =
@@ -1950,7 +1646,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                   (_, shape) -> {
                     set(
                         this.field,
-                        reshape(ServerSettingsScreen.this.draft.get(this.field), shape));
+                        reshape(ServerSettingsScreen.this.draft.value(this.field), shape));
                     refill();
                   });
       if (current.equals("none")) {
@@ -2014,12 +1710,12 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
 
     private boolean changed() {
       return !same(
-          ServerSettingsScreen.this.draft.get(this.field),
-          ServerSettingsScreen.this.base.get(this.field));
+          ServerSettingsScreen.this.draft.value(this.field),
+          ServerSettingsScreen.this.draft.saved(this.field));
     }
 
     private void paint() {
-      final boolean bad = changed() && badLimit(ServerSettingsScreen.this.draft.get(this.field));
+      final boolean bad = changed() && badLimit(ServerSettingsScreen.this.draft.value(this.field));
       this.inputs.forEach(box -> box.setTextColor(bad ? RED : TEXT));
     }
 
@@ -2098,8 +1794,8 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     private ViewsRow(final ServerSettings.@NotNull WorldInfo world) {
       this.world = world;
       this.field = worldField(world.id(), "views");
-      final @Nullable JsonElement before = ServerSettingsScreen.this.base.get(this.field);
-      final @NotNull String current = viewsOf(ServerSettingsScreen.this.draft.get(this.field));
+      final @Nullable JsonElement before = ServerSettingsScreen.this.draft.saved(this.field);
+      final @NotNull String current = viewsOf(ServerSettingsScreen.this.draft.value(this.field));
       this.views =
           CycleButton.builder(
                   (String views) -> Component.translatable("taerra.settings.views." + views),
@@ -2200,7 +1896,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       this.scale = new ScaleSlider(this.scaleField);
       this.label = label(this.field);
       final @NotNull WebMap map = ServerSettingsScreen.this.map;
-      final @NotNull String chosen = string(ServerSettingsScreen.this.draft.get(this.iconField));
+      final @NotNull String chosen = string(ServerSettingsScreen.this.draft.value(this.iconField));
       this.icon =
           new IconChoice(
               20,
@@ -2237,7 +1933,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           CycleButton.booleanBuilder(
                   Component.translatable("taerra.settings.private").withStyle(ChatFormatting.GOLD),
                   Component.translatable("taerra.settings.public"),
-                  on(ServerSettingsScreen.this.draft.get(this.field)))
+                  on(ServerSettingsScreen.this.draft.value(this.field)))
               .displayOnlyValue()
               .create(
                   0,
@@ -2312,12 +2008,12 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     private ScaleSlider(final @NotNull String field) {
       super(0, 0, 0, 20, Component.empty(), 0);
       this.field = field;
-      this.stops = stops(parseScale(string(ServerSettingsScreen.this.draft.get(field))));
+      this.stops = stops(parseScale(string(ServerSettingsScreen.this.draft.value(field))));
       this.value =
           Math.max(
                   0,
                   this.stops.indexOf(
-                      parseScale(string(ServerSettingsScreen.this.draft.get(field)))))
+                      parseScale(string(ServerSettingsScreen.this.draft.value(field)))))
               / (double) (this.stops.size() - 1);
       updateMessage();
     }
@@ -2355,7 +2051,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     protected void applyValue() {
       this.value = index() / (double) (this.stops.size() - 1);
       final @NotNull String text = scaleText(this.stops.get(index()));
-      if (!text.equals(string(ServerSettingsScreen.this.draft.get(this.field)))) {
+      if (!text.equals(string(ServerSettingsScreen.this.draft.value(this.field)))) {
         set(this.field, new JsonPrimitive(text));
       }
     }
