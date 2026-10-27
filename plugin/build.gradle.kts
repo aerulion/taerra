@@ -73,6 +73,36 @@ val writeLibraries =
         )
     }
 
+val webInstall =
+    tasks.register<Exec>("webInstall") {
+        description = "Installs the tools that lint and test the web map"
+        inputs
+            .files("package.json", "package-lock.json")
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+        outputs.dir("node_modules")
+        commandLine("npm", "ci", "--no-audit", "--no-fund")
+    }
+
+val webCheck =
+    tasks.register<Exec>("webCheck") {
+        group = "verification"
+        description = "Lints the web map and runs its tests"
+        dependsOn(webInstall)
+        inputs
+            .files(
+                fileTree("src/main/resources/web/js"),
+                fileTree("src/test/js"),
+                fileTree("src/test/resources/contracts"),
+                "eslint.config.js",
+                "package.json",
+            )
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+        val passed = layout.buildDirectory.file("web-check/passed")
+        outputs.file(passed)
+        commandLine("npm", "run", "check")
+        doLast { passed.get().asFile.writeText("") }
+    }
+
 tasks {
     processResources {
         from(writeLibraries)
@@ -81,6 +111,8 @@ tasks {
     jar {
         from(bundled)
     }
+
+    check { dependsOn(webCheck) }
 
     test {
         inputs

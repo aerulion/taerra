@@ -25,6 +25,13 @@ dependencies {
     localRuntime(libs.modmenu)
 }
 
+tasks.test {
+    inputs
+        .dir(rootProject.layout.projectDirectory.dir("plugin/src/test/resources/contracts"))
+        .withPropertyName("contracts")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
 tasks.processResources {
     val version = project.version.toString()
     val minecraft = libs.versions.minecraft.get()

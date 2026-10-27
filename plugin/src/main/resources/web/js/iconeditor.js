@@ -1,5 +1,6 @@
 import {ColorPicker} from './colors.js';
 import {MAC, t} from './i18n.js';
+import {monochrome} from './pixels.js';
 import {badgeFrame, NOT_NAME, tintFilter} from './icons.js';
 import {armed, disarm, element} from './ui.js';
 
@@ -13,11 +14,6 @@ const WHITE = '#ffffff';
 const opaque = (hex) => ((parseInt(hex.slice(1), 16) << 8) | 0xff) >>> 0;
 const css = (pixel) =>
     `rgb(${pixel >>> 24} ${(pixel >>> 16) & 0xff} ${(pixel >>> 8) & 0xff} / ${(pixel & 0xff) / 255})`;
-
-function monochrome(pixels) {
-    const colors = new Set(pixels.filter((pixel) => pixel & 0xff).map((pixel) => pixel >>> 8));
-    return colors.size === 1 && (colors.has(0xffffff) || colors.has(0));
-}
 
 function image(pixels) {
     const canvas = element('canvas', '');

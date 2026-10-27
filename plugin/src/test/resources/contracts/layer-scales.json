@@ -1,0 +1,22 @@
+{
+  "parse": [
+    {"text": "1px", "scale": 0},
+    {"text": "8px", "scale": 3},
+    {"text": "256px", "scale": 8},
+    {"text": "512px", "scale": null},
+    {"text": "1block", "scale": 0},
+    {"text": "2blocks", "scale": -1},
+    {"text": "4096blocks", "scale": -12},
+    {"text": "8192blocks", "scale": null},
+    {"text": "6px", "scale": null},
+    {"text": "0px", "scale": null},
+    {"text": "8 px", "scale": null},
+    {"text": "123456px", "scale": null},
+    {"text": "", "scale": null}
+  ],
+  "format": [
+    {"scale": 0, "text": "1px"},
+    {"scale": 3, "text": "8px"},
+    {"scale": -2, "text": "4blocks"}
+  ]
+}

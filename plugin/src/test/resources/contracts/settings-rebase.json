@@ -1,0 +1,71 @@
+[
+  {
+    "name": "an untouched field follows the server",
+    "base": {"setting:web.name": "A"},
+    "edits": {},
+    "now": {"setting:web.name": "B"},
+    "expect": {"values": {"setting:web.name": "B"}, "conflicts": {}, "changed": ["setting:web.name"]}
+  },
+  {
+    "name": "an edit survives when the server kept its value",
+    "base": {"setting:web.name": "A"},
+    "edits": {"setting:web.name": "Mine"},
+    "now": {"setting:web.name": "A"},
+    "expect": {"values": {"setting:web.name": "Mine"}, "conflicts": {}, "changed": []}
+  },
+  {
+    "name": "an edit against a different server change is a conflict",
+    "base": {"setting:web.name": "A"},
+    "edits": {"setting:web.name": "Mine"},
+    "now": {"setting:web.name": "Theirs"},
+    "authors": {"setting:web.name": "Alex"},
+    "expect": {
+      "values": {"setting:web.name": "Mine"},
+      "conflicts": {"setting:web.name": {"theirs": "Theirs", "by": "Alex"}},
+      "changed": []
+    }
+  },
+  {
+    "name": "the same edit on both sides is no conflict",
+    "base": {"setting:web.name": "A"},
+    "edits": {"setting:web.name": "Same"},
+    "now": {"setting:web.name": "Same"},
+    "expect": {"values": {"setting:web.name": "Same"}, "conflicts": {}, "changed": []}
+  },
+  {
+    "name": "a field the server dropped leaves the draft",
+    "base": {"setting:web.name": "A", "layer:towny": true},
+    "edits": {"layer:towny": false},
+    "now": {"setting:web.name": "A"},
+    "expect": {"values": {"setting:web.name": "A"}, "absent": ["layer:towny"], "conflicts": {}, "changed": []}
+  },
+  {
+    "name": "a new server field joins the draft without counting as a change",
+    "base": {"setting:web.name": "A"},
+    "edits": {},
+    "now": {"setting:web.name": "A", "layer:towny": true},
+    "expect": {"values": {"layer:towny": true}, "conflicts": {}, "changed": []}
+  },
+  {
+    "name": "a world order the server changed counts as a change",
+    "base": {"world:a:enabled": true, "world:b:enabled": true, "order": ["a", "b"]},
+    "edits": {},
+    "now": {"world:a:enabled": true, "world:b:enabled": true, "order": ["b", "a"]},
+    "expect": {"values": {}, "conflicts": {}, "changed": ["order"]}
+  },
+  {
+    "name": "a world order the server only grew is no conflict",
+    "base": {"world:a:enabled": true, "world:b:enabled": true, "world:c:enabled": false, "order": ["a", "b"]},
+    "edits": {"order": ["b", "a"]},
+    "now": {"world:a:enabled": true, "world:b:enabled": true, "world:c:enabled": true, "order": ["a", "c", "b"]},
+    "expect": {"values": {}, "conflicts": {}, "changed": ["world:c:enabled"]}
+  },
+  {
+    "name": "two different reorders conflict",
+    "base": {"world:a:enabled": true, "world:b:enabled": true, "world:c:enabled": true, "order": ["a", "b", "c"]},
+    "edits": {"order": ["c", "a", "b"]},
+    "now": {"world:a:enabled": true, "world:b:enabled": true, "world:c:enabled": true, "order": ["b", "a", "c"]},
+    "authors": {"order": "Alex"},
+    "expect": {"values": {}, "conflicts": {"order": {"theirs": ["b", "a", "c"], "by": "Alex"}}, "changed": []}
+  }
+]

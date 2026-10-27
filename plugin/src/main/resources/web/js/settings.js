@@ -4,6 +4,31 @@ import {iconChooser, iconStore, MARKER} from './icons.js';
 import {mapManager} from './map.js';
 import {markerManager, privateIcon} from './markers.js';
 import {armed, disarm, element, iconButton, slide, switchInput} from './ui.js';
+import {
+    addsView,
+    badLimit,
+    isLimit,
+    isStorage,
+    isViews,
+    layerField,
+    layerIconField,
+    layerScaleField,
+    limit,
+    ORDER,
+    outOfRange,
+    parseScale,
+    rebase,
+    reshape,
+    same,
+    sameOrder,
+    scaleText,
+    settingField,
+    SHAPES,
+    STORAGE_TYPE,
+    VIEWS,
+    viewsOf,
+    worldField
+} from './settingvalues.js';
 import {wsManager} from './websocket.js';
 
 const $ = (id) => document.getElementById(id);
@@ -11,7 +36,6 @@ const $ = (id) => document.getElementById(id);
 const NOT_NAME = /[^\p{L}\p{N} _.,:'&()#!?+-]/gu;
 const STATUS_MILLIS = 6000;
 const FLASH_MILLIS = 1800;
-const ORDER = 'order';
 const SECTIONS = [
     ['worlds', []],
     ['limits', []],
@@ -52,60 +76,7 @@ const SECTIONS = [
 ];
 const ago = new Intl.RelativeTimeFormat(language, {numeric: 'auto'});
 
-const settingField = (key) => `setting:${key}`;
-const worldField = (id, part) => `world:${id}:${part}`;
-const layerField = (id) => `layer:${id}`;
-const layerIconField = (id) => `layer-icon:${id}`;
-const layerScaleField = (id) => `layer-scale:${id}`;
-const SCALE = /^(\d+)(px|blocks?)$/;
-
-function parseScale(text) {
-    const match = SCALE.exec(text ?? '');
-    const exponent = match ? Math.log2(Number(match[1])) : NaN;
-    return Number.isInteger(exponent) ? (match[2] === 'px' ? exponent : -exponent) || 0 : null;
-}
-
-const scaleText = (scale) => (scale === null ? '' : scale >= 0 ? `${2 ** scale}px` : `${2 ** -scale}blocks`);
-const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-const relative = (order, other) => (order ?? []).filter((id) => (other ?? []).includes(id));
-const sameOrder = (a, b) => same(relative(a, b), relative(b, a));
-const outOfRange = (setting, value) =>
-    setting?.kind === 'number' && !(Number.isInteger(value) && value >= setting.min && value <= setting.max);
-const SHAPES = ['none', 'circle', 'square', 'rectangle'];
-const MAX_COORDINATE = 30_000_000;
-const isLimit = (field) => field.startsWith('world:') && field.endsWith(':limit');
-const isViews = (field) => field.startsWith('world:') && field.endsWith(':views');
-const isStorage = (field) => field.startsWith('setting:storage.');
-const STORAGE_TYPE = 'setting:storage.type';
-const VIEWS = {both: ['top_down', 'isometric'], top_down: ['top_down'], isometric: ['isometric']};
-const viewsOf = (value) => VIEWS[value] ?? VIEWS.both;
-const addsView = (before, after) => viewsOf(after).some((view) => !viewsOf(before).includes(view));
-const limit = (shape, minX, minZ, maxX, maxZ) => (shape === 'none' ? {shape} : {shape, minX, minZ, maxX, maxZ});
 const coordinate = (text) => (/^-?\d+$/.test(text.trim()) ? Number(text) : null);
-
-function badLimit(value) {
-    if (!value || value.shape === 'none') {
-        return false;
-    }
-    const bounds = [value.minX, value.minZ, value.maxX, value.maxZ];
-    if (!bounds.every((bound) => Number.isInteger(bound) && Math.abs(bound) <= MAX_COORDINATE)) {
-        return true;
-    }
-    const width = value.maxX - value.minX;
-    return width < 0 || value.maxZ - value.minZ < 0 || (value.shape !== 'rectangle' && width < 2);
-}
-
-function reshape(value, shape) {
-    const known = value && value.shape !== 'none' && !badLimit(value);
-    const {minX, minZ, maxX, maxZ} = known ? value : {minX: -1000, minZ: -1000, maxX: 1000, maxZ: 1000};
-    if (shape !== 'circle' && shape !== 'square') {
-        return limit(shape, minX, minZ, maxX, maxZ);
-    }
-    const radius = Math.max(1, Math.round(Math.max(maxX - minX, maxZ - minZ) / 2));
-    const x = Math.floor((minX + maxX) / 2);
-    const z = Math.floor((minZ + maxZ) / 2);
-    return limit(shape, x - radius, z - radius, x + radius, z + radius);
-}
 
 function translated(key, fallback) {
     const text = t(key);
@@ -276,44 +247,9 @@ class SettingsDialog {
     }
 
     rebase(next) {
-        const before = this.base;
         const now = next.values;
-        const changed = new Set();
-        for (const field of new Set([...Object.keys(before), ...Object.keys(now), ...Object.keys(this.draft)])) {
-            if (!(field in now)) {
-                delete this.draft[field];
-                this.conflicts.delete(field);
-                continue;
-            }
-            if (field === ORDER) {
-                continue;
-            }
-            const mine = this.draft[field];
-            const touched = field in this.draft && !same(mine, before[field]);
-            if (!touched) {
-                if (field in before && !same(mine, now[field])) {
-                    changed.add(field);
-                }
-                this.draft[field] = structuredClone(now[field]);
-                this.conflicts.delete(field);
-            } else if (same(mine, now[field])) {
-                this.conflicts.delete(field);
-            } else if (!same(before[field], now[field])) {
-                this.conflicts.set(field, {theirs: structuredClone(now[field]), by: next.authors?.[field]?.name});
-            }
-        }
+        const changed = rebase(this, next);
         this.accept(next);
-        if (same(this.draft[ORDER], before[ORDER])) {
-            if (!sameOrder(this.draft[ORDER], now[ORDER])) {
-                changed.add(ORDER);
-            }
-            this.draft[ORDER] = structuredClone(now[ORDER]);
-            this.conflicts.delete(ORDER);
-        } else if (same(this.draft[ORDER], now[ORDER])) {
-            this.conflicts.delete(ORDER);
-        } else if (!sameOrder(before[ORDER], now[ORDER])) {
-            this.conflicts.set(ORDER, {theirs: structuredClone(now[ORDER]), by: next.authors?.[ORDER]?.name});
-        }
         this.arrange(this.draft[ORDER]);
         this.fixOrder();
         this.base = structuredClone(now);
@@ -1323,9 +1259,7 @@ class SettingsDialog {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({base: this.view.revision, changes})
             });
-        } catch {
-            response = null;
-        }
+        } catch {}
         $('settings-save').classList.remove('is-busy');
         const body =
             response && (response.status === 200 || response.status === 409)

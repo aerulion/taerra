@@ -1,7 +1,8 @@
 import {accountManager} from './account.js';
 import {MAC, numbers, t} from './i18n.js';
 import {mapManager} from './map.js';
-import {cell, freshColor, regionManager} from './regions.js';
+import {cell, regionManager} from './regions.js';
+import {freshColor} from './regioncolors.js';
 import {regionEditor} from './regioneditor.js';
 import {groundNow, markerManager, spline} from './markers.js';
 import {armed, disarm, element} from './ui.js';
@@ -287,7 +288,9 @@ class ChunkSelection {
         }
         this.points = region ? [] : (editing?.points.map(([x, , z]) => [x, z]) ?? []);
         this.smooth = editing?.smooth ?? false;
-        this.color = editing?.color ?? (region ? freshColor() : (accountManager.waypointColor() ?? DEFAULT_COLOR));
+        this.color =
+            editing?.color ??
+            (region ? freshColor(regionManager.regions) : (accountManager.waypointColor() ?? DEFAULT_COLOR));
         this.history = [];
         this.future = [];
         this.hover = null;

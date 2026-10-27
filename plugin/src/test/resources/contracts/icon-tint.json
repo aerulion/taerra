@@ -1,0 +1,10 @@
+[
+  {"name": "white pixels are tinted", "pixels": ["ffffffff", "ffffffff"], "tinted": true},
+  {"name": "black pixels are tinted", "pixels": ["ff000000"], "tinted": true},
+  {"name": "transparent pixels do not count", "pixels": ["ffffffff", "00ff0000", "00000000"], "tinted": true},
+  {"name": "half transparent white still counts as white", "pixels": ["80ffffff"], "tinted": true},
+  {"name": "white and black together are not tinted", "pixels": ["ffffffff", "ff000000"], "tinted": false},
+  {"name": "a colour is not tinted", "pixels": ["ff3ab3da"], "tinted": false},
+  {"name": "almost white is not white", "pixels": ["fffefefe"], "tinted": false},
+  {"name": "an empty icon is not tinted", "pixels": ["00000000"], "tinted": false}
+]

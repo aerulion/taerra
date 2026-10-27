@@ -1,0 +1,15 @@
+[
+  {"name": "no limit", "limit": {"shape": "none"}, "valid": true},
+  {"name": "a rectangle", "limit": {"shape": "rectangle", "minX": -5, "minZ": -5, "maxX": 5, "maxZ": 10}, "valid": true},
+  {"name": "a single block rectangle", "limit": {"shape": "rectangle", "minX": 0, "minZ": 0, "maxX": 0, "maxZ": 0}, "valid": true},
+  {"name": "a missing bound", "limit": {"shape": "rectangle", "minX": -5, "maxX": 5, "maxZ": 10}, "valid": false},
+  {"name": "an inverted rectangle", "limit": {"shape": "rectangle", "minX": 5, "minZ": 0, "maxX": -5, "maxZ": 10}, "valid": false},
+  {"name": "outside the world", "limit": {"shape": "rectangle", "minX": 0, "minZ": 0, "maxX": 30000001, "maxZ": 1}, "valid": false},
+  {"name": "a fractional bound", "limit": {"shape": "rectangle", "minX": 0, "minZ": 0, "maxX": 1.5, "maxZ": 1}, "valid": false},
+  {"name": "a circle", "limit": {"shape": "circle", "minX": -10, "minZ": -10, "maxX": 10, "maxZ": 10}, "valid": true},
+  {"name": "a circle with an odd width", "limit": {"shape": "circle", "minX": 0, "minZ": 0, "maxX": 3, "maxZ": 3}, "valid": false},
+  {"name": "a stretched circle", "limit": {"shape": "circle", "minX": 0, "minZ": 0, "maxX": 10, "maxZ": 20}, "valid": false},
+  {"name": "the smallest square", "limit": {"shape": "square", "minX": -1, "minZ": -1, "maxX": 1, "maxZ": 1}, "valid": true},
+  {"name": "a square too small", "limit": {"shape": "square", "minX": 0, "minZ": 0, "maxX": 1, "maxZ": 1}, "valid": false},
+  {"name": "an unknown shape", "limit": {"shape": "hexagon", "minX": -1, "minZ": -1, "maxX": 1, "maxZ": 1}, "valid": false}
+]

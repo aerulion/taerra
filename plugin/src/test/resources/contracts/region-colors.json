@@ -1,0 +1,11 @@
+[
+  {"name": "the first colour while no region has one", "used": [], "fresh": "#3ab3da"},
+  {"name": "the next unused colour", "used": ["#3ab3da"], "fresh": "#b02e26"},
+  {"name": "the least used colour", "used": ["#3ab3da", "#b02e26", "#3ab3da"], "fresh": "#80c71f"},
+  {"name": "colours outside the palette do not count", "used": ["#ffffff"], "fresh": "#3ab3da"},
+  {
+    "name": "back to the start once every colour is used",
+    "used": ["#3ab3da", "#b02e26", "#80c71f", "#f9801d", "#8932b8", "#fed83d", "#169c9c", "#c74ebd", "#3c44aa", "#5e7c16", "#f38baa", "#835432", "#3ab3da"],
+    "fresh": "#b02e26"
+  }
+]
