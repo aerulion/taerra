@@ -1,9 +1,7 @@
 package net.aerulion.taerra.bootstrap;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -97,6 +95,7 @@ import net.aerulion.taerra.web.player.PlayerPositionBroadcaster;
 import net.aerulion.taerra.web.player.PlayerPositionBroadcasterImpl;
 import net.aerulion.taerra.web.socket.MapWebSocketHandler;
 import net.aerulion.taerra.web.socket.MapWebSocketHandlerImpl;
+import net.aerulion.taerra.web.socket.SocketMessage;
 import net.aerulion.taerra.web.socket.TileUpdateBroadcaster;
 import net.aerulion.taerra.web.socket.TileUpdateBroadcasterImpl;
 import net.aerulion.taerra.world.Teleports;
@@ -247,7 +246,7 @@ public final class Taerra extends JavaPlugin {
       final @NotNull MapWebSocketHandler webSocketHandler =
           new MapWebSocketHandlerImpl(this, configuration, webSessions, webSettings);
       webSessions.onChange(webSocketHandler::revalidate);
-      webSessions.onDevices(uuid -> webSocketHandler.sendTo(uuid, Map.of("type", "devices")));
+      webSessions.onDevices(uuid -> webSocketHandler.sendTo(uuid, SocketMessage.DEVICES.json()));
       webSessions.onLogin(
           (session, game) ->
               Events.fire(
@@ -301,7 +300,7 @@ public final class Taerra extends JavaPlugin {
       final @NotNull MarkerIconsImpl icons =
           new MarkerIconsImpl(this, markers, new File(getDataFolder(), "icons"));
       icons.load();
-      icons.onChange(() -> webSocketHandler.broadcast("{\"type\":\"icons\"}"));
+      icons.onChange(() -> webSocketHandler.broadcast(SocketMessage.ICONS.json()));
       getServer().getPluginManager().registerEvents(icons, this);
       final @NotNull MapPlayersImpl mapPlayers = new MapPlayersImpl();
       getServer().getPluginManager().registerEvents(mapPlayers, this);
@@ -346,7 +345,7 @@ public final class Taerra extends JavaPlugin {
                       .runTaskLaterAsynchronously(
                           this, () -> onWebServer(TaerraWebServer::restart), WEB_RESTART_DELAY),
               () -> onWebServer(TaerraWebServer::refreshMarkers),
-              () -> webSocketHandler.broadcast("{\"type\":\"config\"}"));
+              () -> webSocketHandler.broadcast(SocketMessage.CONFIG.json()));
       final @NotNull ConfigEditor configEditor =
           new ConfigEditor(
               this,
@@ -359,25 +358,24 @@ public final class Taerra extends JavaPlugin {
               () -> onWebServer(TaerraWebServer::refreshMarkers),
               revision ->
                   webSocketHandler.broadcastToConfigurers(
-                      "{\"type\":\"settings\",\"revision\":" + revision + "}"),
+                      SocketMessage.SETTINGS.json("revision", revision)),
               icons::exists,
               tileStorage);
       configEditor.start();
       final @NotNull RegionEditor regionEditor =
           new RegionEditor(
-              this, regions, renders, () -> webSocketHandler.broadcast("{\"type\":\"regions\"}"));
+              this,
+              regions,
+              renders,
+              () -> webSocketHandler.broadcast(SocketMessage.REGIONS.json()));
       final @NotNull Preferences preferences = new Preferences(playerFiles);
       preferences.onNavigation(
-          (player, target) -> {
-            final @NotNull Map<String, Object> message = new HashMap<>();
-            message.put("type", "navigation");
-            message.put("target", target);
-            webSocketHandler.sendTo(player, message);
-          });
+          (player, target) ->
+              webSocketHandler.sendTo(player, SocketMessage.NAVIGATION.json("target", target)));
       preferences.onWaypointColor(
           (player, rgb) ->
               webSocketHandler.sendTo(
-                  player, Map.of("type", "waypointColor", "color", HexColors.format(rgb))));
+                  player, SocketMessage.WAYPOINT_COLOR.json("color", HexColors.format(rgb))));
       final @NotNull TaerraWebServer webServer =
           new TaerraWebServerImpl(
               this,
@@ -442,8 +440,8 @@ public final class Taerra extends JavaPlugin {
                   webSocketHandler.sendTo(
                       uuid,
                       name.isEmpty()
-                          ? Map.of("type", "regions")
-                          : Map.of("type", "regions", "discovered", name)));
+                          ? SocketMessage.REGIONS.json()
+                          : SocketMessage.REGIONS.json("discovered", name)));
       getServer()
           .getServicesManager()
           .register(

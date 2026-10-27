@@ -82,6 +82,13 @@ tasks {
         from(bundled)
     }
 
+    test {
+        inputs
+            .dir(rootProject.layout.projectDirectory.dir("mod/src/main/java"))
+            .withPropertyName("modSources")
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+    }
+
     runDevBundleServer {
         runDirectory = rootProject.layout.projectDirectory.dir("run")
         args("-wworld-${libs.versions.paper.get().substringBefore(".build").replace(".", "-")}")

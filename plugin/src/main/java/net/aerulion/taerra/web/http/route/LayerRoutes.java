@@ -9,6 +9,7 @@ import net.aerulion.taerra.player.Preferences;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.http.Requests;
 import net.aerulion.taerra.web.socket.MapWebSocketHandler;
+import net.aerulion.taerra.web.socket.SocketMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -68,7 +69,7 @@ public final class LayerRoutes implements Routes {
       ctx.status(400).result("Invalid layers");
       return;
     }
-    this.wsHandler.sendTo(viewer.uuid(), Map.of("type", "layers", "layers", layers));
+    this.wsHandler.sendTo(viewer.uuid(), SocketMessage.LAYERS.json("layers", layers));
     ctx.json(layers);
   }
 

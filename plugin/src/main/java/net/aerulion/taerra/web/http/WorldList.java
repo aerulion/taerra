@@ -17,6 +17,7 @@ import net.aerulion.taerra.region.MapRegions;
 import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.socket.MapWebSocketHandler;
+import net.aerulion.taerra.web.socket.SocketMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
@@ -70,7 +71,7 @@ public final class WorldList {
       this.publishedWorlds = worlds;
       if (this.publishedWorldsJson != null && !json.equals(this.publishedWorldsJson)) {
         this.wsHandler.revalidate();
-        this.wsHandler.broadcast("{\"type\":\"worlds\"}");
+        this.wsHandler.broadcast(SocketMessage.WORLDS.json());
       }
       this.publishedWorldsJson = json;
     } catch (final JsonProcessingException e) {

@@ -19,6 +19,7 @@ import net.aerulion.taerra.region.MapRegion;
 import net.aerulion.taerra.region.RegionVisibility;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.socket.MapWebSocketHandler;
+import net.aerulion.taerra.web.socket.SocketMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -188,7 +189,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
     this.lastSent = List.copyOf(sent);
     this.shown = Map.copyOf(shown);
     if (changed) {
-      this.wsHandler.broadcast(viewer -> "{\"type\":\"players\",\"data\":" + players(viewer) + "}");
+      this.wsHandler.broadcast(viewer -> SocketMessage.PLAYERS.withData(players(viewer)));
     }
   }
 

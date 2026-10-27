@@ -22,7 +22,7 @@ public sealed interface MapWebSocketHandler permits MapWebSocketHandlerImpl {
 
   void refreshMarkers(@NotNull UUID player);
 
-  void sendTo(@NotNull UUID player, @NotNull Object message);
+  void sendTo(@NotNull UUID player, @NotNull String message);
 
   void publishProgress(
       @Nullable String worldName, @NotNull String message, @NotNull String withoutWorld);

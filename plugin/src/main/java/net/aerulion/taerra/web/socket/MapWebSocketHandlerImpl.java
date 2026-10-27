@@ -26,8 +26,6 @@ import org.jetbrains.annotations.Nullable;
 
 public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
 
-  private static final @NotNull String ACCOUNT_CHANGED = "{\"type\":\"account\"}";
-
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig config;
   private final @NotNull WebSessions sessions;
@@ -143,9 +141,7 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
 
   private void publishEditors() {
     try {
-      broadcastToConfigurers(
-          this.mapper.writeValueAsString(
-              Map.of("type", "settings_editors", "editors", settingsEditors())));
+      broadcastToConfigurers(SocketMessage.SETTINGS_EDITORS.json("editors", settingsEditors()));
     } catch (final Exception e) {
       this.plugin.getLogger().log(Level.FINE, "Failed to send the settings editors", e);
     }
@@ -163,13 +159,7 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
   }
 
   @Override
-  public void sendTo(final @NotNull UUID player, final @NotNull Object message) {
-    final @NotNull String json;
-    try {
-      json = this.mapper.writeValueAsString(message);
-    } catch (final Exception e) {
-      return;
-    }
+  public void sendTo(final @NotNull UUID player, final @NotNull String json) {
     this.connections.forEach(
         (ctx, connection) -> {
           if (player.equals(connection.viewer().uuid())) {
@@ -179,7 +169,7 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
   }
 
   public static @NotNull String markersMessage(final @NotNull String world) {
-    return "{\"type\":\"markers\",\"world\":\"" + world + "\"}";
+    return SocketMessage.MARKERS.json("world", world);
   }
 
   @Override
@@ -212,7 +202,7 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
                   : this.sessions.viewer(connection.token());
           if (!viewer.equals(connection.viewer())) {
             this.connections.put(ctx, new Connection(connection.token(), viewer));
-            send(ctx, ACCOUNT_CHANGED);
+            send(ctx, SocketMessage.ACCOUNT.json());
             if (!viewer.canConfigure() && this.settingsClients.remove(ctx) != null) {
               publishEditors();
             }
@@ -277,7 +267,7 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
           publishEditors();
         }
       } else if ("ping".equals(type)) {
-        send(ctx, "{\"type\":\"pong\"}");
+        send(ctx, SocketMessage.PONG.json());
       }
     } catch (final Exception ignored) {
     }

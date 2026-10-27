@@ -6,6 +6,7 @@ import net.aerulion.taerra.rendering.pipeline.RenderStatusSnapshot;
 import net.aerulion.taerra.rendering.pipeline.TileGeneratorService;
 import net.aerulion.taerra.rendering.session.ManualRenderSessionSnapshot;
 import net.aerulion.taerra.storage.TileStorage;
+import net.aerulion.taerra.web.socket.SocketMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,8 +18,7 @@ public final class RenderStatsPayloadSerializer {
 
   public static @NotNull Map<String, Object> progress(
       final @NotNull RenderStatusSnapshot snapshot, final TileStorage.@Nullable Move move) {
-    final @NotNull Map<String, Object> payload = new LinkedHashMap<>();
-    payload.put("type", "progress");
+    final @NotNull Map<String, Object> payload = SocketMessage.PROGRESS.payload();
     payload.put("queued", snapshot.totalQueuedTiles());
     payload.put("inFlight", snapshot.totalInFlightTiles());
     final @NotNull ManualRenderSessionSnapshot session = snapshot.manualRenderSession();

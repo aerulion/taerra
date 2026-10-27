@@ -2,7 +2,6 @@ package net.aerulion.taerra.web.socket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -93,8 +92,7 @@ public final class TileUpdateBroadcasterImpl implements TileUpdateBroadcaster {
         continue;
       }
 
-      final @NotNull Map<String, Object> message = new HashMap<>();
-      message.put("type", "tile_updated");
+      final @NotNull Map<String, Object> message = SocketMessage.TILE_UPDATED.payload();
       message.put("world", world);
 
       if (tiles.size() > MAX_TILES_PER_MESSAGE) {

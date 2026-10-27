@@ -10,6 +10,7 @@ import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.socket.MapWebSocketHandler;
+import net.aerulion.taerra.web.socket.SocketMessage;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.clock.ClockInstance;
@@ -123,6 +124,6 @@ public final class SkyList {
       return;
     }
     this.published = Map.copyOf(skies);
-    this.wsHandler.broadcast(viewer -> "{\"type\":\"sky\",\"data\":" + visibleTo(viewer) + "}");
+    this.wsHandler.broadcast(viewer -> SocketMessage.SKY.withData(visibleTo(viewer)));
   }
 }
