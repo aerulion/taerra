@@ -16,8 +16,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.limit.WorldLimits;
@@ -27,6 +25,7 @@ import net.aerulion.taerra.model.WorldLimit;
 import net.aerulion.taerra.rendering.RenderService;
 import net.aerulion.taerra.storage.StorageSettings;
 import net.aerulion.taerra.storage.TileStorage;
+import net.aerulion.taerra.util.MainThread;
 import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.util.Throwables;
 import net.aerulion.taerra.waypoint.Waypoints;
@@ -85,7 +84,6 @@ public final class ConfigEditor {
   public static final @NotNull String VIEWS = "views";
   private static final long TRACK_INTERVAL_TICKS = 20L;
   private static final int MAX_COORDINATE = 30_000_000;
-  private static final @NotNull Pattern CONTROL = Pattern.compile("\\p{Cntrl}");
 
   private final @NotNull Plugin plugin;
   private final @NotNull TaerraConfig config;
@@ -234,7 +232,7 @@ public final class ConfigEditor {
   public @Nullable Object get(final @NotNull String key) {
     final @Nullable Object value = this.plugin.getConfig().get(key);
     final @Nullable Setting setting = setting(key);
-    return setting == null || setting.kind() != Kind.SECRET
+    return setting == null || setting.kind() != Setting.Kind.SECRET
         ? value
         : value == null || String.valueOf(value).isEmpty() ? "" : MASK;
   }
@@ -364,12 +362,13 @@ public final class ConfigEditor {
   }
 
   public @NotNull CompletableFuture<View> view() {
-    return onMainThread(this::viewNow);
+    return MainThread.supply(this.plugin, this::viewNow);
   }
 
   public @NotNull CompletableFuture<Outcome> apply(
       final long base, final @NotNull Map<String, Object> changes, final @NotNull String who) {
-    return onMainThread(
+    return MainThread.supply(
+            this.plugin,
             () -> {
               final @Nullable StorageSettings target = storageTarget(changes);
               return target == null
@@ -384,7 +383,8 @@ public final class ConfigEditor {
                     : prepare(Objects.requireNonNull(step.target()))
                         .handle(
                             (prepared, error) ->
-                                onMainThread(
+                                MainThread.supply(
+                                    this.plugin,
                                     () ->
                                         error != null
                                             ? new Unreachable(
@@ -455,21 +455,6 @@ public final class ConfigEditor {
     }
   }
 
-  private <T> @NotNull CompletableFuture<T> onMainThread(final @NotNull Supplier<T> task) {
-    final @NotNull CompletableFuture<T> result = new CompletableFuture<>();
-    Bukkit.getScheduler()
-        .runTask(
-            this.plugin,
-            () -> {
-              try {
-                result.complete(task.get());
-              } catch (final RuntimeException e) {
-                result.completeExceptionally(e);
-              }
-            });
-    return result;
-  }
-
   private @NotNull View viewNow() {
     track(null);
     final @NotNull List<SettingInfo> settings =
@@ -480,9 +465,9 @@ public final class ConfigEditor {
                         setting.key(),
                         setting.kind().name().toLowerCase(Locale.ROOT),
                         setting.editable(),
-                        setting.kind() == Kind.NUMBER ? setting.min() : null,
-                        setting.kind() == Kind.NUMBER ? setting.max() : null,
-                        setting.kind() == Kind.CHOICE ? setting.options() : null))
+                        setting.kind() == Setting.Kind.NUMBER ? setting.min() : null,
+                        setting.kind() == Setting.Kind.NUMBER ? setting.max() : null,
+                        setting.kind() == Setting.Kind.CHOICE ? setting.options() : null))
             .toList();
     final @NotNull List<WorldInfo> worlds =
         worldIds().stream()
@@ -844,38 +829,9 @@ public final class ConfigEditor {
     return worldName.contains(".") ? null : Names.of(given);
   }
 
-  private @Nullable Object valid(final @NotNull String key, final @NotNull Object value) {
+  private static @Nullable Object valid(final @NotNull String key, final @NotNull Object value) {
     final @Nullable Setting setting = setting(key);
-    if (setting == null) {
-      return null;
-    }
-    return switch (setting.kind()) {
-      case NUMBER ->
-          value instanceof final @NotNull Number number
-                  && number.doubleValue() == number.intValue()
-                  && number.intValue() >= setting.min()
-                  && number.intValue() <= setting.max()
-              ? number.intValue()
-              : null;
-      case TOGGLE -> value instanceof Boolean ? value : null;
-      case CHOICE ->
-          value instanceof final @NotNull String text && setting.options().contains(text)
-              ? text
-              : null;
-      case SECRET ->
-          value instanceof final @NotNull String text && !CONTROL.matcher(text).find()
-              ? text
-              : null;
-      case TEXT -> {
-        if (!(value instanceof final @NotNull String text) || CONTROL.matcher(text).find()) {
-          yield null;
-        }
-        if (key.equals("web.name") && !text.isBlank()) {
-          yield Names.of(text);
-        }
-        yield text.strip();
-      }
-    };
+    return setting == null ? null : setting.valid(value);
   }
 
   private void write(final @NotNull String key, final @NotNull Object value) {
@@ -894,46 +850,7 @@ public final class ConfigEditor {
     UNKNOWN_ICON
   }
 
-  public enum Kind {
-    NUMBER,
-    TOGGLE,
-    TEXT,
-    CHOICE,
-    SECRET
-  }
-
   public sealed interface Outcome permits Applied, Conflicted, Invalid, Busy, Unreachable {}
-
-  public record Setting(
-      @NotNull String key,
-      @NotNull Kind kind,
-      int min,
-      int max,
-      boolean editable,
-      @NotNull List<String> options) {
-
-    private static @NotNull Setting number(
-        final @NotNull String key, final int min, final int max, final boolean editable) {
-      return new Setting(key, Kind.NUMBER, min, max, editable, List.of());
-    }
-
-    private static @NotNull Setting text(final @NotNull String key, final boolean editable) {
-      return new Setting(key, Kind.TEXT, 0, 0, editable, List.of());
-    }
-
-    private static @NotNull Setting toggle(final @NotNull String key) {
-      return new Setting(key, Kind.TOGGLE, 0, 0, true, List.of());
-    }
-
-    private static @NotNull Setting choice(
-        final @NotNull String key, final @NotNull String @NotNull ... options) {
-      return new Setting(key, Kind.CHOICE, 0, 0, true, List.of(options));
-    }
-
-    private static @NotNull Setting secret(final @NotNull String key) {
-      return new Setting(key, Kind.SECRET, 0, 0, true, List.of());
-    }
-  }
 
   public record Change(@NotNull Effect effect, @NotNull Object value) {}
 

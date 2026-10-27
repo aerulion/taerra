@@ -11,13 +11,13 @@ import java.util.concurrent.CompletableFuture;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.util.HexColors;
+import net.aerulion.taerra.util.MainThread;
 import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.waypoint.PersonalWaypoints;
 import net.aerulion.taerra.waypoint.WaypointEditor;
 import net.aerulion.taerra.waypoint.Waypoints;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.http.Requests;
-import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
@@ -99,10 +99,6 @@ public final class WaypointRoutes implements Routes {
   }
 
   private void handleWaypointSaveRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
     final @NotNull WaypointRequest request;
     try {
@@ -183,10 +179,6 @@ public final class WaypointRoutes implements Routes {
   }
 
   private void handleWaypointDeleteRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
     final boolean personal = "true".equals(ctx.queryParam("personal"));
     if (personal ? !viewer.canKeepPersonalMarkers() : !viewer.canEditMarkers()) {
@@ -222,10 +214,6 @@ public final class WaypointRoutes implements Routes {
   }
 
   private void handlePersonalHiddenRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
     if (!viewer.canKeepPersonalMarkers()) {
       ctx.status(403).result("Not allowed");
@@ -244,14 +232,11 @@ public final class WaypointRoutes implements Routes {
       ctx.status(400).result("Invalid request");
       return;
     }
-    final @NotNull CompletableFuture<Integer> result = new CompletableFuture<>();
-    Bukkit.getScheduler()
-        .runTask(
+    final @NotNull CompletableFuture<Integer> result =
+        MainThread.supply(
             this.plugin,
             () ->
-                result.complete(
-                    this.personalWaypoints.setHidden(
-                        viewer.uuid(), request.names(), request.hidden())));
+                this.personalWaypoints.setHidden(viewer.uuid(), request.names(), request.hidden()));
     ctx.future(
         () ->
             result.thenAccept(
@@ -260,10 +245,6 @@ public final class WaypointRoutes implements Routes {
   }
 
   private void handlePersonalImportRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
     if (!viewer.canKeepPersonalMarkers()) {
       ctx.status(403).result("Not allowed");
@@ -283,9 +264,8 @@ public final class WaypointRoutes implements Routes {
       ctx.status(400).result("Invalid file");
       return;
     }
-    final @NotNull CompletableFuture<Map<String, Object>> result = new CompletableFuture<>();
-    Bukkit.getScheduler()
-        .runTask(
+    final @NotNull CompletableFuture<Map<String, Object>> result =
+        MainThread.supply(
             this.plugin,
             () -> {
               final @NotNull List<PersonalWaypoints.Saved> valid = new ArrayList<>();
@@ -305,14 +285,13 @@ public final class WaypointRoutes implements Routes {
               }
               final PersonalWaypoints.@Nullable Imported imported =
                   this.personalWaypoints.importAll(viewer.uuid(), valid, replace);
-              result.complete(
-                  imported == null
-                      ? null
-                      : Map.of(
-                          "added", imported.added(),
-                          "taken", imported.taken(),
-                          "full", imported.full(),
-                          "invalid", invalid));
+              return imported == null
+                  ? null
+                  : Map.<String, Object>of(
+                      "added", imported.added(),
+                      "taken", imported.taken(),
+                      "full", imported.full(),
+                      "invalid", invalid);
             });
     ctx.future(
         () ->

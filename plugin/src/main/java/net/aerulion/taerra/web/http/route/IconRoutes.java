@@ -117,10 +117,6 @@ public final class IconRoutes implements Routes {
   }
 
   private @Nullable Viewer manager(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return null;
-    }
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
     if (!viewer.canEditIcons()) {
       ctx.status(403).result("Not allowed");

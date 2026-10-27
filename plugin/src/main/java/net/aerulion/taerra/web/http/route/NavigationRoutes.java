@@ -60,7 +60,7 @@ public final class NavigationRoutes implements Routes {
 
   private void handleNavigationSaveRequest(final @NotNull Context ctx) {
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
-    if (!Requests.sameOrigin(ctx) || viewer.uuid() == null) {
+    if (viewer.uuid() == null) {
       ctx.status(403).result("Not allowed");
       return;
     }
@@ -104,7 +104,7 @@ public final class NavigationRoutes implements Routes {
 
   private void handleNavigationDeleteRequest(final @NotNull Context ctx) {
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
-    if (!Requests.sameOrigin(ctx) || viewer.uuid() == null) {
+    if (viewer.uuid() == null) {
       ctx.status(403).result("Not allowed");
       return;
     }

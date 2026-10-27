@@ -6,6 +6,7 @@ import net.aerulion.taerra.api.event.web.WebTeleportEvent;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.permission.TaerraPermission;
+import net.aerulion.taerra.util.MainThread;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -30,28 +31,21 @@ public final class Teleports {
       final @Nullable Integer y,
       final int z,
       final boolean announce) {
-    final @NotNull CompletableFuture<Outcome> result = new CompletableFuture<>();
-    this.plugin
-        .getServer()
-        .getScheduler()
-        .runTask(
+    return MainThread.compose(
             this.plugin,
             () -> {
               final @Nullable Player player = this.plugin.getServer().getPlayer(uuid);
               final @Nullable World world = WorldKeys.resolve(worldName);
               if (player == null) {
-                result.complete(Outcome.OFFLINE);
-                return;
+                return CompletableFuture.completedFuture(Outcome.OFFLINE);
               }
               if (!TaerraPermission.TELEPORT.check(player) || world == null) {
-                result.complete(Outcome.FORBIDDEN);
-                return;
+                return CompletableFuture.completedFuture(Outcome.FORBIDDEN);
               }
               if (!WorldPositions.insideBorder(world, x, z)) {
-                result.complete(Outcome.OUTSIDE_BORDER);
-                return;
+                return CompletableFuture.completedFuture(Outcome.OUTSIDE_BORDER);
               }
-              WorldPositions.clearY(world, x, y, z)
+              return WorldPositions.clearY(world, x, y, z)
                   .thenCompose(
                       feet -> {
                         final @NotNull Location to =
@@ -73,12 +67,9 @@ public final class Teleports {
                                   }
                                   return teleported ? Outcome.TELEPORTED : Outcome.REFUSED;
                                 });
-                      })
-                  .whenComplete(
-                      (outcome, error) ->
-                          result.complete(error == null ? outcome : Outcome.FAILED));
-            });
-    return result;
+                      });
+            })
+        .exceptionally(error -> Outcome.FAILED);
   }
 
   public enum Outcome {

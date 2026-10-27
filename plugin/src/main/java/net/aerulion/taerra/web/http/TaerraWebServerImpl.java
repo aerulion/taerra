@@ -161,6 +161,7 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                 config.bundledPlugins.enableCors(
                     cors -> cors.addRule(CorsPluginConfig.CorsRule::anyHost));
 
+                config.routes.before("/api/*", Requests::rejectCrossSite);
                 this.routes.forEach(group -> group.register(config.routes));
                 config.routes.ws("/ws", this.wsHandler::configure);
               });

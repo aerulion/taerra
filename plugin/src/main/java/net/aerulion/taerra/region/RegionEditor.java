@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 import net.aerulion.taerra.api.event.region.RegionChangeEvent;
 import net.aerulion.taerra.api.event.region.RegionCreateEvent;
 import net.aerulion.taerra.api.event.region.RegionDeleteEvent;
@@ -15,7 +14,7 @@ import net.aerulion.taerra.api.event.region.RegionResetEvent;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.rendering.RenderService;
 import net.aerulion.taerra.util.Events;
-import org.bukkit.Bukkit;
+import net.aerulion.taerra.util.MainThread;
 import org.bukkit.World;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.Plugin;
@@ -63,7 +62,8 @@ public final class RegionEditor {
       return CompletableFuture.completedFuture(Problem.SPLIT);
     }
     final @NotNull LongSet painted = new LongOpenHashSet(chunks);
-    return onMainThread(
+    return MainThread.supply(
+        this.plugin,
         () -> {
           final @Nullable World world = WorldKeys.resolve(worldName);
           if (world == null) {
@@ -113,7 +113,8 @@ public final class RegionEditor {
   }
 
   public @NotNull CompletableFuture<Result> delete(final @NotNull UUID id) {
-    return onMainThread(
+    return MainThread.supply(
+        this.plugin,
         () -> {
           synchronized (this) {
             final @Nullable MapRegion region = this.regions.get(id);
@@ -201,21 +202,6 @@ public final class RegionEditor {
       }
     }
     return changed;
-  }
-
-  private <T> @NotNull CompletableFuture<T> onMainThread(final @NotNull Supplier<T> task) {
-    final @NotNull CompletableFuture<T> result = new CompletableFuture<>();
-    Bukkit.getScheduler()
-        .runTask(
-            this.plugin,
-            () -> {
-              try {
-                result.complete(task.get());
-              } catch (final RuntimeException e) {
-                result.completeExceptionally(e);
-              }
-            });
-    return result;
   }
 
   public sealed interface Result permits Problem, Saved {}

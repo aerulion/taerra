@@ -9,6 +9,7 @@ import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.player.Preferences;
+import net.aerulion.taerra.util.MainThread;
 import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.world.WorldPositions;
 import org.bukkit.Color;
@@ -105,59 +106,42 @@ public final class WaypointEditor {
                 : groupId == null ? Waypoints.LAYER : groupId)) {
       return CompletableFuture.completedFuture(Result.FORBIDDEN);
     }
-    final @NotNull CompletableFuture<Result> result = new CompletableFuture<>();
-    this.plugin
-        .getServer()
-        .getScheduler()
-        .runTask(
+    return MainThread.compose(
             this.plugin,
             () -> {
               final @Nullable World world = WorldKeys.resolve(draft.world());
               final @Nullable CompletableFuture<Marker> shaped =
                   world == null ? null : shape(world, draft);
               if (shaped == null) {
-                result.complete(Result.INVALID);
-                return;
+                return CompletableFuture.completedFuture(Result.INVALID);
               }
-              shaped
-                  .thenAccept(
-                      marker -> {
-                        final @NotNull Result stored =
-                            store(
-                                marker
-                                    .withColor(Color.fromRGB(draft.rgb()))
-                                    .withDescription(Names.description(draft.description())),
-                                draft,
-                                groupId,
-                                author);
-                        if (stored == Result.SAVED && author.uuid() != null) {
-                          this.preferences.rememberWaypointColor(author.uuid(), draft.rgb());
-                        }
-                        result.complete(stored);
-                      })
-                  .exceptionally(
-                      error -> {
-                        result.complete(Result.FAILED);
-                        return null;
-                      });
-            });
-    return result;
+              return shaped.thenApply(
+                  marker -> {
+                    final @NotNull Result stored =
+                        store(
+                            marker
+                                .withColor(Color.fromRGB(draft.rgb()))
+                                .withDescription(Names.description(draft.description())),
+                            draft,
+                            groupId,
+                            author);
+                    if (stored == Result.SAVED && author.uuid() != null) {
+                      this.preferences.rememberWaypointColor(author.uuid(), draft.rgb());
+                    }
+                    return stored;
+                  });
+            })
+        .exceptionally(error -> Result.FAILED);
   }
 
   public @NotNull CompletableFuture<Boolean> delete(
       final @NotNull String name, final boolean personal, final @NotNull Author author) {
-    final @NotNull CompletableFuture<Boolean> result = new CompletableFuture<>();
-    this.plugin
-        .getServer()
-        .getScheduler()
-        .runTask(
-            this.plugin,
-            () ->
-                result.complete(
-                    personal
-                        ? this.personal.remove(author.uuid(), name)
-                        : mayEdit(author, name) && this.waypoints.remove(name)));
-    return result;
+    return MainThread.supply(
+        this.plugin,
+        () ->
+            personal
+                ? this.personal.remove(author.uuid(), name)
+                : mayEdit(author, name) && this.waypoints.remove(name));
   }
 
   @NotNull

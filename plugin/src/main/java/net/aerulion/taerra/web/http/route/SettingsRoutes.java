@@ -70,10 +70,6 @@ public final class SettingsRoutes implements Routes {
 
   private void handleSettingsSaveRequest(final @NotNull Context ctx) {
     ctx.header("Cache-Control", "no-store");
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final @Nullable Viewer viewer = configurer(ctx);
     if (viewer == null) {
       return;

@@ -1,7 +1,9 @@
 package net.aerulion.taerra.web.http;
 
 import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
 import java.net.URI;
+import java.util.Set;
 import java.util.function.Function;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.web.auth.Viewer;
@@ -10,6 +12,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class Requests {
+
+  private static final @NotNull Set<HandlerType> SAFE_METHODS =
+      Set.of(HandlerType.GET, HandlerType.HEAD, HandlerType.OPTIONS);
 
   private final @NotNull WebSessions sessions;
   private final @NotNull TaerraConfig config;
@@ -20,8 +25,10 @@ public final class Requests {
     this.config = config;
   }
 
-  public static boolean sameOrigin(final @NotNull Context ctx) {
-    return sameOrigin(ctx::header, "");
+  public static void rejectCrossSite(final @NotNull Context ctx) {
+    if (!SAFE_METHODS.contains(ctx.method()) && !sameOrigin(ctx::header, "")) {
+      ctx.status(403).result("Cross-site request").skipRemainingHandlers();
+    }
   }
 
   public static boolean sameOrigin(

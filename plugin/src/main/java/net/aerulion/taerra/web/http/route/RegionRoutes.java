@@ -132,10 +132,6 @@ public final class RegionRoutes implements Routes {
   }
 
   private boolean mayEdit(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return false;
-    }
     if (!this.requests.viewer(ctx).canEditRegions()) {
       ctx.status(403).result("Not allowed");
       return false;

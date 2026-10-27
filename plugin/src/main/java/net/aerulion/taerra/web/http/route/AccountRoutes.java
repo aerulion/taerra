@@ -135,10 +135,6 @@ public final class AccountRoutes implements Routes {
   }
 
   private void handleDeviceLogoutRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final @Nullable String token = ctx.cookie(WebSessions.COOKIE);
     final WebSessions.@Nullable Session session = this.sessions.session(token);
     if (session == null) {
@@ -159,10 +155,6 @@ public final class AccountRoutes implements Routes {
   }
 
   private void handleLoginRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final WebSessions.@Nullable Login login =
         this.sessions.redeem(ctx.body().strip(), Device.of(ctx.userAgent()));
     if (login == null) {
@@ -173,10 +165,6 @@ public final class AccountRoutes implements Routes {
   }
 
   private void handlePairRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final WebSessions.@NotNull Pair pair = this.sessions.pair();
     ctx.header("Cache-Control", "no-store")
         .json(
@@ -187,10 +175,6 @@ public final class AccountRoutes implements Routes {
   }
 
   private void handleClaimRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final WebSessions.@Nullable Claim claim =
         this.sessions.claim(ctx.body().strip(), Device.of(ctx.userAgent()));
     if (claim == null) {
@@ -203,10 +187,6 @@ public final class AccountRoutes implements Routes {
   }
 
   private void handleLinkRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final @Nullable String code = this.sessions.linkCode(ctx.cookie(WebSessions.COOKIE));
     if (code == null) {
       ctx.status(403).result("Not allowed");
@@ -248,10 +228,6 @@ public final class AccountRoutes implements Routes {
   }
 
   private void handleLogoutRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     this.sessions.end(ctx.cookie(WebSessions.COOKIE));
     ctx.removeCookie(WebSessions.COOKIE, "/");
     ctx.status(204);

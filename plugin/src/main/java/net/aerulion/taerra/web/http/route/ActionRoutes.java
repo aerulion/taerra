@@ -12,6 +12,7 @@ import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.model.ChunkCoordinate;
 import net.aerulion.taerra.model.WorldKeys;
 import net.aerulion.taerra.rendering.RenderService;
+import net.aerulion.taerra.util.MainThread;
 import net.aerulion.taerra.web.auth.ModHandshake;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.auth.WebSessions;
@@ -63,10 +64,6 @@ public final class ActionRoutes implements Routes {
   }
 
   private void handleTeleportRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
     final @Nullable UUID uuid = viewer.uuid();
     if (uuid == null) {
@@ -105,10 +102,6 @@ public final class ActionRoutes implements Routes {
   }
 
   private void handleAreaRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
     final @NotNull AreaRequest request;
     try {
@@ -135,35 +128,28 @@ public final class ActionRoutes implements Routes {
         request.chunks().stream()
             .map(chunk -> ChunkCoordinate.key(chunk[0], chunk[1]))
             .collect(Collectors.toUnmodifiableSet());
-    final @NotNull CompletableFuture<Integer> result = new CompletableFuture<>();
-    Bukkit.getScheduler()
-        .runTask(
+    final @NotNull CompletableFuture<Integer> result =
+        MainThread.supply(
             this.plugin,
             () -> {
               final @Nullable World world = WorldKeys.resolve(request.world());
               if (world == null) {
-                result.complete(400);
-                return;
+                return 400;
               }
               final @Nullable Player player =
                   viewer.uuid() == null ? null : Bukkit.getPlayer(viewer.uuid());
-              result.complete(
-                  this.renderFeedback.report(
-                          player == null ? Audience.empty() : player,
-                          WorldKeys.id(world),
-                          RenderFeedback.area(chunks.size()),
-                          this.renders.area(world, chunks))
-                      ? 202
-                      : 409);
+              return this.renderFeedback.report(
+                      player == null ? Audience.empty() : player,
+                      WorldKeys.id(world),
+                      RenderFeedback.area(chunks.size()),
+                      this.renders.area(world, chunks))
+                  ? 202
+                  : 409;
             });
     ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
   }
 
   private void handleRenderRequest(final @NotNull Context ctx) {
-    if (!Requests.sameOrigin(ctx)) {
-      ctx.status(403).result("Cross-site request");
-      return;
-    }
     final @NotNull Viewer viewer = this.requests.viewer(ctx);
     final @NotNull RenderRequest request;
     try {
@@ -185,36 +171,31 @@ public final class ActionRoutes implements Routes {
     }
     final WebSessions.@Nullable Session session = this.requests.session(ctx);
     final @NotNull String who = session != null ? session.name() : viewer.uuid().toString();
-    final @NotNull CompletableFuture<Integer> result = new CompletableFuture<>();
-    Bukkit.getScheduler()
-        .runTask(
+    final @NotNull CompletableFuture<Integer> result =
+        MainThread.supply(
             this.plugin,
             () -> {
               final @Nullable World world = WorldKeys.resolve(request.world());
               if (world == null) {
-                result.complete(400);
-                return;
+                return 400;
               }
               final @Nullable Player player = Bukkit.getPlayer(viewer.uuid());
               final @NotNull Audience audience = player == null ? Audience.empty() : player;
               if (!cancel) {
-                result.complete(
-                    this.renderFeedback.report(
-                            audience,
-                            WorldKeys.id(world),
-                            RenderFeedback.full(),
-                            this.renders.full(world))
-                        ? 202
-                        : 409);
-                return;
+                return this.renderFeedback.report(
+                        audience,
+                        WorldKeys.id(world),
+                        RenderFeedback.full(),
+                        this.renders.full(world))
+                    ? 202
+                    : 409;
               }
               if (!WorldKeys.id(world).equals(this.renders.rendering())) {
-                result.complete(409);
-                return;
+                return 409;
               }
               final RenderService.@NotNull Stop stop = this.renders.cancel("Canceled by " + who);
               audience.sendMessage(RenderFeedback.canceled(stop));
-              result.complete(stop.idle() ? 409 : 204);
+              return stop.idle() ? 409 : 204;
             });
     ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
   }

@@ -18,6 +18,7 @@ import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.chat.RenderFeedback;
 import net.aerulion.taerra.config.ConfigEditor;
 import net.aerulion.taerra.config.LayerScale;
+import net.aerulion.taerra.config.Setting;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.icon.MarkerIconsImpl;
 import net.aerulion.taerra.model.MapViews;
@@ -40,7 +41,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
     return context.getSource().getSender().getName();
   }
 
-  private static @NotNull ArgumentType<?> type(final ConfigEditor.@NotNull Setting setting) {
+  private static @NotNull ArgumentType<?> type(final @NotNull Setting setting) {
     return switch (setting.kind()) {
       case NUMBER -> IntegerArgumentType.integer(setting.min(), setting.max());
       case TOGGLE -> BoolArgumentType.bool();
@@ -255,7 +256,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
     lines.add(listRow("config.private_players", this.config.privatePlayers()));
     lines.add(listRow("config.private_layers", this.config.privateLayers()));
     ConfigEditor.SETTINGS.stream()
-        .map(ConfigEditor.Setting::key)
+        .map(Setting::key)
         .forEach(
             key ->
                 lines.add(
