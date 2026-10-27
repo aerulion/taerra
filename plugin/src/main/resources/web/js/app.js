@@ -366,7 +366,7 @@ function syncViewControls() {
         const view = button.dataset.view === 'iso' ? 'isometric' : 'top_down';
         button.setAttribute('aria-pressed', String((button.dataset.view === 'iso') === mapManager.isIsometric()));
         button.disabled = !shownViews().includes(view);
-        button.title = button.disabled ? t('view.unavailable', {view: button.textContent.trim()}) : '';
+        button.title = button.disabled ? t('view.unavailable') : '';
     }
     $('rotation-controls').hidden = !mapManager.isIsometric();
     const compassLabel = mapManager.isIsometric() ? t('compass.rotate') : t('compass');

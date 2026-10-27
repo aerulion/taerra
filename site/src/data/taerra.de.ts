@@ -193,12 +193,12 @@ export const de: Copy = {
                         title: 'WorldGuard',
                         text: 'Regionen als Ebene, nur für dein Team, solange du sie nicht freigibst.'
                     },
-                    {title: 'Towny', text: 'Städte als Ebene, jede mit Bürgermeister, Nation und Einwohnern.'},
+                    {title: 'Towny', text: 'Städte als Ebene, jede mit Bürgermeister:in, Nation und Einwohner:innen.'},
                     {
                         title: 'GriefPrevention',
                         text: 'Claims als Ebene, nur für dein Team, solange du sie nicht freigibst.'
                     },
-                    {title: 'PlotSquared', text: 'Vergebene Plots als Ebene, jeder mit Besitzern und Mitgliedern.'},
+                    {title: 'PlotSquared', text: 'Vergebene Plots als Ebene, jeder mit Besitzer:innen und Mitgliedern.'},
                     {
                         title: 'Weltbarrieren',
                         text: 'Die Weltbarriere aus Vanilla und die Grenzen von ChunkyBorder als Ebene.'
@@ -338,7 +338,7 @@ export const de: Copy = {
     reference: {
         kicker: 'Referenz',
         title: 'Befehle und Berechtigungen',
-        lede: 'Alles läuft über /taerra. Die Berechtigungen funktionieren mit LuckPerms oder jedem anderen Berechtigungs-Plugin, und jede private Welt, Ebene und Welt mit privaten Positionen bekommt ihre eigene. Mit LuckPerms kommen Änderungen sofort auf der Karte an, auch bei Spielern, die gerade offline sind.',
+        lede: 'Alles läuft über /taerra. Die Berechtigungen funktionieren mit LuckPerms oder jedem anderen Berechtigungs-Plugin, und jede private Welt, Ebene und Welt mit privaten Positionen bekommt ihre eigene. Mit LuckPerms kommen Änderungen sofort auf der Karte an, auch bei Spieler:innen, die gerade offline sind.',
         commands: {
             title: 'Befehle',
             head: ['Befehl', 'Was er tut'],
