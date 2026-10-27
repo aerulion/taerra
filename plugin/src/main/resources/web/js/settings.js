@@ -1,7 +1,8 @@
 import {accountManager, FALLBACK_AVATAR} from './account.js';
 import {language, numbers, plurals, t} from './i18n.js';
 import {iconChooser, iconStore, MARKER} from './icons.js';
-import {privateIcon} from './markers.js';
+import {mapManager} from './map.js';
+import {markerManager, privateIcon} from './markers.js';
 import {armed, disarm, element, iconButton, slide, switchInput} from './ui.js';
 import {wsManager} from './websocket.js';
 
@@ -33,6 +34,16 @@ const settingField = (key) => `setting:${key}`;
 const worldField = (id, part) => `world:${id}:${part}`;
 const layerField = (id) => `layer:${id}`;
 const layerIconField = (id) => `layer-icon:${id}`;
+const layerScaleField = (id) => `layer-scale:${id}`;
+const SCALE = /^(\d+)(px|blocks?)$/;
+
+function parseScale(text) {
+    const match = SCALE.exec(text ?? '');
+    const exponent = match ? Math.log2(Number(match[1])) : NaN;
+    return Number.isInteger(exponent) ? (match[2] === 'px' ? exponent : -exponent) || 0 : null;
+}
+
+const scaleText = (scale) => scale === null ? '' : scale >= 0 ? `${2 ** scale}px` : `${2 ** -scale}blocks`;
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 const relative = (order, other) => (order ?? []).filter(id => (other ?? []).includes(id));
 const sameOrder = (a, b) => same(relative(a, b), relative(b, a));
@@ -120,9 +131,13 @@ class SettingsDialog {
         this.highlight = null;
         this.loading = null;
         this.reload = false;
+        this.worlds = () => [];
+        this.scaleOpen = null;
+        this.scaleZoom = 0;
     }
 
-    initialize() {
+    initialize(worlds) {
+        this.worlds = worlds;
         $('settings-open').addEventListener('click', () => void this.open());
         iconStore.onChange(() => this.dialog.open && this.draft && this.render());
         this.dialog.addEventListener('cancel', (event) => {
@@ -131,6 +146,7 @@ class SettingsDialog {
             }
         });
         this.dialog.addEventListener('close', () => {
+            this.closeScale();
             wsManager.send({type: 'settings', open: false});
             this.disarm();
             this.view = null;
@@ -355,6 +371,9 @@ class SettingsDialog {
         if (field.startsWith('layer-icon:')) {
             return `${this.label(layerField(field.slice('layer-icon:'.length)))}: ${t('settings.layerIcon')}`;
         }
+        if (field.startsWith('layer-scale:')) {
+            return `${this.label(layerField(field.slice('layer-scale:'.length)))}: ${t('settings.layerScale')}`;
+        }
         const key = field.startsWith('setting:') ? field.slice('setting:'.length) : field;
         return translated(`settings.${key}`, key);
     }
@@ -375,6 +394,9 @@ class SettingsDialog {
         }
         if (field.startsWith('layer-icon:')) {
             return value ? iconStore.label(value) || value : t('icons.default');
+        }
+        if (field.startsWith('layer-scale:')) {
+            return this.describeScale(parseScale(value));
         }
         if (value === '' || value === null || value === undefined) {
             return t('settings.default');
@@ -903,7 +925,8 @@ class SettingsDialog {
     layerRow(layer) {
         const field = layerField(layer.id);
         const iconField = layerIconField(layer.id);
-        const fields = [field, iconField];
+        const scaleField = layerScaleField(layer.id);
+        const fields = [field, iconField, scaleField];
         const row = element('label', 'row row--action settings__row settings__layer');
         row.dataset.fields = fields.join(' ');
         row.title = fields.map(each => this.changedBy(each)).filter(Boolean)[0] ?? '';
@@ -938,9 +961,134 @@ class SettingsDialog {
             }
             this.dialog.querySelector(`[data-field="${CSS.escape(iconField)}"]`)?.focus();
         });
-        row.append(text, wrap, choose);
+        const scale = element('button', 'settings__scale-button',
+            this.format(scaleField, this.draft[scaleField]));
+        scale.type = 'button';
+        scale.dataset.field = `${scaleField}:open`;
+        scale.title = t('settings.layerScale');
+        scale.setAttribute('aria-label', `${title.textContent}, ${t('settings.layerScale')}: ${scale.textContent}`);
+        scale.setAttribute('aria-expanded', String(this.scaleOpen === layer.id));
+        scale.addEventListener('click', (event) => {
+            event.preventDefault();
+            this.toggleScale(layer.id);
+            this.dialog.querySelector(`[data-field="${CSS.escape(`${scaleField}:open`)}"]`)?.focus();
+        });
+        row.append(text, wrap, scale, choose);
+        const rows = [row];
+        if (this.scaleOpen === layer.id) {
+            rows.push(this.scalePanel(layer, scaleField, title.textContent, row, scale));
+        }
         const conflict = this.conflict(...fields);
-        return conflict ? [row, conflict] : [row];
+        return conflict ? [...rows, conflict] : rows;
+    }
+
+    describeScale(scale) {
+        if (scale === null) {
+            return t('settings.layerScale.always');
+        }
+        return scale >= 0 ? t('settings.layerScale.pixels', {pixels: numbers.format(2 ** scale)})
+            : t('settings.layerScale.blocks', {blocks: numbers.format(2 ** -scale)});
+    }
+
+    scaleStops(value) {
+        const {far, close} = mapManager.scaleRange(this.worlds());
+        const current = parseScale(value);
+        const from = Math.min(far + 1, close, current ?? Infinity);
+        const to = Math.max(close, current ?? -Infinity);
+        return [null, ...Array.from({length: to - from + 1}, (_, index) => from + index)];
+    }
+
+    toggleScale(id) {
+        const open = this.scaleOpen !== id;
+        this.closeScale();
+        if (open) {
+            this.scaleOpen = id;
+            this.scaleZoom = mapManager.getMap().getZoom();
+        }
+        this.render();
+    }
+
+    closeScale() {
+        if (this.scaleOpen === null) {
+            return;
+        }
+        this.scaleOpen = null;
+        this.dialog.classList.remove('is-peeking');
+        markerManager.previewScale(null);
+        mapManager.getMap().setZoom(this.scaleZoom, {animate: false});
+    }
+
+    peekScale(id, scale) {
+        markerManager.previewScale(id, scale);
+        mapManager.getMap().setZoom(scale === null ? mapManager.activeMinZoom() : mapManager.zoomForScale(scale),
+            {animate: false});
+    }
+
+    scalePanel(layer, field, title, row, button) {
+        const stops = this.scaleStops(this.draft[field]);
+        const panel = element('div', 'row settings__row settings__row--sub settings__scale');
+        panel.dataset.fields = field;
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.className = 'settings__slider';
+        slider.dataset.field = field;
+        slider.min = '0';
+        slider.max = String(stops.length - 1);
+        slider.step = '1';
+        slider.value = String(Math.max(0, stops.indexOf(parseScale(this.draft[field]))));
+        slider.setAttribute('aria-label', t('settings.layerScaleTitle', {layer: title}));
+        slider.style.setProperty('--steps', String(stops.length - 1));
+        const fill = () => slider.style.setProperty('--at', String(Number(slider.value) / (stops.length - 1)));
+        fill();
+        const shown = element('output', 'settings__scale-value');
+        const choose = (scale) => {
+            fill();
+            const text = this.describeScale(scale);
+            shown.textContent = text;
+            button.textContent = text;
+            slider.setAttribute('aria-valuetext', text);
+            this.set(field, scaleText(scale));
+            row.classList.toggle('is-changed',
+                [layerField(layer.id), layerIconField(layer.id), field]
+                    .some(each => !same(this.draft[each], this.base[each])));
+            this.peekScale(layer.id, scale);
+        };
+        shown.textContent = this.describeScale(stops[Number(slider.value)]);
+        slider.setAttribute('aria-valuetext', shown.textContent);
+        slider.addEventListener('input', () => choose(stops[Number(slider.value)]));
+        slider.addEventListener('pointerdown', () => {
+            this.dialog.classList.add('is-peeking');
+            const done = () => {
+                this.dialog.classList.remove('is-peeking');
+                removeEventListener('pointerup', done);
+                removeEventListener('pointercancel', done);
+            };
+            addEventListener('pointerup', done);
+            addEventListener('pointercancel', done);
+        });
+        slider.addEventListener('keydown', (event) => event.key !== 'Tab' && this.dialog.classList.add('is-peeking'));
+        for (const type of ['keyup', 'blur']) {
+            slider.addEventListener(type, () => this.dialog.classList.remove('is-peeking'));
+        }
+        const ends = element('span', 'settings__scale-ends');
+        ends.append(element('span', '', t('settings.layerScale.always')),
+            element('span', '', t('settings.layerScale.closest')));
+        const track = element('span', 'settings__scale-track');
+        track.append(slider, ends);
+        const here = element('button', 'btn btn--small', t('settings.layerScale.useMap'));
+        here.type = 'button';
+        here.addEventListener('click', () => {
+            const scale = Math.floor(mapManager.scaleAt(this.scaleZoom));
+            const index = scale < stops[1] ? 0 : Math.min(stops.length - 1, stops.indexOf(scale));
+            slider.value = String(index < 0 ? stops.length - 1 : index);
+            choose(stops[Number(slider.value)]);
+        });
+        const head = element('div', 'settings__scale-head');
+        const label = element('span', 'settings__scale-label', t('settings.layerScale'));
+        label.append(shown);
+        head.append(label, track);
+        panel.append(head, element('span', 'hint', t('settings.layerScale.hint')), here);
+        return panel;
     }
 
     changes() {

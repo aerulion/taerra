@@ -154,7 +154,8 @@ class SearchPalette {
             run: () => {
                 this.app.selectWorld(world.name);
                 const [x, y, z] = center(marker);
-                mapManager.centerOnBlock(Math.floor(x), Math.floor(z), Math.max(mapManager.getMap().getZoom(), 2),
+                mapManager.centerOnBlock(Math.floor(x), Math.floor(z), Math.max(mapManager.getMap().getZoom(), 2,
+                    markerManager.revealZoom(layer)),
                     Number.isFinite(y) ? Math.floor(y) : undefined);
                 markerManager.reveal(layer.id, marker.id);
             }

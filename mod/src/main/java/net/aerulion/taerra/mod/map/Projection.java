@@ -1,6 +1,8 @@
 package net.aerulion.taerra.mod.map;
 
+import java.util.List;
 import net.aerulion.taerra.mod.web.model.MapConfig;
+import net.aerulion.taerra.mod.web.model.World;
 import org.jetbrains.annotations.NotNull;
 
 public record Projection(boolean isometric, int rotation, double unitsPerBlock, int blockWidth) {
@@ -18,6 +20,42 @@ public record Projection(boolean isometric, int rotation, double unitsPerBlock, 
           / Math.log(2);
     }
     return Math.log(config.tileSize() / tileUnits(config.maxZoom()) * guiScale) / Math.log(2);
+  }
+
+  public static int viewOffset(final @NotNull MapConfig config) {
+    final double isoBlock = isometric(config, 0).unitsPerBlock() * config.isometric().blockWidth();
+    return (int) Math.round(Math.log(isoBlock / topDown(config).unitsPerBlock()) / Math.log(2));
+  }
+
+  public static double scale(
+      final @NotNull MapConfig config, final boolean isometric, final double zoom) {
+    return zoom
+        + Math.log(topDown(config).unitsPerBlock()) / Math.log(2)
+        + (isometric ? viewOffset(config) : 0);
+  }
+
+  public static double zoomFor(
+      final @NotNull MapConfig config, final boolean isometric, final int scale) {
+    return scale - scale(config, isometric, 0);
+  }
+
+  public static int @NotNull [] scaleRange(
+      final @NotNull MapConfig config, final @NotNull List<World> worlds) {
+    int far = Integer.MAX_VALUE;
+    int close = Integer.MAX_VALUE;
+    for (final @NotNull World world : worlds) {
+      if (world.shows(false)) {
+        far = Math.min(far, (int) scale(config, false, world.minZoom(config, false, 0)));
+        close = Math.min(close, (int) scale(config, false, config.maxZoom()));
+      }
+      if (world.shows(true)) {
+        for (int rotation = 0; rotation < world.depth().isometric().length; rotation++) {
+          far = Math.min(far, (int) scale(config, true, world.minZoom(config, true, rotation)));
+        }
+        close = Math.min(close, (int) scale(config, true, config.isometric().maxZoom()));
+      }
+    }
+    return close == Integer.MAX_VALUE ? new int[] {-4, 2} : new int[] {far, close};
   }
 
   public static @NotNull Projection topDown(final @NotNull MapConfig config) {

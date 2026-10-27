@@ -49,6 +49,18 @@ class TaerraConfigTest {
   }
 
   @Test
+  @DisplayName("layer scales are read back from config.yml as they were written")
+  void layerScalesRoundTrip() throws InvalidConfigurationException {
+    final Map<String, Integer> scales = Map.of("waypoints.shops", 2, "towny", -3, "spawn", 0);
+    final YamlConfiguration written = new YamlConfiguration();
+    written.set("markers.layer-scales", TaerraConfig.layerScaleEntries(scales));
+    final YamlConfiguration read = new YamlConfiguration();
+    read.loadFromString(written.saveToString());
+
+    assertEquals(scales, TaerraConfig.layerScales(read.getMapList("markers.layer-scales")));
+  }
+
+  @Test
   @DisplayName("clearing a layer's icon falls back to the default, past a built-in layer icon too")
   void clearedLayerIcons() {
     final YamlConfiguration file = new YamlConfiguration();
@@ -73,6 +85,7 @@ class TaerraConfigTest {
             new CopyOnWriteArrayList<>(),
             new CopyOnWriteArrayList<>(),
             new CopyOnWriteArrayList<>(),
+            new ConcurrentHashMap<>(),
             new ConcurrentHashMap<>(),
             new ConcurrentHashMap<>(),
             new ConcurrentHashMap<>());

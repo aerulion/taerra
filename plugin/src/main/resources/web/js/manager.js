@@ -248,7 +248,8 @@ class WaypointManager {
         this.dialog.close();
         this.app.selectWorld(waypoint.world);
         const [x, y, z] = center(waypoint);
-        mapManager.centerOnBlock(Math.floor(x), Math.floor(z), Math.max(mapManager.getMap().getZoom(), 2),
+        mapManager.centerOnBlock(Math.floor(x), Math.floor(z), Math.max(mapManager.getMap().getZoom(), 2,
+            markerManager.revealZoom(markerManager.layers.find(layer => layer.id === PERSONAL_LAYER))),
             Number.isFinite(y) ? Math.floor(y) : undefined);
         if (!waypoint.hidden) {
             markerManager.reveal(PERSONAL_LAYER, `${PERSONAL_LAYER}:${key(waypoint.name)}`);

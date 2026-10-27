@@ -137,7 +137,8 @@ public final class MarkerTexts {
         layer.restricted(),
         layer.personal(),
         markers,
-        layer.icon());
+        layer.icon(),
+        layer.minScale());
   }
 
   private static @NotNull Marker with(

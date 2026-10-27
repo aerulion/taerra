@@ -1,6 +1,7 @@
 package net.aerulion.taerra.mod.gui.widget;
 
 import java.util.List;
+import java.util.function.DoubleSupplier;
 import java.util.stream.Stream;
 import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.web.WebMap;
@@ -25,10 +26,12 @@ public final class LayerList extends ContainerObjectSelectionList<LayerList.Entr
   private static final String ELLIPSIS = "…";
 
   private final WebMap map;
+  private final DoubleSupplier scale;
 
-  public LayerList(final WebMap map) {
+  public LayerList(final WebMap map, final DoubleSupplier scale) {
     super(Minecraft.getInstance(), PanelList.WIDTH, 0, 0, ROW);
     this.map = map;
+    this.scale = scale;
   }
 
   public void refresh(final @Nullable String world) {
@@ -49,10 +52,14 @@ public final class LayerList extends ContainerObjectSelectionList<LayerList.Entr
 
   public final class Entry extends ContainerObjectSelectionList.Entry<Entry> {
 
+    private final @NotNull Layer layer;
     private final @NotNull String count;
     private final @NotNull Checkbox checkbox;
+    private final @Nullable Tooltip tooltip;
+    private boolean reached = true;
 
     private Entry(final @NotNull Layer layer) {
+      this.layer = layer;
       final @NotNull Font font = Minecraft.getInstance().font;
       this.count = layer == Layer.PLAYERS ? "" : String.valueOf(layer.markers().size());
       final @NotNull String name = layer.displayName().getString();
@@ -78,13 +85,16 @@ public final class LayerList extends ContainerObjectSelectionList<LayerList.Entr
               .selected(LayerList.this.map.shown(layer))
               .onValueChange((_, shown) -> LayerList.this.map.setShown(layer, shown));
       if (layer.restricted()) {
-        checkbox.tooltip(Tooltip.create(Component.translatable("taerra.private")));
+        this.tooltip = Tooltip.create(Component.translatable("taerra.private"));
       } else if (layer.personal()) {
-        checkbox.tooltip(Tooltip.create(Component.translatable("taerra.personal")));
+        this.tooltip = Tooltip.create(Component.translatable("taerra.personal"));
       } else if (cut) {
-        checkbox.tooltip(Tooltip.create(Component.literal(name)));
+        this.tooltip = Tooltip.create(Component.literal(name));
+      } else {
+        this.tooltip = null;
       }
       this.checkbox = checkbox.build();
+      this.checkbox.setTooltip(this.tooltip);
     }
 
     @Override
@@ -95,6 +105,15 @@ public final class LayerList extends ContainerObjectSelectionList<LayerList.Entr
         final boolean hovered,
         final float partialTick) {
       final @NotNull Font font = Minecraft.getInstance().font;
+      final boolean reached = this.layer.reaches(LayerList.this.scale.getAsDouble());
+      if (reached != this.reached) {
+        this.reached = reached;
+        this.checkbox.setAlpha(reached ? 1 : .5F);
+        this.checkbox.setTooltip(
+            reached
+                ? this.tooltip
+                : Tooltip.create(Component.translatable("taerra.layers.zoom_in")));
+      }
       this.checkbox.setPosition(getContentX(), getContentYMiddle() - this.checkbox.getHeight() / 2);
       this.checkbox.extractRenderState(graphics, mouseX, mouseY, partialTick);
       graphics.text(

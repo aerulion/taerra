@@ -17,19 +17,23 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.aerulion.taerra.mod.gui.widget.IconChoice;
 import net.aerulion.taerra.mod.map.MapIcons;
+import net.aerulion.taerra.mod.map.Projection;
 import net.aerulion.taerra.mod.util.PlayerInfos;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.aerulion.taerra.mod.web.WebMapListener;
 import net.aerulion.taerra.mod.web.model.Account;
+import net.aerulion.taerra.mod.web.model.MapConfig;
 import net.aerulion.taerra.mod.web.model.MapIcon;
 import net.aerulion.taerra.mod.web.model.ServerSettings;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
@@ -49,6 +53,7 @@ import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.locale.Language;
@@ -66,6 +71,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
   private static final Pattern NOT_NAME = Pattern.compile("[^\\p{L}\\p{N} _.,:'&()#!?+-]");
   private static final Pattern NOT_DIGIT = Pattern.compile("\\D");
   private static final Pattern NOT_COORDINATE = Pattern.compile("[^0-9-]");
+  private static final Pattern SCALE = Pattern.compile("(\\d{1,5})(px|blocks?)");
   private static final List<String> SHAPES = List.of("none", "circle", "square", "rectangle");
   private static final List<String> VIEWS = List.of("both", "top_down", "isometric");
   private static final int MAX_COORDINATE = 30_000_000;
@@ -195,6 +201,35 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
 
   private static @NotNull String layerIconField(final @NotNull String id) {
     return "layer-icon:" + id;
+  }
+
+  private static @NotNull String layerScaleField(final @NotNull String id) {
+    return "layer-scale:" + id;
+  }
+
+  private static @Nullable Integer parseScale(final @NotNull String text) {
+    final @NotNull Matcher matcher = SCALE.matcher(text);
+    if (!matcher.matches() || Integer.bitCount(Integer.parseInt(matcher.group(1))) != 1) {
+      return null;
+    }
+    final int exponent = Integer.numberOfTrailingZeros(Integer.parseInt(matcher.group(1)));
+    return matcher.group(2).equals("px") ? exponent : -exponent;
+  }
+
+  private static @NotNull String scaleText(final @Nullable Integer scale) {
+    if (scale == null) {
+      return "";
+    }
+    return scale >= 0 ? (1 << scale) + "px" : (1 << -scale) + "blocks";
+  }
+
+  private static @NotNull Component describeScale(final @Nullable Integer scale) {
+    if (scale == null) {
+      return Component.translatable("taerra.settings.layer_scale.always");
+    }
+    return scale >= 0
+        ? Component.translatable("taerra.settings.layer_scale.pixels", 1 << scale)
+        : Component.translatable("taerra.settings.layer_scale.blocks", 1 << -scale);
   }
 
   private static boolean same(final @Nullable JsonElement a, final @Nullable JsonElement b) {
@@ -856,6 +891,12 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           .append(": ")
           .append(Component.translatable("taerra.settings.layer_icon"));
     }
+    if (field.startsWith("layer-scale:")) {
+      return label(layerField(field.substring("layer-scale:".length())))
+          .copy()
+          .append(": ")
+          .append(Component.translatable("taerra.settings.layer_scale"));
+    }
     if (field.startsWith("layer:")) {
       final @NotNull String id = field.substring("layer:".length());
       final @NotNull String label =
@@ -888,6 +929,9 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     if (field.startsWith("layer-icon:")) {
       final @Nullable MapIcon icon = this.map.icon(string(value));
       return icon == null ? Component.translatable("taerra.icons.default") : icon.displayName();
+    }
+    if (field.startsWith("layer-scale:")) {
+      return describeScale(parseScale(string(value)));
     }
     if (value == null || value.isJsonNull() || string(value).isEmpty()) {
       return Component.translatable("taerra.settings.default");
@@ -1209,6 +1253,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           add(new LayerRow(layer));
           conflict(layerField(layer.id()));
           conflict(layerIconField(layer.id()));
+          conflict(layerScaleField(layer.id()));
         }
       }
       setScrollAmount(scroll);
@@ -2145,10 +2190,14 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     private final @NotNull List<FormattedCharSequence> hint;
     private final @NotNull CycleButton<Boolean> toggle;
     private final @NotNull IconChoice icon;
+    private final @NotNull String scaleField;
+    private final @NotNull ScaleSlider scale;
 
     private LayerRow(final ServerSettings.@NotNull LayerInfo layer) {
       this.field = layerField(layer.id());
       this.iconField = layerIconField(layer.id());
+      this.scaleField = layerScaleField(layer.id());
+      this.scale = new ScaleSlider(this.scaleField);
       this.label = label(this.field);
       final @NotNull WebMap map = ServerSettingsScreen.this.map;
       final @NotNull String chosen = string(ServerSettingsScreen.this.draft.get(this.iconField));
@@ -2204,23 +2253,27 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
 
     @Override
     int height() {
+      return top() + 26;
+    }
+
+    private int top() {
       return Math.max(30, 22 + this.hint.size() * 10);
     }
 
     @Override
     @NotNull
     List<String> fields() {
-      return List.of(this.field, this.iconField);
+      return List.of(this.field, this.iconField, this.scaleField);
     }
 
     @Override
     public @NotNull List<? extends GuiEventListener> children() {
-      return List.of(this.icon, this.toggle);
+      return List.of(this.icon, this.toggle, this.scale);
     }
 
     @Override
     public @NotNull List<? extends NarratableEntry> narratables() {
-      return List.of(this.icon, this.toggle);
+      return List.of(this.icon, this.toggle, this.scale);
     }
 
     @Override
@@ -2239,12 +2292,83 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       }
       this.toggle.setPosition(
           getContentRight() - 6 - this.toggle.getWidth(),
-          getY() + getHeight() / 2 - this.toggle.getHeight() / 2);
+          getY() + top() / 2 - this.toggle.getHeight() / 2);
       this.toggle.extractRenderState(graphics, mouseX, mouseY, partialTick);
       this.icon.setPosition(
           this.toggle.getX() - 6 - this.icon.getWidth(),
-          getY() + getHeight() / 2 - this.icon.getHeight() / 2);
+          getY() + top() / 2 - this.icon.getHeight() / 2);
       this.icon.extractRenderState(graphics, mouseX, mouseY, partialTick);
+      this.scale.setPosition(getContentX() + 4, getY() + top());
+      this.scale.setWidth(getContentRight() - 6 - getContentX() - 4);
+      this.scale.extractRenderState(graphics, mouseX, mouseY, partialTick);
+    }
+  }
+
+  private final class ScaleSlider extends AbstractSliderButton {
+
+    private final @NotNull String field;
+    private final @NotNull List<@Nullable Integer> stops;
+
+    private ScaleSlider(final @NotNull String field) {
+      super(0, 0, 0, 20, Component.empty(), 0);
+      this.field = field;
+      this.stops = stops(parseScale(string(ServerSettingsScreen.this.draft.get(field))));
+      this.value =
+          Math.max(
+                  0,
+                  this.stops.indexOf(
+                      parseScale(string(ServerSettingsScreen.this.draft.get(field)))))
+              / (double) (this.stops.size() - 1);
+      updateMessage();
+    }
+
+    private @NotNull List<@Nullable Integer> stops(final @Nullable Integer current) {
+      final @Nullable MapConfig config = ServerSettingsScreen.this.map.config();
+      final int @NotNull [] range =
+          config == null
+              ? new int[] {-4, 2}
+              : Projection.scaleRange(config, ServerSettingsScreen.this.map.worlds());
+      final int from =
+          Math.min(Math.min(range[0] + 1, range[1]), current == null ? range[1] : current);
+      final int to = Math.max(range[1], current == null ? range[1] : current);
+      final @NotNull List<@Nullable Integer> stops = new ArrayList<>();
+      stops.add(null);
+      for (int scale = from; scale <= to; scale++) {
+        stops.add(scale);
+      }
+      return stops;
+    }
+
+    private int index() {
+      return (int) Math.round(this.value * (this.stops.size() - 1));
+    }
+
+    @Override
+    protected void updateMessage() {
+      setMessage(
+          Component.translatable("taerra.settings.layer_scale")
+              .append(": ")
+              .append(describeScale(this.stops.get(index()))));
+    }
+
+    @Override
+    protected void applyValue() {
+      this.value = index() / (double) (this.stops.size() - 1);
+      final @NotNull String text = scaleText(this.stops.get(index()));
+      if (!text.equals(string(ServerSettingsScreen.this.draft.get(this.field)))) {
+        set(this.field, new JsonPrimitive(text));
+      }
+    }
+
+    @Override
+    public boolean keyPressed(final @NotNull KeyEvent event) {
+      if (event.isLeft() || event.isRight()) {
+        setValue(
+            Math.clamp(index() + (event.isLeft() ? -1 : 1), 0, this.stops.size() - 1)
+                / (double) (this.stops.size() - 1));
+        return true;
+      }
+      return super.keyPressed(event);
     }
   }
 }

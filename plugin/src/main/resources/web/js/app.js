@@ -902,7 +902,7 @@ regionList.initialize({
     create: () => currentWorld && chunkSelection.start(currentWorld.name, 'region'),
     edit: (region) => currentWorld && chunkSelection.start(currentWorld.name, 'region', region)
 });
-settingsDialog.initialize();
+settingsDialog.initialize(() => worlds);
 iconChooser.initialize();
 iconEditor.initialize();
 iconManager.initialize();

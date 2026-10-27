@@ -55,6 +55,7 @@ class WaypointEditorTest {
             new CopyOnWriteArrayList<>(),
             new ConcurrentHashMap<>(),
             new ConcurrentHashMap<>(),
+            new ConcurrentHashMap<>(),
             new ConcurrentHashMap<>());
     final @NotNull PlayerFiles files = new PlayerFiles(plugin);
     this.personal = new PersonalWaypoints(plugin, registry, files);

@@ -148,13 +148,15 @@ public final class RegionListScreen extends Screen {
   private void showOnMap(final Regions.@NotNull Region region) {
     onClose();
     this.parent.jump(
-        new SearchScreen.Target(this.world, region.label()[0], null, region.label()[1], null));
+        new SearchScreen.Target(
+            this.world, region.label()[0], null, region.label()[1], null, null));
   }
 
   private void edit(final Regions.@NotNull Region region) {
     onClose();
     this.parent.jump(
-        new SearchScreen.Target(this.world, region.label()[0], null, region.label()[1], null));
+        new SearchScreen.Target(
+            this.world, region.label()[0], null, region.label()[1], null, null));
     this.parent.editRegion(region);
   }
 

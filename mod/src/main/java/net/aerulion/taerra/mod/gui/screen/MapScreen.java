@@ -30,6 +30,7 @@ import net.aerulion.taerra.mod.map.Drawing;
 import net.aerulion.taerra.mod.map.MapView;
 import net.aerulion.taerra.mod.map.MarkerHover;
 import net.aerulion.taerra.mod.map.Place;
+import net.aerulion.taerra.mod.map.Projection;
 import net.aerulion.taerra.mod.navigation.Navigation;
 import net.aerulion.taerra.mod.util.Colors;
 import net.aerulion.taerra.mod.util.Dimensions;
@@ -198,7 +199,7 @@ public final class MapScreen extends Screen {
     this.view = view;
     this.settings = settings;
     this.players = new PlayerList(map, settings, view::world, this::worldName, this::follow);
-    this.layers = new LayerList(map);
+    this.layers = new LayerList(map, view::scale);
     this.worldPicker = new WorldPicker(map::worlds, view::world, map::sky, this::pickWorld);
     final @Nullable MapConfig config = map.config();
     final @NotNull String current = Dimensions.current();
@@ -980,6 +981,12 @@ public final class MapScreen extends Screen {
     }
     this.view.centerOn(config, target.x(), target.y() == null ? 64 : target.y(), target.z());
     zoomNear();
+    if (target.minScale() != null) {
+      this.view.zoomToward(
+          Math.max(
+              this.view.targetZoom(),
+              Math.ceil(Projection.zoomFor(config, this.view.isometric(), target.minScale()))));
+    }
   }
 
   private void goToSpawn() {

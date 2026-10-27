@@ -474,6 +474,12 @@ public final class MapRoutes implements Routes {
               regions.shownByDefault(),
               this.taerraConfig::layerPrivate));
     }
+    for (final @NotNull Map<String, Object> layer : layers) {
+      final @Nullable Integer scale = this.taerraConfig.layerScale((String) layer.get("id"));
+      if (scale != null) {
+        layer.put("minScale", scale);
+      }
+    }
     ctx.header("Cache-Control", "no-cache").json(layers);
   }
 

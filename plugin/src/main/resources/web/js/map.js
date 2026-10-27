@@ -347,6 +347,36 @@ class MapManager {
         return Math.max(this.minZoomFor(mode), Math.min(mode === 'iso' ? this.isometric.maxZoom : this.maxZoom, target));
     }
 
+    scaleAt(zoom, mode = this.viewMode) {
+        return zoom + Math.log2(this.mapUnitsPerBlock) + (mode === 'iso' ? this.viewZoomOffset() : 0);
+    }
+
+    scale() {
+        return this.scaleAt(this.map.getZoom());
+    }
+
+    zoomForScale(scale) {
+        return scale - this.scaleAt(0);
+    }
+
+    scaleRange(worlds) {
+        const far = [];
+        const close = [];
+        for (const world of worlds) {
+            const views = world.views ?? ['top_down', 'isometric'];
+            if (views.includes('top_down')) {
+                far.push(this.scaleAt(this.maxZoom - (world.depth?.top_down ?? 0), 'top'));
+                close.push(this.scaleAt(this.maxZoom, 'top'));
+            }
+            if (views.includes('isometric')) {
+                (world.depth?.isometric ?? [0]).forEach(depth =>
+                    far.push(this.scaleAt(this.isometric.maxZoom - depth, 'iso')));
+                close.push(this.scaleAt(this.isometric.maxZoom, 'iso'));
+            }
+        }
+        return close.length ? {far: Math.min(...far), close: Math.min(...close)} : {far: -4, close: 2};
+    }
+
     getRotation() {
         return this.rotation;
     }

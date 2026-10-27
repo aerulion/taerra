@@ -79,6 +79,7 @@ public final class ConfigEditor {
   public static final @NotNull String WORLD = "world:";
   public static final @NotNull String LAYER = "layer:";
   public static final @NotNull String LAYER_ICON = "layer-icon:";
+  public static final @NotNull String LAYER_SCALE = "layer-scale:";
   public static final @NotNull String ORDER = "order";
   public static final @NotNull String LIMIT = "limit";
   public static final @NotNull String VIEWS = "views";
@@ -331,6 +332,17 @@ public final class ConfigEditor {
     this.layersChanged.run();
     track(who);
     return LayerIcon.SET;
+  }
+
+  public boolean setLayerScale(
+      final @NotNull String layerId, final @Nullable Integer scale, final @NotNull String who) {
+    if (this.markers.existingLayer(layerId) == null && this.config.layerScale(layerId) == null) {
+      return false;
+    }
+    this.config.setLayerScale(this.plugin, layerId, scale);
+    this.layersChanged.run();
+    track(who);
+    return true;
   }
 
   public RenderService.@NotNull Start setLimit(
@@ -676,6 +688,12 @@ public final class ConfigEditor {
             change.getKey().substring(LAYER_ICON.length()),
             (String) change.getValue());
         layers = true;
+      } else if (change.getKey().startsWith(LAYER_SCALE)) {
+        this.config.setLayerScale(
+            this.plugin,
+            change.getKey().substring(LAYER_SCALE.length()),
+            LayerScale.parse((String) change.getValue()));
+        layers = true;
       }
     }
     if (layers) {
@@ -744,6 +762,15 @@ public final class ConfigEditor {
           ? icon
           : null;
     }
+    if (field.startsWith(LAYER_SCALE)) {
+      return value instanceof final @NotNull String text
+          ? text.isEmpty()
+              ? text
+              : LayerScale.parse(text) instanceof final @NotNull Integer scale
+                  ? LayerScale.format(scale)
+                  : null
+          : null;
+    }
     return field.startsWith(LAYER) && value instanceof Boolean ? value : null;
   }
 
@@ -773,6 +800,8 @@ public final class ConfigEditor {
       values.put(
           LAYER_ICON + layer.id(),
           Objects.requireNonNullElse(this.config.layerIcon(layer.id()), ""));
+      final @Nullable Integer scale = this.config.layerScale(layer.id());
+      values.put(LAYER_SCALE + layer.id(), scale == null ? "" : LayerScale.format(scale));
     }
     return values;
   }
@@ -799,6 +828,9 @@ public final class ConfigEditor {
       layers.putIfAbsent(layer, new LayerInfo(layer, layer, false));
     }
     for (final @NotNull String layer : this.config.layerIcons().keySet()) {
+      layers.putIfAbsent(layer, new LayerInfo(layer, layer, false));
+    }
+    for (final @NotNull String layer : this.config.layerScales().keySet()) {
       layers.putIfAbsent(layer, new LayerInfo(layer, layer, false));
     }
     return List.copyOf(layers.values());

@@ -92,6 +92,7 @@ public final class MapViewImpl implements MapView {
   private double offsetX;
   private double offsetY;
   private int maxZoom;
+  private double scale;
   private @NotNull Look look = Look.COLOR;
   private @Nullable List<Component> tooltip;
   private @Nullable MarkerHover hover;
@@ -179,10 +180,7 @@ public final class MapViewImpl implements MapView {
     final double @NotNull [] center =
         projection(config).toBlock(this.centerX, this.centerY, this.centerHeight);
     if (isometric != this.isometric) {
-      final double isoBlock =
-          Projection.isometric(config, 0).unitsPerBlock() * config.isometric().blockWidth();
-      final double offset =
-          Math.round(Math.log(isoBlock / Projection.topDown(config).unitsPerBlock()) / Math.log(2));
+      final int offset = Projection.viewOffset(config);
       this.zoom += isometric ? -offset : offset;
       this.targetZoom = Math.round(this.zoom);
     }
@@ -308,7 +306,8 @@ public final class MapViewImpl implements MapView {
                           layer.markers().stream()
                               .filter(marker -> !marker.id().equals(hidden))
                               .toList(),
-                          layer.icon()))
+                          layer.icon(),
+                          layer.minScale()))
               .toList();
     }
     return this.withoutHidden;
@@ -402,6 +401,7 @@ public final class MapViewImpl implements MapView {
     final int level = Math.clamp(Math.round(this.zoom), minZoom - 1, this.maxZoom + 2);
     final boolean settled =
         level == Math.clamp(Math.round(this.targetZoom), minZoom - 1, this.maxZoom + 2);
+    this.scale = Projection.scale(config, this.isometric, level);
     final boolean far = OverlayRaster.far(this.maxZoom, level);
     final double gui = OverlayRaster.guiPerUnit(level, this.pixels);
     final double margin = CULL_MARGIN / this.unitPixels;
@@ -414,7 +414,7 @@ public final class MapViewImpl implements MapView {
     final @NotNull List<DrawnPoint> points = new ArrayList<>();
     @Nullable DrawnPoint hovered = null;
     for (final @NotNull Layer layer : layers) {
-      if (!map.shown(layer)) {
+      if (!shown(map, layer)) {
         continue;
       }
       for (final @NotNull Marker marker : layer.markers()) {
@@ -790,6 +790,15 @@ public final class MapViewImpl implements MapView {
     }
   }
 
+  private boolean shown(final @NotNull WebMap map, final @NotNull Layer layer) {
+    return map.shown(layer) && layer.reaches(this.scale);
+  }
+
+  @Override
+  public double scale() {
+    return this.scale;
+  }
+
   private void updateScene(
       final @NotNull WebMap map,
       final @NotNull String world,
@@ -797,7 +806,7 @@ public final class MapViewImpl implements MapView {
       final @NotNull List<Layer> layers) {
     final boolean @NotNull [] shown = new boolean[layers.size()];
     for (int i = 0; i < shown.length; i++) {
-      shown[i] = map.shown(layers.get(i));
+      shown[i] = shown(map, layers.get(i));
     }
     final @Nullable OverlayScene current = this.scene;
     final boolean changed =
@@ -1173,7 +1182,7 @@ public final class MapViewImpl implements MapView {
         this.minimap || this.world == null ? null : map.regions(this.world).regions();
     if (regions == null
         || map.markers(this.world).stream()
-            .noneMatch(layer -> layer.id().equals("regions") && map.shown(layer))) {
+            .noneMatch(layer -> layer.id().equals("regions") && shown(map, layer))) {
       return;
     }
     final @NotNull Font font = Minecraft.getInstance().font;

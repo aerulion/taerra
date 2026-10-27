@@ -93,6 +93,11 @@ markers:
   # - { layer: waypoints.shops, icon: "taerra:shop" }
   # Set in game with /taerra config layer <layer> icon <icon>
   layer-icons: [ ]
+  # How far in viewers must zoom before a layer shows: the pixels one block takes on screen ("4px")
+  # or the blocks one pixel takes ("8blocks"), like
+  # - { layer: waypoints.shops, scale: 1px }
+  # Set in game with /taerra config layer <layer> scale <scale>
+  layer-scales: [ ]
   spawn:
     # Mark each world's spawn point on a layer of its own, moved along when the spawn moves
     enabled: true

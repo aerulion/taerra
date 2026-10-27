@@ -262,6 +262,8 @@ class MarkerManager {
         this.hidden = null;
         this.pending = null;
         this.onPlayers = null;
+        this.preview = null;
+        this.outOfScale = '';
         this.list = document.getElementById('layer-list');
     }
 
@@ -275,6 +277,7 @@ class MarkerManager {
                 this.far = far;
                 this.redraw();
             }
+            this.renderScales();
         });
         map.on('moveend', () => this.cull());
         iconStore.onChange(() => this.redraw());
@@ -369,6 +372,34 @@ class MarkerManager {
 
     isShown(layer) {
         return this.visibility[layer.id] ?? layer.shown;
+    }
+
+    minScale(layer) {
+        return this.preview?.id === layer.id ? this.preview.scale : layer.minScale;
+    }
+
+    reaches(layer, scale = mapManager.scale()) {
+        const min = this.minScale(layer);
+        return !Number.isInteger(min) || scale >= min;
+    }
+
+    revealZoom(layer) {
+        return Number.isInteger(layer?.minScale) ? mapManager.zoomForScale(layer.minScale) : -Infinity;
+    }
+
+    previewScale(id, scale) {
+        this.preview = id === null ? null : {id, scale};
+        this.cull();
+        this.renderScales();
+    }
+
+    renderScales() {
+        const scale = mapManager.scale();
+        const out = this.layers.filter(layer => !this.reaches(layer, scale)).map(layer => layer.id).join('\n');
+        if (out !== this.outOfScale) {
+            this.outOfScale = out;
+            this.renderControls();
+        }
     }
 
     writeVisibility(params) {
@@ -478,6 +509,7 @@ class MarkerManager {
         clearTimeout(this.cullTimer);
         const map = mapManager.getMap();
         const view = map.getBounds().pad(VIEW_MARGIN);
+        const scale = mapManager.scale();
         const started = performance.now();
         let unfinished = false;
         for (const entry of this.entries) {
@@ -486,7 +518,8 @@ class MarkerManager {
                 entry.reach = this.reach(entry.marker);
                 entry.rough = false;
             }
-            const inView = this.isShown(entry.layer) && view.intersects(entry.reach);
+            const inView = this.isShown(entry.layer) && this.reaches(entry.layer, scale)
+                && view.intersects(entry.reach);
             if (inView && !entry.drawn && performance.now() - started > DRAW_BUDGET_MS) {
                 unfinished = true;
             } else if (inView && !entry.drawn) {
@@ -815,7 +848,14 @@ class MarkerManager {
             if (layer.personal) {
                 name.append(personalIcon());
             }
-            row.append(toggle, name);
+            if (layer !== PLAYER_LAYER && !this.reaches(layer)) {
+                const text = element('span', 'row__text');
+                text.append(name, element('span', 'hint', t('layers.zoomIn')));
+                row.classList.add('is-out-of-scale');
+                row.append(toggle, text);
+            } else {
+                row.append(toggle, name);
+            }
             if (layer !== PLAYER_LAYER) {
                 row.append(element('span', 'badge', numbers.format(layer.markers.length)));
             }

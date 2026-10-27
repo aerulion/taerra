@@ -38,6 +38,8 @@ public sealed interface MapView permits MapViewImpl {
 
   long targetZoom();
 
+  double scale();
+
   @Nullable
   Place placeAt(WebMap map, double x, double y);
 

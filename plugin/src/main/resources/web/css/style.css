@@ -2132,6 +2132,10 @@
         font-weight: 700;
     }
 
+    .is-out-of-scale .layer__name {
+        opacity: .55;
+    }
+
     .player {
         grid-template-columns: 32px minmax(0, 1fr) auto;
         cursor: pointer;
@@ -3839,12 +3843,132 @@
     }
 
     .settings__row.settings__layer {
-        grid-template-columns: minmax(0, 1fr) auto auto;
+        grid-template-columns: minmax(0, 1fr) auto auto auto;
         gap: var(--space-3);
     }
 
-    .settings__layer .icon-choice {
+    .settings__layer .icon-choice,
+    .settings__layer .settings__scale-button {
         order: 1;
+    }
+
+    .settings__scale-button {
+        height: var(--control-s);
+        padding: 0 var(--space-3);
+        background: var(--stone-900);
+        border: var(--field-edge);
+        box-shadow: var(--well);
+        color: var(--stone-100);
+        font-size: var(--text-s);
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: var(--hover);
+    }
+
+    .settings__scale-button:hover,
+    .settings__scale-button[aria-expanded="true"] {
+        border-color: var(--stone-200);
+    }
+
+    .settings__scale-button[aria-expanded="true"] {
+        color: var(--white);
+    }
+
+    .settings__scale {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        row-gap: var(--space-3);
+    }
+
+    .settings__scale-head {
+        display: grid;
+        grid-column: 1 / -1;
+        gap: var(--space-3);
+    }
+
+    .settings__scale-label {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-3);
+        color: var(--stone-200);
+        font-size: var(--text-s);
+    }
+
+    .settings__scale-track {
+        display: grid;
+        gap: var(--space-2);
+    }
+
+    .settings__slider {
+        --thumb: 10px;
+        appearance: none;
+        width: 100%;
+        height: 14px;
+        margin: 0;
+        background:
+            repeating-linear-gradient(to right, rgb(255 255 255 / .18) 0 2px, transparent 2px calc((100% - 2px) / var(--steps, 1))) calc(var(--thumb) / 2 - 1px) 50% / calc(100% - var(--thumb) + 2px) 4px no-repeat,
+            linear-gradient(var(--accent)) right / calc(100% - var(--thumb) / 2 - var(--at, 0) * (100% - var(--thumb))) 100% no-repeat,
+            var(--stone-900);
+        border: var(--edge);
+        box-shadow: var(--well);
+        cursor: pointer;
+    }
+
+    .settings__slider::-webkit-slider-thumb {
+        appearance: none;
+        width: var(--thumb);
+        height: 22px;
+        background: var(--white);
+        border: 2px solid var(--stone-900);
+        box-shadow: inset 0 -3px var(--stone-lip);
+    }
+
+    .settings__slider::-moz-range-thumb {
+        width: 6px;
+        height: 18px;
+        background: var(--white);
+        border: 2px solid var(--stone-900);
+        border-radius: 0;
+        box-shadow: inset 0 -3px var(--stone-lip);
+    }
+
+    .settings__slider:focus-visible {
+        outline-offset: 1px;
+    }
+
+    .settings__scale-ends {
+        display: flex;
+        justify-content: space-between;
+        color: var(--stone-200);
+        font-size: var(--text-xs);
+    }
+
+    .settings__scale-value {
+        color: var(--white);
+        font-size: var(--text-m);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .dialog.is-peeking {
+        visibility: hidden;
+    }
+
+    .dialog.is-peeking::backdrop {
+        background: transparent;
+        backdrop-filter: none;
+    }
+
+    .dialog.is-peeking .settings__scale {
+        background: none;
+        box-shadow: none;
+    }
+
+    .dialog.is-peeking .settings__scale-head {
+        visibility: visible;
+        background: var(--glass);
+        box-shadow: 0 0 0 var(--space-4) var(--glass), 0 8px 24px var(--space-4) rgb(0 0 0 / .5);
     }
 
     .settings__layer .switch {

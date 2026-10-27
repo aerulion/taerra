@@ -13,14 +13,19 @@ public record Layer(
     @SerializedName("private") boolean restricted,
     boolean personal,
     List<Marker> markers,
-    @Nullable String icon) {
+    @Nullable String icon,
+    @Nullable Integer minScale) {
 
   public static final String PERSONAL = "personal";
   public static final Layer PLAYERS =
-      new Layer("players", "Players", true, false, false, List.of(), null);
+      new Layer("players", "Players", true, false, false, List.of(), null, null);
 
   public @NotNull Component displayName() {
     return Component.translatableWithFallback("taerra.layer." + this.id, this.label);
+  }
+
+  public boolean reaches(final double scale) {
+    return this.minScale == null || scale >= this.minScale;
   }
 
   public boolean waypoints() {

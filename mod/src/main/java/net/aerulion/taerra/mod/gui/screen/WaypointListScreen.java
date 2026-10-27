@@ -17,6 +17,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 import net.aerulion.taerra.mod.TaerraClient;
@@ -28,6 +29,7 @@ import net.aerulion.taerra.mod.util.Distances;
 import net.aerulion.taerra.mod.util.FileDialogs;
 import net.aerulion.taerra.mod.web.WebMap;
 import net.aerulion.taerra.mod.web.model.Account;
+import net.aerulion.taerra.mod.web.model.Layer;
 import net.aerulion.taerra.mod.web.model.PersonalWaypoint;
 import net.aerulion.taerra.mod.web.model.World;
 import net.minecraft.ChatFormatting;
@@ -371,7 +373,13 @@ public final class WaypointListScreen extends Screen {
             center[0],
             Double.isNaN(center[1]) ? null : center[1],
             center[2],
-            null));
+            null,
+            this.map.markers(waypoint.world()).stream()
+                .filter(layer -> layer.id().equals(Layer.PERSONAL))
+                .map(Layer::minScale)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null)));
   }
 
   private void navigate(final @NotNull PersonalWaypoint waypoint) {

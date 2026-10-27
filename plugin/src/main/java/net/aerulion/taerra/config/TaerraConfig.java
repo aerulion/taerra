@@ -34,6 +34,7 @@ public record TaerraConfig(
     @NotNull CopyOnWriteArrayList<String> privateLayers,
     @NotNull Map<String, String> worldNames,
     @NotNull Map<String, String> layerIcons,
+    @NotNull Map<String, Integer> layerScales,
     @NotNull Map<String, MapViews> worldViews) {
 
   private static final long HEAP_BYTES = Runtime.getRuntime().maxMemory();
@@ -67,6 +68,7 @@ public record TaerraConfig(
         new CopyOnWriteArrayList<>(file.getStringList("markers.private-layers")),
         new ConcurrentHashMap<>(names(file.getConfigurationSection("world-names"))),
         new ConcurrentHashMap<>(layerIcons(file.getMapList("markers.layer-icons"))),
+        new ConcurrentHashMap<>(layerScales(file.getMapList("markers.layer-scales"))),
         new ConcurrentHashMap<>(viewsOf(file.getConfigurationSection("world-views"))));
   }
 
@@ -92,6 +94,18 @@ public record TaerraConfig(
       }
     }
     return icons;
+  }
+
+  static @NotNull Map<String, Integer> layerScales(final @NotNull List<Map<?, ?>> entries) {
+    final @NotNull Map<String, Integer> scales = new HashMap<>();
+    for (final @NotNull Map<?, ?> entry : entries) {
+      if (entry.get("layer") instanceof final @NotNull String layer
+          && entry.get("scale") instanceof final @NotNull String text
+          && LayerScale.parse(text) instanceof final @NotNull Integer scale) {
+        scales.put(layer, scale);
+      }
+    }
+    return scales;
   }
 
   public static int renderThreads(final @NotNull FileConfiguration file) {
@@ -217,6 +231,31 @@ public record TaerraConfig(
     return new TreeMap<>(icons)
         .entrySet().stream()
             .map(entry -> Map.of("layer", entry.getKey(), "icon", entry.getValue()))
+            .toList();
+  }
+
+  public @Nullable Integer layerScale(final @NotNull String layerId) {
+    return this.layerScales.get(layerId);
+  }
+
+  public synchronized void setLayerScale(
+      final @NotNull Plugin plugin, final @NotNull String layerId, final @Nullable Integer scale) {
+    if (scale == null) {
+      this.layerScales.remove(layerId);
+    } else {
+      this.layerScales.put(layerId, scale);
+    }
+    plugin.getConfig().set("markers.layer-scales", layerScaleEntries(this.layerScales));
+    plugin.saveConfig();
+  }
+
+  static @NotNull List<Map<String, String>> layerScaleEntries(
+      final @NotNull Map<String, Integer> scales) {
+    return new TreeMap<>(scales)
+        .entrySet().stream()
+            .map(
+                entry ->
+                    Map.of("layer", entry.getKey(), "scale", LayerScale.format(entry.getValue())))
             .toList();
   }
 

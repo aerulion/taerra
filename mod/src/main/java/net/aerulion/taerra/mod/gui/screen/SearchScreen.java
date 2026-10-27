@@ -176,7 +176,7 @@ public final class SearchScreen extends Screen {
               elsewhere(player.world()),
               player,
               0,
-              new Target(player.world(), player.x(), player.y(), player.z(), player.uuid())));
+              new Target(player.world(), player.x(), player.y(), player.z(), player.uuid(), null)));
     }
     final @NotNull List<World> worlds = new ArrayList<>(this.map.worlds());
     worlds.sort(Comparator.comparing(world -> !world.name().equals(this.currentWorld)));
@@ -203,6 +203,7 @@ public final class SearchScreen extends Screen {
                   world.spawn().x() + .5,
                   (double) world.spawn().y(),
                   world.spawn().z() + .5,
+                  null,
                   null)));
     }
     return all;
@@ -235,7 +236,7 @@ public final class SearchScreen extends Screen {
         elsewhere(world.name()),
         null,
         Colors.argb(marker.color()),
-        new Target(world.name(), x, y, z, null));
+        new Target(world.name(), x, y, z, null, layer.minScale()));
   }
 
   private void refresh(final boolean reset) {
@@ -261,7 +262,7 @@ public final class SearchScreen extends Screen {
               null,
               null,
               0xFF48494A,
-              new Target(this.currentWorld, x + .5, y, z + .5, null)));
+              new Target(this.currentWorld, x + .5, y, z + .5, null, null)));
     }
     final @NotNull List<Result> candidates = candidates();
     if (needle.isEmpty()) {
@@ -306,7 +307,12 @@ public final class SearchScreen extends Screen {
   }
 
   public record Target(
-      String world, double x, @Nullable Double y, double z, @Nullable String player) {}
+      String world,
+      double x,
+      @Nullable Double y,
+      double z,
+      @Nullable String player,
+      @Nullable Integer minScale) {}
 
   private record Result(
       String label,

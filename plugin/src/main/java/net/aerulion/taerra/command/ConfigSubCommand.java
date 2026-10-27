@@ -17,6 +17,7 @@ import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.chat.RenderFeedback;
 import net.aerulion.taerra.config.ConfigEditor;
+import net.aerulion.taerra.config.LayerScale;
 import net.aerulion.taerra.config.TaerraConfig;
 import net.aerulion.taerra.icon.MarkerIconsImpl;
 import net.aerulion.taerra.model.MapViews;
@@ -188,7 +189,34 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                                                         context,
                                                         context
                                                             .getArgument("icon", Key.class)
-                                                            .asString()))))));
+                                                            .asString()))))
+                            .then(
+                                Commands.literal("scale")
+                                    .then(
+                                        Commands.literal("always")
+                                            .executes(context -> setLayerScale(context, "")))
+                                    .then(
+                                        Commands.argument("scale", StringArgumentType.word())
+                                            .suggests(
+                                                (context, suggestions) -> {
+                                                  for (int scale = LayerScale.MIN;
+                                                      scale <= LayerScale.MAX;
+                                                      scale++) {
+                                                    final @NotNull String text =
+                                                        LayerScale.format(scale);
+                                                    if (text.startsWith(
+                                                        suggestions.getRemaining())) {
+                                                      suggestions.suggest(text);
+                                                    }
+                                                  }
+                                                  return suggestions.buildFuture();
+                                                })
+                                            .executes(
+                                                context ->
+                                                    setLayerScale(
+                                                        context,
+                                                        StringArgumentType.getString(
+                                                            context, "scale")))))));
     ConfigEditor.SETTINGS.forEach(
         setting ->
             builder.then(
@@ -405,6 +433,29 @@ public final class ConfigSubCommand implements TaerraSubCommand {
           case UNKNOWN_LAYER -> Messages.error("config.unknown_layer", Messages.value(layerId));
           case UNKNOWN_ICON -> Messages.error("config.unknown_icon", Messages.value(icon));
         });
+    return SUCCESS;
+  }
+
+  private int setLayerScale(
+      final @NotNull CommandContext<CommandSourceStack> context, final @NotNull String text) {
+    final @NotNull String layerId = StringArgumentType.getString(context, "layer");
+    final @Nullable Integer scale = text.isEmpty() ? null : LayerScale.parse(text);
+    if (!text.isEmpty() && scale == null) {
+      feedback(context, Messages.error("config.unknown_scale", Messages.value(text)));
+      return SUCCESS;
+    }
+    if (!this.editor.setLayerScale(layerId, scale, who(context))) {
+      feedback(context, Messages.error("config.unknown_layer", Messages.value(layerId)));
+      return SUCCESS;
+    }
+    feedback(
+        context,
+        scale == null
+            ? Messages.success("config.layer_scale_cleared", Messages.value(layerId))
+            : Messages.success(
+                "config.layer_scale",
+                Messages.value(layerId),
+                Messages.value(LayerScale.format(scale))));
     return SUCCESS;
   }
 
