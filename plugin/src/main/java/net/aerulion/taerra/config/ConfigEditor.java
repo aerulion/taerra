@@ -26,7 +26,6 @@ import net.aerulion.taerra.rendering.RenderService;
 import net.aerulion.taerra.storage.StorageSettings;
 import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.util.MainThread;
-import net.aerulion.taerra.util.Names;
 import net.aerulion.taerra.util.Throwables;
 import net.aerulion.taerra.waypoint.Waypoints;
 import org.bukkit.Bukkit;
@@ -146,7 +145,7 @@ public final class ConfigEditor {
     return List.copyOf(order);
   }
 
-  private static @NotNull String worldOf(final @NotNull String field) {
+  static @NotNull String worldOf(final @NotNull String field) {
     return field.substring(WORLD.length(), field.lastIndexOf(':'));
   }
 
@@ -214,14 +213,6 @@ public final class ConfigEditor {
         : null;
   }
 
-  private static @NotNull MapViews views(final @Nullable Object normalized) {
-    return Objects.requireNonNullElse(MapViews.parse((String) normalized), MapViews.BOTH);
-  }
-
-  private static boolean same(final @Nullable Object a, final @Nullable Object b) {
-    return Objects.equals(a, b);
-  }
-
   public void start() {
     this.revisions.seed(values(), System.currentTimeMillis());
     this.tileStorage.resume(Set.copyOf(worldIds()));
@@ -280,7 +271,7 @@ public final class ConfigEditor {
 
   public boolean setWorldName(
       final @NotNull String worldName, final @NotNull String given, final @NotNull String who) {
-    final @Nullable String name = worldName(worldName, given);
+    final @Nullable String name = SettingsPlan.worldName(worldName, given);
     if (name == null) {
       return false;
     }
@@ -449,6 +440,35 @@ public final class ConfigEditor {
     return target.equals(this.tileStorage.settings()) ? null : target;
   }
 
+  private SettingsPlan.@NotNull Server server() {
+    return new SettingsPlan.Server() {
+      @Override
+      public boolean worldLoaded(final @NotNull String world) {
+        return WorldKeys.resolve(world) != null;
+      }
+
+      @Override
+      public boolean worldEnabled(final @NotNull String world) {
+        return ConfigEditor.this.config.worldEnabled(world);
+      }
+
+      @Override
+      public @NotNull MapViews views(final @NotNull String world) {
+        return ConfigEditor.this.config.views(world);
+      }
+
+      @Override
+      public boolean iconExists(final @NotNull String icon) {
+        return ConfigEditor.this.iconExists.test(icon);
+      }
+
+      @Override
+      public boolean rendering() {
+        return ConfigEditor.this.renders.rendering() != null;
+      }
+    };
+  }
+
   private void track(final @Nullable String who) {
     if (!this.revisions.track(values(), who, System.currentTimeMillis()).isEmpty()) {
       this.published.accept(this.revisions.revision());
@@ -513,69 +533,25 @@ public final class ConfigEditor {
       final @NotNull Map<String, Object> changes,
       final @NotNull String who,
       final TileStorage.@Nullable Prepared prepared) {
-    final @NotNull Map<String, Object> current = values();
-    final @NotNull Map<String, Object> next = new LinkedHashMap<>();
-    for (final Map.@NotNull Entry<String, Object> change : changes.entrySet()) {
-      final @Nullable Object value =
-          current.containsKey(change.getKey())
-              ? normalize(change.getKey(), change.getValue(), current)
-              : null;
-      if (value == null) {
-        return new Invalid(change.getKey());
+    final SettingsPlan.@NotNull Ready ready;
+    switch (SettingsPlan.plan(base, changes, values(), this.revisions, server())) {
+      case SettingsPlan.Invalid(final String field) -> {
+        return new Invalid(field);
       }
-      next.put(change.getKey(), value);
+      case SettingsPlan.Conflicted(final List<Conflict> conflicts) -> {
+        return new Conflicted(conflicts, viewNow());
+      }
+      case SettingsPlan.Busy(final String field) -> {
+        return new Busy(field, viewNow());
+      }
+      case final SettingsPlan.Ready planned -> ready = planned;
     }
-    final @NotNull List<Conflict> conflicts = new ArrayList<>();
-    next.forEach(
-        (field, value) -> {
-          if (!same(current.get(field), value) && this.revisions.changedSince(field, base)) {
-            conflicts.add(new Conflict(field, current.get(field), this.revisions.author(field)));
-          }
-        });
-    if (!conflicts.isEmpty()) {
-      return new Conflicted(List.copyOf(conflicts), viewNow());
-    }
-    next.entrySet().removeIf(entry -> same(current.get(entry.getKey()), entry.getValue()));
+    final @NotNull Map<String, Object> next = ready.next();
     if (next.isEmpty()) {
       return new Applied(viewNow());
     }
-    final @NotNull List<String> limitFields =
-        next.keySet().stream()
-            .filter(field -> field.startsWith(WORLD) && field.endsWith(":" + LIMIT))
-            .toList();
-    final @NotNull List<String> viewFields =
-        next.keySet().stream()
-            .filter(field -> field.startsWith(WORLD) && field.endsWith(":" + VIEWS))
-            .toList();
-    final @NotNull List<String> renderFields = new ArrayList<>(limitFields);
-    viewFields.stream()
-        .filter(
-            field ->
-                (next.get(worldField(worldOf(field), "enabled")) instanceof final Boolean on
-                        ? on
-                        : this.config.worldEnabled(worldOf(field)))
-                    && !this.config
-                        .views(worldOf(field))
-                        .views()
-                        .containsAll(views(next.get(field)).views()))
-        .forEach(renderFields::add);
-    if (renderFields.size() > 1) {
-      return new Invalid(renderFields.get(1));
-    }
-    if (!viewFields.isEmpty() && this.renders.rendering() != null) {
-      return new Busy(viewFields.getFirst(), viewNow());
-    }
-    for (final @NotNull String field : limitFields) {
-      final @NotNull String world = worldOf(field);
-      if (!(next.get(worldField(world, "enabled")) instanceof final Boolean on
-          ? on
-          : this.config.worldEnabled(world))) {
-        return new Invalid(field);
-      }
-      if (this.renders.rendering() != null) {
-        return new Busy(field, viewNow());
-      }
-    }
+    final @NotNull List<String> limitFields = ready.limitFields();
+    final @NotNull List<String> viewFields = ready.viewFields();
     final @Nullable StorageSettings target = storageTarget(changes);
     if (target != null
         && (prepared == null || !target.equals(prepared.settings()) || storageBusy())) {
@@ -598,58 +574,21 @@ public final class ConfigEditor {
       this.tileStorage.move(prepared, Set.copyOf(worldIds()));
     }
 
-    final @NotNull List<String> enabled = new ArrayList<>(this.config.enabledWorlds());
-    final @NotNull Set<String> hidden = new LinkedHashSet<>(this.config.privateWorlds());
-    final @NotNull Set<String> hiddenPlayers = new LinkedHashSet<>(this.config.privatePlayers());
-    final @NotNull Map<String, String> names = new HashMap<>(this.config.worldNames());
-    boolean worlds = false;
-    for (final Map.@NotNull Entry<String, Object> change : next.entrySet()) {
-      final @NotNull String field = change.getKey();
-      if (!field.startsWith(WORLD) || limitFields.contains(field) || viewFields.contains(field)) {
-        continue;
-      }
-      worlds = true;
-      final @NotNull String world = worldOf(field);
-      switch (field.substring(field.lastIndexOf(':') + 1)) {
-        case "enabled" -> {
-          enabled.remove(world);
-          if (Boolean.TRUE.equals(change.getValue())) {
-            enabled.add(world);
-          }
-        }
-        case "private" -> {
-          hidden.remove(world);
-          if (Boolean.TRUE.equals(change.getValue())) {
-            hidden.add(world);
-          }
-        }
-        case "players" -> {
-          hiddenPlayers.remove(world);
-          if (Boolean.TRUE.equals(change.getValue())) {
-            hiddenPlayers.add(world);
-          }
-        }
-        default -> {
-          if (change.getValue() instanceof final @NotNull String name && !name.isEmpty()) {
-            names.put(world, name);
-          } else {
-            names.remove(world);
-          }
-        }
-      }
-    }
-    @NotNull List<String> order = List.copyOf(enabled);
-    if (next.get(ORDER) instanceof final @NotNull List<?> wanted) {
-      worlds = true;
-      order = order(wanted.stream().map(String::valueOf).toList(), enabled);
-    }
-    if (worlds) {
-      this.config.setWorlds(this.plugin, order, hidden, hiddenPlayers, names);
+    final SettingsPlan.@Nullable Worlds worlds =
+        SettingsPlan.worlds(
+            ready,
+            this.config.enabledWorlds(),
+            new LinkedHashSet<>(this.config.privateWorlds()),
+            new LinkedHashSet<>(this.config.privatePlayers()),
+            this.config.worldNames());
+    if (worlds != null) {
+      this.config.setWorlds(
+          this.plugin, worlds.order(), worlds.hidden(), worlds.hiddenPlayers(), worlds.names());
     }
     for (final @NotNull String field : viewFields) {
       final @Nullable World world = WorldKeys.resolve(worldOf(field));
       if (world != null) {
-        this.renders.views(world, views(next.get(field)));
+        this.renders.views(world, SettingsPlan.views(next.get(field)));
       }
     }
     for (final @NotNull String field : limitFields) {
@@ -697,66 +636,6 @@ public final class ConfigEditor {
                         + (field.equals(SETTING + "storage.database.password") ? MASK : value)));
     track(who);
     return new Applied(viewNow());
-  }
-
-  private @Nullable Object normalize(
-      final @NotNull String field,
-      final @Nullable Object value,
-      final @NotNull Map<String, Object> current) {
-    if (value == null) {
-      return null;
-    }
-    if (field.startsWith(SETTING)) {
-      final @Nullable Setting setting = setting(field.substring(SETTING.length()));
-      return setting == null || !setting.editable() ? null : valid(setting.key(), value);
-    }
-    if (field.equals(ORDER)) {
-      if (!(value instanceof final @NotNull List<?> list)) {
-        return null;
-      }
-      final @NotNull List<String> order = new ArrayList<>();
-      for (final @Nullable Object world : list) {
-        if (!(world instanceof final @NotNull String id)
-            || order.contains(id)
-            || !current.containsKey(worldField(id, "enabled"))) {
-          return null;
-        }
-        order.add(id);
-      }
-      return List.copyOf(order);
-    }
-    if (field.startsWith(WORLD)) {
-      final @NotNull String world = worldOf(field);
-      if (field.endsWith(":" + LIMIT)) {
-        return WorldKeys.resolve(world) == null ? null : normalizeLimit(value);
-      }
-      if (field.endsWith(":" + VIEWS)) {
-        return WorldKeys.resolve(world) != null
-                && value instanceof final @NotNull String id
-                && MapViews.parse(id) != null
-            ? id
-            : null;
-      }
-      return field.endsWith(":name")
-          ? value instanceof final @NotNull String name ? worldName(world, name) : null
-          : value instanceof Boolean ? value : null;
-    }
-    if (field.startsWith(LAYER_ICON)) {
-      return value instanceof final @NotNull String icon
-              && (icon.isEmpty() || this.iconExists.test(icon))
-          ? icon
-          : null;
-    }
-    if (field.startsWith(LAYER_SCALE)) {
-      return value instanceof final @NotNull String text
-          ? text.isEmpty()
-              ? text
-              : LayerScale.parse(text) instanceof final @NotNull Integer scale
-                  ? LayerScale.format(scale)
-                  : null
-          : null;
-    }
-    return field.startsWith(LAYER) && value instanceof Boolean ? value : null;
   }
 
   private @NotNull Map<String, Object> values() {
@@ -819,14 +698,6 @@ public final class ConfigEditor {
       layers.putIfAbsent(layer, new LayerInfo(layer, layer, false));
     }
     return List.copyOf(layers.values());
-  }
-
-  private @Nullable String worldName(final @NotNull String worldName, final @NotNull String given) {
-    final @Nullable NamespacedKey key = NamespacedKey.fromString(worldName);
-    if (key == null || given.isBlank() || given.strip().equals(WorldKeys.displayName(key))) {
-      return key == null ? null : "";
-    }
-    return worldName.contains(".") ? null : Names.of(given);
   }
 
   private static @Nullable Object valid(final @NotNull String key, final @NotNull Object value) {

@@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class RenderService {
 
-  private static final int REGION_SIZE_BLOCKS = 512;
+  static final int REGION_SIZE_BLOCKS = 512;
 
   private final @NotNull Plugin plugin;
   private final @NotNull TileGeneratorService generator;
@@ -73,6 +73,31 @@ public final class RenderService {
       final @Nullable WorldLimit limit, final int x, final int z, final int size) {
     return limit == null
         || limit.intersects(x * size, z * size, x * size + size - 1, z * size + size - 1);
+  }
+
+  static @NotNull Set<Long> withFogReach(final @NotNull Set<Long> changed) {
+    final @NotNull Set<Long> affected = new HashSet<>(changed);
+    for (final long chunk : changed) {
+      for (int offsetX = -Fog.REACH_CHUNKS; offsetX <= Fog.REACH_CHUNKS; offsetX++) {
+        for (int offsetZ = -Fog.REACH_CHUNKS; offsetZ <= Fog.REACH_CHUNKS; offsetZ++) {
+          affected.add(
+              ChunkCoordinate.key(
+                  ChunkCoordinate.keyX(chunk) + offsetX, ChunkCoordinate.keyZ(chunk) + offsetZ));
+        }
+      }
+    }
+    return affected;
+  }
+
+  static @NotNull Set<Long> containing(final @NotNull Set<Long> chunks, final int sizeBlocks) {
+    final @NotNull Set<Long> cells = new HashSet<>();
+    for (final long chunk : chunks) {
+      cells.add(
+          ChunkCoordinate.key(
+              Math.floorDiv(ChunkCoordinate.keyX(chunk) << 4, sizeBlocks),
+              Math.floorDiv(ChunkCoordinate.keyZ(chunk) << 4, sizeBlocks)));
+    }
+    return cells;
   }
 
   public @NotNull Start full(final @NotNull World world) {
@@ -142,17 +167,7 @@ public final class RenderService {
 
   public @NotNull Start regions(
       final @NotNull World world, final @NotNull Set<Long> changed, final @NotNull Runnable apply) {
-    final @NotNull Set<Long> affected = new HashSet<>(changed);
-    for (final long chunk : changed) {
-      for (int offsetX = -Fog.REACH_CHUNKS; offsetX <= Fog.REACH_CHUNKS; offsetX++) {
-        for (int offsetZ = -Fog.REACH_CHUNKS; offsetZ <= Fog.REACH_CHUNKS; offsetZ++) {
-          affected.add(
-              ChunkCoordinate.key(
-                  ChunkCoordinate.keyX(chunk) + offsetX, ChunkCoordinate.keyZ(chunk) + offsetZ));
-        }
-      }
-    }
-    return area(TileGeneratorService.REGION_RENDER, world, affected, apply, false);
+    return area(TileGeneratorService.REGION_RENDER, world, withFogReach(changed), apply, false);
   }
 
   private @NotNull Start area(
@@ -167,21 +182,9 @@ public final class RenderService {
       affected.addAll(this.columns.groundDependents(worldName, changed));
     }
     final @Nullable WorldLimit limit = this.limits.get(worldName);
-    final @NotNull Set<Long> regions = new HashSet<>();
-    final @NotNull Set<Long> tiles = new HashSet<>();
+    final @NotNull Set<Long> regions = containing(affected, REGION_SIZE_BLOCKS);
+    final @NotNull Set<Long> tiles = containing(affected, TileGeometry.TILE_SIZE);
     final @NotNull LongSet chunks = new LongOpenHashSet(affected);
-    for (final long chunk : affected) {
-      final int blockX = ChunkCoordinate.keyX(chunk) << 4;
-      final int blockZ = ChunkCoordinate.keyZ(chunk) << 4;
-      regions.add(
-          ChunkCoordinate.key(
-              Math.floorDiv(blockX, REGION_SIZE_BLOCKS),
-              Math.floorDiv(blockZ, REGION_SIZE_BLOCKS)));
-      tiles.add(
-          ChunkCoordinate.key(
-              Math.floorDiv(blockX, TileGeometry.TILE_SIZE),
-              Math.floorDiv(blockZ, TileGeometry.TILE_SIZE)));
-    }
     final @NotNull List<TileCoordinate> isometric =
         this.config.views(worldName).shows(MapView.ISOMETRIC)
             ? this.isoTiles.tilesShowing(world, chunks, terrain)

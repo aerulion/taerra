@@ -1,7 +1,9 @@
 package net.aerulion.taerra.config;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
 import net.aerulion.taerra.integration.GriefPreventionClaims;
@@ -78,35 +80,63 @@ public final class LiveSettings {
     }
   }
 
+  static @Nullable Reaction reaction(final @NotNull String key) {
+    return switch (key) {
+      case "rendering.render-threads" -> Reaction.RENDER_THREADS;
+      case "rendering.update-interval" -> Reaction.UPDATE_INTERVAL;
+      case "cache.max-tiles" -> Reaction.TILE_CACHE;
+      case "cache.max-chunks" -> Reaction.CHUNK_CACHE;
+      case "join-hint.interval-days" -> Reaction.READ_ON_USE;
+      default -> {
+        if (layer(key) != null) {
+          yield Reaction.MARKER_LAYER;
+        }
+        if (ConfigEditor.effect(key) == ConfigEditor.Effect.WEB_RESTARTED) {
+          yield Reaction.RESTART_WEB;
+        }
+        if (key.startsWith("web.")) {
+          yield Reaction.WEB_CHANGED;
+        }
+        yield key.startsWith(ConfigEditor.STORAGE) ? Reaction.STORAGE_MOVE : null;
+      }
+    };
+  }
+
+  private static @Nullable Layer layer(final @NotNull String key) {
+    for (final @NotNull Layer layer : Layer.values()) {
+      if (key.startsWith("markers." + layer.setting + ".")) {
+        return layer;
+      }
+    }
+    return null;
+  }
+
   public void apply(final @NotNull Set<String> keys) {
     final @NotNull FileConfiguration file = this.plugin.getConfig();
-    if (keys.contains("rendering.render-threads")) {
+    final @NotNull Set<Reaction> reactions = EnumSet.noneOf(Reaction.class);
+    keys.stream().map(LiveSettings::reaction).filter(Objects::nonNull).forEach(reactions::add);
+    if (reactions.contains(Reaction.RENDER_THREADS)) {
       this.generator.setThreads(TaerraConfig.renderThreads(file));
     }
-    if (keys.contains("rendering.update-interval")) {
+    if (reactions.contains(Reaction.UPDATE_INTERVAL)) {
       this.changes.setInterval(TaerraConfig.updateInterval(file));
     }
-    if (keys.contains("cache.max-tiles")) {
+    if (reactions.contains(Reaction.TILE_CACHE)) {
       this.tileCache.resize(TaerraConfig.maxCacheTiles(file));
       this.tileStorage.resize(TaerraConfig.maxCacheTiles(file));
     }
-    if (keys.contains("cache.max-chunks")) {
+    if (reactions.contains(Reaction.CHUNK_CACHE)) {
       this.columnsCache.resize(TaerraConfig.maxCacheChunks(file));
     }
-    boolean layersChanged = false;
-    for (final @NotNull Layer layer : Layer.values()) {
-      if (keys.stream().anyMatch(key -> key.startsWith("markers." + layer.setting + "."))) {
-        restart(layer);
-        layersChanged = true;
-      }
-    }
-    if (layersChanged) {
+    final @NotNull Set<Layer> layers = EnumSet.noneOf(Layer.class);
+    keys.stream().map(LiveSettings::layer).filter(Objects::nonNull).forEach(layers::add);
+    layers.forEach(this::restart);
+    if (!layers.isEmpty()) {
       this.refreshMarkers.run();
     }
-    if (keys.stream()
-        .anyMatch(key -> ConfigEditor.effect(key) == ConfigEditor.Effect.WEB_RESTARTED)) {
+    if (reactions.contains(Reaction.RESTART_WEB)) {
       this.restartWeb.run();
-    } else if (keys.stream().anyMatch(key -> key.startsWith("web."))) {
+    } else if (reactions.contains(Reaction.WEB_CHANGED)) {
       this.webChanged.run();
     }
   }
@@ -162,6 +192,18 @@ public final class LiveSettings {
     if (task != null) {
       this.layers.put(layer, task);
     }
+  }
+
+  enum Reaction {
+    RENDER_THREADS,
+    UPDATE_INTERVAL,
+    TILE_CACHE,
+    CHUNK_CACHE,
+    MARKER_LAYER,
+    RESTART_WEB,
+    WEB_CHANGED,
+    STORAGE_MOVE,
+    READ_ON_USE
   }
 
   private enum Layer {
