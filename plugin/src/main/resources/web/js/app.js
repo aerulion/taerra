@@ -4,7 +4,17 @@ import {iconEditor} from './iconeditor.js';
 import {iconChooser, iconStore} from './icons.js';
 import {iconManager} from './iconmanager.js';
 import {waypointManager} from './manager.js';
-import {defaultLanguage, hashLanguage, language, LANGUAGES, MAC, numbers, setLanguage, t, translatePage} from './i18n.js';
+import {
+    defaultLanguage,
+    hashLanguage,
+    language,
+    LANGUAGES,
+    MAC,
+    numbers,
+    setLanguage,
+    t,
+    translatePage
+} from './i18n.js';
 import {mapManager} from './map.js';
 import {navigationManager} from './navigation.js';
 import {setupOffline} from './offline.js';
@@ -71,17 +81,27 @@ function renderWorlds() {
     toggle.type = 'button';
     toggle.setAttribute('popovertarget', 'world-menu');
     toggle.append(label);
-    toggle.insertAdjacentHTML('beforeend', `<svg aria-hidden="true" class="world-switch__chevron" height="6" shape-rendering="crispEdges" viewBox="0 0 5 3" width="10">
-<path d="M0 0h5v1H0zM1 1h3v1H1zM2 2h1v1H2z" fill="currentColor"/></svg>`);
+    toggle.insertAdjacentHTML(
+        'beforeend',
+        `<svg aria-hidden="true" class="world-switch__chevron" height="6" shape-rendering="crispEdges" viewBox="0 0 5 3" width="10">
+<path d="M0 0h5v1H0zM1 1h3v1H1zM2 2h1v1H2z" fill="currentColor"/></svg>`
+    );
 
     const nav = $('world-list');
-    nav.replaceChildren(toggle, ...worlds.map(world => worldButton(world, 'world-tab', worldEnv(world), worldTitle(world))));
-    $('world-menu').replaceChildren(...Object.values(Object.groupBy(worlds, world => world.environment)).map(group => {
-        const section = element('div', 'menu__group');
-        section.append(element('p', 'label menu__label', t(`env.${group[0].environment}`)),
-            ...group.map(world => worldButton(world, 'menu__item', worldTitle(world))));
-        return section;
-    }));
+    nav.replaceChildren(
+        toggle,
+        ...worlds.map((world) => worldButton(world, 'world-tab', worldEnv(world), worldTitle(world)))
+    );
+    $('world-menu').replaceChildren(
+        ...Object.values(Object.groupBy(worlds, (world) => world.environment)).map((group) => {
+            const section = element('div', 'menu__group');
+            section.append(
+                element('p', 'label menu__label', t(`env.${group[0].environment}`)),
+                ...group.map((world) => worldButton(world, 'menu__item', worldTitle(world)))
+            );
+            return section;
+        })
+    );
     fitWorlds();
     $('player-scope').hidden = worlds.length < 2;
 }
@@ -111,7 +131,7 @@ $('world-menu').addEventListener('beforetoggle', (event) => {
 });
 
 async function selectWorld(name) {
-    const world = worlds.find(w => w.name === name);
+    const world = worlds.find((w) => w.name === name);
     if (!world || world === currentWorld) {
         return;
     }
@@ -159,7 +179,7 @@ async function loadWorlds() {
         $('world-list').textContent = t('worlds.none');
         return;
     }
-    if (!await applyHash()) {
+    if (!(await applyHash())) {
         await selectWorld(worlds[0].name);
     }
 }
@@ -188,13 +208,18 @@ function showVersion(version) {
         const link = element('a', 'about__commit', commit[0]);
         link.href = `https://github.com/aerulion/taerra/commit/${commit[0]}`;
         link.target = '_blank';
-        $('about-version-text').replaceChildren(version.slice(0, commit.index), link,
-            version.slice(commit.index + commit[0].length));
+        $('about-version-text').replaceChildren(
+            version.slice(0, commit.index),
+            link,
+            version.slice(commit.index + commit[0].length)
+        );
     } else {
         $('about-version-text').textContent = version;
     }
-    $('about-report').href = `https://github.com/aerulion/taerra/issues/new?template=bug-plugin.yml&debug=${
-        encodeURIComponent(debugInfo())}`;
+    $('about-report').href =
+        `https://github.com/aerulion/taerra/issues/new?template=bug-plugin.yml&debug=${encodeURIComponent(
+            debugInfo()
+        )}`;
 }
 
 async function refreshServerName() {
@@ -221,7 +246,7 @@ async function refreshWorlds() {
         console.error('Failed to load worlds:', error);
         return;
     }
-    currentWorld = worlds.find(world => world.name === currentWorld?.name) ?? null;
+    currentWorld = worlds.find((world) => world.name === currentWorld?.name) ?? null;
     mapManager.setDepth(currentWorld?.depth);
     mapManager.setBounds(currentWorld?.bounds);
     if (currentWorld) {
@@ -284,7 +309,7 @@ async function applyHash() {
     applyPanelHash(params);
     markerManager.readVisibility(params);
     setMapStyle(params.get('style'));
-    const world = worlds.find(w => w.name === params.get('world'));
+    const world = worlds.find((w) => w.name === params.get('world'));
     if (!world) {
         return false;
     }
@@ -294,7 +319,7 @@ async function applyHash() {
         mapManager.setRotation(Number(params.get('r')));
     }
     syncViewControls();
-    const [x, z, zoom] = ['x', 'z', 'zoom'].map(key => params.has(key) ? Number(params.get(key)) : NaN);
+    const [x, z, zoom] = ['x', 'z', 'zoom'].map((key) => (params.has(key) ? Number(params.get(key)) : NaN));
     if (Number.isFinite(x) && Number.isFinite(z)) {
         const y = params.has('y') ? Number(params.get('y')) : undefined;
         mapManager.centerOnBlock(x, z, Number.isFinite(zoom) ? zoom : undefined, y);
@@ -319,7 +344,9 @@ function setMapStyle(style) {
 function setupMapStyle() {
     $('map-style-buttons').addEventListener('click', (event) => {
         const button = event.target.closest('button');
-        setMapStyle(button ? button.dataset.style : MAP_STYLES[(MAP_STYLES.indexOf(mapStyle()) + 1) % MAP_STYLES.length]);
+        setMapStyle(
+            button ? button.dataset.style : MAP_STYLES[(MAP_STYLES.indexOf(mapStyle()) + 1) % MAP_STYLES.length]
+        );
         writeHash();
     });
 }
@@ -407,7 +434,7 @@ function setupDialogs() {
         await copyText($('about-version-text').textContent);
         clearTimeout(copiedTimer);
         $('about-copy').dataset.icon = 'check';
-        copiedTimer = setTimeout(() => $('about-copy').dataset.icon = 'copy', 1500);
+        copiedTimer = setTimeout(() => ($('about-copy').dataset.icon = 'copy'), 1500);
     });
     let debugTimer;
     $('about-debug').addEventListener('click', async () => {
@@ -454,17 +481,28 @@ function setupHaptics() {
             haptic();
         }
     });
-    document.addEventListener('click', (event) => {
-        if (event.target.closest?.('.segmented > .btn:not([aria-pressed="true"], :disabled)')) {
-            haptic();
-        }
-    }, true);
+    document.addEventListener(
+        'click',
+        (event) => {
+            if (event.target.closest?.('.segmented > .btn:not([aria-pressed="true"], :disabled)')) {
+                haptic();
+            }
+        },
+        true
+    );
 }
 
 function setupShortcuts() {
     document.addEventListener('keydown', (event) => {
-        if (event.ctrlKey || event.metaKey || event.altKey || event.repeat || event.key.length !== 1 ||
-            event.target.closest('input, select, textarea') || document.querySelector('dialog[open]')) {
+        if (
+            event.ctrlKey ||
+            event.metaKey ||
+            event.altKey ||
+            event.repeat ||
+            event.key.length !== 1 ||
+            event.target.closest('input, select, textarea') ||
+            document.querySelector('dialog[open]')
+        ) {
             return;
         }
         const combo = `${event.shiftKey ? 'Shift+' : ''}${event.key.toUpperCase()}`;
@@ -482,8 +520,15 @@ function keycaps(combo) {
     if (combo === 'Shift+?') {
         return ['?'];
     }
-    return combo.split('+').map(key => key === 'Shift' ? t('hint.key.shift')
-        : key === 'Control' || key === 'Meta' ? t(MAC ? 'key.command' : 'key.control') : key);
+    return combo
+        .split('+')
+        .map((key) =>
+            key === 'Shift'
+                ? t('hint.key.shift')
+                : key === 'Control' || key === 'Meta'
+                  ? t(MAC ? 'key.command' : 'key.control')
+                  : key
+        );
 }
 
 function setupTooltips() {
@@ -515,9 +560,12 @@ function setupTooltips() {
         }
         timer = setTimeout(() => {
             const label = (node.dataset.tip ?? node.getAttribute('aria-label') ?? node.textContent)
-                .replace(/\s*\([^()]*\)$/, '').trim();
-            tip.replaceChildren(element('span', '', label),
-                ...keycaps(node.getAttribute('aria-keyshortcuts')).map(key => element('kbd', '', key)));
+                .replace(/\s*\([^()]*\)$/, '')
+                .trim();
+            tip.replaceChildren(
+                element('span', '', label),
+                ...keycaps(node.getAttribute('aria-keyshortcuts')).map((key) => element('kbd', '', key))
+            );
             tip.showPopover();
             const box = node.getBoundingClientRect();
             const {width, height} = tip.getBoundingClientRect();
@@ -545,11 +593,13 @@ function setupTooltips() {
 function formatDuration(millis) {
     const minutes = Math.max(1, Math.round(millis / 60000));
     const unit = (value, unit) => new Intl.NumberFormat(language, {style: 'unit', unit}).format(value);
-    return minutes < 60 ? unit(minutes, 'minute') : `${unit(Math.floor(minutes / 60), 'hour')} ${unit(minutes % 60, 'minute')}`;
+    return minutes < 60
+        ? unit(minutes, 'minute')
+        : `${unit(Math.floor(minutes / 60), 'hour')} ${unit(minutes % 60, 'minute')}`;
 }
 
 function worldName(name) {
-    const world = worlds.find(w => w.name === name);
+    const world = worlds.find((w) => w.name === name);
     return world ? worldLabel(world) : name;
 }
 
@@ -564,19 +614,22 @@ function renderProgress({render, move, queued = 0, inFlight = 0}) {
         const percent = Math.max(0, Math.min(100, render.percent ?? 0));
         $('render-title').textContent = t('render.title');
         $('render-what').hidden = false;
-        $('render-what').textContent = t(render.kind === 'area' ? 'render.area' : 'render.full', {world: worldName(render.world)});
+        $('render-what').textContent = t(render.kind === 'area' ? 'render.area' : 'render.full', {
+            world: worldName(render.world)
+        });
         $('render-percent').hidden = false;
         $('render-percent').textContent = `${Math.floor(percent)}%`;
         bar.classList.remove('is-indeterminate');
         $('render-bar').style.width = `${percent}%`;
         let detail;
         if (scanning) {
-            detail = render.totalRegions > 0
-                ? t('render.scanning', {
-                    done: numbers.format(render.scannedRegions),
-                    total: numbers.format(render.totalRegions)
-                })
-                : t('render.starting');
+            detail =
+                render.totalRegions > 0
+                    ? t('render.scanning', {
+                          done: numbers.format(render.scannedRegions),
+                          total: numbers.format(render.totalRegions)
+                      })
+                    : t('render.starting');
         } else {
             detail = t('render.drawing', {
                 done: numbers.format(render.completedTiles),
@@ -628,8 +681,17 @@ async function renderButton(button, action) {
     button.classList.remove('is-armed');
     const done = response?.ok === true;
     const full = action === 'full';
-    button.textContent = t(done ? (full ? 'menu.renderStarted' : 'menu.renderCanceled')
-        : response?.status === 409 ? (full ? 'menu.renderBusy' : 'menu.renderIdle') : 'selection.failed');
+    button.textContent = t(
+        done
+            ? full
+                ? 'menu.renderStarted'
+                : 'menu.renderCanceled'
+            : response?.status === 409
+              ? full
+                  ? 'menu.renderBusy'
+                  : 'menu.renderIdle'
+              : 'selection.failed'
+    );
     button.classList.add(done ? 'is-done' : 'is-failed');
     return done;
 }
@@ -729,8 +791,14 @@ function setupContextMenu() {
             return;
         }
         if (action === 'render-world' || action === 'cancel-render') {
-            if (!armed(button, t(action === 'render-world' ? 'menu.renderConfirm' : 'menu.cancelConfirm',
-                {world: worldLabel(currentWorld)}))) {
+            if (
+                !armed(
+                    button,
+                    t(action === 'render-world' ? 'menu.renderConfirm' : 'menu.cancelConfirm', {
+                        world: worldLabel(currentWorld)
+                    })
+                )
+            ) {
                 return;
             }
             const done = await renderButton(button, action === 'render-world' ? 'full' : 'cancel');
@@ -742,8 +810,13 @@ function setupContextMenu() {
             const y = exact ? block.y + 1 : null;
             close();
             void navigationManager.navigate({
-                label: exact ? `${x}, ${y}, ${z}` : `${x}, ${z}`, world: currentWorld.name,
-                x: x + .5, y, z: z + .5, color: '#ffffff', player: null
+                label: exact ? `${x}, ${y}, ${z}` : `${x}, ${z}`,
+                world: currentWorld.name,
+                x: x + 0.5,
+                y,
+                z: z + 0.5,
+                color: '#ffffff',
+                player: null
             });
             return;
         }
@@ -764,8 +837,13 @@ function setupContextMenu() {
             void waypointEditor.open({world: currentWorld.name, x, y, z});
             return;
         }
-        await copyText(action === 'coordinates' ? (exact ? `${block.x} ${block.y} ${block.z}` : `${block.x} ${block.z}`)
-            : placeLink(block));
+        await copyText(
+            action === 'coordinates'
+                ? exact
+                    ? `${block.x} ${block.y} ${block.z}`
+                    : `${block.x} ${block.z}`
+                : placeLink(block)
+        );
         button.textContent = t('menu.copied');
         button.classList.add('is-done');
         closeTimer = setTimeout(close, 700);
@@ -800,7 +878,7 @@ function setupContextMenu() {
 }
 
 wsManager.on('progress', renderProgress);
-wsManager.on('disconnect', () => $('render-section').hidden = true);
+wsManager.on('disconnect', () => ($('render-section').hidden = true));
 
 wsManager.on('players', (message) => playerManager.updatePlayers(message.data ?? []));
 
@@ -827,25 +905,27 @@ wsManager.on('worlds', () => void refreshWorlds());
 
 const discovery = $('discovery');
 let discoveryTimer;
-discovery.addEventListener('click', () => discovery.hidden = true);
+discovery.addEventListener('click', () => (discovery.hidden = true));
 
 function celebrate(region) {
     $('discovery-name').textContent = region;
-    $('discovery-burst').replaceChildren(...Array.from({length: 28}, (_, index) => {
-        const spark = document.createElement('i');
-        const angle = index / 28 * 2 * Math.PI + Math.random() * .4;
-        const reach = 90 + Math.random() * 110;
-        spark.style.setProperty('--x', `${Math.round(Math.cos(angle) * reach)}px`);
-        spark.style.setProperty('--y', `${Math.round(Math.sin(angle) * reach * .55)}px`);
-        spark.style.setProperty('--delay', `${Math.round(Math.random() * 150)}ms`);
-        return spark;
-    }));
+    $('discovery-burst').replaceChildren(
+        ...Array.from({length: 28}, (_, index) => {
+            const spark = document.createElement('i');
+            const angle = (index / 28) * 2 * Math.PI + Math.random() * 0.4;
+            const reach = 90 + Math.random() * 110;
+            spark.style.setProperty('--x', `${Math.round(Math.cos(angle) * reach)}px`);
+            spark.style.setProperty('--y', `${Math.round(Math.sin(angle) * reach * 0.55)}px`);
+            spark.style.setProperty('--delay', `${Math.round(Math.random() * 150)}ms`);
+            return spark;
+        })
+    );
     discovery.hidden = false;
     discovery.classList.remove('is-shown');
     void discovery.offsetWidth;
     discovery.classList.add('is-shown');
     clearTimeout(discoveryTimer);
-    discoveryTimer = setTimeout(() => discovery.hidden = true, 5000);
+    discoveryTimer = setTimeout(() => (discovery.hidden = true), 5000);
 }
 
 wsManager.on('regions', (message) => {
@@ -876,7 +956,7 @@ wsManager.on('connect', () => {
 });
 
 translatePage();
-const accountReady = accountManager.initialize().catch(error => console.error('Failed to log in:', error));
+const accountReady = accountManager.initialize().catch((error) => console.error('Failed to log in:', error));
 await mapManager.initialize();
 void iconStore.initialize();
 markerManager.initialize();
@@ -892,8 +972,12 @@ navigationManager.onShow = (target) => {
     if (target.player) {
         playerManager.follow(target.player);
     } else {
-        mapManager.centerOnBlock(Math.floor(target.x), Math.floor(target.z), Math.max(mapManager.getMap().getZoom(), 2),
-            Number.isFinite(target.y) ? Math.floor(target.y) : undefined);
+        mapManager.centerOnBlock(
+            Math.floor(target.x),
+            Math.floor(target.z),
+            Math.max(mapManager.getMap().getZoom(), 2),
+            Number.isFinite(target.y) ? Math.floor(target.y) : undefined
+        );
     }
 };
 waypointEditor.initialize();
@@ -928,8 +1012,13 @@ markerManager.onWaypoint = async (action, waypoint, button) => {
     if (action === 'navigate') {
         mapManager.getMap().closePopup();
         void navigationManager.navigate({
-            label: waypoint.name, world: waypoint.world, x: waypoint.x + .5, y: waypoint.y, z: waypoint.z + .5,
-            color: waypoint.color, player: null
+            label: waypoint.name,
+            world: waypoint.world,
+            x: waypoint.x + 0.5,
+            y: waypoint.y,
+            z: waypoint.z + 0.5,
+            color: waypoint.color,
+            player: null
         });
         return;
     }

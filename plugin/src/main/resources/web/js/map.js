@@ -3,10 +3,24 @@ import {t} from './i18n.js';
 export const pixelPath = (list) => list.map(([x, y, w, h]) => `M${x} ${y}h${w}v${h}h${-w}z`).join('');
 
 const NEEDLE_SVG = `<svg class="compass__needle" viewBox="0 0 7 15" width="14" height="30" aria-hidden="true">
-<path d="${pixelPath([[3, 0, 1, 2], [2, 2, 2, 2], [1, 4, 3, 3]])}" fill="#e34a4a"/>
-<path d="${pixelPath([[4, 2, 1, 2], [4, 4, 2, 3]])}" fill="#a32c2c"/>
-<path d="${pixelPath([[1, 7, 3, 4], [2, 11, 2, 2], [3, 13, 1, 2]])}" fill="#d0d1d4"/>
-<path d="${pixelPath([[4, 7, 2, 4], [4, 11, 1, 2]])}" fill="#8c8d90"/>
+<path d="${pixelPath([
+    [3, 0, 1, 2],
+    [2, 2, 2, 2],
+    [1, 4, 3, 3]
+])}" fill="#e34a4a"/>
+<path d="${pixelPath([
+    [4, 2, 1, 2],
+    [4, 4, 2, 3]
+])}" fill="#a32c2c"/>
+<path d="${pixelPath([
+    [1, 7, 3, 4],
+    [2, 11, 2, 2],
+    [3, 13, 1, 2]
+])}" fill="#d0d1d4"/>
+<path d="${pixelPath([
+    [4, 7, 2, 4],
+    [4, 11, 1, 2]
+])}" fill="#8c8d90"/>
 <path d="${pixelPath([[3, 7, 1, 1]])}" fill="#1e1e1f"/></svg>`;
 
 const DOUBLE_TAP_MS = 300;
@@ -37,7 +51,8 @@ function quickZoom(map) {
         gesture.center = map.unproject(map.project(gesture.latLng, gesture.zoom).subtract(offset), gesture.zoom);
         L.Util.cancelAnimFrame(gesture.frame);
         gesture.frame = L.Util.requestAnimFrame(() =>
-            map._move(gesture.center, gesture.zoom, {pinch: true, round: false}));
+            map._move(gesture.center, gesture.zoom, {pinch: true, round: false})
+        );
     };
     const end = () => {
         document.removeEventListener('touchmove', move);
@@ -55,34 +70,53 @@ function quickZoom(map) {
         gesture = null;
     };
     const container = map.getContainer();
-    container.addEventListener('touchstart', (event) => {
-        if (event.touches.length !== 1 || gesture || map._animatingZoom || !map.dragging.enabled()) {
+    container.addEventListener(
+        'touchstart',
+        (event) => {
+            if (event.touches.length !== 1 || gesture || map._animatingZoom || !map.dragging.enabled()) {
+                tap = null;
+                last = null;
+                return;
+            }
+            const at = point(event.touches[0]);
+            if (last && event.timeStamp - last.time < DOUBLE_TAP_MS && at.distanceTo(last.point) < DOUBLE_TAP_SLOP) {
+                last = null;
+                event.preventDefault();
+                event.stopPropagation();
+                map._stop();
+                map.dragging.disable();
+                const zoom = map.getZoom();
+                gesture = {
+                    anchor: at,
+                    latLng: map.containerPointToLatLng(at),
+                    start: zoom,
+                    zoom,
+                    moved: false,
+                    frame: 0
+                };
+                document.addEventListener('touchmove', move, {passive: false});
+                document.addEventListener('touchend', end);
+                document.addEventListener('touchcancel', end);
+                return;
+            }
+            tap = {time: event.timeStamp, point: at};
+        },
+        {capture: true, passive: false}
+    );
+    container.addEventListener(
+        'touchend',
+        (event) => {
+            last =
+                tap &&
+                event.touches.length === 0 &&
+                event.timeStamp - tap.time < DOUBLE_TAP_MS &&
+                point(event.changedTouches[0]).distanceTo(tap.point) < DOUBLE_TAP_SLOP
+                    ? {time: event.timeStamp, point: tap.point}
+                    : null;
             tap = null;
-            last = null;
-            return;
-        }
-        const at = point(event.touches[0]);
-        if (last && event.timeStamp - last.time < DOUBLE_TAP_MS && at.distanceTo(last.point) < DOUBLE_TAP_SLOP) {
-            last = null;
-            event.preventDefault();
-            event.stopPropagation();
-            map._stop();
-            map.dragging.disable();
-            const zoom = map.getZoom();
-            gesture = {anchor: at, latLng: map.containerPointToLatLng(at), start: zoom, zoom, moved: false, frame: 0};
-            document.addEventListener('touchmove', move, {passive: false});
-            document.addEventListener('touchend', end);
-            document.addEventListener('touchcancel', end);
-            return;
-        }
-        tap = {time: event.timeStamp, point: at};
-    }, {capture: true, passive: false});
-    container.addEventListener('touchend', (event) => {
-        last = tap && event.touches.length === 0 && event.timeStamp - tap.time < DOUBLE_TAP_MS
-            && point(event.changedTouches[0]).distanceTo(tap.point) < DOUBLE_TAP_SLOP
-            ? {time: event.timeStamp, point: tap.point} : null;
-        tap = null;
-    }, true);
+        },
+        true
+    );
 }
 
 class MapManager {
@@ -149,8 +183,14 @@ class MapManager {
     }
 
     static async decodePick(raw) {
-        if (raw.length < 18 || raw[0] !== 0x50 || raw[1] !== 0x4D || raw[2] !== 0x50 || raw[3] !== 0x4B ||
-            raw[4] !== 3) {
+        if (
+            raw.length < 18 ||
+            raw[0] !== 0x50 ||
+            raw[1] !== 0x4d ||
+            raw[2] !== 0x50 ||
+            raw[3] !== 0x4b ||
+            raw[4] !== 3
+        ) {
             return null;
         }
         const header = new DataView(raw.buffer, raw.byteOffset, 18);
@@ -166,8 +206,8 @@ class MapManager {
         if (body.length < maskBytes + cells * width * 2) {
             return null;
         }
-        const read = offset => width === 1 ? body[offset] : body[offset] << 8 | body[offset + 1];
-        const wrap = width === 1 ? 0xFF : 0xFFFF;
+        const read = (offset) => (width === 1 ? body[offset] : (body[offset] << 8) | body[offset + 1]);
+        const wrap = width === 1 ? 0xff : 0xffff;
         const originDepth = header.getInt32(7);
         const originHeight = header.getInt32(11);
         const depths = new Int32Array(cells);
@@ -196,21 +236,26 @@ class MapManager {
     }
 
     screenBearing(yaw) {
-        const radians = yaw * Math.PI / 180;
+        const radians = (yaw * Math.PI) / 180;
         const dx = -Math.sin(radians);
         const dz = Math.cos(radians);
         let screenX = dx;
         let screenY = dz;
         if (this.isIsometric()) {
-            const [rx, rz] = [[dx, dz], [dz, -dx], [-dx, -dz], [-dz, dx]][this.rotation] ?? [dx, dz];
+            const [rx, rz] = [
+                [dx, dz],
+                [dz, -dx],
+                [-dx, -dz],
+                [-dz, dx]
+            ][this.rotation] ?? [dx, dz];
             screenX = rx - rz;
             screenY = (rx + rz) / 2;
         }
-        return Math.atan2(screenX, -screenY) * 180 / Math.PI;
+        return (Math.atan2(screenX, -screenY) * 180) / Math.PI;
     }
 
     computeMapUnitsPerBlock() {
-        return (MapManager.LEAFLET_TILE_SIZE / Math.pow(2, this.maxZoom)) / this.tileBlockSize;
+        return MapManager.LEAFLET_TILE_SIZE / Math.pow(2, this.maxZoom) / this.tileBlockSize;
     }
 
     async loadGeometry() {
@@ -253,11 +298,13 @@ class MapManager {
             zoomSnap: 1
         });
         quickZoom(this.map);
-        L.control.zoom({
-            position: 'topright',
-            zoomInTitle: t('map.zoomIn'),
-            zoomOutTitle: t('map.zoomOut')
-        }).addTo(this.map);
+        L.control
+            .zoom({
+                position: 'topright',
+                zoomInTitle: t('map.zoomIn'),
+                zoomOutTitle: t('map.zoomOut')
+            })
+            .addTo(this.map);
         const compass = L.DomUtil.create('button', 'map-btn compass');
         compass.type = 'button';
         compass.id = 'compass';
@@ -279,7 +326,6 @@ class MapManager {
         });
         this.map.on('mouseout', () => this.forgetPointer());
         this.map.on('moveend resize', () => this.keepInBounds());
-
     }
 
     isIsometric() {
@@ -322,12 +368,21 @@ class MapManager {
         }
         const {minX, minZ, maxX, maxZ} = this.bounds;
         const zoom = this.map.getZoom();
-        const area = L.bounds([[minX, minZ], [minX, maxZ + 1], [maxX + 1, minZ], [maxX + 1, maxZ + 1]]
-            .map(([x, z]) => this.map.project(this.blockToLatLng(x, z), zoom)));
+        const area = L.bounds(
+            [
+                [minX, minZ],
+                [minX, maxZ + 1],
+                [maxX + 1, minZ],
+                [maxX + 1, maxZ + 1]
+            ].map(([x, z]) => this.map.project(this.blockToLatLng(x, z), zoom))
+        );
         const half = this.map.getSize().divideBy(2);
-        this.map.panInsideBounds(L.latLngBounds(
-            this.map.unproject(area.min.subtract(half), zoom),
-            this.map.unproject(area.max.add(half), zoom)));
+        this.map.panInsideBounds(
+            L.latLngBounds(
+                this.map.unproject(area.min.subtract(half), zoom),
+                this.map.unproject(area.max.add(half), zoom)
+            )
+        );
     }
 
     viewZoomOffset() {
@@ -344,7 +399,10 @@ class MapManager {
         }
         const offset = this.viewZoomOffset();
         const target = this.map.getZoom() + (mode === 'iso' ? -offset : offset);
-        return Math.max(this.minZoomFor(mode), Math.min(mode === 'iso' ? this.isometric.maxZoom : this.maxZoom, target));
+        return Math.max(
+            this.minZoomFor(mode),
+            Math.min(mode === 'iso' ? this.isometric.maxZoom : this.maxZoom, target)
+        );
     }
 
     scaleAt(zoom, mode = this.viewMode) {
@@ -369,8 +427,9 @@ class MapManager {
                 close.push(this.scaleAt(this.maxZoom, 'top'));
             }
             if (views.includes('isometric')) {
-                (world.depth?.isometric ?? [0]).forEach(depth =>
-                    far.push(this.scaleAt(this.isometric.maxZoom - depth, 'iso')));
+                (world.depth?.isometric ?? [0]).forEach((depth) =>
+                    far.push(this.scaleAt(this.isometric.maxZoom - depth, 'iso'))
+                );
                 close.push(this.scaleAt(this.isometric.maxZoom, 'iso'));
             }
         }
@@ -420,22 +479,26 @@ class MapManager {
             const Layered = L.GridLayer.extend({
                 createTile(coords, done) {
                     const tile = document.createElement('canvas');
-                    void manager.composeTile(tile, coords.z, coords.x, coords.y).catch(() => {
-                    }).then(() => done(null, tile));
+                    void manager
+                        .composeTile(tile, coords.z, coords.x, coords.y)
+                        .catch(() => {})
+                        .then(() => done(null, tile));
                     return tile;
                 }
             });
             this.tileLayer = new Layered(options);
-            this.tileLayer.on('tileunload', event => event.tile.loading?.abort());
+            this.tileLayer.on('tileunload', (event) => event.tile.loading?.abort());
         } else {
-            const template = this.isIsometric() ? 'api/iso/{world}/{rotation}/{z}/{x}/{y}.png?v={v}' :
-                'api/tiles/{world}/{z}/{x}/{y}.png?v={v}';
+            const template = this.isIsometric()
+                ? 'api/iso/{world}/{rotation}/{z}/{x}/{y}.png?v={v}'
+                : 'api/tiles/{world}/{z}/{x}/{y}.png?v={v}';
             this.tileLayer = L.tileLayer(template, {
                 ...options,
                 world: encodeURIComponent(this.currentWorld),
                 rotation: this.rotation,
                 v: (data) => this.tileVersion(data.z, data.x, data.y),
-                errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+                errorTileUrl:
+                    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
             });
         }
 
@@ -482,7 +545,7 @@ class MapManager {
     updateCompass() {
         const target = this.screenBearing(180);
         const current = this.needleAngle ?? target;
-        this.needleAngle = current + ((target - current) % 360 + 540) % 360 - 180;
+        this.needleAngle = current + ((((target - current) % 360) + 540) % 360) - 180;
         this.needle.style.rotate = `${this.needleAngle}deg`;
     }
 
@@ -511,7 +574,7 @@ class MapManager {
 
     setRevealed(ids) {
         const next = new Set(ids);
-        if (next.size === this.revealed.size && [...next].every(id => this.revealed.has(id))) {
+        if (next.size === this.revealed.size && [...next].every((id) => this.revealed.has(id))) {
             return;
         }
         this.revealed = next;
@@ -521,10 +584,13 @@ class MapManager {
     }
 
     wantedLayers(header) {
-        return (header ?? '').split(',').filter(id => {
-            const region = id.slice(1);
-            return id[0] === 'b' ? this.revealed.has(region) : id[0] === 's' && !this.revealed.has(region);
-        }).sort((a, b) => a[0] === b[0] ? 0 : a[0] === 'b' ? -1 : 1);
+        return (header ?? '')
+            .split(',')
+            .filter((id) => {
+                const region = id.slice(1);
+                return id[0] === 'b' ? this.revealed.has(region) : id[0] === 's' && !this.revealed.has(region);
+            })
+            .sort((a, b) => (a[0] === b[0] ? 0 : a[0] === 'b' ? -1 : 1));
     }
 
     static async fetchImage(url, signal) {
@@ -545,7 +611,9 @@ class MapManager {
             return;
         }
         const ids = this.wantedLayers(base.response.headers.get('X-Taerra-Layers'));
-        const pieces = await Promise.all(ids.map(id => MapManager.fetchImage(`${url}&layer=${id}`, loading.signal).catch(() => null)));
+        const pieces = await Promise.all(
+            ids.map((id) => MapManager.fetchImage(`${url}&layer=${id}`, loading.signal).catch(() => null))
+        );
         if (loading.signal.aborted) {
             return;
         }
@@ -580,7 +648,7 @@ class MapManager {
                 under[i + 3] = 0;
                 continue;
             }
-            const keep = (255 - alpha) * under[i + 3] / 255;
+            const keep = ((255 - alpha) * under[i + 3]) / 255;
             const total = alpha + keep;
             for (let channel = 0; channel < 3; channel++) {
                 under[i + channel] = (over[i + channel] * alpha + under[i + channel] * keep) / total;
@@ -598,8 +666,9 @@ class MapManager {
         next.src = url;
 
         if (typeof next.decode === 'function') {
-            next.decode().then(swap).catch(() => {
-            });
+            next.decode()
+                .then(swap)
+                .catch(() => {});
         } else {
             next.onload = swap;
         }
@@ -608,8 +677,7 @@ class MapManager {
     refreshTile(tile) {
         const {x, y, z} = tile.coords;
         if (this.layered) {
-            void this.composeTile(tile.el, z, x, y).catch(() => {
-            });
+            void this.composeTile(tile.el, z, x, y).catch(() => {});
         } else {
             this.swapTileImage(tile.el, this.tileUrl(z, x, y));
         }
@@ -697,7 +765,8 @@ class MapManager {
         return {
             key: `top:${this.currentWorld}:${tileX}:${tileZ}`,
             url: `api/tiles/${encodeURIComponent(this.currentWorld)}/${tileX}/${tileZ}.pick`,
-            height: buffer => buffer ? MapManager.pickCell(buffer, x - tileX * size, z - tileZ * size)?.height : undefined
+            height: (buffer) =>
+                buffer ? MapManager.pickCell(buffer, x - tileX * size, z - tileZ * size)?.height : undefined
         };
     }
 
@@ -722,7 +791,7 @@ class MapManager {
         if (!pending) {
             pending = this.fetchPick(url)
                 .catch(() => null)
-                .then(buffer => {
+                .then((buffer) => {
                     this.pickPending.delete(key);
                     this.rememberPick(key, buffer);
                     if (this.lastPointer) {
@@ -741,11 +810,13 @@ class MapManager {
             return null;
         }
         const base = await MapManager.decodePick(new Uint8Array(await response.arrayBuffer()));
-        const ids = this.wantedLayers(response.headers.get('X-Taerra-Layers')).filter(id => id[0] === 'b');
-        const bodies = await Promise.all(ids.map(async id => {
-            const layer = await fetch(`${url}?layer=${id}`);
-            return layer.ok ? MapManager.decodePick(new Uint8Array(await layer.arrayBuffer())) : null;
-        }));
+        const ids = this.wantedLayers(response.headers.get('X-Taerra-Layers')).filter((id) => id[0] === 'b');
+        const bodies = await Promise.all(
+            ids.map(async (id) => {
+                const layer = await fetch(`${url}?layer=${id}`);
+                return layer.ok ? MapManager.decodePick(new Uint8Array(await layer.arrayBuffer())) : null;
+            })
+        );
         for (const body of bodies) {
             if (base && body && body.stored === base.stored) {
                 for (let cell = 0; cell < base.empty.length; cell++) {
@@ -767,8 +838,10 @@ class MapManager {
         const size = this.isometric.tileSize;
         const tileX = Math.floor(screenX / size);
         const tileY = Math.floor(screenY / size);
-        const buffer = this.cachedPick(this.pickKey(tileX, tileY),
-            `api/iso/${encodeURIComponent(this.currentWorld)}/${this.rotation}/${tileX}/${tileY}.pick`);
+        const buffer = this.cachedPick(
+            this.pickKey(tileX, tileY),
+            `api/iso/${encodeURIComponent(this.currentWorld)}/${this.rotation}/${tileX}/${tileY}.pick`
+        );
         const cell = buffer && MapManager.pickCell(buffer, screenX - tileX * size, screenY - tileY * size);
         if (!cell) {
             return null;
@@ -823,7 +896,7 @@ class MapManager {
         }
         const half = this.isometric.blockWidth / 2;
         const units = this.isoMapUnitsPerPixel();
-        return L.latLng(-(down * half / 2 - (y - 1) * half) * units, across * half * units);
+        return L.latLng(-((down * half) / 2 - (y - 1) * half) * units, across * half * units);
     }
 
     latLngToBlock(latLng) {
@@ -842,8 +915,11 @@ class MapManager {
 
             const difference = screenX / half;
             const sum = (screenY + (this.lastPickedY ?? MapManager.ISO_REFERENCE_Y) * half) / quarter;
-            const [x, z] = MapManager.unrotateCell(this.rotation, Math.round((sum + difference) / 2),
-                Math.round((sum - difference) / 2));
+            const [x, z] = MapManager.unrotateCell(
+                this.rotation,
+                Math.round((sum + difference) / 2),
+                Math.round((sum - difference) / 2)
+            );
             return {x, z};
         }
 
@@ -855,8 +931,7 @@ class MapManager {
 
     mark(x, z, y) {
         const icon = L.divIcon({className: 'map-mark', iconSize: [64, 64]});
-        const mark = L.marker(this.blockToLatLng(x, z, y), {icon, interactive: false, keyboard: false})
-            .addTo(this.map);
+        const mark = L.marker(this.blockToLatLng(x, z, y), {icon, interactive: false, keyboard: false}).addTo(this.map);
         mark.getElement().addEventListener('animationend', (event) => !event.pseudoElement && mark.remove());
     }
 

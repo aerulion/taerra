@@ -101,9 +101,12 @@ class WaypointEditor {
 
     groupIcon() {
         const group = this.selectedGroup();
-        const icon = group === PERSONAL ? markerManager.layers.find(layer => layer.id === PERSONAL_LAYER)?.icon
-            : group === '' ? markerManager.layers.find(layer => layer.id === 'waypoints')?.icon
-                : this.groups.find(known => known.label === group)?.icon;
+        const icon =
+            group === PERSONAL
+                ? markerManager.layers.find((layer) => layer.id === PERSONAL_LAYER)?.icon
+                : group === ''
+                  ? markerManager.layers.find((layer) => layer.id === 'waypoints')?.icon
+                  : this.groups.find((known) => known.label === group)?.icon;
         return iconStore.get(icon) ? icon : '';
     }
 
@@ -118,8 +121,11 @@ class WaypointEditor {
     showPreview() {
         const fallback = this.fallback();
         const own = iconStore.get(this.icon) ? this.icon : '';
-        $('waypoint-preview').innerHTML = iconStore.badge(own || fallback.id, this.hex,
-            this.selectedGroup() === PERSONAL);
+        $('waypoint-preview').innerHTML = iconStore.badge(
+            own || fallback.id,
+            this.hex,
+            this.selectedGroup() === PERSONAL
+        );
         $('waypoint-icon-image').replaceChildren(iconStore.image(own || fallback.id));
         $('waypoint-icon').classList.toggle('is-default', !own);
         $('waypoint-icon-name').textContent = own ? iconStore.label(own) : fallback.label;
@@ -148,11 +154,14 @@ class WaypointEditor {
         const serverChips = accountManager.canEditMarkers();
         $('waypoint-groups').replaceChildren(
             ...(ownChip ? [chip(PERSONAL, t('waypoint.personal'), false)] : []),
-            ...(serverChips ? [
-                chip('', t('waypoint.noGroup'), false),
-                ...groups.map(group => chip(group.label, group.label, group.private)),
-                chip(NEW_GROUP, t('waypoint.newGroup'), false)
-            ] : []));
+            ...(serverChips
+                ? [
+                      chip('', t('waypoint.noGroup'), false),
+                      ...groups.map((group) => chip(group.label, group.label, group.private)),
+                      chip(NEW_GROUP, t('waypoint.newGroup'), false)
+                  ]
+                : [])
+        );
         if (!$('waypoint-groups').querySelector('input:checked')) {
             $('waypoint-groups').querySelector('input').checked = true;
         }
@@ -164,10 +173,23 @@ class WaypointEditor {
     }
 
     async open({
-                   world, x, y, z, type = 'point', points = null, smooth = false,
-                   name = '', description = '', color = null, group = '', previous = null,
-                   personal = false, icon = '', onSaved = null, onColor = null
-               }) {
+        world,
+        x,
+        y,
+        z,
+        type = 'point',
+        points = null,
+        smooth = false,
+        name = '',
+        description = '',
+        color = null,
+        group = '',
+        previous = null,
+        personal = false,
+        icon = '',
+        onSaved = null,
+        onColor = null
+    }) {
         this.target = {world, x, y, z, type, points, smooth, previous, personal, onSaved, onColor};
         const kind = type === 'point' ? 'waypoint' : type;
         $('waypoint-title').textContent = t(previous ? `${kind}.edit` : `${kind}.new`);
@@ -178,7 +200,7 @@ class WaypointEditor {
         $('waypoint-delete').hidden = !previous;
         disarm($('waypoint-delete'));
         this.showError(null);
-        this.picker.set(HEX.test(color ?? '') ? color : accountManager.waypointColor() ?? DEFAULT_COLOR);
+        this.picker.set(HEX.test(color ?? '') ? color : (accountManager.waypointColor() ?? DEFAULT_COLOR));
         this.icon = points ? '' : icon;
         $('waypoint-icon-field').hidden = Boolean(points);
         const current = personal || (!previous && accountManager.canKeepPersonal()) ? PERSONAL : group;
@@ -231,9 +253,15 @@ class WaypointEditor {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                name, color: this.hex, group: group || null, description: $('waypoint-description').value,
+                name,
+                color: this.hex,
+                group: group || null,
+                description: $('waypoint-description').value,
                 privateGroup: creating && $('waypoint-private').checked,
-                world, previous, personal, previousPersonal: this.target.personal,
+                world,
+                previous,
+                personal,
+                previousPersonal: this.target.personal,
                 ...(points ? {type, points, smooth} : {x, y: Number.isFinite(y) ? y : null, z, icon: this.icon || null})
             })
         });
@@ -299,9 +327,17 @@ class WaypointEditor {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                name: waypoint.name, color: waypoint.color, group: waypoint.group || null,
-                description: waypoint.description, personal: waypoint.personal, icon: waypoint.icon || null,
-                world, x, y, z, previous: waypoint.previous
+                name: waypoint.name,
+                color: waypoint.color,
+                group: waypoint.group || null,
+                description: waypoint.description,
+                personal: waypoint.personal,
+                icon: waypoint.icon || null,
+                world,
+                x,
+                y,
+                z,
+                previous: waypoint.previous
             })
         });
         if (response?.ok) {
@@ -311,7 +347,7 @@ class WaypointEditor {
         $('placing').classList.add('is-failed');
         $('placing-text').textContent = t('waypoint.failed', {name: waypoint.name});
         $('placing').hidden = false;
-        this.placingTimer = setTimeout(() => $('placing').hidden = true, 3000);
+        this.placingTimer = setTimeout(() => ($('placing').hidden = true), 3000);
     }
 
     async send(url, options) {

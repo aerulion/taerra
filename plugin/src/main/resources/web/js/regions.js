@@ -6,8 +6,20 @@ const LABEL_Y = 64;
 const OFFSET = 2 ** 21;
 const SPAN = 2 ** 22;
 
-export const PALETTE = ['#3ab3da', '#b02e26', '#80c71f', '#f9801d', '#8932b8', '#fed83d', '#169c9c', '#c74ebd',
-    '#3c44aa', '#5e7c16', '#f38baa', '#835432'];
+export const PALETTE = [
+    '#3ab3da',
+    '#b02e26',
+    '#80c71f',
+    '#f9801d',
+    '#8932b8',
+    '#fed83d',
+    '#169c9c',
+    '#c74ebd',
+    '#3c44aa',
+    '#5e7c16',
+    '#f38baa',
+    '#835432'
+];
 
 export const cell = (x, z) => (x + OFFSET) * SPAN + z + OFFSET;
 
@@ -32,8 +44,7 @@ class RegionManager {
         try {
             const response = await fetch(`api/regions/${encodeURIComponent(world)}`);
             data = response.ok ? await response.json() : null;
-        } catch {
-        }
+        } catch {}
         if (world !== this.world) {
             return;
         }
@@ -78,7 +89,11 @@ class RegionManager {
             L.marker(mapManager.project(x, LABEL_Y, z), {
                 interactive: false,
                 keyboard: false,
-                icon: L.divIcon({className: 'region-name-icon', html: element('span', 'region-name', region.name), iconSize: null})
+                icon: L.divIcon({
+                    className: 'region-name-icon',
+                    html: element('span', 'region-name', region.name),
+                    iconSize: null
+                })
             }).addTo(this.labels);
         }
     }
@@ -87,11 +102,11 @@ class RegionManager {
 export const regionManager = new RegionManager();
 
 export function freshColor() {
-    const uses = new Map(PALETTE.map(color => [color, 0]));
+    const uses = new Map(PALETTE.map((color) => [color, 0]));
     for (const region of regionManager.regions) {
         if (uses.has(region.color)) {
             uses.set(region.color, uses.get(region.color) + 1);
         }
     }
-    return PALETTE.reduce((best, color) => uses.get(color) < uses.get(best) ? color : best);
+    return PALETTE.reduce((best, color) => (uses.get(color) < uses.get(best) ? color : best));
 }

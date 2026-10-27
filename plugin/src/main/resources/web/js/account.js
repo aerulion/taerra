@@ -7,7 +7,9 @@ import {wsManager} from './websocket.js';
 
 const $ = (id) => document.getElementById(id);
 
-export const FALLBACK_AVATAR = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" shape-rendering="crispEdges">
+export const FALLBACK_AVATAR =
+    'data:image/svg+xml,' +
+    encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" shape-rendering="crispEdges">
 <rect width="8" height="8" fill="#7a7a7a"/><rect width="8" height="2" fill="#4a4a4a"/><rect y="2" width="1" height="1" fill="#4a4a4a"/><rect x="7" y="2" width="1" height="1" fill="#4a4a4a"/>
 <rect x="1" y="4" width="1" height="1" fill="#e0e0e0"/><rect x="2" y="4" width="1" height="1" fill="#333"/><rect x="5" y="4" width="1" height="1" fill="#333"/><rect x="6" y="4" width="1" height="1" fill="#e0e0e0"/>
 <rect x="3" y="6" width="2" height="1" fill="#5a5a5a"/></svg>`);
@@ -15,7 +17,11 @@ export const FALLBACK_AVATAR = 'data:image/svg+xml,' + encodeURIComponent(`<svg 
 const tabs = new BroadcastChannel('taerra-account');
 const POLL_MILLIS = 2000;
 const QUIET_ZONE = 4;
-const AGO = [['day', 86400000], ['hour', 3600000], ['minute', 60000]];
+const AGO = [
+    ['day', 86400000],
+    ['hour', 3600000],
+    ['minute', 60000]
+];
 const relative = new Intl.RelativeTimeFormat(language, {numeric: 'auto'});
 
 let current = null;
@@ -138,8 +144,7 @@ async function startPairing() {
     let response = null;
     try {
         response = await fetch('api/login/pair', {method: 'POST'});
-    } catch {
-    }
+    } catch {}
     if (pairing !== started) {
         return;
     }
@@ -168,8 +173,7 @@ async function pollPairing() {
     let response = null;
     try {
         response = await fetch('api/login/claim', {method: 'POST', body: waiting.claim});
-    } catch {
-    }
+    } catch {}
     if (pairing !== waiting) {
         return;
     }
@@ -207,8 +211,7 @@ async function showDeviceLink() {
     let response = null;
     try {
         response = await fetch('api/login/link', {method: 'POST'});
-    } catch {
-    }
+    } catch {}
     panel.hidden = false;
     if (!response?.ok) {
         panel.classList.add('is-expired');
@@ -275,30 +278,40 @@ async function loadDevices() {
     try {
         const response = await fetch('api/account/sessions');
         devices = response.ok ? await response.json() : [];
-    } catch {
-    }
-    $('device-list').replaceChildren(...devices.map(device => {
-        const row = element('li', 'row device');
-        row.dataset.icon = deviceIcon(device);
-        row.classList.toggle('is-current', Boolean(device.current || device.game));
-        const text = element('span', 'row__text');
-        text.append(element('span', 'row__name', deviceName(device)), element('span', 'row__meta',
-            device.current ? t('account.thisDevice') : device.game ? t('account.inGame') : ago(device.seen)));
-        row.append(text);
-        if (!device.current && !device.game) {
-            const button = iconButton('logout', t('account.endDeviceLabel', {device: deviceName(device)}), async () => {
-                button.disabled = true;
-                try {
-                    await fetch(`api/account/sessions/${encodeURIComponent(device.id)}`, {method: 'DELETE'});
-                } catch {
-                }
-                await loadDevices();
-            });
-            button.classList.add('icon-btn--danger');
-            row.append(button);
-        }
-        return row;
-    }));
+    } catch {}
+    $('device-list').replaceChildren(
+        ...devices.map((device) => {
+            const row = element('li', 'row device');
+            row.dataset.icon = deviceIcon(device);
+            row.classList.toggle('is-current', Boolean(device.current || device.game));
+            const text = element('span', 'row__text');
+            text.append(
+                element('span', 'row__name', deviceName(device)),
+                element(
+                    'span',
+                    'row__meta',
+                    device.current ? t('account.thisDevice') : device.game ? t('account.inGame') : ago(device.seen)
+                )
+            );
+            row.append(text);
+            if (!device.current && !device.game) {
+                const button = iconButton(
+                    'logout',
+                    t('account.endDeviceLabel', {device: deviceName(device)}),
+                    async () => {
+                        button.disabled = true;
+                        try {
+                            await fetch(`api/account/sessions/${encodeURIComponent(device.id)}`, {method: 'DELETE'});
+                        } catch {}
+                        await loadDevices();
+                    }
+                );
+                button.classList.add('icon-btn--danger');
+                row.append(button);
+            }
+            return row;
+        })
+    );
 }
 
 function takeHashCode() {
@@ -320,7 +333,7 @@ async function initialize() {
         }
     });
     for (const head of [$('account-head'), $('account-avatar')]) {
-        head.addEventListener('load', () => head.hidden = false);
+        head.addEventListener('load', () => (head.hidden = false));
         head.addEventListener('error', () => {
             if (current && head.getAttribute('src') !== FALLBACK_AVATAR) {
                 head.src = FALLBACK_AVATAR;
@@ -436,8 +449,21 @@ function canConfigure() {
 }
 
 export const accountManager = {
-    initialize, loggedIn, usesMod, ownUuid, canTeleport, canEditMarkers, canKeepPersonal, canEditIcons,
-    waypointColor, rememberWaypointColor,
+    initialize,
+    loggedIn,
+    usesMod,
+    ownUuid,
+    canTeleport,
+    canEditMarkers,
+    canKeepPersonal,
+    canEditIcons,
+    waypointColor,
+    rememberWaypointColor,
     canCreatePrivateGroups,
-    canRenderWorld, canRenderArea, canCancelRender, canEditRegions, canResetRegions, canConfigure
+    canRenderWorld,
+    canRenderArea,
+    canCancelRender,
+    canEditRegions,
+    canResetRegions,
+    canConfigure
 };

@@ -50,7 +50,10 @@ export function translatePage() {
     }
     if (MAC) {
         for (const element of document.querySelectorAll('[aria-keyshortcuts^="Control+"]')) {
-            element.setAttribute('aria-keyshortcuts', element.getAttribute('aria-keyshortcuts').replace('Control+', 'Meta+'));
+            element.setAttribute(
+                'aria-keyshortcuts',
+                element.getAttribute('aria-keyshortcuts').replace('Control+', 'Meta+')
+            );
         }
     }
     const mod = t(MAC ? 'key.command' : 'key.control');

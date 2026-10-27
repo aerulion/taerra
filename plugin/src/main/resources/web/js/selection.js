@@ -22,10 +22,25 @@ const HISTORY = 200;
 const SIZES = [1, 3, 5];
 const TOUCH = matchMedia('(hover: none)');
 const SMALL = matchMedia('(max-width: 720px)');
-const TOOLS = {chunks: ['brush', 'rectangle', 'lasso'], region: ['brush', 'rectangle', 'lasso'], area: ['brush', 'rectangle', 'lasso', 'points'], line: ['points']};
+const TOOLS = {
+    chunks: ['brush', 'rectangle', 'lasso'],
+    region: ['brush', 'rectangle', 'lasso'],
+    area: ['brush', 'rectangle', 'lasso', 'points'],
+    line: ['points']
+};
 
-const SIDES = [[0, -1], [1, 0], [0, 1], [-1, 0]];
-const CORNERS = [[0, 0], [1, 0], [1, 1], [0, 1]];
+const SIDES = [
+    [0, -1],
+    [1, 0],
+    [0, 1],
+    [-1, 0]
+];
+const CORNERS = [
+    [0, 0],
+    [1, 0],
+    [1, 1],
+    [0, 1]
+];
 
 function trace(chunks) {
     const edges = new Map();
@@ -96,14 +111,14 @@ function detached(chunks) {
 }
 
 const chunkOf = (block) => Math.floor(block / CHUNK);
-const touching = (at) => at % CHUNK === 0 ? [at / CHUNK - 1, at / CHUNK] : [chunkOf(at)];
+const touching = (at) => (at % CHUNK === 0 ? [at / CHUNK - 1, at / CHUNK] : [chunkOf(at)]);
 
 function inside(outline, x, z) {
     let crossings = 0;
     for (let i = 0, j = outline.length - 1; i < outline.length; j = i++) {
         const [ax, az] = outline[i];
         const [bx, bz] = outline[j];
-        if ((az > z) !== (bz > z) && x < (bx - ax) * (z - az) / (bz - az) + ax) {
+        if (az > z !== bz > z && x < ((bx - ax) * (z - az)) / (bz - az) + ax) {
             crossings++;
         }
     }
@@ -189,12 +204,16 @@ class ChunkSelection {
         addEventListener('pointerup', end);
         addEventListener('pointercancel', end);
         for (const type of ['click', 'contextmenu']) {
-            container.addEventListener(type, (event) => {
-                if (this.world && !ignored(event)) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-            }, true);
+            container.addEventListener(
+                type,
+                (event) => {
+                    if (this.world && !ignored(event)) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                },
+                true
+            );
         }
         document.addEventListener('keydown', (event) => {
             if (!this.world || event.target.closest('input, select, textarea, dialog')) {
@@ -214,7 +233,7 @@ class ChunkSelection {
                 this.save();
             } else if (event.key === 'Backspace' && this.tool === 'points' && this.points.length > 0) {
                 event.preventDefault();
-                this.remember({points: this.points.map(point => [...point])});
+                this.remember({points: this.points.map((point) => [...point])});
                 this.points.pop();
                 this.changed();
             } else if ((event.key === '[' || event.key === ']') && !command) {
@@ -266,9 +285,9 @@ class ChunkSelection {
             }
             regionManager.hide('all');
         }
-        this.points = region ? [] : editing?.points.map(([x, , z]) => [x, z]) ?? [];
+        this.points = region ? [] : (editing?.points.map(([x, , z]) => [x, z]) ?? []);
         this.smooth = editing?.smooth ?? false;
-        this.color = editing?.color ?? (region ? freshColor() : accountManager.waypointColor() ?? DEFAULT_COLOR);
+        this.color = editing?.color ?? (region ? freshColor() : (accountManager.waypointColor() ?? DEFAULT_COLOR));
         this.history = [];
         this.future = [];
         this.hover = null;
@@ -279,13 +298,15 @@ class ChunkSelection {
         map.dragging.disable();
         map.boxZoom.disable();
         const chunks = kind === 'chunks';
-        this.label($('selection-title'), chunks ? 'selection.title'
-            : region && editing ? 'selection.title.regionEdit' : `selection.title.${kind}`);
+        this.label(
+            $('selection-title'),
+            chunks ? 'selection.title' : region && editing ? 'selection.title.regionEdit' : `selection.title.${kind}`
+        );
         this.label($('selection-done'), chunks ? 'selection.done' : 'selection.cancel');
         disarm($('selection-delete'));
         this.label($('selection-delete'), 'waypoint.delete');
         $('selection-delete').hidden = !editing;
-        markerManager.hide(region ? null : editing?.id ?? null);
+        markerManager.hide(region ? null : (editing?.id ?? null));
         $('selection-render').hidden = !chunks || !accountManager.canRenderArea();
         $('selection-smooth').hidden = kind !== 'line';
         $('selection-save').hidden = chunks;
@@ -299,7 +320,7 @@ class ChunkSelection {
             $('panel-toggle').click();
         }
         this.tool = null;
-        this.setTool(editing && kind !== 'region' || kind === 'line' ? 'points' : this.lastTool);
+        this.setTool((editing && kind !== 'region') || kind === 'line' ? 'points' : this.lastTool);
         this.changed();
     }
 
@@ -395,7 +416,7 @@ class ChunkSelection {
 
     segmentAt(point) {
         const map = mapManager.getMap();
-        const screen = this.handles().map(handle => map.latLngToContainerPoint(handle));
+        const screen = this.handles().map((handle) => map.latLngToContainerPoint(handle));
         const closed = this.kind === 'area' && screen.length >= 3;
         for (let i = 0; i < screen.length - (closed ? 0 : 1); i++) {
             const a = screen[i];
@@ -428,7 +449,7 @@ class ChunkSelection {
         }
         this.hover = null;
         if (this.tool === 'points') {
-            const before = this.points.map(entry => [...entry]);
+            const before = this.points.map((entry) => [...entry]);
             let index = this.pointAt(point);
             if (shift) {
                 if (index >= 0) {
@@ -440,7 +461,7 @@ class ChunkSelection {
                 if (!existing) {
                     const segment = this.segmentAt(point);
                     index = segment < 0 ? this.points.length : segment + 1;
-                    this.points.splice(index, 0, [block.x + .5, block.z + .5]);
+                    this.points.splice(index, 0, [block.x + 0.5, block.z + 0.5]);
                 }
                 this.stroke = {index, existing, moved: false, before};
             }
@@ -448,8 +469,13 @@ class ChunkSelection {
             return;
         }
         this.stroke = {
-            erase: this.erasing(shift), anchor: block, reach: block, last: point,
-            lasso: [[block.x + .5, block.z + .5]], added: new Map(), removed: new Map()
+            erase: this.erasing(shift),
+            anchor: block,
+            reach: block,
+            last: point,
+            lasso: [[block.x + 0.5, block.z + 0.5]],
+            added: new Map(),
+            removed: new Map()
         };
         if (this.tool === 'brush') {
             this.brush(chunkOf(block.x), chunkOf(block.z));
@@ -462,8 +488,8 @@ class ChunkSelection {
         if (stroke.index !== undefined) {
             const block = this.blockAt(point);
             const [x, z] = this.points[stroke.index];
-            if (block && (block.x + .5 !== x || block.z + .5 !== z)) {
-                this.points[stroke.index] = [block.x + .5, block.z + .5];
+            if (block && (block.x + 0.5 !== x || block.z + 0.5 !== z)) {
+                this.points[stroke.index] = [block.x + 0.5, block.z + 0.5];
                 stroke.moved = true;
                 this.changed();
             }
@@ -480,8 +506,8 @@ class ChunkSelection {
                 this.brush(chunkOf(block.x), chunkOf(block.z));
             } else if (this.tool === 'lasso') {
                 const [lastX, lastZ] = stroke.lasso.at(-1);
-                if (Math.abs(lastX - block.x - .5) + Math.abs(lastZ - block.z - .5) >= 1) {
-                    stroke.lasso.push([block.x + .5, block.z + .5]);
+                if (Math.abs(lastX - block.x - 0.5) + Math.abs(lastZ - block.z - 0.5) >= 1) {
+                    stroke.lasso.push([block.x + 0.5, block.z + 0.5]);
                 }
             }
         }
@@ -590,8 +616,10 @@ class ChunkSelection {
     box(stroke) {
         const {anchor, reach} = stroke;
         return [
-            chunkOf(Math.min(anchor.x, reach.x)), chunkOf(Math.min(anchor.z, reach.z)),
-            chunkOf(Math.max(anchor.x, reach.x)), chunkOf(Math.max(anchor.z, reach.z))
+            chunkOf(Math.min(anchor.x, reach.x)),
+            chunkOf(Math.min(anchor.z, reach.z)),
+            chunkOf(Math.max(anchor.x, reach.x)),
+            chunkOf(Math.max(anchor.z, reach.z))
         ];
     }
 
@@ -657,9 +685,10 @@ class ChunkSelection {
 
     isSplit() {
         if (this.split === null) {
-            this.loose = this.kind === 'region' || this.kind === 'area' && this.tool !== 'points'
-                ? detached(this.chunks) : [];
-            this.split = this.loose.length > 0 || this.kind === 'area' && this.tool !== 'points' && this.outlines().length > 1;
+            this.loose =
+                this.kind === 'region' || (this.kind === 'area' && this.tool !== 'points') ? detached(this.chunks) : [];
+            this.split =
+                this.loose.length > 0 || (this.kind === 'area' && this.tool !== 'points' && this.outlines().length > 1);
         }
         return this.split;
     }
@@ -680,7 +709,12 @@ class ChunkSelection {
         }
         const [minX, minZ, maxX, maxZ] = this.box(stroke);
         const [x0, z0, x1, z1] = [minX * CHUNK, minZ * CHUNK, (maxX + 1) * CHUNK, (maxZ + 1) * CHUNK];
-        return [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+        return [
+            [x0, z0],
+            [x1, z0],
+            [x1, z1],
+            [x0, z1]
+        ];
     }
 
     shape() {
@@ -719,25 +753,29 @@ class ChunkSelection {
         if (this.kind !== 'area' || !mapManager.isIsometric() || points.length < 3) {
             return null;
         }
-        return groundNow(points).map(side => side.map(([x, y, z]) => {
-            if (y === undefined) {
-                this.missing = true;
-            }
-            return mapManager.project(x, y ?? UNKNOWN_GROUND + 1, z);
-        }));
+        return groundNow(points).map((side) =>
+            side.map(([x, y, z]) => {
+                if (y === undefined) {
+                    this.missing = true;
+                }
+                return mapManager.project(x, y ?? UNKNOWN_GROUND + 1, z);
+            })
+        );
     }
 
     handles() {
-        return this.draped(this.points)?.map(side => side[0]) ?? this.points.map(([x, z]) => this.ground(x, z));
+        return this.draped(this.points)?.map((side) => side[0]) ?? this.points.map(([x, z]) => this.ground(x, z));
     }
 
     level(x, z, selected = null) {
         if (!mapManager.isIsometric()) {
             return mapManager.project(x, 0, z);
         }
-        const levels = touching(x).flatMap(chunkX => touching(z)
-            .filter(chunkZ => !selected || selected.has(cell(chunkX, chunkZ)))
-            .map(chunkZ => this.chunkLevel(chunkX, chunkZ)));
+        const levels = touching(x).flatMap((chunkX) =>
+            touching(z)
+                .filter((chunkZ) => !selected || selected.has(cell(chunkX, chunkZ)))
+                .map((chunkZ) => this.chunkLevel(chunkX, chunkZ))
+        );
         return mapManager.project(x, levels.reduce((sum, y) => sum + y, 0) / levels.length + 1, z);
     }
 
@@ -769,15 +807,29 @@ class ChunkSelection {
     square(chunkX, chunkZ) {
         const [x0, z0, x1, z1] = [chunkX * CHUNK, chunkZ * CHUNK, (chunkX + 1) * CHUNK, (chunkZ + 1) * CHUNK];
         if (!mapManager.isIsometric()) {
-            return [[x0, z0], [x1, z0], [x1, z1], [x0, z1]].map(([x, z]) => mapManager.project(x, 0, z));
+            return [
+                [x0, z0],
+                [x1, z0],
+                [x1, z1],
+                [x0, z1]
+            ].map(([x, z]) => mapManager.project(x, 0, z));
         }
         const y = this.chunkLevel(chunkX, chunkZ) + 1;
-        return [[x0, z0], [x1, z0], [x1, z1], [x0, z1]].map(([x, z]) => mapManager.project(x, y, z));
+        return [
+            [x0, z0],
+            [x1, z0],
+            [x1, z1],
+            [x0, z1]
+        ].map(([x, z]) => mapManager.project(x, y, z));
     }
 
     squares(chunks, style) {
-        return chunks.length === 0 ? null
-            : L.polygon(chunks.map(([x, z]) => [this.square(x, z)]), {interactive: false, ...style});
+        return chunks.length === 0
+            ? null
+            : L.polygon(
+                  chunks.map(([x, z]) => [this.square(x, z)]),
+                  {interactive: false, ...style}
+              );
     }
 
     paintColor() {
@@ -812,19 +864,32 @@ class ChunkSelection {
             }
             const owned = new Map(other.chunks.map(([x, z]) => [cell(x, z), [x, z]]));
             const color = other.color ?? LINE;
-            group.addLayer(L.polygon(trace(owned).map(ring => corners(ring).map(([x, z]) => this.level(x, z, owned))), {
-                color, opacity: .9, weight: 1.5, fillColor: color, fillOpacity: .22, interactive: false
-            }));
+            group.addLayer(
+                L.polygon(
+                    trace(owned).map((ring) => corners(ring).map(([x, z]) => this.level(x, z, owned))),
+                    {
+                        color,
+                        opacity: 0.9,
+                        weight: 1.5,
+                        fillColor: color,
+                        fillOpacity: 0.22,
+                        interactive: false
+                    }
+                )
+            );
             if (other.label) {
                 const [x, z] = other.label;
-                group.addLayer(L.marker(this.level(x, z, owned), {
-                    interactive: false, keyboard: false,
-                    icon: L.divIcon({
-                        className: 'region-name-icon',
-                        html: element('span', 'region-name', other.name || t('regions.unnamed')),
-                        iconSize: null
+                group.addLayer(
+                    L.marker(this.level(x, z, owned), {
+                        interactive: false,
+                        keyboard: false,
+                        icon: L.divIcon({
+                            className: 'region-name-icon',
+                            html: element('span', 'region-name', other.name || t('regions.unnamed')),
+                            iconSize: null
+                        })
                     })
-                }));
+                );
             }
         }
         return group;
@@ -841,9 +906,17 @@ class ChunkSelection {
         const color = this.paintColor();
         const marker = this.kind === 'area' || this.kind === 'line';
         const rings = this.stroke ? trace(chunks) : this.outlines();
-        return L.polygon(rings.map(ring => this.draped(corners(ring))?.flat() ?? ring.map(([x, z]) => this.level(x, z, chunks))), {
-            color, opacity: marker ? 1 : .9, weight: 2, fillColor: color, fillOpacity: .3, interactive: false
-        });
+        return L.polygon(
+            rings.map((ring) => this.draped(corners(ring))?.flat() ?? ring.map(([x, z]) => this.level(x, z, chunks))),
+            {
+                color,
+                opacity: marker ? 1 : 0.9,
+                weight: 2,
+                fillColor: color,
+                fillOpacity: 0.3,
+                interactive: false
+            }
+        );
     }
 
     strokeBase() {
@@ -866,18 +939,31 @@ class ChunkSelection {
             return null;
         }
         const color = this.paintColor();
-        return L.layerGroup([
-            this.squares([...stroke.added.values()], {stroke: false, fillColor: color, fillOpacity: .45}),
-            this.squares([...stroke.removed.values()], {color: ERASE, weight: 1, fillColor: '#000', fillOpacity: .45})
-        ].filter(Boolean));
+        return L.layerGroup(
+            [
+                this.squares([...stroke.added.values()], {stroke: false, fillColor: color, fillOpacity: 0.45}),
+                this.squares([...stroke.removed.values()], {
+                    color: ERASE,
+                    weight: 1,
+                    fillColor: '#000',
+                    fillOpacity: 0.45
+                })
+            ].filter(Boolean)
+        );
     }
 
     previewLayer() {
         const outline = this.outline();
         if (outline && outline.length > 1) {
-            return L.polygon(outline.map(([x, z]) => this.level(x, z)), {
-                color: this.stroke.erase ? ERASE : LINE, weight: 2, fill: false, interactive: false
-            });
+            return L.polygon(
+                outline.map(([x, z]) => this.level(x, z)),
+                {
+                    color: this.stroke.erase ? ERASE : LINE,
+                    weight: 2,
+                    fill: false,
+                    interactive: false
+                }
+            );
         }
         const hover = this.hover;
         if (!hover || this.stroke || this.tool === 'points') {
@@ -887,10 +973,18 @@ class ChunkSelection {
         const footprint = this.footprint(hover.x, hover.z);
         const taken = erase ? [] : footprint.filter(([x, z]) => this.taken(x, z));
         const free = erase ? footprint : footprint.filter(([x, z]) => !this.taken(x, z));
-        return L.layerGroup([
-            this.squares(free, {color: erase ? ERASE : LINE, weight: 2, fill: erase, fillColor: '#000', fillOpacity: .25}),
-            this.squares(taken, {color: ERASE, weight: 1, fillColor: ERASE, fillOpacity: .35, dashArray: '3 3'})
-        ].filter(Boolean));
+        return L.layerGroup(
+            [
+                this.squares(free, {
+                    color: erase ? ERASE : LINE,
+                    weight: 2,
+                    fill: erase,
+                    fillColor: '#000',
+                    fillOpacity: 0.25
+                }),
+                this.squares(taken, {color: ERASE, weight: 1, fillColor: ERASE, fillOpacity: 0.35, dashArray: '3 3'})
+            ].filter(Boolean)
+        );
     }
 
     pointsLayer() {
@@ -901,16 +995,34 @@ class ChunkSelection {
         const group = L.layerGroup();
         if (this.kind === 'line') {
             const path = this.smooth && this.points.length > 2 ? spline(this.points) : this.points;
-            group.addLayer(L.polyline(path.map(([x, z]) => this.ground(x, z)), {color, weight: 3, interactive: false}));
+            group.addLayer(
+                L.polyline(
+                    path.map(([x, z]) => this.ground(x, z)),
+                    {color, weight: 3, interactive: false}
+                )
+            );
         } else {
-            group.addLayer(L.polygon(this.draped(this.points)?.flat() ?? this.points.map(([x, z]) => this.ground(x, z)), {
-                color, weight: 2, fillColor: color, fillOpacity: .3, interactive: false
-            }));
+            group.addLayer(
+                L.polygon(this.draped(this.points)?.flat() ?? this.points.map(([x, z]) => this.ground(x, z)), {
+                    color,
+                    weight: 2,
+                    fillColor: color,
+                    fillOpacity: 0.3,
+                    interactive: false
+                })
+            );
         }
         for (const handle of this.handles()) {
-            group.addLayer(L.circleMarker(handle, {
-                radius: 4, color: '#000', weight: 1, fillColor: LINE, fillOpacity: 1, interactive: false
-            }));
+            group.addLayer(
+                L.circleMarker(handle, {
+                    radius: 4,
+                    color: '#000',
+                    weight: 1,
+                    fillColor: LINE,
+                    fillOpacity: 1,
+                    interactive: false
+                })
+            );
         }
         return group;
     }
@@ -929,14 +1041,18 @@ class ChunkSelection {
             return;
         }
         const region = this.kind === 'region';
-        const strokeKey = this.stroke?.added ? `${this.version}|${this.stroke.added.size}|${this.stroke.removed.size}` : null;
-        this.layer('others', region ? `${regionManager.version}|${this.editing?.id}` : 'none',
-            () => region ? this.othersLayer() : null);
+        const strokeKey = this.stroke?.added
+            ? `${this.version}|${this.stroke.added.size}|${this.stroke.removed.size}`
+            : null;
+        this.layer('others', region ? `${regionManager.version}|${this.editing?.id}` : 'none', () =>
+            region ? this.othersLayer() : null
+        );
         this.layer('base', `${this.version}|${this.color}|${Boolean(this.stroke?.added)}`, () => this.baseLayer());
         this.layer('stroke', strokeKey ?? 'none', () => this.strokeLayer());
         const loose = !this.stroke && this.chunks.size > 0 && this.isSplit() ? this.loose : [];
-        this.layer('loose', `${this.version}|${loose.length}`,
-            () => this.squares(loose, {color: ERASE, weight: 2, fillColor: ERASE, fillOpacity: .5}));
+        this.layer('loose', `${this.version}|${loose.length}`, () =>
+            this.squares(loose, {color: ERASE, weight: 2, fillColor: ERASE, fillOpacity: 0.5})
+        );
         this.layer('preview', Symbol(), () => this.previewLayer());
         this.layer('points', Symbol(), () => this.pointsLayer());
         if (this.missing) {
@@ -952,8 +1068,13 @@ class ChunkSelection {
         const split = !this.stroke && !points && this.chunks.size > 0 && this.isSplit();
         $('selection-count').textContent = numbers.format(points ? this.points.length : this.chunks.size);
         const full = !points && this.chunks.size >= this.limit();
-        const message = this.status ?? (split ? t(region ? 'region.split' : 'selection.split')
-            : full ? t('selection.full', {count: numbers.format(this.limit())}) : null);
+        const message =
+            this.status ??
+            (split
+                ? t(region ? 'region.split' : 'selection.split')
+                : full
+                  ? t('selection.full', {count: numbers.format(this.limit())})
+                  : null);
         $('selection-text').classList.toggle('selection__message--keys', !message);
         if (message) {
             $('selection-text').textContent = message;
@@ -981,10 +1102,30 @@ class ChunkSelection {
     hints(points) {
         const erase = this.mode === 'erase';
         const pairs = points
-            ? TOUCH.matches ? [['tap', 'add'], ['drag', 'move'], ['tapPoint', 'remove'], ['twoFingers', 'panZoom']]
-                : [['click', 'add'], ['drag', 'move'], ['clickPoint', 'remove'], ['backspace', 'undo'], ['rightDrag', 'pan']]
-            : TOUCH.matches ? [['drag', erase ? 'erase' : 'paint'], ['twoFingers', 'panZoom']]
-                : [['drag', erase ? 'erase' : 'paint'], ['shift', erase ? 'paint' : 'erase'], ['rightDrag', 'pan']];
+            ? TOUCH.matches
+                ? [
+                      ['tap', 'add'],
+                      ['drag', 'move'],
+                      ['tapPoint', 'remove'],
+                      ['twoFingers', 'panZoom']
+                  ]
+                : [
+                      ['click', 'add'],
+                      ['drag', 'move'],
+                      ['clickPoint', 'remove'],
+                      ['backspace', 'undo'],
+                      ['rightDrag', 'pan']
+                  ]
+            : TOUCH.matches
+              ? [
+                    ['drag', erase ? 'erase' : 'paint'],
+                    ['twoFingers', 'panZoom']
+                ]
+              : [
+                    ['drag', erase ? 'erase' : 'paint'],
+                    ['shift', erase ? 'paint' : 'erase'],
+                    ['rightDrag', 'pan']
+                ];
         if (!TOUCH.matches) {
             pairs.push(['undoKey', 'history']);
             pairs.push(['esc', this.kind === 'chunks' ? 'exit' : 'cancel']);
@@ -1028,8 +1169,7 @@ class ChunkSelection {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({action, world, chunks: [...this.chunks.values()]})
             });
-        } catch {
-        }
+        } catch {}
         this.setSending(false);
         if (world !== this.world) {
             return;
@@ -1040,8 +1180,16 @@ class ChunkSelection {
             this.future = [];
             this.touched();
         }
-        this.show(t(response?.status === 202 ? `selection.started.${action}`
-            : response?.status === 409 ? 'selection.busy' : 'selection.failed'), response?.status !== 202);
+        this.show(
+            t(
+                response?.status === 202
+                    ? `selection.started.${action}`
+                    : response?.status === 409
+                      ? 'selection.busy'
+                      : 'selection.failed'
+            ),
+            response?.status !== 202
+        );
     }
 
     openRegion() {
@@ -1049,7 +1197,9 @@ class ChunkSelection {
             return;
         }
         regionEditor.open({
-            region: this.editing, color: this.color, size: this.chunks.size,
+            region: this.editing,
+            color: this.color,
+            size: this.chunks.size,
             onColor: (color) => {
                 this.color = color;
                 this.redraw();
@@ -1070,10 +1220,14 @@ class ChunkSelection {
             response = await fetch('api/regions', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({world, id: this.editing?.id ?? null, ...fields, chunks: [...this.chunks.values()]})
+                body: JSON.stringify({
+                    world,
+                    id: this.editing?.id ?? null,
+                    ...fields,
+                    chunks: [...this.chunks.values()]
+                })
             });
-        } catch {
-        }
+        } catch {}
         this.setSending(false);
         if (world !== this.world) {
             return 'failed';
@@ -1087,20 +1241,19 @@ class ChunkSelection {
             this.show(t(response.status === 202 ? 'region.started' : 'region.saved'), false);
             return null;
         }
-        return response ? (await response.json().catch(() => null))?.problem ?? 'failed' : 'failed';
+        return response ? ((await response.json().catch(() => null))?.problem ?? 'failed') : 'failed';
     }
 
     async deleteRegion() {
         let response = null;
         try {
             response = await fetch(`api/regions/${this.editing.id}`, {method: 'DELETE'});
-        } catch {
-        }
+        } catch {}
         if (response?.ok) {
             this.stop();
             return null;
         }
-        return response ? (await response.json().catch(() => null))?.problem ?? 'failed' : 'failed';
+        return response ? ((await response.json().catch(() => null))?.problem ?? 'failed') : 'failed';
     }
 
     save() {
@@ -1114,8 +1267,12 @@ class ChunkSelection {
         }
         const heights = new Map(this.editing?.points.map(([x, y, z]) => [`${x},${z}`, y]));
         void waypointEditor.open({
-            ...this.editing, world: this.world, type: this.kind, smooth: this.kind === 'line' && this.smooth,
-            color: this.color, points: shape.map(([x, z]) => [x, heights.get(`${x},${z}`) ?? null, z]),
+            ...this.editing,
+            world: this.world,
+            type: this.kind,
+            smooth: this.kind === 'line' && this.smooth,
+            color: this.color,
+            points: shape.map(([x, z]) => [x, heights.get(`${x},${z}`) ?? null, z]),
             onSaved: () => this.stop(),
             onColor: (color) => {
                 this.color = color;
@@ -1142,8 +1299,7 @@ class ChunkSelection {
         let response = null;
         try {
             response = await fetch(waypointUrl(previous, this.editing.personal), {method: 'DELETE'});
-        } catch {
-        }
+        } catch {}
         if (response?.ok) {
             this.stop();
             void markerManager.load(world);

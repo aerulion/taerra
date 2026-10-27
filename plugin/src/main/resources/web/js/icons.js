@@ -3,22 +3,49 @@ import {pixelPath} from './map.js';
 import {element} from './ui.js';
 import {wsManager} from './websocket.js';
 
-const OUTLINE = pixelPath([[1, 0, 10, 1], [0, 1, 12, 10], [1, 11, 10, 1], [3, 12, 6, 1], [4, 13, 4, 1], [5, 14, 2, 1]]);
-const FILL = pixelPath([[1, 1, 10, 10], [3, 11, 6, 1], [4, 12, 4, 1], [5, 13, 2, 1]]);
-const SHINE = pixelPath([[1, 1, 2, 1], [1, 2, 1, 1]]);
-const RIM = pixelPath([[2, 0, 10, 1], [1, 1, 12, 1], [0, 2, 14, 10], [1, 12, 12, 1], [2, 13, 10, 1], [4, 14, 6, 1],
-    [5, 15, 4, 1], [6, 16, 2, 1]]);
+const OUTLINE = pixelPath([
+    [1, 0, 10, 1],
+    [0, 1, 12, 10],
+    [1, 11, 10, 1],
+    [3, 12, 6, 1],
+    [4, 13, 4, 1],
+    [5, 14, 2, 1]
+]);
+const FILL = pixelPath([
+    [1, 1, 10, 10],
+    [3, 11, 6, 1],
+    [4, 12, 4, 1],
+    [5, 13, 2, 1]
+]);
+const SHINE = pixelPath([
+    [1, 1, 2, 1],
+    [1, 2, 1, 1]
+]);
+const RIM = pixelPath([
+    [2, 0, 10, 1],
+    [1, 1, 12, 1],
+    [0, 2, 14, 10],
+    [1, 12, 12, 1],
+    [2, 13, 10, 1],
+    [4, 14, 6, 1],
+    [5, 15, 4, 1],
+    [6, 16, 2, 1]
+]);
 export const MARKER = 'taerra:marker';
 export const GEM = 'taerra:gem';
 export const NOT_NAME = /[^\p{L}\p{N} _.,:'&()#!?+-]/gu;
-export const fold = (text) => text.normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase();
+export const fold = (text) =>
+    text
+        .normalize('NFD')
+        .replace(/\p{M}+/gu, '')
+        .toLowerCase();
 const MIN_CONTRAST = 3;
 
-const linear = (value) => (value /= 255) <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
+const linear = (value) => ((value /= 255) <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
 
 function lowContrast(hex) {
-    const [r, g, b] = [1, 3, 5].map(i => linear(parseInt(hex.slice(i, i + 2), 16) || 0));
-    return 1.05 / (.2126 * r + .7152 * g + .0722 * b + .05) < MIN_CONTRAST;
+    const [r, g, b] = [1, 3, 5].map((i) => linear(parseInt(hex.slice(i, i + 2), 16) || 0));
+    return 1.05 / (0.2126 * r + 0.7152 * g + 0.0722 * b + 0.05) < MIN_CONTRAST;
 }
 
 let grids = 0;
@@ -28,8 +55,10 @@ export function tintFilter(tint, color) {
 }
 
 function badgeSvg(href, tint, color, personal = false) {
-    return badgeFrame(href ? `<image href="${href}" x="2" y="2" width="8" height="8"${tintFilter(tint, color)}/>` : '',
-        personal);
+    return badgeFrame(
+        href ? `<image href="${href}" x="2" y="2" width="8" height="8"${tintFilter(tint, color)}/>` : '',
+        personal
+    );
 }
 
 export function badgeFrame(glyph, personal = false) {
@@ -57,8 +86,8 @@ class IconStore {
             if (!response.ok) {
                 return;
             }
-            this.icons = new Map((await response.json()).map(icon => [icon.id, icon]));
-            this.listeners.forEach(listener => listener());
+            this.icons = new Map((await response.json()).map((icon) => [icon.id, icon]));
+            this.listeners.forEach((listener) => listener());
         } catch (error) {
             console.error('Failed to load the icons:', error);
         }
@@ -154,7 +183,7 @@ class IconGrid {
             radio.value = id;
             radio.checked = id === this.value;
             radio.setAttribute('aria-label', label);
-            radio.addEventListener('change', () => this.value = id);
+            radio.addEventListener('change', () => (this.value = id));
             wrapper.addEventListener('click', (event) => {
                 if (event.detail > 0) {
                     this.onPick(id);
@@ -164,9 +193,13 @@ class IconGrid {
             return wrapper;
         };
         const query = fold(this.query.trim());
-        this.root.replaceChildren(...(query ? [] : [tile('', this.fallbackLabel, iconStore.image(this.fallback))]),
-            ...iconStore.list().filter(icon => fold(iconStore.label(icon.id)).includes(query))
-                .map(icon => tile(icon.id, iconStore.label(icon.id), iconStore.image(icon.id))));
+        this.root.replaceChildren(
+            ...(query ? [] : [tile('', this.fallbackLabel, iconStore.image(this.fallback))]),
+            ...iconStore
+                .list()
+                .filter((icon) => fold(iconStore.label(icon.id)).includes(query))
+                .map((icon) => tile(icon.id, iconStore.label(icon.id), iconStore.image(icon.id)))
+        );
     }
 
     focus() {
@@ -212,7 +245,7 @@ class IconChooser {
         this.grid.set(current, fallback, fallbackLabel);
         this.dialog.showModal();
         this.grid.focus();
-        return new Promise(resolve => this.resolve = resolve);
+        return new Promise((resolve) => (this.resolve = resolve));
     }
 
     finish(id) {

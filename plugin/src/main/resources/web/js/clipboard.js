@@ -2,8 +2,7 @@ export async function copyText(text) {
     try {
         await navigator.clipboard.writeText(text);
         return;
-    } catch {
-    }
+    } catch {}
     const field = document.createElement('textarea');
     field.value = text;
     field.style.position = 'fixed';

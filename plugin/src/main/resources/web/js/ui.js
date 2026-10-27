@@ -92,7 +92,8 @@ export function switchInput(field, checked, label, onChange) {
     input.setAttribute('aria-label', label);
     input.addEventListener('change', () => {
         onChange(input.checked);
-        const replaced = !input.isConnected && document.querySelector(`.switch__input[data-field="${CSS.escape(field)}"]`);
+        const replaced =
+            !input.isConnected && document.querySelector(`.switch__input[data-field="${CSS.escape(field)}"]`);
         if (replaced && replaced.checked === input.checked) {
             const track = replaced.nextElementSibling;
             track.classList.add('is-instant');

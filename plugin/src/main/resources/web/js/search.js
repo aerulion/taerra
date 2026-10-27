@@ -12,14 +12,18 @@ const COORDINATES = /^(-?\d+(?:\.\d+)?)(?:[\s,]+(-?\d+(?:\.\d+)?))?[\s,]+(-?\d+(
 
 const SEPARATOR = /[\s_.,:'&()#!?+-]/;
 
-const fold = (text) => text.normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase();
+const fold = (text) =>
+    text
+        .normalize('NFD')
+        .replace(/\p{M}+/gu, '')
+        .toLowerCase();
 
 function score(label, query) {
     const text = fold(label);
     if (text.startsWith(query)) {
         return 0;
     }
-    if (text.split(new RegExp(`${SEPARATOR.source}+`)).some(word => word.startsWith(query))) {
+    if (text.split(new RegExp(`${SEPARATOR.source}+`)).some((word) => word.startsWith(query))) {
         return 1;
     }
     return text.includes(query) ? 2 : -1;
@@ -37,8 +41,11 @@ function marked(label, query) {
     if (at < 0) {
         name.textContent = label;
     } else {
-        name.append(label.slice(0, at), element('mark', 'search__match', label.slice(at, at + query.length)),
-            label.slice(at + query.length));
+        name.append(
+            label.slice(0, at),
+            element('mark', 'search__match', label.slice(at, at + query.length)),
+            label.slice(at + query.length)
+        );
     }
     return name;
 }
@@ -47,8 +54,8 @@ function center(marker) {
     if (marker.type === 'point') {
         return marker.position;
     }
-    const xs = marker.points.map(point => point[0]);
-    const zs = marker.points.map(point => point.at(-1));
+    const xs = marker.points.map((point) => point[0]);
+    const zs = marker.points.map((point) => point.at(-1));
     return [(Math.min(...xs) + Math.max(...xs)) / 2, undefined, (Math.min(...zs) + Math.max(...zs)) / 2];
 }
 
@@ -99,17 +106,21 @@ class SearchPalette {
         this.input.focus();
         this.update();
         const worlds = this.app.worlds();
-        const loaded = await Promise.all(worlds.map(async world => {
-            try {
-                const response = await fetch(`api/markers/${encodeURIComponent(world.name)}`);
-                return response.ok ? (await response.json()).map(layer => ({world, layer})) : [];
-            } catch {
-                return [];
-            }
-        }));
-        this.markers = loaded.flat().flatMap(({world, layer}) => layer.markers
-            .filter(marker => marker.label)
-            .map(marker => ({world, layer, marker})));
+        const loaded = await Promise.all(
+            worlds.map(async (world) => {
+                try {
+                    const response = await fetch(`api/markers/${encodeURIComponent(world.name)}`);
+                    return response.ok ? (await response.json()).map((layer) => ({world, layer})) : [];
+                } catch {
+                    return [];
+                }
+            })
+        );
+        this.markers = loaded
+            .flat()
+            .flatMap(({world, layer}) =>
+                layer.markers.filter((marker) => marker.label).map((marker) => ({world, layer, marker}))
+            );
         if (this.dialog.open) {
             this.update();
         }
@@ -121,9 +132,9 @@ class SearchPalette {
 
     candidates() {
         const players = [...playerManager.entries.values()]
-            .map(entry => entry.player)
-            .filter(player => !player.anonymous && located(player))
-            .map(player => ({
+            .map((entry) => entry.player)
+            .filter((player) => !player.anonymous && located(player))
+            .map((player) => ({
                 kind: 'player',
                 label: player.name,
                 detail: `${player.x}, ${player.y}, ${player.z}`,
@@ -135,32 +146,36 @@ class SearchPalette {
                 }
             }));
         const here = this.app.current();
-        const markers = this.markers.toSorted((a, b) => (a.world.name !== here) - (b.world.name !== here))
+        const markers = this.markers
+            .toSorted((a, b) => (a.world.name !== here) - (b.world.name !== here))
             .map(({world, layer, marker}) => ({
-            kind: 'marker',
-            label: marker.label,
-            detail: markerManager.layerLabel(layer),
-            tag: this.elsewhere(world.name),
-            description: marker.description,
-            icon: () => {
-                const icon = element('span', `marker-icon marker-icon--${marker.type}`);
-                icon.classList.toggle('marker-icon--personal', Boolean(layer.personal));
-                icon.style.setProperty('--marker', marker.color);
-                if (marker.type === 'point') {
-                    icon.innerHTML = markerBadge(layer, marker);
+                kind: 'marker',
+                label: marker.label,
+                detail: markerManager.layerLabel(layer),
+                tag: this.elsewhere(world.name),
+                description: marker.description,
+                icon: () => {
+                    const icon = element('span', `marker-icon marker-icon--${marker.type}`);
+                    icon.classList.toggle('marker-icon--personal', Boolean(layer.personal));
+                    icon.style.setProperty('--marker', marker.color);
+                    if (marker.type === 'point') {
+                        icon.innerHTML = markerBadge(layer, marker);
+                    }
+                    return icon;
+                },
+                run: () => {
+                    this.app.selectWorld(world.name);
+                    const [x, y, z] = center(marker);
+                    mapManager.centerOnBlock(
+                        Math.floor(x),
+                        Math.floor(z),
+                        Math.max(mapManager.getMap().getZoom(), 2, markerManager.revealZoom(layer)),
+                        Number.isFinite(y) ? Math.floor(y) : undefined
+                    );
+                    markerManager.reveal(layer.id, marker.id);
                 }
-                return icon;
-            },
-            run: () => {
-                this.app.selectWorld(world.name);
-                const [x, y, z] = center(marker);
-                mapManager.centerOnBlock(Math.floor(x), Math.floor(z), Math.max(mapManager.getMap().getZoom(), 2,
-                    markerManager.revealZoom(layer)),
-                    Number.isFinite(y) ? Math.floor(y) : undefined);
-                markerManager.reveal(layer.id, marker.id);
-            }
-        }));
-        const worlds = this.app.worlds().map(world => ({
+            }));
+        const worlds = this.app.worlds().map((world) => ({
             kind: 'world',
             label: this.app.worldName(world.name),
             icon: () => element('span', 'marker-icon marker-icon--world'),
@@ -185,14 +200,16 @@ class SearchPalette {
             .slice(0, LIMIT)
             .map(({result}) => result);
         if (place) {
-            const [x, y, z] = place.slice(1).map(value => value === undefined ? undefined : Math.floor(Number(value)));
+            const [x, y, z] = place
+                .slice(1)
+                .map((value) => (value === undefined ? undefined : Math.floor(Number(value))));
             results.unshift({
                 kind: 'place',
-                label: t('search.goTo', {place: [x, y, z].filter(value => value !== undefined).join(', ')}),
+                label: t('search.goTo', {place: [x, y, z].filter((value) => value !== undefined).join(', ')}),
                 run: () => mapManager.centerOnBlock(x, z, undefined, y)
             });
         }
-        results = KINDS.flatMap(kind => results.filter(result => result.kind === kind));
+        results = KINDS.flatMap((kind) => results.filter((result) => result.kind === kind));
         this.results = results;
         const rows = [];
         results.forEach((result, index) => {
@@ -206,7 +223,9 @@ class SearchPalette {
             row.setAttribute('role', 'option');
             row.append(result.icon?.() ?? element('span', 'marker-icon marker-icon--place'));
             const text = element('span', 'row__text');
-            text.append(result.kind === 'place' ? element('span', 'row__name', result.label) : marked(result.label, query));
+            text.append(
+                result.kind === 'place' ? element('span', 'row__name', result.label) : marked(result.label, query)
+            );
             if (result.detail) {
                 text.append(element('span', 'row__meta', result.detail));
             }

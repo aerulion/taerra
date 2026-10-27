@@ -12,7 +12,7 @@ export function setupOffline() {
     const show = (shown) => {
         clearTimeout(hiding);
         if (shown) {
-            document.querySelectorAll(':popover-open').forEach(popover => {
+            document.querySelectorAll(':popover-open').forEach((popover) => {
                 if (popover !== overlay) {
                     popover.hidePopover();
                 }

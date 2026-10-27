@@ -2,14 +2,26 @@ import {t} from './i18n.js';
 import {element} from './ui.js';
 
 export const DYES = [
-    ['white', '#f9fffe'], ['light_gray', '#9d9d97'], ['gray', '#474f52'], ['black', '#1d1d21'],
-    ['brown', '#835432'], ['red', '#b02e26'], ['orange', '#f9801d'], ['yellow', '#fed83d'],
-    ['lime', '#80c71f'], ['green', '#5e7c16'], ['cyan', '#169c9c'], ['light_blue', '#3ab3da'],
-    ['blue', '#3c44aa'], ['purple', '#8932b8'], ['magenta', '#c74ebd'], ['pink', '#f38baa']
+    ['white', '#f9fffe'],
+    ['light_gray', '#9d9d97'],
+    ['gray', '#474f52'],
+    ['black', '#1d1d21'],
+    ['brown', '#835432'],
+    ['red', '#b02e26'],
+    ['orange', '#f9801d'],
+    ['yellow', '#fed83d'],
+    ['lime', '#80c71f'],
+    ['green', '#5e7c16'],
+    ['cyan', '#169c9c'],
+    ['light_blue', '#3ab3da'],
+    ['blue', '#3c44aa'],
+    ['purple', '#8932b8'],
+    ['magenta', '#c74ebd'],
+    ['pink', '#f38baa']
 ];
 export const DEFAULT_COLOR = '#3ab3da';
 export const HEX = /^#[0-9a-f]{6}$/i;
-const SHADE_STEP = .02;
+const SHADE_STEP = 0.02;
 
 let pickers = 0;
 
@@ -18,17 +30,21 @@ function hsvToHex(h, s, v) {
         const k = (n + h / 60) % 6;
         return v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
     };
-    return `#${[5, 3, 1].map(n => Math.round(channel(n) * 255).toString(16).padStart(2, '0')).join('')}`;
+    return `#${[5, 3, 1]
+        .map((n) =>
+            Math.round(channel(n) * 255)
+                .toString(16)
+                .padStart(2, '0')
+        )
+        .join('')}`;
 }
 
 function hexToHsv(hex) {
-    const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
     const max = Math.max(r, g, b);
     const range = max - Math.min(r, g, b);
-    const h = range === 0 ? 0
-        : max === r ? ((g - b) / range + 6) % 6
-            : max === g ? (b - r) / range + 2
-                : (r - g) / range + 4;
+    const h =
+        range === 0 ? 0 : max === r ? ((g - b) / range + 6) % 6 : max === g ? (b - r) / range + 2 : (r - g) / range + 4;
     return {h: h * 60, s: max === 0 ? 0 : range / max, v: max};
 }
 
@@ -49,18 +65,20 @@ export class ColorPicker {
         const name = `color-${++pickers}`;
 
         this.swatches = element('div', 'swatches');
-        this.swatches.replaceChildren(...DYES.map(([dye, hex]) => {
-            const swatch = element('label', 'swatch');
-            swatch.title = t(`dye.${dye}`);
-            swatch.style.setProperty('--swatch', hex);
-            const radio = labelled(document.createElement('input'), `dye.${dye}`);
-            radio.type = 'radio';
-            radio.name = name;
-            radio.value = hex;
-            radio.addEventListener('change', () => this.set(hex));
-            swatch.append(radio);
-            return swatch;
-        }));
+        this.swatches.replaceChildren(
+            ...DYES.map(([dye, hex]) => {
+                const swatch = element('label', 'swatch');
+                swatch.title = t(`dye.${dye}`);
+                swatch.style.setProperty('--swatch', hex);
+                const radio = labelled(document.createElement('input'), `dye.${dye}`);
+                radio.type = 'radio';
+                radio.name = name;
+                radio.value = hex;
+                radio.addEventListener('change', () => this.set(hex));
+                swatch.append(radio);
+                return swatch;
+            })
+        );
 
         this.shade = labelled(element('div', 'picker'), 'waypoint.shade');
         this.shade.setAttribute('role', 'slider');
@@ -93,7 +111,7 @@ export class ColorPicker {
                 this.set(`#${value.toLowerCase()}`, true, false);
             }
         });
-        this.hexInput.addEventListener('blur', () => this.hexInput.value = this.hex.slice(1));
+        this.hexInput.addEventListener('blur', () => (this.hexInput.value = this.hex.slice(1)));
         hexField.append(this.hexInput);
 
         root.replaceChildren(this.swatches, this.shade, this.hue, hexField);

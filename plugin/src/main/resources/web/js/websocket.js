@@ -113,7 +113,7 @@ class WebSocketManager {
     }
 
     emit(event, data) {
-        this.listeners.get(event)?.forEach(callback => callback(data));
+        this.listeners.get(event)?.forEach((callback) => callback(data));
     }
 }
 

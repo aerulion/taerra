@@ -16,15 +16,19 @@ const STATUS_MILLIS = 6000;
 const meters = new Intl.NumberFormat(language, {style: 'unit', unit: 'meter', maximumFractionDigits: 0});
 const kilometers = new Intl.NumberFormat(language, {style: 'unit', unit: 'kilometer', maximumFractionDigits: 1});
 
-const fold = (text) => text.normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase();
+const fold = (text) =>
+    text
+        .normalize('NFD')
+        .replace(/\p{M}+/gu, '')
+        .toLowerCase();
 const key = (name) => name.toLowerCase();
 
 function center(waypoint) {
     if (waypoint.type === 'point') {
-        return [waypoint.x + .5, waypoint.y, waypoint.z + .5];
+        return [waypoint.x + 0.5, waypoint.y, waypoint.z + 0.5];
     }
-    const xs = waypoint.points.map(point => point[0]);
-    const zs = waypoint.points.map(point => point.at(-1));
+    const xs = waypoint.points.map((point) => point[0]);
+    const zs = waypoint.points.map((point) => point.at(-1));
     return [(Math.min(...xs) + Math.max(...xs)) / 2, undefined, (Math.min(...zs) + Math.max(...zs)) / 2];
 }
 
@@ -93,9 +97,11 @@ class WaypointManager {
     fillWorlds() {
         const select = $('manager-world');
         const chosen = select.value;
-        select.replaceChildren(new Option(t('manager.allWorlds'), ALL),
-            ...this.app.worlds().map(world => new Option(this.app.worldName(world.name), world.name)));
-        select.value = [...select.options].some(option => option.value === chosen) ? chosen : ALL;
+        select.replaceChildren(
+            new Option(t('manager.allWorlds'), ALL),
+            ...this.app.worlds().map((world) => new Option(this.app.worldName(world.name), world.name))
+        );
+        select.value = [...select.options].some((option) => option.value === chosen) ? chosen : ALL;
     }
 
     async load() {
@@ -105,7 +111,7 @@ class WaypointManager {
         } catch {
             this.waypoints = [];
         }
-        const names = new Set(this.waypoints.map(waypoint => key(waypoint.name)));
+        const names = new Set(this.waypoints.map((waypoint) => key(waypoint.name)));
         for (const name of this.selected) {
             if (!names.has(name)) {
                 this.selected.delete(name);
@@ -139,13 +145,18 @@ class WaypointManager {
         const world = $('manager-world').value;
         const query = fold($('manager-filter').value.trim());
         const shown = this.waypoints
-            .filter(waypoint => world === ALL || waypoint.world === world)
-            .filter(waypoint => !query || fold(waypoint.name).includes(query)
-                || fold(waypoint.description ?? '').includes(query))
-            .map(waypoint => ({waypoint, distance: this.distance(waypoint)}));
+            .filter((waypoint) => world === ALL || waypoint.world === world)
+            .filter(
+                (waypoint) =>
+                    !query || fold(waypoint.name).includes(query) || fold(waypoint.description ?? '').includes(query)
+            )
+            .map((waypoint) => ({waypoint, distance: this.distance(waypoint)}));
         if ($('manager-sort').value === 'distance') {
-            shown.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity)
-                || a.waypoint.name.localeCompare(b.waypoint.name, language));
+            shown.sort(
+                (a, b) =>
+                    (a.distance ?? Infinity) - (b.distance ?? Infinity) ||
+                    a.waypoint.name.localeCompare(b.waypoint.name, language)
+            );
         } else {
             shown.sort((a, b) => a.waypoint.name.localeCompare(b.waypoint.name, language));
         }
@@ -155,17 +166,17 @@ class WaypointManager {
     render() {
         const visible = this.visible();
         $('manager-count').textContent = `${numbers.format(this.waypoints.length)} / ${numbers.format(MAX)}`;
-        $('manager-list').replaceChildren(...visible.map(waypoint => this.row(waypoint)));
+        $('manager-list').replaceChildren(...visible.map((waypoint) => this.row(waypoint)));
         const empty = this.waypoints.length === 0;
         $('manager-empty').hidden = visible.length > 0;
         $('manager-empty').textContent = t(empty ? 'manager.none' : 'manager.noMatch');
-        const picked = visible.filter(waypoint => this.selected.has(key(waypoint.name))).length;
+        const picked = visible.filter((waypoint) => this.selected.has(key(waypoint.name))).length;
         $('manager-all').checked = picked > 0 && picked === visible.length;
         $('manager-all').indeterminate = picked > 0 && picked < visible.length;
         $('manager-all').closest('label').hidden = visible.length === 0;
         const count = this.selected.size;
-        $('manager-export').textContent = count > 0
-            ? t('manager.exportSome', {count: numbers.format(count)}) : t('manager.exportAll');
+        $('manager-export').textContent =
+            count > 0 ? t('manager.exportSome', {count: numbers.format(count)}) : t('manager.exportAll');
         $('manager-export').disabled = empty;
         $('manager-delete').hidden = count === 0;
         $('manager-delete').classList.remove('is-armed');
@@ -188,21 +199,31 @@ class WaypointManager {
         const icon = element('span', `marker-icon marker-icon--${waypoint.type} marker-icon--personal`);
         icon.style.setProperty('--marker', waypoint.color);
         if (waypoint.type === 'point') {
-            icon.innerHTML = markerBadge(markerManager.layers.find(layer => layer.id === PERSONAL_LAYER)
-                ?? {personal: true}, waypoint);
+            icon.innerHTML = markerBadge(
+                markerManager.layers.find((layer) => layer.id === PERSONAL_LAYER) ?? {personal: true},
+                waypoint
+            );
         }
         const text = element('button', 'row__text manager__text');
         text.type = 'button';
         text.title = t('manager.showOnMap');
-        const where = waypoint.type === 'point' ? `${waypoint.x}, ${waypoint.y}, ${waypoint.z}`
-            : t(`manager.type.${waypoint.type}`);
+        const where =
+            waypoint.type === 'point'
+                ? `${waypoint.x}, ${waypoint.y}, ${waypoint.z}`
+                : t(`manager.type.${waypoint.type}`);
         const meta = element('span', 'row__meta');
-        meta.append(...[this.app.worldName(waypoint.world), where, waypoint.description]
-            .filter(Boolean).map(part => element('span', 'manager__part', part)));
+        meta.append(
+            ...[this.app.worldName(waypoint.world), where, waypoint.description]
+                .filter(Boolean)
+                .map((part) => element('span', 'manager__part', part))
+        );
         text.append(element('span', 'row__name', waypoint.name), meta);
         text.addEventListener('click', () => this.showOnMap(waypoint));
-        const distance = element('span', 'mono manager__distance',
-            waypoint.distance === null ? '' : distanceText(waypoint.distance));
+        const distance = element(
+            'span',
+            'mono manager__distance',
+            waypoint.distance === null ? '' : distanceText(waypoint.distance)
+        );
         const actions = element('span', 'manager__actions');
         const action = (name, label, run) => {
             const button = iconButton(name, t(label), (button) => void run(button));
@@ -210,8 +231,9 @@ class WaypointManager {
             button.classList.toggle('icon-btn--danger', name === 'delete');
             actions.append(button);
         };
-        action(waypoint.hidden ? 'hide' : 'show', waypoint.hidden ? 'manager.hidden' : 'manager.shown',
-            () => this.setHidden([waypoint.name], !waypoint.hidden));
+        action(waypoint.hidden ? 'hide' : 'show', waypoint.hidden ? 'manager.hidden' : 'manager.shown', () =>
+            this.setHidden([waypoint.name], !waypoint.hidden)
+        );
         if (waypoint.type === 'point' && accountManager.usesMod()) {
             action('navigate', 'waypoint.navigate', () => this.hand('navigate', waypoint));
         }
@@ -229,14 +251,25 @@ class WaypointManager {
 
     editable(waypoint) {
         return {
-            world: waypoint.world, x: waypoint.x, y: waypoint.y, z: waypoint.z, name: waypoint.name,
-            color: waypoint.color, personal: true, group: '', previous: waypoint.name,
-            id: `${PERSONAL_LAYER}:${key(waypoint.name)}`, description: waypoint.description ?? '',
+            world: waypoint.world,
+            x: waypoint.x,
+            y: waypoint.y,
+            z: waypoint.z,
+            name: waypoint.name,
+            color: waypoint.color,
+            personal: true,
+            group: '',
+            previous: waypoint.name,
+            id: `${PERSONAL_LAYER}:${key(waypoint.name)}`,
+            description: waypoint.description ?? '',
             icon: waypoint.icon ?? '',
-            ...(waypoint.type === 'point' ? {} : {
-                type: waypoint.type, smooth: Boolean(waypoint.smooth),
-                points: waypoint.type === 'area' ? waypoint.points.map(([x, z]) => [x, null, z]) : waypoint.points
-            })
+            ...(waypoint.type === 'point'
+                ? {}
+                : {
+                      type: waypoint.type,
+                      smooth: Boolean(waypoint.smooth),
+                      points: waypoint.type === 'area' ? waypoint.points.map(([x, z]) => [x, null, z]) : waypoint.points
+                  })
         };
     }
 
@@ -248,9 +281,16 @@ class WaypointManager {
         this.dialog.close();
         this.app.selectWorld(waypoint.world);
         const [x, y, z] = center(waypoint);
-        mapManager.centerOnBlock(Math.floor(x), Math.floor(z), Math.max(mapManager.getMap().getZoom(), 2,
-            markerManager.revealZoom(markerManager.layers.find(layer => layer.id === PERSONAL_LAYER))),
-            Number.isFinite(y) ? Math.floor(y) : undefined);
+        mapManager.centerOnBlock(
+            Math.floor(x),
+            Math.floor(z),
+            Math.max(
+                mapManager.getMap().getZoom(),
+                2,
+                markerManager.revealZoom(markerManager.layers.find((layer) => layer.id === PERSONAL_LAYER))
+            ),
+            Number.isFinite(y) ? Math.floor(y) : undefined
+        );
         if (!waypoint.hidden) {
             markerManager.reveal(PERSONAL_LAYER, `${PERSONAL_LAYER}:${key(waypoint.name)}`);
         }
@@ -264,8 +304,7 @@ class WaypointManager {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({world: waypoint.world, x: waypoint.x, y: waypoint.y, z: waypoint.z})
             });
-        } catch {
-        }
+        } catch {}
         const done = response?.ok === true;
         button.classList.toggle('is-done', done);
         this.show(t(done ? 'menu.teleported' : response?.status === 409 ? 'menu.offline' : 'menu.failed'), !done);
@@ -279,8 +318,7 @@ class WaypointManager {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({names, hidden})
             });
-        } catch {
-        }
+        } catch {}
         if (!response?.ok) {
             this.show(t('manager.failed'), true);
             return;
@@ -304,7 +342,7 @@ class WaypointManager {
         if (!armed($('manager-delete'), t('waypoint.confirmDelete'))) {
             return;
         }
-        await this.remove(this.waypoints.filter(waypoint => this.selected.has(key(waypoint.name))));
+        await this.remove(this.waypoints.filter((waypoint) => this.selected.has(key(waypoint.name))));
     }
 
     async remove(waypoints) {
@@ -328,11 +366,14 @@ class WaypointManager {
     }
 
     export() {
-        const chosen = this.selected.size > 0
-            ? this.waypoints.filter(waypoint => this.selected.has(key(waypoint.name))) : this.waypoints;
+        const chosen =
+            this.selected.size > 0
+                ? this.waypoints.filter((waypoint) => this.selected.has(key(waypoint.name)))
+                : this.waypoints;
         const waypoints = chosen.map(({distance, ...waypoint}) => waypoint);
-        const file = new Blob([JSON.stringify({format: FORMAT, version: VERSION, waypoints}, null, 2)],
-            {type: 'application/json'});
+        const file = new Blob([JSON.stringify({format: FORMAT, version: VERSION, waypoints}, null, 2)], {
+            type: 'application/json'
+        });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(file);
         link.download = `taerra-waypoints-${today()}.json`;
@@ -352,8 +393,7 @@ class WaypointManager {
         try {
             const data = JSON.parse(await file.text());
             waypoints = Array.isArray(data) ? data : data?.waypoints;
-        } catch {
-        }
+        } catch {}
         if (!Array.isArray(waypoints) || waypoints.length === 0) {
             this.showImport(null);
             this.show(t('manager.notAFile', {file: file.name}), true);
@@ -369,10 +409,11 @@ class WaypointManager {
             return;
         }
         this.show('');
-        $('manager-import-text').textContent = t('manager.importing',
-            {count: numbers.format(incoming.waypoints.length), file: incoming.file});
-        $('manager-import-replace').textContent = t('manager.replace',
-            {count: numbers.format(this.waypoints.length)});
+        $('manager-import-text').textContent = t('manager.importing', {
+            count: numbers.format(incoming.waypoints.length),
+            file: incoming.file
+        });
+        $('manager-import-replace').textContent = t('manager.replace', {count: numbers.format(this.waypoints.length)});
         $('manager-import-replace').hidden = this.waypoints.length === 0;
         $('manager-import-add').focus();
     }
@@ -392,8 +433,7 @@ class WaypointManager {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({mode, waypoints: incoming.waypoints})
             });
-        } catch {
-        }
+        } catch {}
         for (const id of ['manager-import-add', 'manager-import-replace']) {
             $(id).disabled = false;
         }
@@ -408,9 +448,13 @@ class WaypointManager {
             invalid > 0 && t('manager.skipped.invalid', {count: numbers.format(invalid)})
         ].filter(Boolean);
         this.showImport(null);
-        this.show([added > 0 ? t('manager.imported', {count: numbers.format(added)}) : t('manager.importedNone'),
-            ...skipped].join(' '),
-            added === 0 && skipped.length > 0);
+        this.show(
+            [
+                added > 0 ? t('manager.imported', {count: numbers.format(added)}) : t('manager.importedNone'),
+                ...skipped
+            ].join(' '),
+            added === 0 && skipped.length > 0
+        );
         await this.load();
     }
 

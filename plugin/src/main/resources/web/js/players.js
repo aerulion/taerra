@@ -10,10 +10,32 @@ const TELEPORT_BLOCKS = 48;
 const ALL_WORLDS_KEY = 'taerra.players.allWorlds';
 
 const FACING_SVG = `<svg viewBox="0 0 24 24" width="48" height="48" aria-hidden="true">
-<g class="player-marker__edge"><path d="${pixelPath([[11, 0, 2, 1], [10, 1, 4, 1], [9, 2, 6, 1], [8, 3, 8, 1], [9, 4, 6, 1]])}" fill="#111"/>
-<path d="${pixelPath([[11, 1, 2, 1], [10, 2, 4, 1], [9, 3, 6, 1]])}" fill="currentColor"/></g>
-<g class="player-marker__corner"><path d="${pixelPath([[19, 0, 4, 1], [18, 1, 6, 1], [19, 2, 5, 1], [20, 3, 4, 1], [21, 4, 3, 1], [22, 5, 1, 1]])}" fill="#111"/>
-<path d="${pixelPath([[19, 1, 4, 1], [20, 2, 3, 1], [21, 3, 2, 1], [22, 4, 1, 1]])}" fill="currentColor"/></g></svg>`;
+<g class="player-marker__edge"><path d="${pixelPath([
+    [11, 0, 2, 1],
+    [10, 1, 4, 1],
+    [9, 2, 6, 1],
+    [8, 3, 8, 1],
+    [9, 4, 6, 1]
+])}" fill="#111"/>
+<path d="${pixelPath([
+    [11, 1, 2, 1],
+    [10, 2, 4, 1],
+    [9, 3, 6, 1]
+])}" fill="currentColor"/></g>
+<g class="player-marker__corner"><path d="${pixelPath([
+    [19, 0, 4, 1],
+    [18, 1, 6, 1],
+    [19, 2, 5, 1],
+    [20, 3, 4, 1],
+    [21, 4, 3, 1],
+    [22, 5, 1, 1]
+])}" fill="#111"/>
+<path d="${pixelPath([
+    [19, 1, 4, 1],
+    [20, 2, 3, 1],
+    [21, 3, 2, 1],
+    [22, 4, 1, 1]
+])}" fill="currentColor"/></g></svg>`;
 
 export function located(player) {
     return Number.isFinite(player.x) && Number.isFinite(player.z);
@@ -23,7 +45,7 @@ export function avatar(player, size) {
     const img = new Image(size, size);
     img.alt = '';
     img.src = player.anonymous ? FALLBACK_AVATAR : `api/avatars/${player.uuid}.png`;
-    img.addEventListener('error', () => img.src = FALLBACK_AVATAR, {once: true});
+    img.addEventListener('error', () => (img.src = FALLBACK_AVATAR), {once: true});
     return img;
 }
 
@@ -33,9 +55,8 @@ class PlayerManager {
         this.followed = null;
         this.frame = 0;
         this.world = null;
-        this.worldLabel = name => name;
-        this.onWorld = () => {
-        };
+        this.worldLabel = (name) => name;
+        this.onWorld = () => {};
         this.list = document.getElementById('player-list');
         this.count = document.getElementById('player-count');
         this.empty = document.getElementById('player-empty');
@@ -58,8 +79,7 @@ class PlayerManager {
         this.allWorlds = all;
         try {
             localStorage.setItem(ALL_WORLDS_KEY, String(all));
-        } catch {
-        }
+        } catch {}
         for (const button of this.scope.querySelectorAll('button')) {
             button.setAttribute('aria-pressed', String((button.dataset.scope === 'all') === all));
         }
@@ -97,8 +117,8 @@ class PlayerManager {
             const entry = existing ?? this.create(player);
             const previous = entry.player;
             entry.player = player;
-            const jump = Math.abs(player.x - previous.x) + Math.abs(player.y - previous.y) +
-                Math.abs(player.z - previous.z);
+            const jump =
+                Math.abs(player.x - previous.x) + Math.abs(player.y - previous.y) + Math.abs(player.z - previous.z);
             if (this.followed === player.uuid && !located(player)) {
                 this.unfollow();
             } else if (this.followed === player.uuid && player.world !== this.world) {
@@ -110,8 +130,13 @@ class PlayerManager {
             this.show(entry);
             if (!located(player)) {
                 entry.glide = null;
-            } else if (existing && located(previous) && player.world === previous.world && jump <= TELEPORT_BLOCKS
-                && !document.hidden) {
+            } else if (
+                existing &&
+                located(previous) &&
+                player.world === previous.world &&
+                jump <= TELEPORT_BLOCKS &&
+                !document.hidden
+            ) {
                 this.glide(entry);
             } else {
                 if (existing && located(previous) && player.world === previous.world) {
@@ -128,7 +153,9 @@ class PlayerManager {
             entry.button.classList.toggle('is-hidden', player.hidden === true);
             entry.tag.hidden = player.hidden !== true;
             entry.mod.hidden = player.mod !== true;
-            entry.coords.textContent = located(player) ? `${player.x}, ${player.y}, ${player.z}` : t('players.unlocated');
+            entry.coords.textContent = located(player)
+                ? `${player.x}, ${player.y}, ${player.z}`
+                : t('players.unlocated');
             if (entry.marker.isPopupOpen()) {
                 entry.marker.getPopup().update();
             }
@@ -147,12 +174,15 @@ class PlayerManager {
     }
 
     render() {
-        const elsewhere = entry => entry.player.world !== this.world;
+        const elsewhere = (entry) => entry.player.world !== this.world;
         const entries = [...this.entries.values()]
-            .filter(entry => this.allWorlds || !elsewhere(entry))
-            .sort((a, b) => elsewhere(a) - elsewhere(b) ||
-                this.label(a.player.world).localeCompare(this.label(b.player.world)) ||
-                a.player.name.localeCompare(b.player.name));
+            .filter((entry) => this.allWorlds || !elsewhere(entry))
+            .sort(
+                (a, b) =>
+                    elsewhere(a) - elsewhere(b) ||
+                    this.label(a.player.world).localeCompare(this.label(b.player.world)) ||
+                    a.player.name.localeCompare(b.player.name)
+            );
         for (const entry of entries) {
             const away = elsewhere(entry);
             const world = this.label(entry.player.world);
@@ -160,10 +190,11 @@ class PlayerManager {
             entry.button.disabled = !located(entry.player);
             entry.world.hidden = !away;
             entry.world.textContent = world;
-            entry.button.title = !located(entry.player) ? t('players.unlocated')
+            entry.button.title = !located(entry.player)
+                ? t('players.unlocated')
                 : t(away ? 'players.followElsewhere' : 'players.follow', {name: entry.player.name, world});
         }
-        const rows = entries.map(entry => entry.row);
+        const rows = entries.map((entry) => entry.row);
         if (rows.length !== this.list.children.length || rows.some((row, i) => this.list.children[i] !== row)) {
             this.list.replaceChildren(...rows);
         }
@@ -190,7 +221,7 @@ class PlayerManager {
     }
 
     showAll() {
-        this.entries.forEach(entry => this.show(entry));
+        this.entries.forEach((entry) => this.show(entry));
     }
 
     create(player) {
@@ -205,8 +236,10 @@ class PlayerManager {
             popupAnchor: [0, -18],
             html: entry.body
         });
-        entry.marker = L.marker(located(player) ? this.latLng(player) : [0, 0], {icon, title: player.name})
-            .bindPopup(() => this.popup(entry.player), {className: 'marker-popup-frame'});
+        entry.marker = L.marker(located(player) ? this.latLng(player) : [0, 0], {icon, title: player.name}).bindPopup(
+            () => this.popup(entry.player),
+            {className: 'marker-popup-frame'}
+        );
 
         entry.button = element('button', 'row row--action player');
         entry.button.type = 'button';
@@ -252,25 +285,34 @@ class PlayerManager {
     popup(player) {
         const content = element('div', 'marker-popup marker-popup--player');
         content.style.setProperty('--marker', player.color);
-        content.append(element('span', 'label marker-popup__layer', t(player.hidden ? 'players.hiddenPlayer' : 'players.title')),
+        content.append(
+            element('span', 'label marker-popup__layer', t(player.hidden ? 'players.hiddenPlayer' : 'players.title')),
             element('strong', 'title marker-popup__title', player.name),
-            element('span', 'mono marker-popup__facts', `${player.x}, ${player.y}, ${player.z}`));
+            element('span', 'mono marker-popup__facts', `${player.x}, ${player.y}, ${player.z}`)
+        );
         if (accountManager.usesMod() && !player.anonymous && player.uuid !== accountManager.ownUuid()) {
             const actions = element('div', 'menu__group');
-            actions.append(menuItem('navigate', t('waypoint.navigate'), () => {
-                mapManager.getMap().closePopup();
-                void navigationManager.navigate({
-                    label: player.name, world: player.world, x: player.x, y: player.y, z: player.z,
-                    color: player.color, player: player.uuid
-                });
-            }));
+            actions.append(
+                menuItem('navigate', t('waypoint.navigate'), () => {
+                    mapManager.getMap().closePopup();
+                    void navigationManager.navigate({
+                        label: player.name,
+                        world: player.world,
+                        x: player.x,
+                        y: player.y,
+                        z: player.z,
+                        color: player.color,
+                        player: player.uuid
+                    });
+                })
+            );
             content.append(actions);
         }
         return content;
     }
 
     aim(entry) {
-        const octant = (Math.round(mapManager.screenBearing(entry.player.yaw ?? 0) / 45) % 8 + 8) % 8;
+        const octant = ((Math.round(mapManager.screenBearing(entry.player.yaw ?? 0) / 45) % 8) + 8) % 8;
         entry.facing.classList.toggle('is-diagonal', octant % 2 === 1);
         entry.facing.style.rotate = `${Math.floor(octant / 2) * 90}deg`;
     }
@@ -290,7 +332,7 @@ class PlayerManager {
     glide(entry) {
         entry.glide = {from: entry.marker.getLatLng(), to: this.latLng(entry.player), start: performance.now()};
         if (!this.frame) {
-            this.frame = requestAnimationFrame(now => this.tick(now));
+            this.frame = requestAnimationFrame((now) => this.tick(now));
         }
     }
 
@@ -303,8 +345,10 @@ class PlayerManager {
                 continue;
             }
             const progress = Math.min(1, Math.max(0, (now - glide.start) / GLIDE_MILLIS));
-            const latLng = L.latLng(glide.from.lat + (glide.to.lat - glide.from.lat) * progress,
-                glide.from.lng + (glide.to.lng - glide.from.lng) * progress);
+            const latLng = L.latLng(
+                glide.from.lat + (glide.to.lat - glide.from.lat) * progress,
+                glide.from.lng + (glide.to.lng - glide.from.lng) * progress
+            );
             entry.marker.setLatLng(latLng);
             if (this.followed === entry.player.uuid) {
                 mapManager.getMap().panTo(latLng, {animate: false});
@@ -316,7 +360,7 @@ class PlayerManager {
             }
         }
         if (moving) {
-            this.frame = requestAnimationFrame(next => this.tick(next));
+            this.frame = requestAnimationFrame((next) => this.tick(next));
         }
     }
 

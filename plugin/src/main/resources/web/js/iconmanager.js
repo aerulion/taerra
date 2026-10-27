@@ -13,8 +13,14 @@ const STATUS_MILLIS = 6000;
 const ERRORS = {400: 'icons.badName', 409: 'icons.taken', 415: 'icons.wrongSize', 422: 'icons.full'};
 
 function nameOf(file) {
-    const name = file.name.replace(/\.png$/i, '').replace(/[_-]+/g, ' ').normalize('NFC').replace(NOT_NAME, '')
-        .trim().slice(0, 32).trim();
+    const name = file.name
+        .replace(/\.png$/i, '')
+        .replace(/[_-]+/g, ' ')
+        .normalize('NFC')
+        .replace(NOT_NAME, '')
+        .trim()
+        .slice(0, 32)
+        .trim();
     return /[\p{L}\p{N}]/u.test(name) ? name : t('icons.unnamed');
 }
 
@@ -38,7 +44,7 @@ async function read(file) {
     }
     const bytes = new Uint8Array(await file.arrayBuffer());
     let binary = '';
-    bytes.forEach(byte => binary += String.fromCharCode(byte));
+    bytes.forEach((byte) => (binary += String.fromCharCode(byte)));
     return {png: btoa(binary)};
 }
 
@@ -54,7 +60,10 @@ class IconManager {
         $('icons-open').addEventListener('click', () => this.open());
         $('icons-filter').addEventListener('input', () => this.render());
         $('icons-upload').addEventListener('click', () => $('icons-file').click());
-        $('icons-draw').addEventListener('click', () => void iconEditor.open({save: (name, png) => this.drawn(name, png)}));
+        $('icons-draw').addEventListener(
+            'click',
+            () => void iconEditor.open({save: (name, png) => this.drawn(name, png)})
+        );
         $('icons-file').addEventListener('change', () => {
             const files = [...$('icons-file').files];
             $('icons-file').value = '';
@@ -70,7 +79,7 @@ class IconManager {
         this.dialog.addEventListener('dragover', (event) => event.preventDefault());
         this.dialog.addEventListener('drop', (event) => {
             event.preventDefault();
-            void this.upload([...event.dataTransfer?.files ?? []]);
+            void this.upload([...(event.dataTransfer?.files ?? [])]);
         });
         iconStore.onChange(() => this.dialog.open && this.render());
     }
@@ -88,19 +97,20 @@ class IconManager {
     }
 
     uploads() {
-        return iconStore.list().filter(icon => icon.source === 'upload');
+        return iconStore.list().filter((icon) => icon.source === 'upload');
     }
 
     render() {
         const uploads = this.uploads();
         const query = fold($('icons-filter').value.trim());
-        const shown = uploads.filter(icon => !query || fold(icon.label).includes(query))
+        const shown = uploads
+            .filter((icon) => !query || fold(icon.label).includes(query))
             .sort((a, b) => a.label.localeCompare(b.label, language));
         $('icons-count').textContent = `${numbers.format(uploads.length)} / ${numbers.format(MAX)}`;
         $('icons-upload').disabled = uploads.length >= MAX;
         $('icons-draw').disabled = uploads.length >= MAX;
         const focused = document.activeElement?.dataset?.key;
-        $('icons-list').replaceChildren(...shown.map(icon => this.row(icon)));
+        $('icons-list').replaceChildren(...shown.map((icon) => this.row(icon)));
         if (focused) {
             this.dialog.querySelector(`[data-key="${CSS.escape(focused)}"]`)?.focus();
         }
@@ -138,12 +148,25 @@ class IconManager {
         });
         name.addEventListener('change', () => void this.rename(icon, name));
         const uses = icon.uses ?? 0;
-        text.append(name, element('span', 'row__meta',
-            uses === 0 ? t('icons.unused') : t(`icons.uses.${plurals.select(uses)}`, {count: numbers.format(uses)})));
+        text.append(
+            name,
+            element(
+                'span',
+                'row__meta',
+                uses === 0 ? t('icons.unused') : t(`icons.uses.${plurals.select(uses)}`, {count: numbers.format(uses)})
+            )
+        );
         const actions = element('span', 'manager__actions');
-        const draw = iconButton('edit', t('icons.draw.edit'), () => void iconEditor.open({
-            icon, url: iconStore.url(icon.id), save: (_, png) => this.redrawn(icon, png)
-        }));
+        const draw = iconButton(
+            'edit',
+            t('icons.draw.edit'),
+            () =>
+                void iconEditor.open({
+                    icon,
+                    url: iconStore.url(icon.id),
+                    save: (_, png) => this.redrawn(icon, png)
+                })
+        );
         draw.setAttribute('aria-label', `${t('icons.draw.edit')}: ${icon.label}`);
         const replace = iconButton('refresh', t('icons.replace'), () => {
             this.replacing = icon;
@@ -205,8 +228,12 @@ class IconManager {
             }
         }
         await iconStore.load();
-        this.show([added > 0 ? t(`icons.uploaded.${plurals.select(added)}`, {count: numbers.format(added)}) : '',
-            ...problems].filter(Boolean).join(' '), problems.length > 0);
+        this.show(
+            [added > 0 ? t(`icons.uploaded.${plurals.select(added)}`, {count: numbers.format(added)}) : '', ...problems]
+                .filter(Boolean)
+                .join(' '),
+            problems.length > 0
+        );
     }
 
     async drawn(name, png) {

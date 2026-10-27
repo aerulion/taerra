@@ -17,15 +17,37 @@ const SECTIONS = [
     ['limits', []],
     ['views', []],
     ['map', ['web.name', 'web.public-url', 'join-hint.interval-days']],
-    ['layers', ['markers.spawn.enabled', 'markers.spawn.shown-by-default', 'markers.worldborder.enabled', 'markers.worldborder.shown-by-default', 'markers.worldguard.enabled',
-        'markers.worldguard.shown-by-default', 'markers.towny.enabled', 'markers.towny.shown-by-default',
-        'markers.griefprevention.enabled', 'markers.griefprevention.shown-by-default',
-        'markers.plotsquared.enabled', 'markers.plotsquared.shown-by-default',
-        'markers.loaded-chunks.enabled',
-        'markers.loaded-chunks.shown-by-default']],
+    [
+        'layers',
+        [
+            'markers.spawn.enabled',
+            'markers.spawn.shown-by-default',
+            'markers.worldborder.enabled',
+            'markers.worldborder.shown-by-default',
+            'markers.worldguard.enabled',
+            'markers.worldguard.shown-by-default',
+            'markers.towny.enabled',
+            'markers.towny.shown-by-default',
+            'markers.griefprevention.enabled',
+            'markers.griefprevention.shown-by-default',
+            'markers.plotsquared.enabled',
+            'markers.plotsquared.shown-by-default',
+            'markers.loaded-chunks.enabled',
+            'markers.loaded-chunks.shown-by-default'
+        ]
+    ],
     ['rendering', ['rendering.update-interval', 'rendering.render-threads', 'cache.max-tiles', 'cache.max-chunks']],
-    ['storage', ['storage.type', 'storage.database.host', 'storage.database.port', 'storage.database.name',
-        'storage.database.user', 'storage.database.password']],
+    [
+        'storage',
+        [
+            'storage.type',
+            'storage.database.host',
+            'storage.database.port',
+            'storage.database.name',
+            'storage.database.user',
+            'storage.database.password'
+        ]
+    ],
     ['web', ['web.port', 'web.host']]
 ];
 const ago = new Intl.RelativeTimeFormat(language, {numeric: 'auto'});
@@ -43,12 +65,12 @@ function parseScale(text) {
     return Number.isInteger(exponent) ? (match[2] === 'px' ? exponent : -exponent) || 0 : null;
 }
 
-const scaleText = (scale) => scale === null ? '' : scale >= 0 ? `${2 ** scale}px` : `${2 ** -scale}blocks`;
+const scaleText = (scale) => (scale === null ? '' : scale >= 0 ? `${2 ** scale}px` : `${2 ** -scale}blocks`);
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-const relative = (order, other) => (order ?? []).filter(id => (other ?? []).includes(id));
+const relative = (order, other) => (order ?? []).filter((id) => (other ?? []).includes(id));
 const sameOrder = (a, b) => same(relative(a, b), relative(b, a));
-const outOfRange = (setting, value) => setting?.kind === 'number'
-    && !(Number.isInteger(value) && value >= setting.min && value <= setting.max);
+const outOfRange = (setting, value) =>
+    setting?.kind === 'number' && !(Number.isInteger(value) && value >= setting.min && value <= setting.max);
 const SHAPES = ['none', 'circle', 'square', 'rectangle'];
 const MAX_COORDINATE = 30_000_000;
 const isLimit = (field) => field.startsWith('world:') && field.endsWith(':limit');
@@ -57,16 +79,16 @@ const isStorage = (field) => field.startsWith('setting:storage.');
 const STORAGE_TYPE = 'setting:storage.type';
 const VIEWS = {both: ['top_down', 'isometric'], top_down: ['top_down'], isometric: ['isometric']};
 const viewsOf = (value) => VIEWS[value] ?? VIEWS.both;
-const addsView = (before, after) => viewsOf(after).some(view => !viewsOf(before).includes(view));
-const limit = (shape, minX, minZ, maxX, maxZ) => shape === 'none' ? {shape} : {shape, minX, minZ, maxX, maxZ};
-const coordinate = (text) => /^-?\d+$/.test(text.trim()) ? Number(text) : null;
+const addsView = (before, after) => viewsOf(after).some((view) => !viewsOf(before).includes(view));
+const limit = (shape, minX, minZ, maxX, maxZ) => (shape === 'none' ? {shape} : {shape, minX, minZ, maxX, maxZ});
+const coordinate = (text) => (/^-?\d+$/.test(text.trim()) ? Number(text) : null);
 
 function badLimit(value) {
     if (!value || value.shape === 'none') {
         return false;
     }
     const bounds = [value.minX, value.minZ, value.maxX, value.maxZ];
-    if (!bounds.every(bound => Number.isInteger(bound) && Math.abs(bound) <= MAX_COORDINATE)) {
+    if (!bounds.every((bound) => Number.isInteger(bound) && Math.abs(bound) <= MAX_COORDINATE)) {
         return true;
     }
     const width = value.maxX - value.minX;
@@ -305,33 +327,35 @@ class SettingsDialog {
     }
 
     arrange(order) {
-        const known = new Set(this.view.worlds.map(world => world.id));
-        const wanted = (order ?? []).filter(id => known.has(id));
+        const known = new Set(this.view.worlds.map((world) => world.id));
+        const wanted = (order ?? []).filter((id) => known.has(id));
         const queue = [...wanted];
-        const placed = this.display.filter(id => known.has(id))
-            .map(id => wanted.includes(id) ? queue.shift() : id);
-        const rest = [...queue, ...this.view.worlds.map(world => world.id)]
-            .filter(id => !placed.includes(id));
+        const placed = this.display
+            .filter((id) => known.has(id))
+            .map((id) => (wanted.includes(id) ? queue.shift() : id));
+        const rest = [...queue, ...this.view.worlds.map((world) => world.id)].filter((id) => !placed.includes(id));
         this.display = [...placed, ...new Set(rest)];
     }
 
     fixOrder() {
-        this.draft[ORDER] = this.display.filter(id => this.draft[worldField(id, 'enabled')] === true);
+        this.draft[ORDER] = this.display.filter((id) => this.draft[worldField(id, 'enabled')] === true);
     }
 
     announceChanges(fields, next) {
-        const names = [...new Set([...fields].map(field => next.authors?.[field]?.name).filter(Boolean))];
+        const names = [...new Set([...fields].map((field) => next.authors?.[field]?.name).filter(Boolean))];
         const count = fields.size;
         const who = names.length === 1 ? names[0] : t('settings.someone');
-        this.showStatus(t(`settings.liveChanged.${plurals.select(count)}`, {who, count: numbers.format(count)}),
-            'is-live');
+        this.showStatus(
+            t(`settings.liveChanged.${plurals.select(count)}`, {who, count: numbers.format(count)}),
+            'is-live'
+        );
     }
 
     flash(fields) {
         if (!fields.size) {
             return;
         }
-        fields.forEach(field => this.flashing.add(field));
+        fields.forEach((field) => this.flashing.add(field));
         this.markFlashing();
         clearTimeout(this.flashTimer);
         this.flashTimer = setTimeout(() => {
@@ -342,16 +366,19 @@ class SettingsDialog {
 
     markFlashing() {
         for (const row of document.querySelectorAll('#settings [data-fields]')) {
-            row.classList.toggle('is-updated', row.dataset.fields.split(' ').some(field => this.flashing.has(field)));
+            row.classList.toggle(
+                'is-updated',
+                row.dataset.fields.split(' ').some((field) => this.flashing.has(field))
+            );
         }
     }
 
     setting(key) {
-        return this.view.settings.find(setting => setting.key === key);
+        return this.view.settings.find((setting) => setting.key === key);
     }
 
     world(id) {
-        return this.view.worlds.find(world => world.id === id);
+        return this.view.worlds.find((world) => world.id === id);
     }
 
     label(field) {
@@ -366,7 +393,7 @@ class SettingsDialog {
         }
         if (field.startsWith('layer:')) {
             const id = field.slice('layer:'.length);
-            return translated(`layer.${id}`, this.view.layers.find(layer => layer.id === id)?.label ?? id);
+            return translated(`layer.${id}`, this.view.layers.find((layer) => layer.id === id)?.label ?? id);
         }
         if (field.startsWith('layer-icon:')) {
             return `${this.label(layerField(field.slice('layer-icon:'.length)))}: ${t('settings.layerIcon')}`;
@@ -380,7 +407,8 @@ class SettingsDialog {
 
     format(field, value) {
         if (field === ORDER) {
-            return (value ?? []).map(id => this.draft[worldField(id, 'name')] || this.world(id)?.defaultName || id)
+            return (value ?? [])
+                .map((id) => this.draft[worldField(id, 'name')] || this.world(id)?.defaultName || id)
                 .join(' → ');
         }
         if (isLimit(field)) {
@@ -410,12 +438,15 @@ class SettingsDialog {
         }
         if (value.shape === 'rectangle') {
             return t('settings.limit.box', {
-                fromX: numbers.format(value.minX), fromZ: numbers.format(value.minZ),
-                toX: numbers.format(value.maxX), toZ: numbers.format(value.maxZ)
+                fromX: numbers.format(value.minX),
+                fromZ: numbers.format(value.minZ),
+                toX: numbers.format(value.maxX),
+                toZ: numbers.format(value.maxZ)
             });
         }
         return t('settings.limit.round', {
-            shape: t(`settings.limit.${value.shape}`), radius: numbers.format((value.maxX - value.minX) / 2),
+            shape: t(`settings.limit.${value.shape}`),
+            radius: numbers.format((value.maxX - value.minX) / 2),
             x: numbers.format(Math.floor((value.minX + value.maxX) / 2)),
             z: numbers.format(Math.floor((value.minZ + value.maxZ) / 2))
         });
@@ -431,21 +462,31 @@ class SettingsDialog {
         const scroll = body.scrollTop;
         const active = document.activeElement;
         const focused = this.dialog.contains(active) ? active.dataset?.field : null;
-        const selection = focused && typeof active.selectionStart === 'number'
-            ? [active.selectionStart, active.selectionEnd] : null;
+        const selection =
+            focused && typeof active.selectionStart === 'number' ? [active.selectionStart, active.selectionEnd] : null;
         const sections = SECTIONS.map(([name, keys]) => {
             if (name === 'limits' || name === 'views') {
-                return this.section(name, this.display.filter(id => this.draft[worldField(id, 'enabled')] === true)
-                    .map(id => this.world(id)).filter(Boolean)
-                    .flatMap(world => name === 'limits' ? this.limitRow(world) : this.viewsRow(world)));
+                return this.section(
+                    name,
+                    this.display
+                        .filter((id) => this.draft[worldField(id, 'enabled')] === true)
+                        .map((id) => this.world(id))
+                        .filter(Boolean)
+                        .flatMap((world) => (name === 'limits' ? this.limitRow(world) : this.viewsRow(world)))
+                );
             }
             if (name === 'worlds') {
                 return this.section(name, [this.conflict(ORDER), this.worldList()].filter(Boolean));
             }
-            const rows = keys.map(key => this.setting(key)).filter(Boolean).flatMap(setting => this.field(setting));
+            const rows = keys
+                .map((key) => this.setting(key))
+                .filter(Boolean)
+                .flatMap((setting) => this.field(setting));
             if (name === 'layers' && this.view.layers.length) {
-                rows.push(element('h4', 'settings__subheading', t('settings.privateLayers')),
-                    ...this.view.layers.flatMap(layer => this.layerRow(layer)));
+                rows.push(
+                    element('h4', 'settings__subheading', t('settings.privateLayers')),
+                    ...this.view.layers.flatMap((layer) => this.layerRow(layer))
+                );
             }
             return this.section(name, rows);
         });
@@ -466,27 +507,29 @@ class SettingsDialog {
     renderEditors() {
         const box = $('settings-editors');
         const me = accountManager.ownUuid();
-        const others = this.editors.filter(editor => !(editor.uuid === me && editor.client === 'web'));
-        box.replaceChildren(...others.map(editor => {
-            const item = element('span', 'settings__editor');
-            const where = t(editor.client === 'mod' ? 'settings.inGame' : 'settings.inBrowser');
-            const name = editor.uuid === me ? t('settings.you') : editor.name;
-            item.title = t('settings.editing', {name, where});
-            const head = document.createElement('img');
-            head.className = 'settings__editor-head';
-            head.alt = '';
-            head.src = `api/avatars/${editor.uuid}.png`;
-            head.addEventListener('error', () => head.src = FALLBACK_AVATAR, {once: true});
-            item.append(head, element('span', 'settings__editor-name', name));
-            item.dataset.client = editor.client;
-            return item;
-        }));
+        const others = this.editors.filter((editor) => !(editor.uuid === me && editor.client === 'web'));
+        box.replaceChildren(
+            ...others.map((editor) => {
+                const item = element('span', 'settings__editor');
+                const where = t(editor.client === 'mod' ? 'settings.inGame' : 'settings.inBrowser');
+                const name = editor.uuid === me ? t('settings.you') : editor.name;
+                item.title = t('settings.editing', {name, where});
+                const head = document.createElement('img');
+                head.className = 'settings__editor-head';
+                head.alt = '';
+                head.src = `api/avatars/${editor.uuid}.png`;
+                head.addEventListener('error', () => (head.src = FALLBACK_AVATAR), {once: true});
+                item.append(head, element('span', 'settings__editor-name', name));
+                item.dataset.client = editor.client;
+                return item;
+            })
+        );
         box.hidden = others.length === 0;
     }
 
     renderNav(sections) {
         const nav = $('settings-nav');
-        const links = sections.map(section => {
+        const links = sections.map((section) => {
             const link = element('button', 'settings__link', section.dataset.title);
             link.type = 'button';
             link.dataset.icon = section.dataset.section;
@@ -498,8 +541,9 @@ class SettingsDialog {
         this.highlight = () => {
             const atEnd = body.scrollTop + body.clientHeight >= body.scrollHeight - 4;
             const top = body.getBoundingClientRect().top + 32;
-            const current = atEnd ? sections.at(-1)
-                : sections.findLast(section => section.getBoundingClientRect().top <= top) ?? sections[0];
+            const current = atEnd
+                ? sections.at(-1)
+                : (sections.findLast((section) => section.getBoundingClientRect().top <= top) ?? sections[0]);
             links.forEach((link, index) => {
                 const now = sections[index] === current;
                 if (now && link.getAttribute('aria-current') !== 'true') {
@@ -536,7 +580,7 @@ class SettingsDialog {
     }
 
     conflict(...fields) {
-        const found = fields.filter(field => this.conflicts.has(field));
+        const found = fields.filter((field) => this.conflicts.has(field));
         if (!found.length) {
             return null;
         }
@@ -546,11 +590,15 @@ class SettingsDialog {
             const {theirs, by} = this.conflicts.get(field);
             const line = element('div', 'settings__conflict-line');
             const named = field.startsWith('world:') || field === ORDER;
-            const text = element('p', 'settings__conflict-text', t(named ? 'settings.conflictNamed' : 'settings.conflict', {
-                who: by ?? t('settings.someone'),
-                what: this.label(field),
-                value: this.format(field, theirs)
-            }));
+            const text = element(
+                'p',
+                'settings__conflict-text',
+                t(named ? 'settings.conflictNamed' : 'settings.conflict', {
+                    who: by ?? t('settings.someone'),
+                    what: this.label(field),
+                    value: this.format(field, theirs)
+                })
+            );
             const theirsButton = element('button', 'btn btn--small', t('settings.useTheirs'));
             theirsButton.type = 'button';
             theirsButton.addEventListener('click', () => {
@@ -584,15 +632,19 @@ class SettingsDialog {
         const field = settingField(setting.key);
         const value = this.draft[field];
         const database = setting.key.startsWith('storage.database.');
-        const row = element(setting.kind === 'toggle' ? 'label' : 'div',
-            setting.kind === 'toggle' ? 'row row--action settings__row' : 'row settings__row');
+        const row = element(
+            setting.kind === 'toggle' ? 'label' : 'div',
+            setting.kind === 'toggle' ? 'row row--action settings__row' : 'row settings__row'
+        );
         row.dataset.fields = field;
         row.title = this.changedBy(field);
         row.classList.toggle('is-locked', !setting.editable);
         row.classList.toggle('is-conflict', this.conflicts.has(field));
         row.classList.toggle('is-changed', setting.editable && !same(value, this.base[field]));
-        row.classList.toggle('is-invalid',
-            setting.editable && !same(value, this.base[field]) && outOfRange(setting, value));
+        row.classList.toggle(
+            'is-invalid',
+            setting.editable && !same(value, this.base[field]) && outOfRange(setting, value)
+        );
         const id = `setting-${setting.key.replace(/\W/g, '-')}`;
         const text = element('span', 'row__text');
         const title = element(setting.kind === 'toggle' ? 'span' : 'label', 'settings__label', this.label(field));
@@ -602,8 +654,10 @@ class SettingsDialog {
         text.append(title);
         const hint = setting.editable
             ? translated(`settings.${setting.key}.hint`, null)
-            : translated(`settings.${setting.key}.locked`, null)?.replace('{command}', `/taerra config ${setting.key}`)
-            ?? t('settings.readOnly', {command: `/taerra config ${setting.key}`});
+            : (translated(`settings.${setting.key}.locked`, null)?.replace(
+                  '{command}',
+                  `/taerra config ${setting.key}`
+              ) ?? t('settings.readOnly', {command: `/taerra config ${setting.key}`}));
         if (hint) {
             text.append(element('span', 'hint', hint));
         }
@@ -612,8 +666,9 @@ class SettingsDialog {
         const conflict = this.conflict(field);
         if (setting.kind === 'toggle') {
             const parent = setting.key.endsWith('.shown-by-default')
-                ? settingField(setting.key.replace(/shown-by-default$/, 'enabled')) : null;
-            const {wrap, input} = switchInput(field, value === true, this.label(field), checked => {
+                ? settingField(setting.key.replace(/shown-by-default$/, 'enabled'))
+                : null;
+            const {wrap, input} = switchInput(field, value === true, this.label(field), (checked) => {
                 this.set(field, checked);
                 this.render();
             });
@@ -630,7 +685,11 @@ class SettingsDialog {
             group.setAttribute('role', 'group');
             group.setAttribute('aria-label', this.label(field));
             for (const option of setting.options ?? []) {
-                const button = element('button', 'btn btn--small', translated(`settings.${setting.key}.${option}`, option));
+                const button = element(
+                    'button',
+                    'btn btn--small',
+                    translated(`settings.${setting.key}.${option}`, option)
+                );
                 button.type = 'button';
                 button.dataset.field = `${field}:${option}`;
                 button.setAttribute('aria-pressed', String(option === value));
@@ -680,7 +739,7 @@ class SettingsDialog {
                 input.autocomplete = 'new-password';
                 input.classList.add('settings__input--wide');
                 input.placeholder = this.base[field] ? '••••••••' : t('settings.notSet');
-                input.value = same(value, this.base[field]) ? '' : value ?? '';
+                input.value = same(value, this.base[field]) ? '' : (value ?? '');
                 input.addEventListener('input', () => {
                     this.set(field, input.value === '' ? this.base[field] : input.value);
                     row.classList.toggle('is-changed', !same(this.draft[field], this.base[field]));
@@ -708,7 +767,7 @@ class SettingsDialog {
             const off = this.draft[STORAGE_TYPE] === 'files';
             row.classList.add('settings__row--sub');
             row.classList.toggle('is-inactive', off);
-            row.querySelectorAll('input').forEach(input => input.disabled ||= off);
+            row.querySelectorAll('input').forEach((input) => (input.disabled ||= off));
         }
         if (conflict) {
             rows.push(conflict);
@@ -719,73 +778,101 @@ class SettingsDialog {
     worldList() {
         const list = element('ol', 'settings__worlds');
         let position = 0;
-        this.display.map(id => this.world(id)).filter(Boolean).forEach((world) => {
-            const on = this.draft[worldField(world.id, 'enabled')] === true;
-            const fields = ['enabled', 'private', 'players', 'name'].map(part => worldField(world.id, part));
-            const row = element('li', 'row settings__world');
-            row.dataset.env = world.environment ?? 'NONE';
-            row.dataset.fields = fields.join(' ');
-            row.title = fields.map(field => this.changedBy(field)).filter(Boolean)[0] ?? '';
-            row.classList.toggle('is-off', !on);
-            row.classList.toggle('is-conflict', fields.some(field => this.conflicts.has(field)));
-            row.classList.toggle('is-changed', fields.some(field => !same(this.draft[field], this.base[field])));
+        this.display
+            .map((id) => this.world(id))
+            .filter(Boolean)
+            .forEach((world) => {
+                const on = this.draft[worldField(world.id, 'enabled')] === true;
+                const fields = ['enabled', 'private', 'players', 'name'].map((part) => worldField(world.id, part));
+                const row = element('li', 'row settings__world');
+                row.dataset.env = world.environment ?? 'NONE';
+                row.dataset.fields = fields.join(' ');
+                row.title = fields.map((field) => this.changedBy(field)).filter(Boolean)[0] ?? '';
+                row.classList.toggle('is-off', !on);
+                row.classList.toggle(
+                    'is-conflict',
+                    fields.some((field) => this.conflicts.has(field))
+                );
+                row.classList.toggle(
+                    'is-changed',
+                    fields.some((field) => !same(this.draft[field], this.base[field]))
+                );
 
-            const rank = element('span', 'settings__rank', on ? String(++position) : '–');
-            rank.setAttribute('aria-hidden', 'true');
+                const rank = element('span', 'settings__rank', on ? String(++position) : '–');
+                rank.setAttribute('aria-hidden', 'true');
 
-            const nameField = worldField(world.id, 'name');
-            const name = document.createElement('input');
-            name.className = 'input settings__world-input';
-            name.maxLength = 32;
-            name.autocomplete = 'off';
-            name.spellcheck = false;
-            name.placeholder = world.defaultName;
-            name.value = this.draft[nameField] ?? '';
-            name.dataset.field = nameField;
-            name.setAttribute('aria-label', t('settings.worldName', {world: world.defaultName}));
-            name.addEventListener('input', () => {
-                this.set(nameField, cleanName(name));
-                row.classList.toggle('is-changed',
-                    fields.some(field => !same(this.draft[field], this.base[field])));
-            });
-
-            const about = element('span', 'settings__world-id');
-            about.append(element('span', 'settings__env', world.environment
-                ? t(`env.${world.environment}`) : t('settings.notLoaded')), element('code', '', world.id));
-            const naming = element('div', 'settings__world-name');
-            naming.append(name, about);
-
-            const privateField = worldField(world.id, 'private');
-            const playersField = worldField(world.id, 'players');
-            const players = flag(playersField, this.draft[playersField] === true,
-                [privateIcon(), element('span', '', t('settings.privatePlayers'))], checked => {
-                    this.set(playersField, checked);
-                    this.render();
+                const nameField = worldField(world.id, 'name');
+                const name = document.createElement('input');
+                name.className = 'input settings__world-input';
+                name.maxLength = 32;
+                name.autocomplete = 'off';
+                name.spellcheck = false;
+                name.placeholder = world.defaultName;
+                name.value = this.draft[nameField] ?? '';
+                name.dataset.field = nameField;
+                name.setAttribute('aria-label', t('settings.worldName', {world: world.defaultName}));
+                name.addEventListener('input', () => {
+                    this.set(nameField, cleanName(name));
+                    row.classList.toggle(
+                        'is-changed',
+                        fields.some((field) => !same(this.draft[field], this.base[field]))
+                    );
                 });
-            players.title = t('settings.privatePlayersHint', {permission: `taerra.players.${world.id.replaceAll(':', '.')}`});
-            const flags = element('div', 'settings__flags');
-            flags.append(
-                flag(worldField(world.id, 'enabled'), on, [t('settings.onMap')], checked => {
-                    this.set(worldField(world.id, 'enabled'), checked);
-                    this.fixOrder();
-                    this.render();
-                }),
-                flag(privateField, this.draft[privateField] === true,
-                    [privateIcon(), element('span', '', t('settings.private'))], checked => {
-                        this.set(privateField, checked);
+
+                const about = element('span', 'settings__world-id');
+                about.append(
+                    element(
+                        'span',
+                        'settings__env',
+                        world.environment ? t(`env.${world.environment}`) : t('settings.notLoaded')
+                    ),
+                    element('code', '', world.id)
+                );
+                const naming = element('div', 'settings__world-name');
+                naming.append(name, about);
+
+                const privateField = worldField(world.id, 'private');
+                const playersField = worldField(world.id, 'players');
+                const players = flag(
+                    playersField,
+                    this.draft[playersField] === true,
+                    [privateIcon(), element('span', '', t('settings.privatePlayers'))],
+                    (checked) => {
+                        this.set(playersField, checked);
+                        this.render();
+                    }
+                );
+                players.title = t('settings.privatePlayersHint', {
+                    permission: `taerra.players.${world.id.replaceAll(':', '.')}`
+                });
+                const flags = element('div', 'settings__flags');
+                flags.append(
+                    flag(worldField(world.id, 'enabled'), on, [t('settings.onMap')], (checked) => {
+                        this.set(worldField(world.id, 'enabled'), checked);
+                        this.fixOrder();
                         this.render();
                     }),
-                players);
+                    flag(
+                        privateField,
+                        this.draft[privateField] === true,
+                        [privateIcon(), element('span', '', t('settings.private'))],
+                        (checked) => {
+                            this.set(privateField, checked);
+                            this.render();
+                        }
+                    ),
+                    players
+                );
 
-            const moves = element('div', 'settings__moves');
-            moves.append(this.move(world.id, -1, 'up'), this.move(world.id, 1, 'down'));
-            row.append(rank, naming, flags, moves);
-            const conflict = this.conflict(...fields);
-            if (conflict) {
-                row.append(conflict);
-            }
-            list.append(row);
-        });
+                const moves = element('div', 'settings__moves');
+                moves.append(this.move(world.id, -1, 'up'), this.move(world.id, 1, 'down'));
+                row.append(rank, naming, flags, moves);
+                const conflict = this.conflict(...fields);
+                if (conflict) {
+                    row.append(conflict);
+                }
+                list.append(row);
+            });
         return list;
     }
 
@@ -826,9 +913,17 @@ class SettingsDialog {
         if (value.shape !== 'none') {
             const round = value.shape !== 'rectangle';
             const parts = round
-                ? [['x', Math.floor((value.minX + value.maxX) / 2)], ['z', Math.floor((value.minZ + value.maxZ) / 2)],
-                    ['radius', (value.maxX - value.minX) / 2]]
-                : [['fromX', value.minX], ['fromZ', value.minZ], ['toX', value.maxX], ['toZ', value.maxZ]];
+                ? [
+                      ['x', Math.floor((value.minX + value.maxX) / 2)],
+                      ['z', Math.floor((value.minZ + value.maxZ) / 2)],
+                      ['radius', (value.maxX - value.minX) / 2]
+                  ]
+                : [
+                      ['fromX', value.minX],
+                      ['fromZ', value.minZ],
+                      ['toX', value.maxX],
+                      ['toZ', value.maxZ]
+                  ];
             const inputs = parts.map(([part, number]) => {
                 const input = element('input', 'input input--small');
                 input.inputMode = 'numeric';
@@ -838,18 +933,30 @@ class SettingsDialog {
                 line.append(labelled(t(`settings.limit.${part}`), input));
                 return input;
             });
-            const pick = (a, b, op) => a === null || b === null ? null : op(a, b);
-            inputs.forEach(input => input.addEventListener('input', () => {
-                const [a, b, c, d] = inputs.map(box => coordinate(box.value));
-                const next = round
-                    ? limit(value.shape, pick(a, c, (x, r) => x - r), pick(b, c, (z, r) => z - r),
-                        pick(a, c, (x, r) => x + r), pick(b, c, (z, r) => z + r))
-                    : limit(value.shape, pick(a, c, Math.min), pick(b, d, Math.min), pick(a, c, Math.max),
-                        pick(b, d, Math.max));
-                this.set(field, next);
-                row.classList.toggle('is-changed', changed());
-                row.classList.toggle('is-invalid', changed() && badLimit(next));
-            }));
+            const pick = (a, b, op) => (a === null || b === null ? null : op(a, b));
+            inputs.forEach((input) =>
+                input.addEventListener('input', () => {
+                    const [a, b, c, d] = inputs.map((box) => coordinate(box.value));
+                    const next = round
+                        ? limit(
+                              value.shape,
+                              pick(a, c, (x, r) => x - r),
+                              pick(b, c, (z, r) => z - r),
+                              pick(a, c, (x, r) => x + r),
+                              pick(b, c, (z, r) => z + r)
+                          )
+                        : limit(
+                              value.shape,
+                              pick(a, c, Math.min),
+                              pick(b, d, Math.min),
+                              pick(a, c, Math.max),
+                              pick(b, d, Math.max)
+                          );
+                    this.set(field, next);
+                    row.classList.toggle('is-changed', changed());
+                    row.classList.toggle('is-invalid', changed() && badLimit(next));
+                })
+            );
         }
         const conflict = this.conflict(field);
         return conflict ? [row, conflict] : [row];
@@ -868,8 +975,9 @@ class SettingsDialog {
         const text = element('span', 'row__text');
         text.append(element('span', 'settings__label', name), element('code', 'hint', world.id));
         const effects = [
-            ...viewsOf(before).filter(view => !viewsOf(value).includes(view))
-                .map(view => t(`settings.views.drops.${view}`)),
+            ...viewsOf(before)
+                .filter((view) => !viewsOf(value).includes(view))
+                .map((view) => t(`settings.views.drops.${view}`)),
             ...(addsView(before, value) ? [t('settings.views.renders')] : [])
         ];
         if (effects.length) {
@@ -914,8 +1022,10 @@ class SettingsDialog {
             this.updateStatus();
             this.render();
             const again = this.dialog.querySelector(`[data-field="${CSS.escape(`${ORDER}:${id}:${direction}`)}"]`);
-            (again && !again.disabled ? again
-                : this.dialog.querySelector(`[data-field^="${CSS.escape(`${ORDER}:${id}:`)}"]:not(:disabled)`))?.focus();
+            (again && !again.disabled
+                ? again
+                : this.dialog.querySelector(`[data-field^="${CSS.escape(`${ORDER}:${id}:`)}"]:not(:disabled)`)
+            )?.focus();
         });
         button.dataset.field = `${ORDER}:${id}:${direction}`;
         button.disabled = target < 0 || target >= this.display.length;
@@ -929,19 +1039,38 @@ class SettingsDialog {
         const fields = [field, iconField, scaleField];
         const row = element('label', 'row row--action settings__row settings__layer');
         row.dataset.fields = fields.join(' ');
-        row.title = fields.map(each => this.changedBy(each)).filter(Boolean)[0] ?? '';
-        row.classList.toggle('is-conflict', fields.some(each => this.conflicts.has(each)));
-        row.classList.toggle('is-changed', fields.some(each => !same(this.draft[each], this.base[each])));
+        row.title = fields.map((each) => this.changedBy(each)).filter(Boolean)[0] ?? '';
+        row.classList.toggle(
+            'is-conflict',
+            fields.some((each) => this.conflicts.has(each))
+        );
+        row.classList.toggle(
+            'is-changed',
+            fields.some((each) => !same(this.draft[each], this.base[each]))
+        );
         const text = element('span', 'row__text');
         const title = element('span', 'settings__label', this.label(field));
-        text.append(title, element('span', 'hint', layer.present ? t('settings.layerPermission', {
-            permission: `taerra.layer.${layer.id.replaceAll(':', '.')}`
-        }) : t('settings.layerGone')));
-        const {wrap} = switchInput(field, this.draft[field] === true,
-            t('settings.privateLayer', {layer: title.textContent}), checked => {
+        text.append(
+            title,
+            element(
+                'span',
+                'hint',
+                layer.present
+                    ? t('settings.layerPermission', {
+                          permission: `taerra.layer.${layer.id.replaceAll(':', '.')}`
+                      })
+                    : t('settings.layerGone')
+            )
+        );
+        const {wrap} = switchInput(
+            field,
+            this.draft[field] === true,
+            t('settings.privateLayer', {layer: title.textContent}),
+            (checked) => {
                 this.set(field, checked);
                 this.render();
-            });
+            }
+        );
         const icon = this.draft[iconField] ?? '';
         const choose = element('button', 'icon-choice');
         choose.type = 'button';
@@ -953,16 +1082,19 @@ class SettingsDialog {
         choose.classList.toggle('is-default', !iconStore.get(icon));
         choose.addEventListener('click', async (event) => {
             event.preventDefault();
-            const chosen = await iconChooser.choose(t('settings.layerIconTitle', {layer: title.textContent}),
-                this.draft[iconField] ?? '', MARKER, t('icons.default'));
+            const chosen = await iconChooser.choose(
+                t('settings.layerIconTitle', {layer: title.textContent}),
+                this.draft[iconField] ?? '',
+                MARKER,
+                t('icons.default')
+            );
             if (chosen !== null) {
                 this.set(iconField, chosen);
                 this.render();
             }
             this.dialog.querySelector(`[data-field="${CSS.escape(iconField)}"]`)?.focus();
         });
-        const scale = element('button', 'settings__scale-button',
-            this.format(scaleField, this.draft[scaleField]));
+        const scale = element('button', 'settings__scale-button', this.format(scaleField, this.draft[scaleField]));
         scale.type = 'button';
         scale.dataset.field = `${scaleField}:open`;
         scale.title = t('settings.layerScale');
@@ -986,7 +1118,8 @@ class SettingsDialog {
         if (scale === null) {
             return t('settings.layerScale.always');
         }
-        return scale >= 0 ? t('settings.layerScale.pixels', {pixels: numbers.format(2 ** scale)})
+        return scale >= 0
+            ? t('settings.layerScale.pixels', {pixels: numbers.format(2 ** scale)})
             : t('settings.layerScale.blocks', {blocks: numbers.format(2 ** -scale)});
     }
 
@@ -1020,8 +1153,9 @@ class SettingsDialog {
 
     peekScale(id, scale) {
         markerManager.previewScale(id, scale);
-        mapManager.getMap().setZoom(scale === null ? mapManager.activeMinZoom() : mapManager.zoomForScale(scale),
-            {animate: false});
+        mapManager
+            .getMap()
+            .setZoom(scale === null ? mapManager.activeMinZoom() : mapManager.zoomForScale(scale), {animate: false});
     }
 
     scalePanel(layer, field, title, row, button) {
@@ -1048,9 +1182,12 @@ class SettingsDialog {
             button.textContent = text;
             slider.setAttribute('aria-valuetext', text);
             this.set(field, scaleText(scale));
-            row.classList.toggle('is-changed',
-                [layerField(layer.id), layerIconField(layer.id), field]
-                    .some(each => !same(this.draft[each], this.base[each])));
+            row.classList.toggle(
+                'is-changed',
+                [layerField(layer.id), layerIconField(layer.id), field].some(
+                    (each) => !same(this.draft[each], this.base[each])
+                )
+            );
             this.peekScale(layer.id, scale);
         };
         shown.textContent = this.describeScale(stops[Number(slider.value)]);
@@ -1071,8 +1208,10 @@ class SettingsDialog {
             slider.addEventListener(type, () => this.dialog.classList.remove('is-peeking'));
         }
         const ends = element('span', 'settings__scale-ends');
-        ends.append(element('span', '', t('settings.layerScale.always')),
-            element('span', '', t('settings.layerScale.closest')));
+        ends.append(
+            element('span', '', t('settings.layerScale.always')),
+            element('span', '', t('settings.layerScale.closest'))
+        );
         const track = element('span', 'settings__scale-track');
         track.append(slider, ends);
         const here = element('button', 'btn btn--small', t('settings.layerScale.useMap'));
@@ -1110,23 +1249,34 @@ class SettingsDialog {
 
     problem(changes) {
         const fields = Object.keys(changes);
-        const number = fields.find(field =>
-            field.startsWith('setting:') && outOfRange(this.setting(field.slice('setting:'.length)), changes[field]));
+        const number = fields.find(
+            (field) =>
+                field.startsWith('setting:') && outOfRange(this.setting(field.slice('setting:'.length)), changes[field])
+        );
         if (number) {
             const setting = this.setting(number.slice('setting:'.length));
             return t('settings.range', {
-                name: this.label(number), min: numbers.format(setting.min), max: numbers.format(setting.max)
+                name: this.label(number),
+                min: numbers.format(setting.min),
+                max: numbers.format(setting.max)
             });
         }
         const limits = fields.filter(isLimit);
-        const bad = limits.find(field => badLimit(changes[field]));
+        const bad = limits.find((field) => badLimit(changes[field]));
         if (bad) {
             const id = bad.slice('world:'.length, bad.lastIndexOf(':'));
-            return t('settings.limitInvalid', {world: this.draft[worldField(id, 'name')] || this.world(id)?.defaultName || id});
+            return t('settings.limitInvalid', {
+                world: this.draft[worldField(id, 'name')] || this.world(id)?.defaultName || id
+            });
         }
-        const renders = limits.length + fields.filter(field => isViews(field)
-            && this.draft[worldField(field.slice('world:'.length, field.lastIndexOf(':')), 'enabled')] === true
-            && addsView(this.base[field], changes[field])).length;
+        const renders =
+            limits.length +
+            fields.filter(
+                (field) =>
+                    isViews(field) &&
+                    this.draft[worldField(field.slice('world:'.length, field.lastIndexOf(':')), 'enabled')] === true &&
+                    addsView(this.base[field], changes[field])
+            ).length;
         return renders > 1 ? t('settings.limitOne') : null;
     }
 
@@ -1135,21 +1285,22 @@ class SettingsDialog {
             return;
         }
         const changes = this.changes();
-        const count = Object.keys(changes).length
-            - (ORDER in changes && sameOrder(changes[ORDER], this.base[ORDER]) ? 1 : 0);
+        const count =
+            Object.keys(changes).length - (ORDER in changes && sameOrder(changes[ORDER], this.base[ORDER]) ? 1 : 0);
         const conflicts = this.conflicts.size;
         const problem = this.problem(changes);
         $('settings-save').disabled = count === 0 || conflicts > 0 || Boolean(problem);
         const status = $('settings-status');
         if (conflicts) {
-            this.showStatus(t(`settings.conflicts.${plurals.select(conflicts)}`, {count: numbers.format(conflicts)}),
-                'is-conflict');
+            this.showStatus(
+                t(`settings.conflicts.${plurals.select(conflicts)}`, {count: numbers.format(conflicts)}),
+                'is-conflict'
+            );
         } else if (problem) {
             this.showStatus(problem, 'is-conflict');
         } else if (count) {
-            this.showStatus(t(`settings.unsaved.${plurals.select(count)}`, {count: numbers.format(count)}),
-                'is-dirty');
-        } else if (!['is-live', 'is-done', 'is-failed'].some(state => status.classList.contains(state))) {
+            this.showStatus(t(`settings.unsaved.${plurals.select(count)}`, {count: numbers.format(count)}), 'is-dirty');
+        } else if (!['is-live', 'is-done', 'is-failed'].some((state) => status.classList.contains(state))) {
             this.showStatus(null);
         }
     }
@@ -1176,16 +1327,29 @@ class SettingsDialog {
             response = null;
         }
         $('settings-save').classList.remove('is-busy');
-        const body = response && (response.status === 200 || response.status === 409)
-            ? await response.json().catch(() => null) : null;
+        const body =
+            response && (response.status === 200 || response.status === 409)
+                ? await response.json().catch(() => null)
+                : null;
         if (response?.status === 200 && body) {
             const before = this.base;
             this.base = {...this.base, ...structuredClone(changes)};
             this.rebase(body);
-            const views = Object.keys(changes).some(field => isViews(field) && addsView(before[field], changes[field]));
-            this.showStatus(t(Object.keys(changes).some(isLimit) ? 'settings.savedLimit'
-                : views ? 'settings.savedViews'
-                    : Object.keys(changes).some(isStorage) ? 'settings.savedStorage' : 'settings.saved'), 'is-done');
+            const views = Object.keys(changes).some(
+                (field) => isViews(field) && addsView(before[field], changes[field])
+            );
+            this.showStatus(
+                t(
+                    Object.keys(changes).some(isLimit)
+                        ? 'settings.savedLimit'
+                        : views
+                          ? 'settings.savedViews'
+                          : Object.keys(changes).some(isStorage)
+                            ? 'settings.savedStorage'
+                            : 'settings.saved'
+                ),
+                'is-done'
+            );
             return;
         }
         if (response?.status === 409 && body) {
@@ -1199,12 +1363,17 @@ class SettingsDialog {
         }
         if (response?.status === 400) {
             const invalid = await response.json().catch(() => null);
-            this.showStatus(invalid?.unreachable
-                ? t('settings.storageFailed', {reason: invalid.unreachable})
-                : t('settings.invalid', {name: this.label(invalid?.invalid ?? '')}), 'is-failed');
+            this.showStatus(
+                invalid?.unreachable
+                    ? t('settings.storageFailed', {reason: invalid.unreachable})
+                    : t('settings.invalid', {name: this.label(invalid?.invalid ?? '')}),
+                'is-failed'
+            );
         } else {
-            this.showStatus(t(response?.status === 401 || response?.status === 403
-                ? 'settings.denied' : 'settings.failed'), 'is-failed');
+            this.showStatus(
+                t(response?.status === 401 || response?.status === 403 ? 'settings.denied' : 'settings.failed'),
+                'is-failed'
+            );
         }
         $('settings-save').disabled = false;
     }

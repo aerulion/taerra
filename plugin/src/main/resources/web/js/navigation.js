@@ -5,9 +5,33 @@ import {wsManager} from './websocket.js';
 
 const $ = (id) => document.getElementById(id);
 
-const X_OUTLINE = [[0, 0, 3, 1], [4, 0, 3, 1], [0, 1, 1, 1], [3, 1, 1, 1], [6, 1, 1, 1], [0, 2, 1, 1], [6, 2, 1, 1],
-    [1, 3, 1, 1], [5, 3, 1, 1], [0, 4, 1, 1], [6, 4, 1, 1], [0, 5, 1, 1], [3, 5, 1, 1], [6, 5, 1, 1], [0, 6, 3, 1], [4, 6, 3, 1]];
-const X_BODY = [[1, 1, 2, 1], [4, 1, 2, 1], [1, 2, 5, 1], [2, 3, 3, 1], [1, 4, 5, 1], [1, 5, 2, 1], [4, 5, 2, 1]];
+const X_OUTLINE = [
+    [0, 0, 3, 1],
+    [4, 0, 3, 1],
+    [0, 1, 1, 1],
+    [3, 1, 1, 1],
+    [6, 1, 1, 1],
+    [0, 2, 1, 1],
+    [6, 2, 1, 1],
+    [1, 3, 1, 1],
+    [5, 3, 1, 1],
+    [0, 4, 1, 1],
+    [6, 4, 1, 1],
+    [0, 5, 1, 1],
+    [3, 5, 1, 1],
+    [6, 5, 1, 1],
+    [0, 6, 3, 1],
+    [4, 6, 3, 1]
+];
+const X_BODY = [
+    [1, 1, 2, 1],
+    [4, 1, 2, 1],
+    [1, 2, 5, 1],
+    [2, 3, 3, 1],
+    [1, 4, 5, 1],
+    [1, 5, 2, 1],
+    [4, 5, 2, 1]
+];
 
 export const TARGET_SVG = `<svg viewBox="0 0 7 7" width="21" height="21" aria-hidden="true" shape-rendering="crispEdges">
 <path d="${pixelPath(X_OUTLINE)}" fill="#111"/><path d="${pixelPath(X_BODY)}" fill="currentColor"/></svg>`;
@@ -43,9 +67,12 @@ class NavigationManager {
 
     async navigate(target) {
         try {
-            const response = await fetch('api/navigation', target
-                ? {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(target)}
-                : {method: 'DELETE'});
+            const response = await fetch(
+                'api/navigation',
+                target
+                    ? {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(target)}
+                    : {method: 'DELETE'}
+            );
             if (response.ok) {
                 this.apply(target);
             }

@@ -37,6 +37,23 @@ spotless {
         targetExclude("**/build/**", "site/**")
         ktfmt(libs.versions.ktfmt.get()).kotlinlangStyle()
     }
+    format("webMap") {
+        target(
+            "plugin/src/main/resources/web/js/**/*.js",
+            "plugin/src/test/js/**/*.mjs",
+            "plugin/eslint.config.js",
+        )
+        prettier(libs.versions.prettier.get())
+            .config(
+                mapOf(
+                    "printWidth" to 120,
+                    "tabWidth" to 4,
+                    "singleQuote" to true,
+                    "bracketSpacing" to false,
+                    "trailingComma" to "none",
+                )
+            )
+    }
     json {
         target("plugin/src/main/resources/web/**/*.json", "mod/src/main/resources/**/*.json")
         jackson().version(libs.versions.jackson.get()).feature("INDENT_OUTPUT", true)

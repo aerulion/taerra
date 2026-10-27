@@ -8,15 +8,16 @@ import {accountManager} from './account.js';
 
 const $ = (id) => document.getElementById(id);
 
-const fold = (text) => text.normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase();
+const fold = (text) =>
+    text
+        .normalize('NFD')
+        .replace(/\p{M}+/gu, '')
+        .toLowerCase();
 
 const regionName = (region) => region.name || t('regions.unnamed');
 
 function meta(region) {
-    return [
-        t(`region.fog.${region.fog ?? 'hide'}`),
-        chunkCount(region.size ?? region.chunks?.length ?? 0)
-    ].join(', ');
+    return [t(`region.fog.${region.fog ?? 'hide'}`), chunkCount(region.size ?? region.chunks?.length ?? 0)].join(', ');
 }
 
 class RegionEditor {
@@ -87,7 +88,9 @@ class RegionEditor {
             return;
         }
         const problem = await target.onSave({
-            name: $('region-name').value.trim(), color: this.color, fog: this.fog,
+            name: $('region-name').value.trim(),
+            color: this.color,
+            fog: this.fog,
             discoverable: this.fog !== 'none' && $('region-discoverable').checked
         });
         if (problem) {
@@ -112,7 +115,6 @@ class RegionEditor {
         this.saved = true;
         this.dialog.close();
     }
-
 }
 
 class RegionList {
@@ -147,10 +149,10 @@ class RegionList {
     render() {
         const filter = fold($('regions-filter').value.trim());
         const regions = regionManager.regions
-            .filter(region => !filter || fold(regionName(region)).includes(filter))
+            .filter((region) => !filter || fold(regionName(region)).includes(filter))
             .sort((a, b) => regionName(a).localeCompare(regionName(b)) || a.id.localeCompare(b.id));
         $('regions-count').textContent = numbers.format(regionManager.regions.length);
-        $('regions-list').replaceChildren(...regions.map(region => this.row(region)));
+        $('regions-list').replaceChildren(...regions.map((region) => this.row(region)));
         $('regions-empty').hidden = regions.length > 0;
         $('regions-empty').textContent = t(regionManager.regions.length === 0 ? 'regions.none' : 'manager.noMatch');
     }
@@ -188,8 +190,7 @@ class RegionList {
             let response = null;
             try {
                 response = await fetch(`api/regions/${region.id}${path}`, {method});
-            } catch {
-            }
+            } catch {}
             disarm(button);
             if (!response?.ok) {
                 button.title = t('region.problem.failed');
