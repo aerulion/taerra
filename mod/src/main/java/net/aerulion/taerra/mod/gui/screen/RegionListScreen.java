@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import net.aerulion.taerra.mod.gui.widget.Glyph;
 import net.aerulion.taerra.mod.gui.widget.IconButton;
 import net.aerulion.taerra.mod.util.Colors;
 import net.aerulion.taerra.mod.web.WebMap;
@@ -31,9 +32,7 @@ public final class RegionListScreen extends Screen {
   private static final int ROW = 26;
   private static final int ICON = 16;
   private static final int TOOLS_Y = 24;
-  private static final String[] FORGET = {
-    "........", "...##...", "..#####.", ".#######", "########", "########", ".######.", "........"
-  };
+  private static final Glyph FORGET = Glyph.of("icon/forget", 8, 8);
 
   private final @NotNull MapScreen parent;
   private final @NotNull WebMap map;
@@ -233,7 +232,7 @@ public final class RegionListScreen extends Screen {
       }
 
       private void button(
-          final String @NotNull [] icon, final @NotNull String label, final @NotNull Runnable run) {
+          final @NotNull Glyph icon, final @NotNull String label, final @NotNull Runnable run) {
         final @NotNull IconButton button =
             new IconButton(ICON, icon, Component.translatable(label), run);
         button.setTooltip(Tooltip.create(Component.translatable(label)));

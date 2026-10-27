@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.aerulion.taerra.mod.TaerraClient;
 import net.aerulion.taerra.mod.config.Settings;
 import net.aerulion.taerra.mod.gui.widget.CompassButton;
+import net.aerulion.taerra.mod.gui.widget.Glyph;
 import net.aerulion.taerra.mod.gui.widget.IconButton;
 import net.aerulion.taerra.mod.gui.widget.LayerList;
 import net.aerulion.taerra.mod.gui.widget.PanelList;
@@ -1073,7 +1074,7 @@ public final class MapScreen extends Screen {
   }
 
   private @NotNull IconButton zoomButton(
-      final String @NotNull [] icon, final @NotNull String tooltip, final int steps) {
+      final @NotNull Glyph icon, final @NotNull String tooltip, final int steps) {
     return iconButton(
         CompassButton.SIZE,
         icon,
@@ -1086,7 +1087,7 @@ public final class MapScreen extends Screen {
 
   private static @NotNull IconButton iconButton(
       final int size,
-      final String @NotNull [] icon,
+      final @NotNull Glyph icon,
       final @NotNull Component tooltip,
       final @NotNull Runnable onPress) {
     final @NotNull IconButton button = new IconButton(size, icon, tooltip, onPress);

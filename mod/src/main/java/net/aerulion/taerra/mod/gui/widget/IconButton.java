@@ -10,42 +10,28 @@ import org.jetbrains.annotations.NotNull;
 
 public final class IconButton extends AbstractButton {
 
-  public static final String[] CLOCKWISE = {
-    "..####.#", ".#....##", "#....###", "#.......", "#......#", "#......#", ".#....#.", "..####.."
-  };
-  public static final String[] COUNTER_CLOCKWISE = mirrored(CLOCKWISE);
-  public static final String[] PLUS = {
-    "...#...", "...#...", "...#...", "#######", "...#...", "...#...", "...#..."
-  };
-  public static final String[] MINUS = {"#######"};
-  public static final String[] UNDO = {
-    "..#.....", ".##.....", "######..", ".##...#.", "..#....#", ".......#", "......#.", "...###.."
-  };
-  public static final String[] REDO = mirrored(UNDO);
+  public static final Glyph CLOCKWISE = Glyph.of("icon/rotate_clockwise", 8, 8);
+  public static final Glyph COUNTER_CLOCKWISE = Glyph.of("icon/rotate_counter_clockwise", 8, 8);
+  public static final Glyph PLUS = Glyph.of("icon/zoom_in", 8, 8);
+  public static final Glyph MINUS = Glyph.of("icon/zoom_out", 8, 8);
+  public static final Glyph UNDO = Glyph.of("icon/undo", 8, 8);
+  public static final Glyph REDO = Glyph.of("icon/redo", 8, 8);
 
   private static final int COLOR = 0xFFFFFFFF;
   private static final int INACTIVE = CommonColors.LIGHT_GRAY;
   private static final int SHADOW = 0xFF3F3F3F;
 
-  private final String[] icon;
+  private final Glyph icon;
   private final Runnable onPress;
 
   public IconButton(
       final int size,
-      final String @NotNull [] icon,
+      final @NotNull Glyph icon,
       final @NotNull Component message,
       final @NotNull Runnable onPress) {
     super(0, 0, size, size, message);
     this.icon = icon;
     this.onPress = onPress;
-  }
-
-  private static String[] mirrored(final String @NotNull [] icon) {
-    final String @NotNull [] mirrored = new String[icon.length];
-    for (int row = 0; row < icon.length; row++) {
-      mirrored[row] = new StringBuilder(icon[row]).reverse().toString();
-    }
-    return mirrored;
   }
 
   @Override
@@ -60,28 +46,14 @@ public final class IconButton extends AbstractButton {
       final int mouseY,
       final float partialTick) {
     extractDefaultSprite(graphics);
-    final int left = getX() + (getWidth() - this.icon[0].length()) / 2;
-    final int top = getY() + (getHeight() - this.icon.length) / 2;
-    draw(graphics, left + 1, top + 1, SHADOW);
-    draw(graphics, left, top, this.active ? COLOR : INACTIVE);
+    final int left = getX() + (getWidth() - this.icon.width()) / 2;
+    final int top = getY() + (getHeight() - this.icon.height()) / 2;
+    this.icon.draw(graphics, left + 1, top + 1, SHADOW);
+    this.icon.draw(graphics, left, top, this.active ? COLOR : INACTIVE);
   }
 
   @Override
   protected void updateWidgetNarration(final NarrationElementOutput output) {
     defaultButtonNarrationText(output);
-  }
-
-  private void draw(
-      final @NotNull GuiGraphicsExtractor graphics,
-      final int left,
-      final int top,
-      final int color) {
-    for (int row = 0; row < this.icon.length; row++) {
-      for (int column = 0; column < this.icon[row].length(); column++) {
-        if (this.icon[row].charAt(column) == '#') {
-          graphics.fill(left + column, top + row, left + column + 1, top + row + 1, color);
-        }
-      }
-    }
   }
 }

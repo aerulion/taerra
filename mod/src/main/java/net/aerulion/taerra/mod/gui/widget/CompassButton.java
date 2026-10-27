@@ -15,19 +15,7 @@ public final class CompassButton extends AbstractButton {
   private static final int NEEDLE_WIDTH = 7;
   private static final int NEEDLE_HEIGHT = 15;
   private static final int NEEDLE_SHADOW = 0x80000000;
-  private static final int[][] NEEDLE = {
-    {0xFFE34A4A, 3, 0, 1, 2},
-    {0xFFE34A4A, 2, 2, 2, 2},
-    {0xFFE34A4A, 1, 4, 3, 3},
-    {0xFFA32C2C, 4, 2, 1, 2},
-    {0xFFA32C2C, 4, 4, 2, 3},
-    {0xFFD0D1D4, 1, 7, 3, 4},
-    {0xFFD0D1D4, 2, 11, 2, 2},
-    {0xFFD0D1D4, 3, 13, 1, 2},
-    {0xFF8C8D90, 4, 7, 2, 4},
-    {0xFF8C8D90, 4, 11, 1, 2},
-    {0xFF1E1E1F, 3, 7, 1, 1}
-  };
+  private static final Glyph NEEDLE = Glyph.of("compass/needle", NEEDLE_WIDTH, NEEDLE_HEIGHT);
 
   private final DoubleSupplier north;
   private final Runnable onPress;
@@ -81,14 +69,7 @@ public final class CompassButton extends AbstractButton {
     if (shadow) {
       pose.translate(.5f, .5f);
     }
-    for (final int[] pixels : NEEDLE) {
-      graphics.fill(
-          pixels[1],
-          pixels[2],
-          pixels[1] + pixels[3],
-          pixels[2] + pixels[4],
-          shadow ? NEEDLE_SHADOW : pixels[0]);
-    }
+    NEEDLE.draw(graphics, 0, 0, shadow ? NEEDLE_SHADOW : 0xFFFFFFFF);
     pose.popMatrix();
   }
 }

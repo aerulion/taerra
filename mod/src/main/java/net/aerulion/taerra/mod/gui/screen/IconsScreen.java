@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
+import net.aerulion.taerra.mod.gui.widget.Glyph;
 import net.aerulion.taerra.mod.gui.widget.IconButton;
 import net.aerulion.taerra.mod.map.MapIcons;
 import net.aerulion.taerra.mod.util.FileDialogs;
@@ -456,9 +457,7 @@ public final class IconsScreen extends Screen implements WebMapListener {
       }
 
       private void button(
-          final String @NotNull [] glyph,
-          final @NotNull String label,
-          final @NotNull Runnable run) {
+          final @NotNull Glyph glyph, final @NotNull String label, final @NotNull Runnable run) {
         final @NotNull IconButton button =
             new IconButton(ICON, glyph, Component.translatable(label), run);
         button.setTooltip(Tooltip.create(Component.translatable(label)));

@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 import net.aerulion.taerra.mod.TaerraClient;
+import net.aerulion.taerra.mod.gui.widget.Glyph;
 import net.aerulion.taerra.mod.gui.widget.IconButton;
 import net.aerulion.taerra.mod.navigation.Navigation;
 import net.aerulion.taerra.mod.util.Colors;
@@ -66,27 +67,13 @@ public final class WaypointListScreen extends Screen {
   private static final long STATUS_MILLIS = 6000;
   private static final String ALL = "";
 
-  private static final String[] SHOWN = {
-    "........", "........", "..####..", ".#.##.#.", "#..##..#", ".#....#.", "..####..", "........"
-  };
-  private static final String[] HIDDEN = {
-    "#.......", ".#......", "..#.##..", ".#.#..#.", "#...#..#", ".#...#..", "..###.#.", ".......#"
-  };
-  static final String[] ON_MAP = {
-    "...##...", "...##...", "........", "##.##.##", "##.##.##", "........", "...##...", "...##..."
-  };
-  private static final String[] NAVIGATE = {
-    "......##", "....####", "..#####.", "#######.", "....##..", "....##..", "....#...", "....#..."
-  };
-  private static final String[] TELEPORT = {
-    "..####..", ".#....#.", "#..##..#", "#.#..#.#", "#.#..#.#", "#..##..#", ".#....#.", "..####.."
-  };
-  static final String[] EDIT = {
-    "......##", ".....#.#", "....#.#.", "...#.#..", "..#.#...", ".#.#....", "###.....", "##......"
-  };
-  static final String[] DELETE = {
-    "..####..", "########", ".#....#.", ".#.##.#.", ".#.##.#.", ".#.##.#.", ".#....#.", "..####.."
-  };
+  private static final Glyph SHOWN = Glyph.of("icon/shown", 8, 8);
+  private static final Glyph HIDDEN = Glyph.of("icon/hidden", 8, 8);
+  static final Glyph ON_MAP = Glyph.of("icon/on_map", 8, 8);
+  private static final Glyph NAVIGATE = Glyph.of("icon/navigate", 8, 8);
+  private static final Glyph TELEPORT = Glyph.of("icon/teleport", 8, 8);
+  static final Glyph EDIT = Glyph.of("icon/edit", 8, 8);
+  static final Glyph DELETE = Glyph.of("icon/delete", 8, 8);
 
   private final @NotNull MapScreen parent;
   private final @NotNull WebMap map;
@@ -711,7 +698,7 @@ public final class WaypointListScreen extends Screen {
       }
 
       private void button(
-          final String @NotNull [] icon, final @NotNull String label, final @NotNull Runnable run) {
+          final @NotNull Glyph icon, final @NotNull String label, final @NotNull Runnable run) {
         final @NotNull IconButton button =
             new IconButton(ICON, icon, Component.translatable(label), run);
         button.setTooltip(Tooltip.create(Component.translatable(label)));

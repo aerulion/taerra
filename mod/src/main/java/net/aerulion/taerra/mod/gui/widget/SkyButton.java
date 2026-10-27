@@ -1,6 +1,5 @@
 package net.aerulion.taerra.mod.gui.widget;
 
-import java.util.Map;
 import java.util.function.Supplier;
 import net.aerulion.taerra.mod.web.model.Sky;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -18,76 +17,11 @@ public final class SkyButton extends AbstractButton {
   private static final int SHADOW = 0x80000000;
   private static final int BAR_WIDTH = 11;
   private static final int BAR_TRACK = 0xFF1E1E1F;
-  private static final Map<Character, Integer> PALETTE =
-      Map.ofEntries(
-          Map.entry('s', 0xFFFFCF3F),
-          Map.entry('r', 0xFFE0A82E),
-          Map.entry('o', 0xFFFF8A3D),
-          Map.entry('p', 0xFFFFB15C),
-          Map.entry('h', 0xFFB35A1F),
-          Map.entry('w', 0xFF8A4518),
-          Map.entry('m', 0xFFE3E4E7),
-          Map.entry('d', 0xFF8C8D90),
-          Map.entry('c', 0xFFA0A1A4),
-          Map.entry('u', 0xFF6E6F72),
-          Map.entry('b', 0xFF5B9BD5),
-          Map.entry('t', 0xFF7D7E82),
-          Map.entry('l', 0xFF58585A));
-  private static final String[] SUN = {
-    "....r....",
-    ".r.....r.",
-    "...sss...",
-    "..sssss..",
-    "r.sssss.r",
-    "..sssss..",
-    "...sss...",
-    ".r.....r.",
-    "....r...."
-  };
-  private static final String[] SUNSET = {
-    ".........",
-    "....p....",
-    ".p.....p.",
-    "...ooo...",
-    "p.ooooo.p",
-    "..ooooo..",
-    "hhhhhhhhh",
-    "..wwwww..",
-    "........."
-  };
-  private static final String[] MOON = {
-    "...mmd...",
-    "..mmd....",
-    ".mmd.....",
-    ".mmd.....",
-    ".mmd.....",
-    ".mmmd....",
-    ".mmmmd...",
-    "..mmmmmd.",
-    "...mmmm.."
-  };
-  private static final String[] RAIN = {
-    ".........",
-    "...ccc...",
-    ".ccccccc.",
-    "ccccccccc",
-    ".uuuuuuu.",
-    ".........",
-    ".b..b..b.",
-    "b..b..b..",
-    "........."
-  };
-  private static final String[] THUNDER = {
-    "...ttt...",
-    ".ttttttt.",
-    "ttttttttt",
-    ".lllllll.",
-    "....ss...",
-    "...ss....",
-    "..ssss...",
-    "...ss....",
-    "...s....."
-  };
+  private static final Glyph SUN = Glyph.of("sky/sun", GLYPH, GLYPH);
+  private static final Glyph SUNSET = Glyph.of("sky/sunset", GLYPH, GLYPH);
+  private static final Glyph MOON = Glyph.of("sky/moon", GLYPH, GLYPH);
+  private static final Glyph RAIN = Glyph.of("sky/rain", GLYPH, GLYPH);
+  private static final Glyph THUNDER = Glyph.of("sky/thunder", GLYPH, GLYPH);
 
   private final Supplier<@Nullable Sky> sky;
   private final Runnable onPress;
@@ -104,12 +38,12 @@ public final class SkyButton extends AbstractButton {
       final int left,
       final int top,
       final @NotNull Sky sky) {
-    final String @NotNull [] glyph = glyph(sky);
-    draw(graphics, glyph, left + 1, top + 1, true);
-    draw(graphics, glyph, left, top, false);
+    final @NotNull Glyph glyph = glyph(sky);
+    glyph.draw(graphics, left + 1, top + 1, SHADOW);
+    glyph.draw(graphics, left, top, 0xFFFFFFFF);
   }
 
-  private static String @NotNull [] glyph(final @NotNull Sky sky) {
+  private static @NotNull Glyph glyph(final @NotNull Sky sky) {
     return switch (sky.weather()) {
       case "thunder" -> THUNDER;
       case "rain" -> RAIN;
@@ -120,23 +54,6 @@ public final class SkyButton extends AbstractButton {
             default -> SUNSET;
           };
     };
-  }
-
-  private static void draw(
-      final @NotNull GuiGraphicsExtractor graphics,
-      final String @NotNull [] glyph,
-      final int left,
-      final int top,
-      final boolean shadow) {
-    for (int row = 0; row < glyph.length; row++) {
-      for (int column = 0; column < glyph[row].length(); column++) {
-        final @Nullable Integer color = PALETTE.get(glyph[row].charAt(column));
-        if (color != null) {
-          graphics.fill(
-              left + column, top + row, left + column + 1, top + row + 1, shadow ? SHADOW : color);
-        }
-      }
-    }
   }
 
   private static int barColor(final @NotNull Sky sky) {
