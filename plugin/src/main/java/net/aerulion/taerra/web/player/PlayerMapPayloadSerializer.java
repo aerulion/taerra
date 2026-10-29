@@ -23,10 +23,13 @@ public final class PlayerMapPayloadSerializer {
 
   @SuppressWarnings("deprecation")
   public static boolean shouldIncludePlayer(final @NotNull Player player) {
-    return player.getGameMode() != GameMode.SPECTATOR
-        && !player.hasPotionEffect(PotionEffectType.INVISIBILITY)
+    return !player.hasPotionEffect(PotionEffectType.INVISIBILITY)
         && player.getMetadata("vanished").stream().noneMatch(MetadataValue::asBoolean)
         && !TaerraPermission.HIDE.check(player);
+  }
+
+  public static boolean isSpectator(final @NotNull Player player) {
+    return player.getGameMode() == GameMode.SPECTATOR;
   }
 
   public static @NotNull Map<String, Object> serialize(final @NotNull Player player) {

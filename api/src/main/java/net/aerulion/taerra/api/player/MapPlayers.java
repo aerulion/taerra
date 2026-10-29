@@ -7,8 +7,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Hides players from the map, the way TAERRA hides spectators, invisible and vanished players. Get
- * it from {@link net.aerulion.taerra.api.TaerraApi#players()}.
+ * Hides players from the map, the way TAERRA hides invisible and vanished players. Get it from
+ * {@link net.aerulion.taerra.api.TaerraApi#players()}.
  *
  * <p>A hidden player is left out for everyone but staff with {@code taerra.see.hidden-players}, who
  * still see them, marked as hidden. Each plugin hides a player for itself, and the player stays
@@ -28,7 +28,7 @@ public interface MapPlayers {
 
   /**
    * Stops hiding a player for your plugin. They show again once no plugin hides them and nothing
-   * else does, like spectator mode.
+   * else does, like invisibility.
    *
    * @param plugin your plugin
    * @param player the player's UUID
@@ -36,8 +36,12 @@ public interface MapPlayers {
   void show(@NotNull Plugin plugin, @NotNull UUID player);
 
   /**
-   * Returns whether the map hides a player for any reason: a plugin hiding them, spectator mode,
-   * invisibility, a vanish plugin's {@code vanished} metadata, or {@code taerra.hide}.
+   * Returns whether the map hides a player for any reason: a plugin hiding them, invisibility, a
+   * vanish plugin's {@code vanished} metadata, or {@code taerra.hide}.
+   *
+   * <p>Players in spectator mode are never hidden: they show up in the player list like players in
+   * a world the viewer cannot see, with their name but without their world and position. Staff with
+   * {@code taerra.see.hidden-players} still see where they are, marked as hidden.
    *
    * @param player the player
    * @return {@code true} if the player is hidden from the map

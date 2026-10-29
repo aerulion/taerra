@@ -200,7 +200,7 @@ const en = {
                     },
                     {
                         title: 'Privacy built in',
-                        text: 'Spectators, vanished and invisible players stay off the map, and players who hide from server lists show as an anonymous dot. Player heads come from your server, so viewing the map never reveals a visitor to Mojang.'
+                        text: 'Spectators are listed without their world and position, vanished and invisible players stay off the map, and players who hide from server lists show as an anonymous dot. Player heads come from your server, so viewing the map never reveals a visitor to Mojang.'
                     },
                     {
                         title: 'Private worlds and layers',

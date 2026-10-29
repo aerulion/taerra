@@ -102,7 +102,8 @@ public final class LoadedChunkMarkers {
             });
     final @NotNull Map<Long, List<Player>> players = new HashMap<>();
     for (final @NotNull Player player : world.getPlayers()) {
-      if (PlayerMapPayloadSerializer.shouldIncludePlayer(player)) {
+      if (!PlayerMapPayloadSerializer.isSpectator(player)
+          && PlayerMapPayloadSerializer.shouldIncludePlayer(player)) {
         players
             .computeIfAbsent(
                 ChunkCoordinate.key(
