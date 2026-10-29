@@ -17,6 +17,10 @@ import org.junit.jupiter.api.Test;
 class MapPlayersImplTest {
 
   private static @NotNull Player player(final @NotNull UUID uuid) {
+    return player(uuid, GameMode.SURVIVAL);
+  }
+
+  private static @NotNull Player player(final @NotNull UUID uuid, final @NotNull GameMode mode) {
     return (Player)
         Proxy.newProxyInstance(
             Player.class.getClassLoader(),
@@ -24,7 +28,7 @@ class MapPlayersImplTest {
             (proxy, method, args) ->
                 switch (method.getName()) {
                   case "getUniqueId" -> uuid;
-                  case "getGameMode" -> GameMode.SURVIVAL;
+                  case "getGameMode" -> mode;
                   case "hasPotionEffect", "hasPermission" -> false;
                   case "getMetadata" -> List.of();
                   default -> throw new UnsupportedOperationException(method.getName());
@@ -53,21 +57,6 @@ class MapPlayersImplTest {
   @DisplayName("spectators are not hidden, unlike invisible players")
   void spectatorsAreListed() {
     final @NotNull MapPlayersImpl players = new MapPlayersImpl();
-    assertFalse(players.hidden(spectator(UUID.randomUUID())));
-  }
-
-  private static @NotNull Player spectator(final @NotNull UUID uuid) {
-    return (Player)
-        Proxy.newProxyInstance(
-            Player.class.getClassLoader(),
-            new Class<?>[] {Player.class},
-            (proxy, method, args) ->
-                switch (method.getName()) {
-                  case "getUniqueId" -> uuid;
-                  case "getGameMode" -> GameMode.SPECTATOR;
-                  case "hasPotionEffect", "hasPermission" -> false;
-                  case "getMetadata" -> List.of();
-                  default -> throw new UnsupportedOperationException(method.getName());
-                });
+    assertFalse(players.hidden(player(UUID.randomUUID(), GameMode.SPECTATOR)));
   }
 }

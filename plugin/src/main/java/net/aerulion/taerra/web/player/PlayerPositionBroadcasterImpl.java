@@ -122,7 +122,9 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
             && (!entry.playersPrivate() || viewer.canSeePlayers(this.config, entry.world()));
     final @NotNull Views views = !known ? entry.unknown() : located ? entry.full() : entry.away();
     final boolean marked =
-        entry.full().listed() == null || (located && seesFog && entry.region() != null);
+        entry.spectator()
+            ? seesHidden
+            : entry.full().listed() == null || (located && seesFog && entry.region() != null);
     if (seesHidden) {
       return marked ? views.withHidden() : views.unmasked();
     }
@@ -153,26 +155,22 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
     final @NotNull List<Entry> sent = new ArrayList<>();
     final @NotNull Map<UUID, Entry> shown = new HashMap<>();
     for (final @NotNull Player player : Bukkit.getOnlinePlayers()) {
-      final boolean spectator = PlayerMapPayloadSerializer.isSpectator(player);
-      final @NotNull String worldName = spectator ? "" : WorldKeys.id(player.getWorld());
-      final int x = spectator ? 0 : player.getLocation().getBlockX();
-      final int z = spectator ? 0 : player.getLocation().getBlockZ();
-      final boolean enabled = !spectator && this.config.worldEnabled(worldName);
-      final @Nullable WorldLimit limit = enabled ? this.limits.get(worldName) : null;
+      final @NotNull String worldName = WorldKeys.id(player.getWorld());
+      final int x = player.getLocation().getBlockX();
+      final int z = player.getLocation().getBlockZ();
+      final boolean enabled = this.config.worldEnabled(worldName);
+      final @Nullable WorldLimit limit = this.limits.get(worldName);
       final @Nullable MapRegion region =
           enabled ? this.visibility.regions().foggedAt(worldName, x >> 4, z >> 4) : null;
       final boolean included = !this.players.hidden(player);
+      final boolean spectator = PlayerMapPayloadSerializer.isSpectator(player);
       final @NotNull Map<String, Object> data = PlayerMapPayloadSerializer.serialize(player);
-      if (spectator) {
-        data.remove("world");
-        POSITION.forEach(data::remove);
-      }
       try {
-        final @NotNull Views full = views(data, included, player);
+        final @NotNull Views full = views(data, included, spectator, player);
         POSITION.forEach(data::remove);
-        final @NotNull Views away = views(data, included, player);
+        final @NotNull Views away = views(data, included, spectator, player);
         data.remove("world");
-        final @NotNull Views unknown = views(data, included, player);
+        final @NotNull Views unknown = views(data, included, spectator, player);
         final @NotNull Entry entry =
             new Entry(
                 player,
@@ -181,6 +179,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
                 region == null ? null : region.id(),
                 this.config.playersPrivate(worldName),
                 included && player.isAllowingServerListings(),
+                spectator,
                 full,
                 away,
                 unknown);
@@ -199,7 +198,10 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
   }
 
   private @NotNull Views views(
-      final @NotNull Map<String, Object> data, final boolean included, final @NotNull Player player)
+      final @NotNull Map<String, Object> data,
+      final boolean included,
+      final boolean spectator,
+      final @NotNull Player player)
       throws JsonProcessingException {
     final @NotNull Map<String, Object> named = new HashMap<>(data);
     named.put("hidden", true);
@@ -210,7 +212,11 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
       return new Views(null, null, withHidden, unmasked);
     }
     final @NotNull Map<String, Object> listed =
-        player.isAllowingServerListings() ? named : anonymize(named, player);
+        new HashMap<>(player.isAllowingServerListings() ? named : anonymize(named, player));
+    if (spectator) {
+      listed.remove("world");
+      POSITION.forEach(listed::remove);
+    }
     final @NotNull String shown = this.mapper.writeValueAsString(listed);
     listed.put("hidden", true);
     return new Views(shown, this.mapper.writeValueAsString(listed), withHidden, unmasked);
@@ -229,6 +235,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
       @Nullable UUID region,
       boolean playersPrivate,
       boolean named,
+      boolean spectator,
       @NotNull Views full,
       @NotNull Views away,
       @NotNull Views unknown) {

@@ -149,7 +149,7 @@ export const de: Copy = {
                     },
                     {
                         title: 'Datenschutz eingebaut',
-                        text: 'Wer im Zuschauermodus, unsichtbar oder per Vanish versteckt ist, bleibt von der Karte fern, und wer sich in Serverlisten verbirgt, erscheint als anonymer Punkt. Die Köpfe kommen von deinem Server, deshalb verrät die Karte niemanden an Mojang.'
+                        text: 'Zuschauer stehen ohne Welt und Position in der Liste, wer unsichtbar oder per Vanish versteckt ist, bleibt von der Karte fern, und wer sich in Serverlisten verbirgt, erscheint als anonymer Punkt. Die Köpfe kommen von deinem Server, deshalb verrät die Karte niemanden an Mojang.'
                     },
                     {
                         title: 'Private Welten und Ebenen',

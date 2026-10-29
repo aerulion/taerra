@@ -28,7 +28,7 @@ public interface MapPlayers {
 
   /**
    * Stops hiding a player for your plugin. They show again once no plugin hides them and nothing
-   * else does, like spectator mode.
+   * else does, like invisibility.
    *
    * @param plugin your plugin
    * @param player the player's UUID
@@ -40,7 +40,8 @@ public interface MapPlayers {
    * vanish plugin's {@code vanished} metadata, or {@code taerra.hide}.
    *
    * <p>Players in spectator mode are never hidden: they show up in the player list like players in
-   * a world the viewer cannot see, with their name but without their world and position.
+   * a world the viewer cannot see, with their name but without their world and position. Staff with
+   * {@code taerra.see.hidden-players} still see where they are, marked as hidden.
    *
    * @param player the player
    * @return {@code true} if the player is hidden from the map
