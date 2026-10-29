@@ -153,15 +153,20 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
     final @NotNull List<Entry> sent = new ArrayList<>();
     final @NotNull Map<UUID, Entry> shown = new HashMap<>();
     for (final @NotNull Player player : Bukkit.getOnlinePlayers()) {
-      final @NotNull String worldName = WorldKeys.id(player.getWorld());
-      final int x = player.getLocation().getBlockX();
-      final int z = player.getLocation().getBlockZ();
-      final boolean enabled = this.config.worldEnabled(worldName);
-      final @Nullable WorldLimit limit = this.limits.get(worldName);
+      final boolean spectator = PlayerMapPayloadSerializer.isSpectator(player);
+      final @NotNull String worldName = spectator ? "" : WorldKeys.id(player.getWorld());
+      final int x = spectator ? 0 : player.getLocation().getBlockX();
+      final int z = spectator ? 0 : player.getLocation().getBlockZ();
+      final boolean enabled = !spectator && this.config.worldEnabled(worldName);
+      final @Nullable WorldLimit limit = enabled ? this.limits.get(worldName) : null;
       final @Nullable MapRegion region =
           enabled ? this.visibility.regions().foggedAt(worldName, x >> 4, z >> 4) : null;
       final boolean included = !this.players.hidden(player);
       final @NotNull Map<String, Object> data = PlayerMapPayloadSerializer.serialize(player);
+      if (spectator) {
+        data.remove("world");
+        POSITION.forEach(data::remove);
+      }
       try {
         final @NotNull Views full = views(data, included, player);
         POSITION.forEach(data::remove);
