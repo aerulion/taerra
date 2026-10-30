@@ -12,6 +12,7 @@ public record Marker(
     @Nullable List<List<String>> details,
     @Nullable List<Double> position,
     @Nullable List<List<Double>> points,
+    @Nullable List<List<List<Double>>> holes,
     double minY,
     double maxY,
     boolean hollow,

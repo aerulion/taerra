@@ -3,6 +3,7 @@ package net.aerulion.taerra.region;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -83,7 +84,18 @@ public final class RegionShapes {
       } while (at != start);
       rings.add(withoutStraightCorners(ring));
     }
+    rings.sort(Comparator.comparingLong(ring -> -Math.abs(doubleArea(ring))));
     return rings;
+  }
+
+  private static long doubleArea(final @NotNull List<long[]> ring) {
+    long sum = 0;
+    for (int i = 0; i < ring.size(); i++) {
+      final long @NotNull [] point = ring.get(i);
+      final long @NotNull [] next = ring.get((i + 1) % ring.size());
+      sum += point[0] * next[1] - next[0] * point[1];
+    }
+    return sum;
   }
 
   private static @NotNull List<long[]> withoutStraightCorners(final @NotNull List<long[]> ring) {

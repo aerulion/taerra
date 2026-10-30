@@ -169,6 +169,13 @@ public final class MarkerPayloadSerializer {
         data.put(
             "points",
             area.outline().stream().map(point -> List.of(point.getX(), point.getZ())).toList());
+        data.put(
+            "holes",
+            area.holes().stream()
+                .map(
+                    hole ->
+                        hole.stream().map(point -> List.of(point.getX(), point.getZ())).toList())
+                .toList());
         data.put("minY", area.minY());
         data.put("maxY", area.maxY());
         data.put("hollow", area.hollow());

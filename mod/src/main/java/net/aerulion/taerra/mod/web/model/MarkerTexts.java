@@ -152,6 +152,7 @@ public final class MarkerTexts {
         details,
         marker.position(),
         marker.points(),
+        marker.holes(),
         marker.minY(),
         marker.maxY(),
         marker.hollow(),

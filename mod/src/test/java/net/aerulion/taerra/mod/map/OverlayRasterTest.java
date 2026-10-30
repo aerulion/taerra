@@ -31,6 +31,15 @@ class OverlayRasterTest {
 
   private static @NotNull Marker area(
       final double x0, final double z0, final double x1, final double z1) {
+    return area(x0, z0, x1, z1, null);
+  }
+
+  private static @NotNull Marker area(
+      final double x0,
+      final double z0,
+      final double x1,
+      final double z1,
+      final @Nullable List<List<List<Double>>> holes) {
     return new Marker(
         "region",
         "Region",
@@ -40,6 +49,7 @@ class OverlayRasterTest {
         null,
         null,
         List.of(List.of(x0, z0), List.of(x1, z0), List.of(x1, z1), List.of(x0, z1)),
+        holes,
         0,
         256,
         false,
@@ -58,6 +68,20 @@ class OverlayRasterTest {
     assertEquals(0x1FFF0000, pixels[64 * 256 + 64], "fill alpha of the color look");
     assertEquals(0xFFFF0000, pixels[64 * 256 + 128], "the right edge, 2 px wide");
     assertEquals(0, pixels[64 * 256 + 200], "outside");
+  }
+
+  @Test
+  void aHoleStaysUnfilledAndGetsItsOwnEdge() {
+    final @NotNull List<List<List<Double>>> hole =
+        List.of(
+            List.of(
+                List.of(8.0, 8.0), List.of(24.0, 8.0), List.of(24.0, 24.0), List.of(8.0, 24.0)));
+    final int @Nullable [] pixels =
+        OverlayRaster.pixels(scene(area(0, 0, 32, 32, hole)), new OverlayKey(4, 0, 0));
+    assertNotNull(pixels);
+    assertEquals(0x1FFF0000, pixels[64 * 256 + 16], "fill between the edge and the hole");
+    assertEquals(0xFFFF0000, pixels[64 * 256 + 96], "the hole's right edge");
+    assertEquals(0, pixels[64 * 256 + 64], "inside the hole");
   }
 
   @Test

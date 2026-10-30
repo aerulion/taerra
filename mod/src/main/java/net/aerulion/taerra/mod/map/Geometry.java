@@ -1,6 +1,7 @@
 package net.aerulion.taerra.mod.map;
 
 import java.util.Arrays;
+import java.util.List;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix3x2fStack;
@@ -38,26 +39,31 @@ final class Geometry {
 
   static void fillPolygon(
       final @NotNull GuiGraphicsExtractor graphics,
-      final double @NotNull [][] points,
+      final double @NotNull [][][] rings,
       final int top,
       final int bottom,
       final int color,
       final double shiftX,
       final double shiftY,
       final double scale) {
-    final double @NotNull [][] scaled = new double[points.length][];
+    final double @NotNull [][][] scaled = new double[rings.length][][];
     double min = Double.MAX_VALUE;
     double max = -Double.MAX_VALUE;
-    for (int i = 0; i < points.length; i++) {
-      scaled[i] = new double[] {(points[i][0] + shiftX) * scale, (points[i][1] + shiftY) * scale};
-      min = Math.min(min, scaled[i][1]);
-      max = Math.max(max, scaled[i][1]);
+    for (int ring = 0; ring < rings.length; ring++) {
+      final double @NotNull [][] points = rings[ring];
+      scaled[ring] = new double[points.length][];
+      for (int i = 0; i < points.length; i++) {
+        scaled[ring][i] =
+            new double[] {(points[i][0] + shiftX) * scale, (points[i][1] + shiftY) * scale};
+        min = Math.min(min, scaled[ring][i][1]);
+        max = Math.max(max, scaled[ring][i][1]);
+      }
     }
     final @NotNull Matrix3x2fStack pose = graphics.pose();
     pose.pushMatrix();
     pose.translate((float) -shiftX, (float) -shiftY);
     pose.scale((float) (1 / scale));
-    final double @NotNull [] crossings = new double[points.length];
+    final double @NotNull [] crossings = new double[corners(rings)];
     int @NotNull [] run = new int[0];
     int runTop = 0;
     final int last = (int) Math.min(Math.ceil((bottom + shiftY) * scale), Math.ceil(max));
@@ -84,8 +90,12 @@ final class Geometry {
   }
 
   static boolean contains(final double @NotNull [][] points, final double x, final double y) {
-    final double @NotNull [] crossings = new double[points.length];
-    final int count = crossings(points, y, crossings);
+    return contains(new double[][][] {points}, x, y);
+  }
+
+  static boolean contains(final double @NotNull [][][] rings, final double x, final double y) {
+    final double @NotNull [] crossings = new double[corners(rings)];
+    final int count = crossings(rings, y, crossings);
     int left = 0;
     for (int i = 0; i < count; i++) {
       if (crossings[i] < x) {
@@ -138,16 +148,36 @@ final class Geometry {
     return sum;
   }
 
-  static int crossings(final double @NotNull [][] points, final double y, final double[] into) {
+  static int crossings(final double @NotNull [][][] rings, final double y, final double[] into) {
     int count = 0;
-    for (int i = 0, j = points.length - 1; i < points.length; j = i++) {
-      final double[] a = points[i];
-      final double[] b = points[j];
-      if ((a[1] > y) != (b[1] > y)) {
-        into[count] = a[0] + (y - a[1]) / (b[1] - a[1]) * (b[0] - a[0]);
-        count++;
+    for (final double @NotNull [][] points : rings) {
+      for (int i = 0, j = points.length - 1; i < points.length; j = i++) {
+        final double[] a = points[i];
+        final double[] b = points[j];
+        if ((a[1] > y) != (b[1] > y)) {
+          into[count] = a[0] + (y - a[1]) / (b[1] - a[1]) * (b[0] - a[0]);
+          count++;
+        }
       }
     }
     return count;
+  }
+
+  static int corners(final double @NotNull [][][] rings) {
+    int corners = 0;
+    for (final double @NotNull [][] ring : rings) {
+      corners += ring.length;
+    }
+    return corners;
+  }
+
+  static double @NotNull [][][] rings(
+      final double @NotNull [][] outline, final @NotNull List<double[][]> holes) {
+    final double @NotNull [][][] rings = new double[holes.size() + 1][][];
+    rings[0] = outline;
+    for (int i = 0; i < holes.size(); i++) {
+      rings[i + 1] = holes.get(i);
+    }
+    return rings;
   }
 }

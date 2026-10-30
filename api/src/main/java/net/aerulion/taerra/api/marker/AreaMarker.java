@@ -27,6 +27,27 @@ public sealed interface AreaMarker extends Marker permits AreaMarkerImpl {
   List<Vector> outline();
 
   /**
+   * Returns the parts cut out of the area, each a ring of corners inside the outline. Only X and Z
+   * are used.
+   *
+   * @return a copy of the holes, empty for none
+   */
+  @NotNull
+  List<List<Vector>> holes();
+
+  /**
+   * Returns a copy with other holes, replacing all current ones. A hole is left unfilled and drawn
+   * with its own outline.
+   *
+   * @param holes the rings of corners to cut out, each inside the outline and with at least three
+   *     corners; only X and Z are used
+   * @return the copy
+   * @throws IllegalArgumentException if a hole has fewer than three corners
+   */
+  @NotNull
+  AreaMarker withHoles(@NotNull List<List<Vector>> holes);
+
+  /**
    * Returns the area's bottom.
    *
    * @return the lowest Y

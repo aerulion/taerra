@@ -83,45 +83,50 @@ final class OverlayRaster {
     }
     final Look look = scene.look();
     if (!scene.projection().isometric()) {
-      region(canvas, look, item, item.face(), far);
+      region(canvas, look, item, Geometry.rings(item.face(), item.faceHoles()), far);
       return;
     }
     final double @Nullable [][] ground = item.ground();
     if (ground == null) {
       return;
     }
+    final double @NotNull [][][] grounds = Geometry.rings(ground, item.groundHoles());
     if (far || item.fullHeight()) {
-      region(canvas, look, item, ground, far);
+      region(canvas, look, item, grounds, far);
       return;
     }
     if (!item.hollow()) {
-      canvas.fill(ground, faded(item, Colors.withAlpha(look.ground(), color)));
+      canvas.fill(grounds, faded(item, Colors.withAlpha(look.ground(), color)));
     }
-    canvas.lines(ground, true, 2, faded(item, Colors.withAlpha(GROUND_LINE, color)), item.dashed());
+    for (final double @NotNull [][] ring : grounds) {
+      canvas.lines(ring, true, 2, faded(item, Colors.withAlpha(GROUND_LINE, color)), item.dashed());
+    }
     for (int i = 0; i < item.walls().size(); i++) {
       final double[][] wall = item.walls().get(i);
       canvas.fill(wall, faded(item, Colors.withAlpha(look.wall(), item.wallColors()[i])));
       canvas.lines(wall, true, 1, faded(item, Colors.withAlpha(look.wallLine(), color)), false);
     }
-    region(canvas, look, item, item.face(), false);
+    region(canvas, look, item, Geometry.rings(item.face(), item.faceHoles()), false);
   }
 
   private static void region(
       final @NotNull Canvas canvas,
       final @NotNull Look look,
       final @NotNull OverlayItem item,
-      final double @NotNull [][] outline,
+      final double @NotNull [][][] rings,
       final boolean far) {
     final int color = item.color();
     if (!item.hollow()) {
-      canvas.fill(outline, faded(item, Colors.withAlpha(look.fill(), color)));
+      canvas.fill(rings, faded(item, Colors.withAlpha(look.fill(), color)));
     }
-    canvas.lines(
-        outline,
-        true,
-        far ? 1 : 2,
-        faded(item, far ? Colors.withAlpha(FAR_LINE, color) : color),
-        item.dashed());
+    for (final double @NotNull [][] ring : rings) {
+      canvas.lines(
+          ring,
+          true,
+          far ? 1 : 2,
+          faded(item, far ? Colors.withAlpha(FAR_LINE, color) : color),
+          item.dashed());
+    }
   }
 
   private static int faded(final @NotNull OverlayItem item, final int color) {
@@ -152,9 +157,16 @@ final class OverlayRaster {
     }
 
     private void fill(final double @NotNull [][] outline, final int color) {
-      final double @NotNull [][] texels = new double[outline.length][];
-      for (int i = 0; i < outline.length; i++) {
-        texels[i] = texel(outline[i]);
+      fill(new double[][][] {outline}, color);
+    }
+
+    private void fill(final double @NotNull [][][] rings, final int color) {
+      final double @NotNull [][][] texels = new double[rings.length][][];
+      for (int ring = 0; ring < rings.length; ring++) {
+        texels[ring] = new double[rings[ring].length][];
+        for (int i = 0; i < rings[ring].length; i++) {
+          texels[ring][i] = texel(rings[ring][i]);
+        }
       }
       fillTexels(texels, color);
     }
@@ -216,17 +228,23 @@ final class OverlayRaster {
     }
 
     private void fillTexels(final double @NotNull [][] points, final int color) {
+      fillTexels(new double[][][] {points}, color);
+    }
+
+    private void fillTexels(final double @NotNull [][][] rings, final int color) {
       double min = Double.MAX_VALUE;
       double max = -Double.MAX_VALUE;
-      for (final double[] point : points) {
-        min = Math.min(min, point[1]);
-        max = Math.max(max, point[1]);
+      for (final double[][] points : rings) {
+        for (final double[] point : points) {
+          min = Math.min(min, point[1]);
+          max = Math.max(max, point[1]);
+        }
       }
       final int first = (int) Math.max(0, Math.floor(min));
       final int last = (int) Math.min(SIZE, Math.ceil(max));
-      final double @NotNull [] crossings = new double[points.length];
+      final double @NotNull [] crossings = new double[Geometry.corners(rings)];
       for (int y = first; y < last; y++) {
-        final int count = Geometry.crossings(points, y + .5, crossings);
+        final int count = Geometry.crossings(rings, y + .5, crossings);
         Arrays.sort(crossings, 0, count);
         for (int i = 0; i + 1 < count; i += 2) {
           final int from = (int) Math.max(0, Math.round(crossings[i]));

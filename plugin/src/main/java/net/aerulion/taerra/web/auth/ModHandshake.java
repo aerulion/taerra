@@ -27,7 +27,7 @@ public final class ModHandshake implements Listener, PluginMessageListener {
 
   public static final @NotNull String CHANNEL = "taerra:web";
 
-  public static final int PROTOCOL = 7;
+  public static final int PROTOCOL = 8;
 
   private static final int MAX_VERSION_LENGTH = 64;
 

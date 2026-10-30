@@ -96,7 +96,7 @@ function edgePoints(outline) {
 }
 
 function groundKey(marker) {
-    return (marker.groundKey ??= `${marker.id} ${marker.points}`);
+    return (marker.groundKey ??= `${marker.id} ${marker.points} ${marker.holes ?? ''}`);
 }
 
 function samples(points) {
@@ -118,11 +118,11 @@ function drape(sides, buffers) {
 }
 
 async function groundUnder(marker) {
-    const sides = samples(marker.points);
+    const rings = [marker.points, ...(marker.holes ?? [])].map(samples);
     const buffers = new Map();
-    const picks = new Map(sides.flat().map(({pick}) => [pick.key, pick]));
+    const picks = new Map(rings.flat(2).map(({pick}) => [pick.key, pick]));
     await Promise.all([...picks.values()].map(async (pick) => buffers.set(pick.key, await mapManager.loadPick(pick))));
-    return drape(sides, buffers);
+    return rings.map((sides) => drape(sides, buffers));
 }
 
 export function groundNow(points) {
@@ -666,7 +666,7 @@ class MarkerManager {
         const ground =
             this.grounds
                 .get(groundKey(marker))
-                ?.flat()
+                ?.flat(2)
                 .map(([, y]) => y)
                 .filter(Number.isFinite) ?? [];
         const low = ground.length > 0 ? Math.max(marker.minY, Math.min(...ground)) : marker.minY;
@@ -729,17 +729,19 @@ class MarkerManager {
 
     area(marker, dashArray) {
         const {color, minY, maxY} = marker;
+        const holes = marker.holes ?? [];
         if (!mapManager.isIsometric()) {
             return this.region(
                 marker,
                 marker.points.map(([x, z]) => mapManager.project(x, 0, z)),
                 [],
-                dashArray
+                dashArray,
+                holes.map((hole) => hole.map(([x, z]) => mapManager.project(x, 0, z)))
             );
         }
 
-        const sides = this.grounds.get(groundKey(marker));
-        if (!sides) {
+        const grounds = this.grounds.get(groundKey(marker));
+        if (!grounds) {
             if (!this.sampling.has(groundKey(marker))) {
                 this.sampling.add(groundKey(marker));
                 const world = this.world;
@@ -756,44 +758,49 @@ class MarkerManager {
 
         const {fullHeight} = marker;
         const bottom = (ground) => Math.min(maxY, Math.max(minY, ground ?? (fullHeight ? FALLBACK_GROUND : minY)));
-        const base = sides.map((side) => side.map(([x, ground, z]) => mapManager.project(x, bottom(ground), z)));
+        const [base, ...holeBases] = grounds.map((sides) =>
+            sides.map((side) => side.map(([x, ground, z]) => mapManager.project(x, bottom(ground), z)))
+        );
+        const holeLines = holeBases.map((ring) => ring.flat());
         if (this.far || fullHeight) {
-            return this.region(marker, base.flat(), [], dashArray);
+            return this.region(marker, base.flat(), [], dashArray, holeLines);
         }
-        const flat = marker.points.map(([x, z]) => mapManager.project(x, 0, z));
-        const winding = Math.sign(signedArea(flat));
 
         const walls = [];
-        sides.forEach((side, i) => {
-            const next = (i + 1) % flat.length;
-            const [x0, , z0] = side[0];
-            const [x1, , z1] = side.at(-1);
-            const slice = [flat[i], flat[next], mapManager.project(x1, 1, z1), mapManager.project(x0, 1, z0)];
-            if (Math.sign(signedArea(slice)) !== winding) {
-                return;
-            }
-            const facesLeft = (flat[next].lat - flat[i].lat) * (flat[next].lng - flat[i].lng) < 0;
-            const crest = side.map(([x, , z]) => mapManager.project(x, maxY, z)).reverse();
-            walls.push(
-                L.polygon([...base[i], ...crest], {
-                    color,
-                    weight: 1,
-                    opacity: this.look.wallLine,
-                    fillColor: shade(color, facesLeft ? 0.55 : 0.8),
-                    fillOpacity: this.look.wall,
-                    interactive: false
-                })
-            );
+        [marker.points, ...holes].forEach((points, ring) => {
+            const flat = points.map(([x, z]) => mapManager.project(x, 0, z));
+            const winding = Math.sign(signedArea(flat));
+            grounds[ring].forEach((side, i) => {
+                const next = (i + 1) % flat.length;
+                const [x0, , z0] = side[0];
+                const [x1, , z1] = side.at(-1);
+                const slice = [flat[i], flat[next], mapManager.project(x1, 1, z1), mapManager.project(x0, 1, z0)];
+                if ((Math.sign(signedArea(slice)) === winding) === ring > 0) {
+                    return;
+                }
+                const facesLeft = (flat[next].lat - flat[i].lat) * (flat[next].lng - flat[i].lng) < 0;
+                const crest = side.map(([x, , z]) => mapManager.project(x, maxY, z)).reverse();
+                walls.push(
+                    L.polygon([...(ring === 0 ? base : holeBases[ring - 1])[i], ...crest], {
+                        color,
+                        weight: 1,
+                        opacity: this.look.wallLine,
+                        fillColor: shade(color, facesLeft ? 0.55 : 0.8),
+                        fillOpacity: this.look.wall,
+                        interactive: false
+                    })
+                );
+            });
         });
 
-        const groundLine = base.flat();
+        const groundLines = [base.flat(), ...holeLines];
         return this.region(
             marker,
             marker.points.map(([x, z]) => mapManager.project(x, maxY, z)),
             [
                 ...(this.look.halo
                     ? [
-                          L.polygon(groundLine, {
+                          L.polygon(groundLines, {
                               color: '#000',
                               opacity: 0.4,
                               weight: 4,
@@ -802,7 +809,7 @@ class MarkerManager {
                           })
                       ]
                     : []),
-                L.polygon(groundLine, {
+                L.polygon(groundLines, {
                     color,
                     weight: 2 + this.look.weight,
                     opacity: 0.9 * (marker.muted ? MUTED : 1),
@@ -813,11 +820,12 @@ class MarkerManager {
                 }),
                 ...walls
             ],
-            dashArray
+            dashArray,
+            holes.map((hole) => hole.map(([x, z]) => mapManager.project(x, maxY, z)))
         );
     }
 
-    region(marker, face, below = [], dashArray = null) {
+    region(marker, face, below = [], dashArray = null, holes = []) {
         const color = marker.color;
         const {halo, weight, fill, hoverFill} = this.look;
         const parts = [
@@ -825,7 +833,7 @@ class MarkerManager {
             ...(this.far || !halo || marker.muted
                 ? []
                 : [
-                      L.polygon(face, {
+                      L.polygon([face, ...holes], {
                           color: '#000',
                           opacity: 0.4,
                           weight: 5,
@@ -837,9 +845,16 @@ class MarkerManager {
         const stroke = (this.far ? 1 : 2) + weight;
         const outline = {color, weight: stroke, opacity: (this.far ? 0.7 : 1) * (marker.muted ? MUTED : 1), dashArray};
         const surface = marker.hollow
-            ? hoverable(L.polyline([...face, face[0]], outline), {weight: stroke + 2}, {weight: stroke})
+            ? hoverable(
+                  L.polyline(
+                      [face, ...holes].map((ring) => [...ring, ring[0]]),
+                      outline
+                  ),
+                  {weight: stroke + 2},
+                  {weight: stroke}
+              )
             : hoverable(
-                  L.polygon(face, {...outline, fillColor: color, fillOpacity: fill}),
+                  L.polygon([face, ...holes], {...outline, fillColor: color, fillOpacity: fill}),
                   {fillOpacity: hoverFill},
                   {fillOpacity: fill}
               );

@@ -169,6 +169,8 @@ tasks {
                 "https://ci.enginehub.org/repository/download/bt11/30231:id/worldguard-bukkit-7.0.20-SNAPSHOT-dist.jar?branch=version/7.0.x&guest=1"
             )
             url("https://download.luckperms.net/1674/bukkit/loader/LuckPerms-Bukkit-5.5.87.jar")
+            val towny = libs.versions.towny.get()
+            url("https://github.com/TownyAdvanced/Towny/releases/download/$towny/towny-$towny.jar")
         }
     }
 }

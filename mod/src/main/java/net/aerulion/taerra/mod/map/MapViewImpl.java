@@ -616,8 +616,17 @@ public final class MapViewImpl implements MapView {
       final int top,
       final int bottom,
       final int color) {
+    fill(graphics, new double[][][] {points}, top, bottom, color);
+  }
+
+  private void fill(
+      final @NotNull GuiGraphicsExtractor graphics,
+      final double @NotNull [][][] rings,
+      final int top,
+      final int bottom,
+      final int color) {
     Geometry.fillPolygon(
-        graphics, points, top, bottom, color, this.subPixelX, this.subPixelY, this.pixels);
+        graphics, rings, top, bottom, color, this.subPixelX, this.subPixelY, this.pixels);
   }
 
   private void decoration(
@@ -740,15 +749,14 @@ public final class MapViewImpl implements MapView {
     this.hover = new MarkerHover(layer, marker);
   }
 
-  private double @Nullable [][] outline(
+  private double @Nullable [][][] outline(
       final @NotNull MarkerShape shape, final @NotNull Marker marker, final boolean far) {
-    if (!this.isometric) {
-      return shape.face;
-    }
-    if (shape.ground == null) {
+    if (shape.face == null || this.isometric && shape.ground == null) {
       return null;
     }
-    return far || marker.fullHeight() ? shape.ground : shape.face;
+    return this.isometric && (far || marker.fullHeight())
+        ? Geometry.rings(shape.ground, shape.groundHoles)
+        : Geometry.rings(shape.face, shape.faceHoles);
   }
 
   private boolean hits(
@@ -768,12 +776,12 @@ public final class MapViewImpl implements MapView {
     if (tiny) {
       return true;
     }
-    final double @Nullable [][] outline = outline(shape, marker, far);
+    final double @Nullable [][][] outline = outline(shape, marker, far);
     if (outline == null) {
       return false;
     }
     return marker.hollow()
-        ? Geometry.nearRing(outline, x, y, reach)
+        ? Arrays.stream(outline).anyMatch(ring -> Geometry.nearRing(ring, x, y, reach))
         : Geometry.contains(outline, x, y);
   }
 
@@ -782,10 +790,14 @@ public final class MapViewImpl implements MapView {
     if (shape.groundKey == null) {
       shape.groundKey = PickCache.groundKey(this.world, marker);
     }
-    final @Nullable List<List<double[]>> sides =
-        map.picks().ground(shape.groundKey, this.world, marker);
-    if (sides != null) {
-      shape.stand(marker, sides, this.shaped);
+    final @NotNull List<List<List<double[]>>> rings = new ArrayList<>();
+    rings.add(map.picks().ground(shape.groundKey, this.world, marker.points()));
+    final @NotNull List<List<List<Double>>> holes = MarkerShape.holes(marker);
+    for (int i = 0; i < holes.size(); i++) {
+      rings.add(map.picks().ground(shape.groundKey + " " + i, this.world, holes.get(i)));
+    }
+    if (!rings.contains(null)) {
+      shape.stand(marker, rings, this.shaped);
       this.grounds++;
     }
   }
@@ -869,17 +881,20 @@ public final class MapViewImpl implements MapView {
       }
       return;
     }
-    final double @Nullable [][] outline = tiny ? null : outline(shape, hovered.marker(), far);
+    final double @Nullable [][][] outline = tiny ? null : outline(shape, hovered.marker(), far);
     if (outline == null) {
       return;
     }
-    final double @NotNull [][] face = screen(outline);
+    final double @NotNull [][][] face =
+        Arrays.stream(outline).map(this::screen).toArray(double[][][]::new);
     if (hovered.marker().hollow()) {
-      Geometry.ring(
-          graphics,
-          face,
-          (far ? 1 : 2) + 1,
-          far ? Colors.withAlpha(OverlayRaster.FAR_LINE, shape.color) : shape.color);
+      for (final double @NotNull [][] ring : face) {
+        Geometry.ring(
+            graphics,
+            ring,
+            (far ? 1 : 2) + 1,
+            far ? Colors.withAlpha(OverlayRaster.FAR_LINE, shape.color) : shape.color);
+      }
       return;
     }
     final int extra =

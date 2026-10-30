@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 public sealed interface PickCache permits PickCacheImpl {
 
   static @NotNull String groundKey(final String world, final @NotNull Marker marker) {
-    return world + " " + marker.id() + " " + marker.points();
+    return world + " " + marker.id() + " " + marker.points() + " " + marker.holes();
   }
 
   @Nullable
@@ -19,7 +19,7 @@ public sealed interface PickCache permits PickCacheImpl {
   int @Nullable [] isometric(String world, int rotation, int screenX, int screenY);
 
   @Nullable
-  List<List<double[]>> ground(String key, String world, Marker marker);
+  List<List<double[]>> ground(String key, String world, List<List<Double>> outline);
 
   @Nullable
   List<List<double[]>> drape(String world, List<double[]> outline);

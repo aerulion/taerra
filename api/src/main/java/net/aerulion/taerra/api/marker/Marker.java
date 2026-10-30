@@ -94,6 +94,7 @@ public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
             new Vector(box.getMaxX(), 0, box.getMinZ()),
             new Vector(box.getMaxX(), 0, box.getMaxZ()),
             new Vector(box.getMinX(), 0, box.getMaxZ())),
+        List.of(),
         box.getMinY(),
         box.getMaxY(),
         false,
@@ -124,7 +125,7 @@ public sealed interface Marker permits PointMarker, LineMarker, AreaMarker {
       final double maxY,
       final @Nullable String label) {
     return new AreaMarkerImpl(
-        id, world, outline, minY, maxY, false, label, Map.of(), null, DEFAULT_COLOR);
+        id, world, outline, List.of(), minY, maxY, false, label, Map.of(), null, DEFAULT_COLOR);
   }
 
   /**

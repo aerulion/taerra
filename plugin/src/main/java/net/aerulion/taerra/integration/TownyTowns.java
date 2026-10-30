@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
-import net.aerulion.taerra.api.marker.AreaMarker;
 import net.aerulion.taerra.api.marker.Marker;
 import net.aerulion.taerra.api.marker.MarkerLayer;
 import net.aerulion.taerra.api.marker.MarkerRegistry;
@@ -77,22 +76,25 @@ public final class TownyTowns {
           (world, keys) -> {
             for (final @NotNull Set<Long> area : RegionShapes.areas(keys)) {
               final long first = area.stream().mapToLong(Long::longValue).min().orElseThrow();
-              final @NotNull List<List<long[]>> rings = RegionShapes.rings(area);
-              for (int i = 0; i < rings.size(); i++) {
-                final @NotNull AreaMarker marker =
-                    Marker.polygon(
-                            WorldKeys.id(world) + "/" + town.getUUID() + "/" + first + "/" + i,
-                            world.getKey(),
-                            rings.get(i).stream()
-                                .map(corner -> new Vector(corner[0] * size, 0, corner[1] * size))
-                                .toList(),
-                            world.getMinHeight(),
-                            world.getMaxHeight(),
-                            town.getName())
-                        .withColor(color)
-                        .withDetails(details);
-                markers.add(rings.size() > 1 ? marker.hollowed() : marker);
-              }
+              final @NotNull List<List<Vector>> rings =
+                  RegionShapes.rings(area).stream()
+                      .map(
+                          ring ->
+                              ring.stream()
+                                  .map(corner -> new Vector(corner[0] * size, 0, corner[1] * size))
+                                  .toList())
+                      .toList();
+              markers.add(
+                  Marker.polygon(
+                          WorldKeys.id(world) + "/" + town.getUUID() + "/" + first,
+                          world.getKey(),
+                          rings.getFirst(),
+                          world.getMinHeight(),
+                          world.getMaxHeight(),
+                          town.getName())
+                      .withHoles(rings.subList(1, rings.size()))
+                      .withColor(color)
+                      .withDetails(details));
             }
           });
       final @Nullable Location spawn =

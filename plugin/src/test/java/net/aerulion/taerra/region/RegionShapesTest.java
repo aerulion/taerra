@@ -1,6 +1,7 @@
 package net.aerulion.taerra.region;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
 import java.util.List;
@@ -25,7 +26,7 @@ class RegionShapesTest {
   }
 
   @Test
-  @DisplayName("a ring of chunks around a revealed one gets an outer and an inner outline")
+  @DisplayName("a ring of chunks around a revealed one gets the outer outline first, then the hole")
   void holeGetsItsOwnRing() {
     final @NotNull Set<Long> chunks = new HashSet<>();
     for (int x = -1; x <= 1; x++) {
@@ -41,6 +42,8 @@ class RegionShapesTest {
     assertEquals(2, rings.size());
     assertEquals(4, rings.get(0).size());
     assertEquals(4, rings.get(1).size());
+    assertTrue(rings.get(0).stream().anyMatch(corner -> corner[0] == -1 && corner[1] == -1));
+    assertTrue(rings.get(1).stream().anyMatch(corner -> corner[0] == 0 && corner[1] == 0));
   }
 
   @Test

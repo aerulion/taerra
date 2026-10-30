@@ -43,27 +43,25 @@ public final class RegionMarkers {
       final boolean revealed =
           visibility.revealed(viewer.uuid(), viewer.canSeeThroughFog(), region);
       final long discovered = visibility.discoveredAt(viewer.uuid(), region);
-      final @NotNull List<List<long[]>> rings = RegionShapes.rings(region.chunks());
-      for (int i = 0; i < rings.size(); i++) {
-        final @NotNull String id = "region:" + region.id() + "/" + i;
-        if (!revealed) {
-          extras.put(id, Map.of("muted", true));
-        } else if (discovered > 0L) {
-          extras.put(id, Map.of("discovered", discovered));
-        }
-        final @NotNull AreaMarker marker =
-            Marker.polygon(
-                    id,
-                    world,
-                    rings.get(i).stream()
-                        .map(corner -> new Vector(corner[0] << 4, 0, corner[1] << 4))
-                        .toList(),
-                    63,
-                    64,
-                    revealed ? region.name() : "")
-                .withColor(Color.fromRGB(region.color()));
-        markers.add(revealed ? marker : marker.hollowed());
+      final @NotNull List<List<Vector>> rings =
+          RegionShapes.rings(region.chunks()).stream()
+              .map(
+                  ring ->
+                      ring.stream()
+                          .map(corner -> new Vector(corner[0] << 4, 0, corner[1] << 4))
+                          .toList())
+              .toList();
+      final @NotNull String id = "region:" + region.id() + "/0";
+      if (!revealed) {
+        extras.put(id, Map.of("muted", true));
+      } else if (discovered > 0L) {
+        extras.put(id, Map.of("discovered", discovered));
       }
+      final @NotNull AreaMarker marker =
+          Marker.polygon(id, world, rings.getFirst(), 63, 64, revealed ? region.name() : "")
+              .withHoles(rings.subList(1, rings.size()))
+              .withColor(Color.fromRGB(region.color()));
+      markers.add(revealed ? marker : marker.hollowed());
     }
     return MarkerPayloadSerializer.layer(
         LAYER,

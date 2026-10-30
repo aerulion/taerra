@@ -18,7 +18,6 @@ import net.aerulion.taerra.mod.tile.TileKey;
 import net.aerulion.taerra.mod.util.Urls;
 import net.aerulion.taerra.mod.web.WebClient;
 import net.aerulion.taerra.mod.web.model.MapConfig;
-import net.aerulion.taerra.mod.web.model.Marker;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -218,13 +217,13 @@ public final class PickCacheImpl implements PickCache {
 
   @Override
   public @Nullable List<List<double[]>> ground(
-      final String key, final @NotNull String world, final @NotNull Marker marker) {
+      final String key, final @NotNull String world, final @NotNull List<List<Double>> outline) {
     final @Nullable MapConfig config = this.config.get();
     if (config == null) {
       return null;
     }
     return this.grounds
-        .computeIfAbsent(key, _ -> new Ground(world, marker.points(), config.tileSize()))
+        .computeIfAbsent(key, _ -> new Ground(world, outline, config.tileSize()))
         .sample();
   }
 

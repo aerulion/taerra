@@ -13,6 +13,7 @@ record AreaMarkerImpl(
     @NotNull String id,
     @NotNull NamespacedKey world,
     @NotNull List<Vector> outline,
+    @NotNull List<List<Vector>> holes,
     double minY,
     double maxY,
     boolean hollow,
@@ -26,6 +27,7 @@ record AreaMarkerImpl(
     Objects.requireNonNull(id, "id");
     Objects.requireNonNull(world, "world");
     outline = MarkerArguments.copy(outline, 3, "An area");
+    holes = holes.stream().map(hole -> MarkerArguments.copy(hole, 3, "A hole")).toList();
     if (maxY < minY) {
       throw new IllegalArgumentException("maxY " + maxY + " is below minY " + minY);
     }
@@ -39,11 +41,33 @@ record AreaMarkerImpl(
   }
 
   @Override
+  public @NotNull List<List<Vector>> holes() {
+    return this.holes.stream().map(hole -> MarkerArguments.copy(hole, 0, "A hole")).toList();
+  }
+
+  @Override
+  public @NotNull AreaMarker withHoles(final @NotNull List<List<Vector>> holes) {
+    return new AreaMarkerImpl(
+        this.id,
+        this.world,
+        this.outline,
+        holes,
+        this.minY,
+        this.maxY,
+        this.hollow,
+        this.label,
+        this.details,
+        this.description,
+        this.color);
+  }
+
+  @Override
   public @NotNull AreaMarker hollowed() {
     return new AreaMarkerImpl(
         this.id,
         this.world,
         this.outline,
+        this.holes,
         this.minY,
         this.maxY,
         true,
@@ -59,6 +83,7 @@ record AreaMarkerImpl(
         this.id,
         this.world,
         this.outline,
+        this.holes,
         this.minY,
         this.maxY,
         this.hollow,
@@ -74,6 +99,7 @@ record AreaMarkerImpl(
         this.id,
         this.world,
         this.outline,
+        this.holes,
         this.minY,
         this.maxY,
         this.hollow,
@@ -89,6 +115,7 @@ record AreaMarkerImpl(
         this.id,
         this.world,
         this.outline,
+        this.holes,
         this.minY,
         this.maxY,
         this.hollow,
