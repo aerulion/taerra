@@ -531,6 +531,8 @@
   "taerra.settings.markers.towny.enabled.hint": "Benötigt Towny. Jede Stadt mit Bürgermeister:in, Nation und Einwohner:innen.",
   "taerra.settings.markers.towny.shown-by-default": "Städte standardmäßig an",
   "taerra.settings.markers.towny.shown-by-default.hint": "An für alle, die sie nicht selbst umgeschaltet haben.",
+  "taerra.settings.markers.towny.private-spawns": "Private Stadt-Spawns zeigen",
+  "taerra.settings.markers.towny.private-spawns.hint": "Markiert den Spawn jeder Stadt, nicht nur der öffentlichen.",
   "taerra.settings.markers.griefprevention.enabled": "GriefPrevention-Claims",
   "taerra.settings.markers.griefprevention.enabled.hint": "Benötigt GriefPrevention. Zeigt, wo Spieler:innen wohnen, also halte die Ebene privat.",
   "taerra.settings.markers.griefprevention.shown-by-default": "Claims standardmäßig an",

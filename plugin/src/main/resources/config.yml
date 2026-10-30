@@ -115,6 +115,8 @@ markers:
     enabled: true
     # Whether the layer is on for viewers who have not toggled it themselves
     shown-by-default: true
+    # Mark the spawns of private towns too, not only those of public ones
+    private-spawns: false
   griefprevention:
     # Show GriefPrevention claims as a layer (needs GriefPrevention installed). It names each claim's
     # owner and who is trusted there, so it shows where players live. It is in private-layers: only

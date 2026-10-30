@@ -531,6 +531,8 @@
   "taerra.settings.markers.towny.enabled.hint": "Needs Towny installed. Each town with its mayor, nation and residents.",
   "taerra.settings.markers.towny.shown-by-default": "Show Towns by Default",
   "taerra.settings.markers.towny.shown-by-default.hint": "On for viewers who haven't switched it themselves.",
+  "taerra.settings.markers.towny.private-spawns": "Show Private Town Spawns",
+  "taerra.settings.markers.towny.private-spawns.hint": "Marks the spawn of every town, not only of public ones.",
   "taerra.settings.markers.griefprevention.enabled": "GriefPrevention Claims",
   "taerra.settings.markers.griefprevention.enabled.hint": "Needs GriefPrevention installed. It shows where players live, so keep it private.",
   "taerra.settings.markers.griefprevention.shown-by-default": "Show Claims by Default",

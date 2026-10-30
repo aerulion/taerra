@@ -167,7 +167,12 @@ public final class LiveSettings {
               yield null;
             }
             this.plugin.getLogger().info("Hooked into Towny, towns show up on the map");
-            yield TownyTowns.start(this.plugin, this.markers, this.config, shown);
+            yield TownyTowns.start(
+                this.plugin,
+                this.markers,
+                this.config,
+                shown,
+                file.getBoolean("markers.towny.private-spawns", false));
           }
           case GRIEFPREVENTION -> {
             if (!Bukkit.getPluginManager().isPluginEnabled("GriefPrevention")) {

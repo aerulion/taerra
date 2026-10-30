@@ -49,14 +49,16 @@ public final class TownyTowns {
       final @NotNull Plugin plugin,
       final @NotNull MarkerRegistry registry,
       final @NotNull TaerraConfig config,
-      final boolean shownByDefault) {
+      final boolean shownByDefault,
+      final boolean privateSpawns) {
     final @NotNull MarkerLayer layer = registry.layer(plugin, LAYER, "Towny Towns", shownByDefault);
     return Bukkit.getScheduler()
         .runTaskTimerAsynchronously(
-            plugin, () -> layer.setAll(towns(config)), 20L, SYNC_INTERVAL_TICKS);
+            plugin, () -> layer.setAll(towns(config, privateSpawns)), 20L, SYNC_INTERVAL_TICKS);
   }
 
-  private static @NotNull List<Marker> towns(final @NotNull TaerraConfig config) {
+  private static @NotNull List<Marker> towns(
+      final @NotNull TaerraConfig config, final boolean privateSpawns) {
     final int size = TownySettings.getTownBlockSize();
     final @NotNull List<Marker> markers = new ArrayList<>();
     for (final @NotNull Town town : TownyAPI.getInstance().getTowns()) {
@@ -93,7 +95,8 @@ public final class TownyTowns {
               }
             }
           });
-      final @Nullable Location spawn = town.isPublic() ? town.getSpawnOrNull() : null;
+      final @Nullable Location spawn =
+          privateSpawns || town.isPublic() ? town.getSpawnOrNull() : null;
       if (spawn != null
           && spawn.isWorldLoaded()
           && config.worldEnabled(WorldKeys.id(spawn.getWorld()))) {

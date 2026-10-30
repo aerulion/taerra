@@ -131,6 +131,7 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                   "markers.worldguard.shown-by-default",
                   "markers.towny.enabled",
                   "markers.towny.shown-by-default",
+                  "markers.towny.private-spawns",
                   "markers.griefprevention.enabled",
                   "markers.griefprevention.shown-by-default",
                   "markers.plotsquared.enabled",

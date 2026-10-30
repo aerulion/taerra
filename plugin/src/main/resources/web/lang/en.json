@@ -531,6 +531,8 @@
   "settings.markers.towny.enabled.hint": "Needs Towny installed. Each town with its mayor, nation and residents.",
   "settings.markers.towny.shown-by-default": "Towns shown by default",
   "settings.markers.towny.shown-by-default.hint": "On for viewers who haven't switched it themselves.",
+  "settings.markers.towny.private-spawns": "Private town spawns shown",
+  "settings.markers.towny.private-spawns.hint": "Marks the spawn of every town, not only of public ones.",
   "settings.markers.griefprevention.enabled": "GriefPrevention claims",
   "settings.markers.griefprevention.enabled.hint": "Needs GriefPrevention installed. It shows where players live, so keep it private.",
   "settings.markers.griefprevention.shown-by-default": "Claims shown by default",

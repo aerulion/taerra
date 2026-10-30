@@ -531,6 +531,8 @@
   "settings.markers.towny.enabled.hint": "Benötigt Towny. Jede Stadt mit Bürgermeister:in, Nation und Einwohner:innen.",
   "settings.markers.towny.shown-by-default": "Städte standardmäßig an",
   "settings.markers.towny.shown-by-default.hint": "An für alle, die sie nicht selbst umgeschaltet haben.",
+  "settings.markers.towny.private-spawns": "Private Stadt-Spawns zeigen",
+  "settings.markers.towny.private-spawns.hint": "Markiert den Spawn jeder Stadt, nicht nur der öffentlichen.",
   "settings.markers.griefprevention.enabled": "GriefPrevention-Claims",
   "settings.markers.griefprevention.enabled.hint": "Benötigt GriefPrevention. Zeigt, wo Spieler:innen wohnen, also halte die Ebene privat.",
   "settings.markers.griefprevention.shown-by-default": "Claims standardmäßig an",
