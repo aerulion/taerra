@@ -3,7 +3,6 @@ package net.aerulion.taerra.web.http;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
-import io.javalin.http.staticfiles.Location;
 import io.javalin.plugin.bundled.CorsPluginConfig;
 import jakarta.servlet.DispatcherType;
 import java.util.EnumSet;
@@ -145,19 +144,12 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
                     handler -> {
                       handler.setClassLoader(this.plugin.getClass().getClassLoader());
                       handler.addFilter(
-                          new StaticEtagFilter(this.plugin.getClass().getClassLoader()),
+                          new StaticFileFilter(this.plugin.getClass().getClassLoader()),
                           "/*",
                           EnumSet.of(DispatcherType.REQUEST));
                     });
                 config.jetty.modifyWebSocketServletFactory(
                     factory -> factory.setMaxOutgoingFrames(MAX_QUEUED_FRAMES));
-                config.staticFiles.add(
-                    staticFiles -> {
-                      staticFiles.directory = "web";
-                      staticFiles.location = Location.CLASSPATH;
-                      staticFiles.headers = Map.of("Cache-Control", "no-cache");
-                    });
-
                 config.bundledPlugins.enableCors(
                     cors -> cors.addRule(CorsPluginConfig.CorsRule::anyHost));
 
