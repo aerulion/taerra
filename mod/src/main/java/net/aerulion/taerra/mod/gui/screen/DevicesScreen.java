@@ -115,14 +115,13 @@ public final class DevicesScreen extends Screen {
   }
 
   private void refresh() {
-    this.map.devices(
-        devices -> {
-          this.devices = devices;
-          this.loaded = true;
-          if (this.list != null) {
-            this.list.show(devices);
-          }
-        });
+    this.map.devices(devices -> {
+      this.devices = devices;
+      this.loaded = true;
+      if (this.list != null) {
+        this.list.show(devices);
+      }
+    });
   }
 
   private final class DeviceList extends ContainerObjectSelectionList<DeviceList.Entry> {

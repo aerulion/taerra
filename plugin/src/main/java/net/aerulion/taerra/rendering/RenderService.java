@@ -287,19 +287,18 @@ public final class RenderService {
     Thread.ofPlatform()
         .name("Taerra-Scan")
         .daemon()
-        .start(
-            () -> {
-              try {
-                scanned.complete(submit(mode, session, scan));
-              } catch (final Throwable e) {
-                final @NotNull String failure = Throwables.describe(e);
-                this.generator.cancelManualRender(session, "Render failed: " + failure);
-                this.plugin
-                    .getLogger()
-                    .log(Level.SEVERE, "Failed to render " + worldName + ": " + failure, e);
-                scanned.completeExceptionally(e);
-              }
-            });
+        .start(() -> {
+          try {
+            scanned.complete(submit(mode, session, scan));
+          } catch (final Throwable e) {
+            final @NotNull String failure = Throwables.describe(e);
+            this.generator.cancelManualRender(session, "Render failed: " + failure);
+            this.plugin
+                .getLogger()
+                .log(Level.SEVERE, "Failed to render " + worldName + ": " + failure, e);
+            scanned.completeExceptionally(e);
+          }
+        });
     return new Started(scanned);
   }
 

@@ -114,17 +114,14 @@ public final class RegionFileScanner {
     }
 
     final @NotNull List<TileCoordinate> orderedTiles = new ArrayList<>(zoom0Tiles);
-    orderedTiles.sort(
-        (left, right) -> {
-          final int zCompare = Integer.compare(left.z(), right.z());
-          if (zCompare != 0) {
-            return zCompare;
-          }
-          final boolean forward = Math.floorMod(left.z(), 2) == 0;
-          return forward
-              ? Integer.compare(left.x(), right.x())
-              : Integer.compare(right.x(), left.x());
-        });
+    orderedTiles.sort((left, right) -> {
+      final int zCompare = Integer.compare(left.z(), right.z());
+      if (zCompare != 0) {
+        return zCompare;
+      }
+      final boolean forward = Math.floorMod(left.z(), 2) == 0;
+      return forward ? Integer.compare(left.x(), right.x()) : Integer.compare(right.x(), left.x());
+    });
 
     final @NotNull Map<RegionCoordinate, List<TileCoordinate>> tilesByRegion =
         new LinkedHashMap<>();

@@ -171,13 +171,12 @@ public final class MapIcons {
   public static void retain(final @NotNull Set<String> icons) {
     SPRITES
         .entrySet()
-        .removeIf(
-            entry -> {
-              final int at = entry.getKey().indexOf('/');
-              return at >= 0
-                  && !icons.contains(entry.getKey().substring(at + 1))
-                  && release(entry.getValue().texture());
-            });
+        .removeIf(entry -> {
+          final int at = entry.getKey().indexOf('/');
+          return at >= 0
+              && !icons.contains(entry.getKey().substring(at + 1))
+              && release(entry.getValue().texture());
+        });
     ICONS
         .entrySet()
         .removeIf(entry -> !icons.contains(entry.getKey()) && release(entry.getValue()));

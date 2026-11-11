@@ -67,12 +67,11 @@ record TaerraApiImpl(
   @Override
   public void blocksChanged(final @NotNull Collection<? extends Block> blocks) {
     final @NotNull List<Block> copy = List.copyOf(blocks);
-    onMainThread(
-        () ->
-            copy.stream()
-                .collect(Collectors.groupingBy(Block::getWorld))
-                .values()
-                .forEach(this.changes::blocksChanged));
+    onMainThread(() ->
+        copy.stream()
+            .collect(Collectors.groupingBy(Block::getWorld))
+            .values()
+            .forEach(this.changes::blocksChanged));
   }
 
   @Override
@@ -89,19 +88,18 @@ record TaerraApiImpl(
     if (lowest > highest) {
       return;
     }
-    onMainThread(
-        () -> {
-          final @NotNull List<Block> blocks = new ArrayList<>();
-          for (int x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
-            for (int z = Math.min(z1, z2); z <= Math.max(z1, z2); z++) {
-              blocks.add(world.getBlockAt(x, highest, z));
-              if (lowest != highest) {
-                blocks.add(world.getBlockAt(x, lowest, z));
-              }
-            }
+    onMainThread(() -> {
+      final @NotNull List<Block> blocks = new ArrayList<>();
+      for (int x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
+        for (int z = Math.min(z1, z2); z <= Math.max(z1, z2); z++) {
+          blocks.add(world.getBlockAt(x, highest, z));
+          if (lowest != highest) {
+            blocks.add(world.getBlockAt(x, lowest, z));
           }
-          this.changes.blocksChanged(blocks);
-        });
+        }
+      }
+      this.changes.blocksChanged(blocks);
+    });
   }
 
   private void onMainThread(final @NotNull Runnable task) {

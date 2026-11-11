@@ -88,51 +88,48 @@ public final class WorldList {
                 .thenComparingInt(
                     (World world) -> environmentSortOrder(world.getEnvironment().name()))
                 .thenComparing(World::getName, String.CASE_INSENSITIVE_ORDER))
-        .map(
-            world -> {
-              final @NotNull Map<String, Object> worldData = new HashMap<>();
-              worldData.put("name", WorldKeys.id(world));
-              worldData.put(
-                  "displayName",
-                  this.taerraConfig
-                      .worldNames()
-                      .getOrDefault(WorldKeys.id(world), WorldKeys.displayName(world.getKey())));
-              worldData.put("environment", world.getEnvironment().name());
-              worldData.put("private", this.taerraConfig.worldPrivate(WorldKeys.id(world)));
-              worldData.put("layered", this.regions.anyFogged(WorldKeys.id(world)));
-              worldData.put(
-                  "views",
-                  this.taerraConfig.views(WorldKeys.id(world)).views().stream()
-                      .map(MapView::id)
-                      .toList());
-              worldData.put(
-                  "depth",
-                  Map.of(
-                      "top_down",
-                      this.generatorService.pyramidDepth(
-                          TileCoordinate.topDown(WorldKeys.id(world), 0, 0, 0)),
-                      "isometric",
-                      Arrays.stream(MapRotation.values())
-                          .map(
-                              rotation ->
-                                  this.generatorService.pyramidDepth(
-                                      TileCoordinate.isometric(
-                                          WorldKeys.id(world), rotation, 0, 0, 0)))
-                          .toList()));
+        .map(world -> {
+          final @NotNull Map<String, Object> worldData = new HashMap<>();
+          worldData.put("name", WorldKeys.id(world));
+          worldData.put(
+              "displayName",
+              this.taerraConfig
+                  .worldNames()
+                  .getOrDefault(WorldKeys.id(world), WorldKeys.displayName(world.getKey())));
+          worldData.put("environment", world.getEnvironment().name());
+          worldData.put("private", this.taerraConfig.worldPrivate(WorldKeys.id(world)));
+          worldData.put("layered", this.regions.anyFogged(WorldKeys.id(world)));
+          worldData.put(
+              "views",
+              this.taerraConfig.views(WorldKeys.id(world)).views().stream()
+                  .map(MapView::id)
+                  .toList());
+          worldData.put(
+              "depth",
+              Map.of(
+                  "top_down",
+                  this.generatorService.pyramidDepth(
+                      TileCoordinate.topDown(WorldKeys.id(world), 0, 0, 0)),
+                  "isometric",
+                  Arrays.stream(MapRotation.values())
+                      .map(rotation ->
+                          this.generatorService.pyramidDepth(
+                              TileCoordinate.isometric(WorldKeys.id(world), rotation, 0, 0, 0)))
+                      .toList()));
 
-              final int @Nullable [] area = this.generatorService.renderedArea(WorldKeys.id(world));
-              if (area != null) {
-                worldData.put(
-                    "bounds",
-                    Map.of("minX", area[0], "minZ", area[1], "maxX", area[2], "maxZ", area[3]));
-              }
+          final int @Nullable [] area = this.generatorService.renderedArea(WorldKeys.id(world));
+          if (area != null) {
+            worldData.put(
+                "bounds",
+                Map.of("minX", area[0], "minZ", area[1], "maxX", area[2], "maxZ", area[3]));
+          }
 
-              final @NotNull org.bukkit.Location spawn = world.getSpawnLocation();
-              worldData.put(
-                  "spawn",
-                  Map.of("x", spawn.getBlockX(), "y", spawn.getBlockY(), "z", spawn.getBlockZ()));
-              return worldData;
-            })
+          final @NotNull org.bukkit.Location spawn = world.getSpawnLocation();
+          worldData.put(
+              "spawn",
+              Map.of("x", spawn.getBlockX(), "y", spawn.getBlockY(), "z", spawn.getBlockZ()));
+          return worldData;
+        })
         .toList();
   }
 }

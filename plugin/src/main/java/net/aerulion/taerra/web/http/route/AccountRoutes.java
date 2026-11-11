@@ -119,18 +119,17 @@ public final class AccountRoutes implements Routes {
     }
     ctx.json(
         this.sessions.devices(session.uuid(), token).stream()
-            .map(
-                device -> {
-                  final @NotNull Map<String, Object> entry = new HashMap<>();
-                  entry.put("id", device.id());
-                  entry.put("game", device.game());
-                  entry.put("browser", device.device() == null ? null : device.device().browser());
-                  entry.put("os", device.device() == null ? null : device.device().os());
-                  entry.put("created", device.created());
-                  entry.put("seen", device.seen());
-                  entry.put("current", device.current());
-                  return entry;
-                })
+            .map(device -> {
+              final @NotNull Map<String, Object> entry = new HashMap<>();
+              entry.put("id", device.id());
+              entry.put("game", device.game());
+              entry.put("browser", device.device() == null ? null : device.device().browser());
+              entry.put("os", device.device() == null ? null : device.device().os());
+              entry.put("created", device.created());
+              entry.put("seen", device.seen());
+              entry.put("current", device.current());
+              return entry;
+            })
             .toList());
   }
 

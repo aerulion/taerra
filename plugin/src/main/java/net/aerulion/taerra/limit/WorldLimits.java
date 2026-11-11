@@ -59,16 +59,15 @@ public final class WorldLimits {
 
   private void save() {
     final @NotNull List<Map<String, Object>> entries = new ArrayList<>();
-    this.limits.forEach(
-        (world, saved) ->
-            entries.add(
-                Map.of(
-                    "world", world,
-                    "shape", saved.shape().name().toLowerCase(Locale.ROOT),
-                    "min-x", saved.minX(),
-                    "min-z", saved.minZ(),
-                    "max-x", saved.maxX(),
-                    "max-z", saved.maxZ())));
+    this.limits.forEach((world, saved) ->
+        entries.add(
+            Map.of(
+                "world", world,
+                "shape", saved.shape().name().toLowerCase(Locale.ROOT),
+                "min-x", saved.minX(),
+                "min-z", saved.minZ(),
+                "max-x", saved.maxX(),
+                "max-z", saved.maxZ())));
     final @NotNull YamlConfiguration yaml = new YamlConfiguration();
     yaml.set("limits", entries);
     try {

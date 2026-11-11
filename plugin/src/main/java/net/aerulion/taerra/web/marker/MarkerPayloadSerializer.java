@@ -110,12 +110,11 @@ public final class MarkerPayloadSerializer {
                 layerPrivate,
                 null,
                 markers.stream()
-                    .map(
-                        marker -> {
-                          final @NotNull Map<String, Object> data = marker(marker);
-                          extend.accept(marker, data);
-                          return data;
-                        })
+                    .map(marker -> {
+                      final @NotNull Map<String, Object> data = marker(marker);
+                      extend.accept(marker, data);
+                      return data;
+                    })
                     .toList()));
   }
 
@@ -172,9 +171,8 @@ public final class MarkerPayloadSerializer {
         data.put(
             "holes",
             area.holes().stream()
-                .map(
-                    hole ->
-                        hole.stream().map(point -> List.of(point.getX(), point.getZ())).toList())
+                .map(hole ->
+                    hole.stream().map(point -> List.of(point.getX(), point.getZ())).toList())
                 .toList());
         data.put("minY", area.minY());
         data.put("maxY", area.maxY());

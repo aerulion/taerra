@@ -64,18 +64,16 @@ final class SqlTileStore implements TileStore {
             .setExceptionHandler(_ -> {})
             .build();
     for (final @NotNull MapEntry entry :
-        run(
-            () ->
-                this.queries
-                    .query("select map_id, world, view from taerra_maps")
-                    .single()
-                    .map(
-                        row ->
-                            new MapEntry(
-                                uuid(row.getBytes("map_id")),
-                                row.getString("world"),
-                                row.getString("view")))
-                    .all())) {
+        run(() ->
+            this.queries
+                .query("select map_id, world, view from taerra_maps")
+                .single()
+                .map(row ->
+                    new MapEntry(
+                        uuid(row.getBytes("map_id")),
+                        row.getString("world"),
+                        row.getString("view")))
+                .all())) {
       this.maps.put(
           new MapKey(entry.world(), MapView.fromId(entry.view(), MapView.TOP_DOWN)), entry.id());
     }
@@ -88,15 +86,14 @@ final class SqlTileStore implements TileStore {
     try {
       dataSource =
           DataSourceCreator.create(MariaDb.get())
-              .configure(
-                  config ->
-                      config
-                          .host(settings.host())
-                          .port(settings.port())
-                          .database(settings.name())
-                          .user(settings.user())
-                          .password(settings.password())
-                          .connectTimeout((int) CONNECT_MILLIS))
+              .configure(config ->
+                  config
+                      .host(settings.host())
+                      .port(settings.port())
+                      .database(settings.name())
+                      .user(settings.user())
+                      .password(settings.password())
+                      .connectTimeout((int) CONNECT_MILLIS))
               .create()
               .withPoolName("taerra-tiles")
               .withConnectionTimeout(CONNECT_MILLIS)
@@ -156,19 +153,18 @@ final class SqlTileStore implements TileStore {
         return known;
       }
       final @NotNull UUID id =
-          run(
-              () -> {
-                this.queries
-                    .query("insert ignore into taerra_maps (map_id, world, view) values (?, ?, ?)")
-                    .single(Call.of().bind(bytes(UUID.randomUUID())).bind(world).bind(view.id()))
-                    .insert();
-                return this.queries
-                    .query("select map_id from taerra_maps where world = ? and view = ?")
-                    .single(Call.of().bind(world).bind(view.id()))
-                    .map(row -> uuid(row.getBytes("map_id")))
-                    .first()
-                    .orElseThrow();
-              });
+          run(() -> {
+            this.queries
+                .query("insert ignore into taerra_maps (map_id, world, view) values (?, ?, ?)")
+                .single(Call.of().bind(bytes(UUID.randomUUID())).bind(world).bind(view.id()))
+                .insert();
+            return this.queries
+                .query("select map_id from taerra_maps where world = ? and view = ?")
+                .single(Call.of().bind(world).bind(view.id()))
+                .map(row -> uuid(row.getBytes("map_id")))
+                .first()
+                .orElseThrow();
+          });
       this.maps.put(key, id);
       return id;
     }
@@ -181,14 +177,13 @@ final class SqlTileStore implements TileStore {
     final @Nullable UUID map = map(coord.world(), coord.view());
     return map == null
         ? null
-        : run(
-            () ->
-                this.queries
-                    .query("select data from taerra_tiles where " + KEY + " and kind = ?")
-                    .single(key(map, coord, layer).bind(kind.ordinal()))
-                    .map(row -> row.getBytes("data"))
-                    .first()
-                    .orElse(null));
+        : run(() ->
+            this.queries
+                .query("select data from taerra_tiles where " + KEY + " and kind = ?")
+                .single(key(map, coord, layer).bind(kind.ordinal()))
+                .map(row -> row.getBytes("data"))
+                .first()
+                .orElse(null));
   }
 
   @Override
@@ -199,21 +194,20 @@ final class SqlTileStore implements TileStore {
       final byte @NotNull [] data)
       throws IOException {
     final @NotNull UUID map = createMap(coord.world(), coord.view());
-    run(
-        () ->
-            this.queries
-                .query(
-                    """
-                    insert into taerra_tiles (map_id, rotation, zoom, x, z, layer, kind, data, modified)
-                    values (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    on duplicate key update data = values(data), modified = values(modified)
-                    """)
-                .single(
-                    key(map, coord, layer)
-                        .bind(kind.ordinal())
-                        .bind(data)
-                        .bind(System.currentTimeMillis()))
-                .insert());
+    run(() ->
+        this.queries
+            .query(
+                """
+                insert into taerra_tiles (map_id, rotation, zoom, x, z, layer, kind, data, modified)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                on duplicate key update data = values(data), modified = values(modified)
+                """)
+            .single(
+                key(map, coord, layer)
+                    .bind(kind.ordinal())
+                    .bind(data)
+                    .bind(System.currentTimeMillis()))
+            .insert());
   }
 
   @Override
@@ -225,20 +219,19 @@ final class SqlTileStore implements TileStore {
       final long modified)
       throws IOException {
     final @NotNull UUID map = createMap(coord.world(), coord.view());
-    return run(
-        () ->
-            this.queries
-                .query(
-                    """
-                    insert into taerra_tiles (map_id, rotation, zoom, x, z, layer, kind, data, modified)
-                    values (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    on duplicate key update
-                      data = if(modified < values(modified), values(data), data),
-                      modified = greatest(modified, values(modified))
-                    """)
-                .single(key(map, coord, layer).bind(kind.ordinal()).bind(data).bind(modified))
-                .insert()
-                .changed());
+    return run(() ->
+        this.queries
+            .query(
+                """
+                insert into taerra_tiles (map_id, rotation, zoom, x, z, layer, kind, data, modified)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                on duplicate key update
+                  data = if(modified < values(modified), values(data), data),
+                  modified = greatest(modified, values(modified))
+                """)
+            .single(key(map, coord, layer).bind(kind.ordinal()).bind(data).bind(modified))
+            .insert()
+            .changed());
   }
 
   @Override
@@ -250,51 +243,46 @@ final class SqlTileStore implements TileStore {
       }
       final byte @NotNull [] id = bytes(map.getValue());
       final @NotNull List<Column> columns =
-          run(
-              () ->
-                  this.queries
-                      .query("select distinct rotation, zoom, x from taerra_tiles where map_id = ?")
-                      .single(Call.of().bind(id))
-                      .map(
-                          row ->
-                              new Column(
-                                  row.getInt("rotation"), row.getInt("zoom"), row.getInt("x")))
-                      .all());
+          run(() ->
+              this.queries
+                  .query("select distinct rotation, zoom, x from taerra_tiles where map_id = ?")
+                  .single(Call.of().bind(id))
+                  .map(row ->
+                      new Column(row.getInt("rotation"), row.getInt("zoom"), row.getInt("x")))
+                  .all());
       for (final @NotNull Column column : columns) {
         @Nullable StoredTile last = null;
         while (true) {
           final @Nullable StoredTile after = last;
           final @NotNull List<StoredTile> page =
-              run(
-                  () ->
-                      this.queries
-                          .query(
-                              """
-                              select z, layer, kind, data, modified from taerra_tiles
-                              where map_id = ? and rotation = ? and zoom = ? and x = ?
-                                and (z, layer, kind) > (?, ?, ?)
-                              order by z, layer, kind
-                              limit %d
-                              """
-                                  .formatted(COPY_BATCH))
-                          .single(
-                              Call.of()
-                                  .bind(id)
-                                  .bind(column.rotation())
-                                  .bind(column.zoom())
-                                  .bind(column.x())
-                                  .bind(after == null ? Integer.MIN_VALUE : after.z())
-                                  .bind(after == null ? "" : after.layer())
-                                  .bind(after == null ? -1 : after.kind()))
-                          .map(
-                              row ->
-                                  new StoredTile(
-                                      row.getInt("z"),
-                                      row.getString("layer"),
-                                      row.getInt("kind"),
-                                      row.getBytes("data"),
-                                      row.getLong("modified")))
-                          .all());
+              run(() ->
+                  this.queries
+                      .query(
+                          """
+                          select z, layer, kind, data, modified from taerra_tiles
+                          where map_id = ? and rotation = ? and zoom = ? and x = ?
+                            and (z, layer, kind) > (?, ?, ?)
+                          order by z, layer, kind
+                          limit %d
+                          """
+                              .formatted(COPY_BATCH))
+                      .single(
+                          Call.of()
+                              .bind(id)
+                              .bind(column.rotation())
+                              .bind(column.zoom())
+                              .bind(column.x())
+                              .bind(after == null ? Integer.MIN_VALUE : after.z())
+                              .bind(after == null ? "" : after.layer())
+                              .bind(after == null ? -1 : after.kind()))
+                      .map(row ->
+                          new StoredTile(
+                              row.getInt("z"),
+                              row.getString("layer"),
+                              row.getInt("kind"),
+                              row.getBytes("data"),
+                              row.getLong("modified")))
+                      .all());
           for (final @NotNull StoredTile tile : page) {
             final @Nullable FogView layer = FogView.parse(tile.layer());
             if (layer != null && tile.kind() >= 0 && tile.kind() < Kind.values().length) {
@@ -327,14 +315,13 @@ final class SqlTileStore implements TileStore {
     for (final Map.@NotNull Entry<MapKey, UUID> map : Map.copyOf(this.maps).entrySet()) {
       if (worlds.contains(map.getKey().world())) {
         count +=
-            run(
-                () ->
-                    this.queries
-                        .query("select count(*) as count from taerra_tiles where map_id = ?")
-                        .single(Call.of().bind(bytes(map.getValue())))
-                        .map(row -> row.getLong("count"))
-                        .first()
-                        .orElse(0L));
+            run(() ->
+                this.queries
+                    .query("select count(*) as count from taerra_tiles where map_id = ?")
+                    .single(Call.of().bind(bytes(map.getValue())))
+                    .map(row -> row.getLong("count"))
+                    .first()
+                    .orElse(0L));
       }
     }
     return count;
@@ -345,22 +332,21 @@ final class SqlTileStore implements TileStore {
       throws IOException {
     final @Nullable UUID map = map(coord.world(), coord.view());
     if (map == null
-        || !run(
-            () ->
-                this.queries
-                    .query("update taerra_tiles set modified = ? where " + KEY + " and kind = ?")
-                    .single(
-                        Call.of()
-                            .bind(System.currentTimeMillis())
-                            .bind(bytes(map))
-                            .bind(coord.rotation().index())
-                            .bind(coord.zoom())
-                            .bind(coord.x())
-                            .bind(coord.z())
-                            .bind(layer.id())
-                            .bind(Kind.TILE.ordinal()))
-                    .update()
-                    .changed())) {
+        || !run(() ->
+            this.queries
+                .query("update taerra_tiles set modified = ? where " + KEY + " and kind = ?")
+                .single(
+                    Call.of()
+                        .bind(System.currentTimeMillis())
+                        .bind(bytes(map))
+                        .bind(coord.rotation().index())
+                        .bind(coord.zoom())
+                        .bind(coord.x())
+                        .bind(coord.z())
+                        .bind(layer.id())
+                        .bind(Kind.TILE.ordinal()))
+                .update()
+                .changed())) {
       throw new IOException("No tile at " + coord);
     }
   }
@@ -370,13 +356,12 @@ final class SqlTileStore implements TileStore {
       throws IOException {
     final @Nullable UUID map = map(coord.world(), coord.view());
     return map != null
-        && run(
-            () ->
-                this.queries
-                    .query("delete from taerra_tiles where " + KEY)
-                    .single(key(map, coord, layer))
-                    .delete()
-                    .changed());
+        && run(() ->
+            this.queries
+                .query("delete from taerra_tiles where " + KEY)
+                .single(key(map, coord, layer))
+                .delete()
+                .changed());
   }
 
   @Override
@@ -384,14 +369,13 @@ final class SqlTileStore implements TileStore {
     final @Nullable UUID map = map(coord.world(), coord.view());
     return map == null
         ? 0
-        : run(
-            () ->
-                this.queries
-                    .query("select modified from taerra_tiles where " + KEY + " and kind = ?")
-                    .single(key(map, coord, FogView.BASE).bind(Kind.TILE.ordinal()))
-                    .map(row -> row.getLong("modified"))
-                    .first()
-                    .orElse(0L));
+        : run(() ->
+            this.queries
+                .query("select modified from taerra_tiles where " + KEY + " and kind = ?")
+                .single(key(map, coord, FogView.BASE).bind(Kind.TILE.ordinal()))
+                .map(row -> row.getLong("modified"))
+                .first()
+                .orElse(0L));
   }
 
   @Override
@@ -404,30 +388,28 @@ final class SqlTileStore implements TileStore {
     if (map == null) {
       return;
     }
-    run(
-        () ->
-            this.queries
-                .query("delete from taerra_maps where map_id = ?")
-                .single(Call.of().bind(bytes(map)))
-                .delete());
+    run(() ->
+        this.queries
+            .query("delete from taerra_maps where map_id = ?")
+            .single(Call.of().bind(bytes(map)))
+            .delete());
     Thread.ofPlatform().name("Taerra-Delete").daemon().start(() -> deleteTiles(map));
   }
 
   private void deleteOrphans() {
     try {
       for (final byte @NotNull [] map :
-          run(
-              () ->
-                  this.queries
-                      .query(
-                          """
-                          select distinct t.map_id from taerra_tiles t
-                          left join taerra_maps m on m.map_id = t.map_id
-                          where m.map_id is null
-                          """)
-                      .single()
-                      .map(row -> row.getBytes("map_id"))
-                      .all())) {
+          run(() ->
+              this.queries
+                  .query(
+                      """
+                      select distinct t.map_id from taerra_tiles t
+                      left join taerra_maps m on m.map_id = t.map_id
+                      where m.map_id is null
+                      """)
+                  .single()
+                  .map(row -> row.getBytes("map_id"))
+                  .all())) {
         deleteTiles(uuid(map));
       }
     } catch (final IOException e) {
@@ -438,13 +420,12 @@ final class SqlTileStore implements TileStore {
   private void deleteTiles(final @NotNull UUID map) {
     try {
       while (!this.closing
-          && run(
-              () ->
-                  this.queries
-                      .query("delete from taerra_tiles where map_id = ? limit " + DELETE_BATCH)
-                      .single(Call.of().bind(bytes(map)))
-                      .delete()
-                      .changed())) {}
+          && run(() ->
+              this.queries
+                  .query("delete from taerra_tiles where map_id = ? limit " + DELETE_BATCH)
+                  .single(Call.of().bind(bytes(map)))
+                  .delete()
+                  .changed())) {}
     } catch (final IOException e) {
       warnUnlessClosed("Failed to delete old tiles: " + e.getMessage());
     }
@@ -461,12 +442,11 @@ final class SqlTileStore implements TileStore {
     for (final @NotNull MapView view : MapView.values()) {
       final @Nullable UUID map = map(worldName, view);
       if (map != null) {
-        run(
-            () ->
-                this.queries
-                    .query("delete from taerra_tiles where map_id = ? and layer <> ''")
-                    .single(Call.of().bind(bytes(map)))
-                    .delete());
+        run(() ->
+            this.queries
+                .query("delete from taerra_tiles where map_id = ? and layer <> ''")
+                .single(Call.of().bind(bytes(map)))
+                .delete());
       }
     }
   }
@@ -480,26 +460,23 @@ final class SqlTileStore implements TileStore {
       return found;
     }
     for (final @NotNull StoredLayer stored :
-        run(
-            () ->
-                this.queries
-                    .query(
-                        """
-                        select z, layer from taerra_tiles
-                        where map_id = ? and rotation = ? and zoom = ? and x = ?
-                          and layer <> '' and kind = ?
-                        """)
-                    .single(
-                        Call.of()
-                            .bind(bytes(map))
-                            .bind(column.rotation().index())
-                            .bind(column.zoom())
-                            .bind(column.x())
-                            .bind(Kind.TILE.ordinal()))
-                    .map(
-                        row ->
-                            new StoredLayer(row.getInt("z"), FogView.parse(row.getString("layer"))))
-                    .all())) {
+        run(() ->
+            this.queries
+                .query(
+                    """
+                    select z, layer from taerra_tiles
+                    where map_id = ? and rotation = ? and zoom = ? and x = ?
+                      and layer <> '' and kind = ?
+                    """)
+                .single(
+                    Call.of()
+                        .bind(bytes(map))
+                        .bind(column.rotation().index())
+                        .bind(column.zoom())
+                        .bind(column.x())
+                        .bind(Kind.TILE.ordinal()))
+                .map(row -> new StoredLayer(row.getInt("z"), FogView.parse(row.getString("layer"))))
+                .all())) {
       if (stored.layer() != null && !stored.layer().base()) {
         found.computeIfAbsent(stored.z(), _ -> ConcurrentHashMap.newKeySet()).add(stored.layer());
       }
@@ -513,22 +490,21 @@ final class SqlTileStore implements TileStore {
     final @Nullable UUID map = map(level.world(), level.view());
     return map == null
         ? List.of()
-        : run(
-            () ->
-                this.queries
-                    .query(
-                        """
-                        select x, z from taerra_tiles
-                        where map_id = ? and rotation = ? and zoom = ? and layer = '' and kind = ?
-                        """)
-                    .single(
-                        Call.of()
-                            .bind(bytes(map))
-                            .bind(level.rotation().index())
-                            .bind(level.zoom())
-                            .bind(Kind.TILE.ordinal()))
-                    .map(row -> level.at(level.zoom(), row.getInt("x"), row.getInt("z")))
-                    .all());
+        : run(() ->
+            this.queries
+                .query(
+                    """
+                    select x, z from taerra_tiles
+                    where map_id = ? and rotation = ? and zoom = ? and layer = '' and kind = ?
+                    """)
+                .single(
+                    Call.of()
+                        .bind(bytes(map))
+                        .bind(level.rotation().index())
+                        .bind(level.zoom())
+                        .bind(Kind.TILE.ordinal()))
+                .map(row -> level.at(level.zoom(), row.getInt("x"), row.getInt("z")))
+                .all());
   }
 
   @Override
@@ -541,26 +517,23 @@ final class SqlTileStore implements TileStore {
         continue;
       }
       stale.addAll(
-          run(
-              () ->
-                  this.queries
-                      .query(
-                          """
-                          select rotation, zoom, x, z from taerra_tiles
-                          where map_id = ? and layer = '' and kind = ? and modified < ?
-                          """)
-                      .single(
-                          Call.of().bind(bytes(map)).bind(Kind.TILE.ordinal()).bind(cutoffMillis))
-                      .map(
-                          row ->
-                              new TileCoordinate(
-                                  worldName,
-                                  view,
-                                  MapRotation.fromIndex(row.getInt("rotation"), MapRotation.R0),
-                                  row.getInt("zoom"),
-                                  row.getInt("x"),
-                                  row.getInt("z")))
-                      .all()));
+          run(() ->
+              this.queries
+                  .query(
+                      """
+                      select rotation, zoom, x, z from taerra_tiles
+                      where map_id = ? and layer = '' and kind = ? and modified < ?
+                      """)
+                  .single(Call.of().bind(bytes(map)).bind(Kind.TILE.ordinal()).bind(cutoffMillis))
+                  .map(row ->
+                      new TileCoordinate(
+                          worldName,
+                          view,
+                          MapRotation.fromIndex(row.getInt("rotation"), MapRotation.R0),
+                          row.getInt("zoom"),
+                          row.getInt("x"),
+                          row.getInt("z")))
+                  .all()));
     }
     return stale;
   }

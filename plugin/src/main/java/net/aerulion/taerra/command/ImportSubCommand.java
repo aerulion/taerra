@@ -43,10 +43,8 @@ public final class ImportSubCommand implements TaerraSubCommand {
                 .executes(context -> importDynmap(context, DYNMAP_MARKERS))
                 .then(
                     Commands.argument("file", StringArgumentType.greedyString())
-                        .executes(
-                            context ->
-                                importDynmap(
-                                    context, StringArgumentType.getString(context, "file")))));
+                        .executes(context ->
+                            importDynmap(context, StringArgumentType.getString(context, "file")))));
   }
 
   private int importDynmap(

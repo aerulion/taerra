@@ -121,25 +121,24 @@ public final class LuckPermsGrants {
     final @NotNull List<CompletableFuture<User>> loads =
         due.stream().map(this.luckPerms.getUserManager()::loadUser).toList();
     CompletableFuture.allOf(loads.toArray(CompletableFuture[]::new))
-        .whenComplete(
-            (_, error) -> {
-              if (error != null) {
-                this.plugin
-                    .getLogger()
-                    .log(Level.WARNING, "Failed to load permissions from LuckPerms", error);
-              }
-              if (this.plugin.isEnabled()) {
-                Bukkit.getScheduler()
-                    .runTask(
-                        this.plugin,
-                        () ->
-                            grant(
-                                loads.stream()
-                                    .filter(load -> !load.isCompletedExceptionally())
-                                    .map(CompletableFuture::join)
-                                    .toList()));
-              }
-            });
+        .whenComplete((_, error) -> {
+          if (error != null) {
+            this.plugin
+                .getLogger()
+                .log(Level.WARNING, "Failed to load permissions from LuckPerms", error);
+          }
+          if (this.plugin.isEnabled()) {
+            Bukkit.getScheduler()
+                .runTask(
+                    this.plugin,
+                    () ->
+                        grant(
+                            loads.stream()
+                                .filter(load -> !load.isCompletedExceptionally())
+                                .map(CompletableFuture::join)
+                                .toList()));
+          }
+        });
   }
 
   private void grant(final @NotNull List<User> users) {

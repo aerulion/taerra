@@ -295,19 +295,18 @@ public final class MapViewImpl implements MapView {
       this.hiddenId = hidden;
       this.withoutHidden =
           layers.stream()
-              .map(
-                  layer ->
-                      new Layer(
-                          layer.id(),
-                          layer.label(),
-                          layer.shown(),
-                          layer.restricted(),
-                          layer.personal(),
-                          layer.markers().stream()
-                              .filter(marker -> !marker.id().equals(hidden))
-                              .toList(),
-                          layer.icon(),
-                          layer.minScale()))
+              .map(layer ->
+                  new Layer(
+                      layer.id(),
+                      layer.label(),
+                      layer.shown(),
+                      layer.restricted(),
+                      layer.personal(),
+                      layer.markers().stream()
+                          .filter(marker -> !marker.id().equals(hidden))
+                          .toList(),
+                      layer.icon(),
+                      layer.minScale()))
               .toList();
     }
     return this.withoutHidden;
@@ -1105,14 +1104,12 @@ public final class MapViewImpl implements MapView {
     return sides == null
         ? null
         : sides.stream()
-            .map(
-                side ->
-                    side.stream()
-                        .map(
-                            at ->
-                                projection.toMap(
-                                    at[0], Double.isNaN(at[1]) ? UNKNOWN_GROUND + 1 : at[1], at[2]))
-                        .toList())
+            .map(side ->
+                side.stream()
+                    .map(at ->
+                        projection.toMap(
+                            at[0], Double.isNaN(at[1]) ? UNKNOWN_GROUND + 1 : at[1], at[2]))
+                    .toList())
             .toList();
   }
 
@@ -1266,12 +1263,11 @@ public final class MapViewImpl implements MapView {
           snapped(at[0] - (width + 1) / 2.0, at[1] - sprites.get(i).tip() - 2 - 9);
       final double @NotNull [] box = {corner[0], corner[1], corner[0] + width + 1, corner[1] + 9};
       if (this.labels.stream()
-          .anyMatch(
-              other ->
-                  box[0] < other[2] + LABEL_GAP
-                      && other[0] < box[2] + LABEL_GAP
-                      && box[1] < other[3] + LABEL_GAP
-                      && other[1] < box[3] + LABEL_GAP)) {
+          .anyMatch(other ->
+              box[0] < other[2] + LABEL_GAP
+                  && other[0] < box[2] + LABEL_GAP
+                  && box[1] < other[3] + LABEL_GAP
+                  && other[1] < box[3] + LABEL_GAP)) {
         continue;
       }
       this.labels.add(box);

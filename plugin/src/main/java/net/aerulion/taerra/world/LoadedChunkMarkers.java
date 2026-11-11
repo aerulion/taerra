@@ -91,15 +91,14 @@ public final class LoadedChunkMarkers {
     final @NotNull Map<Long, Set<String>> tickets = new HashMap<>();
     world
         .getPluginChunkTickets()
-        .forEach(
-            (owner, chunks) -> {
-              for (final @NotNull Chunk chunk : chunks) {
-                tickets
-                    .computeIfAbsent(
-                        ChunkCoordinate.key(chunk.getX(), chunk.getZ()), _ -> new TreeSet<>())
-                    .add(owner.getName());
-              }
-            });
+        .forEach((owner, chunks) -> {
+          for (final @NotNull Chunk chunk : chunks) {
+            tickets
+                .computeIfAbsent(
+                    ChunkCoordinate.key(chunk.getX(), chunk.getZ()), _ -> new TreeSet<>())
+                .add(owner.getName());
+          }
+        });
     final @NotNull Map<Long, List<Player>> players = new HashMap<>();
     for (final @NotNull Player player : world.getPlayers()) {
       if (!PlayerMapPayloadSerializer.isSpectator(player)
@@ -116,12 +115,11 @@ public final class LoadedChunkMarkers {
     final @NotNull List<Marker> markers = new ArrayList<>();
     for (final @NotNull Level level : Level.values()) {
       final @NotNull Set<Long> reached = new HashSet<>();
-      levels.forEach(
-          (key, at) -> {
-            if (at.compareTo(level) <= 0) {
-              reached.add(key);
-            }
-          });
+      levels.forEach((key, at) -> {
+        if (at.compareTo(level) <= 0) {
+          reached.add(key);
+        }
+      });
       for (final @NotNull Set<Long> area : RegionShapes.areas(reached)) {
         final @NotNull Map<String, String> details =
             details(world, level, area, levels, forced, tickets, players);

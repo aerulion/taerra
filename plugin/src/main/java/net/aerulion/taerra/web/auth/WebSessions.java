@@ -193,10 +193,9 @@ public final class WebSessions {
     final @NotNull String key = hash(token);
     final @NotNull List<Session> evicted =
         this.sessions.entrySet().stream()
-            .filter(
-                entry ->
-                    entry.getValue().uuid().equals(who.uuid())
-                        && !this.unsaved.contains(entry.getKey()))
+            .filter(entry ->
+                entry.getValue().uuid().equals(who.uuid())
+                    && !this.unsaved.contains(entry.getKey()))
             .sorted(Comparator.comparingLong(entry -> -entry.getValue().expires()))
             .skip(MAX_SESSIONS - 1)
             .map(Map.Entry::getKey)
@@ -318,15 +317,14 @@ public final class WebSessions {
     final long now = System.currentTimeMillis();
     return this.sessions.entrySet().stream()
         .filter(entry -> entry.getValue().uuid().equals(uuid) && entry.getValue().expires() >= now)
-        .map(
-            entry ->
-                new Active(
-                    entry.getKey().substring(0, ID_LENGTH),
-                    this.unsaved.contains(entry.getKey()),
-                    entry.getValue().device(),
-                    entry.getValue().created(),
-                    this.seen.getOrDefault(entry.getKey(), entry.getValue().created()),
-                    entry.getKey().equals(current)))
+        .map(entry ->
+            new Active(
+                entry.getKey().substring(0, ID_LENGTH),
+                this.unsaved.contains(entry.getKey()),
+                entry.getValue().device(),
+                entry.getValue().created(),
+                this.seen.getOrDefault(entry.getKey(), entry.getValue().created()),
+                entry.getKey().equals(current)))
         .sorted(
             Comparator.comparing(Active::current)
                 .thenComparing(Active::game)
@@ -340,11 +338,10 @@ public final class WebSessions {
         id.length() != ID_LENGTH
             ? null
             : this.sessions.entrySet().stream()
-                .filter(
-                    entry ->
-                        entry.getKey().startsWith(id)
-                            && entry.getValue().uuid().equals(uuid)
-                            && !this.unsaved.contains(entry.getKey()))
+                .filter(entry ->
+                    entry.getKey().startsWith(id)
+                        && entry.getValue().uuid().equals(uuid)
+                        && !this.unsaved.contains(entry.getKey()))
                 .map(Map.Entry::getKey)
                 .findFirst()
                 .orElse(null);
@@ -430,12 +427,11 @@ public final class WebSessions {
         .values()
         .removeIf(pairing -> pairing.who() != null && pairing.who().uuid().equals(uuid));
     final @NotNull Map<String, Session> ended = new HashMap<>();
-    this.sessions.forEach(
-        (key, session) -> {
-          if (session.uuid().equals(uuid)) {
-            ended.put(key, session);
-          }
-        });
+    this.sessions.forEach((key, session) -> {
+      if (session.uuid().equals(uuid)) {
+        ended.put(key, session);
+      }
+    });
     if (!ended.isEmpty()) {
       final @NotNull Set<String> game = new HashSet<>(this.unsaved);
       this.sessions.keySet().removeAll(ended.keySet());
@@ -454,33 +450,30 @@ public final class WebSessions {
     this.seenSaved = now;
     this.grants
         .keySet()
-        .removeIf(
-            uuid ->
-                this.sessions.values().stream().noneMatch(session -> session.uuid().equals(uuid))
-                    && this.codes.values().stream()
-                        .noneMatch(code -> code.who().uuid().equals(uuid))
-                    && this.pairings.values().stream()
-                        .noneMatch(
-                            pairing -> pairing.who() != null && pairing.who().uuid().equals(uuid)));
+        .removeIf(uuid ->
+            this.sessions.values().stream().noneMatch(session -> session.uuid().equals(uuid))
+                && this.codes.values().stream().noneMatch(code -> code.who().uuid().equals(uuid))
+                && this.pairings.values().stream()
+                    .noneMatch(
+                        pairing -> pairing.who() != null && pairing.who().uuid().equals(uuid)));
     final @NotNull YamlConfiguration yaml = new YamlConfiguration();
     this.grants.forEach(
         (uuid, granted) -> yaml.set("grants." + uuid, granted.stream().sorted().toList()));
-    this.sessions.forEach(
-        (key, session) -> {
-          if (this.unsaved.contains(key)) {
-            return;
-          }
-          yaml.set("sessions." + key + ".uuid", session.uuid().toString());
-          yaml.set("sessions." + key + ".name", session.name());
-          yaml.set("sessions." + key + ".skin", session.skin());
-          yaml.set("sessions." + key + ".expires", session.expires());
-          yaml.set("sessions." + key + ".created", session.created());
-          yaml.set("sessions." + key + ".seen", this.seen.get(key));
-          if (session.device() != null) {
-            yaml.set("sessions." + key + ".browser", session.device().browser());
-            yaml.set("sessions." + key + ".os", session.device().os());
-          }
-        });
+    this.sessions.forEach((key, session) -> {
+      if (this.unsaved.contains(key)) {
+        return;
+      }
+      yaml.set("sessions." + key + ".uuid", session.uuid().toString());
+      yaml.set("sessions." + key + ".name", session.name());
+      yaml.set("sessions." + key + ".skin", session.skin());
+      yaml.set("sessions." + key + ".expires", session.expires());
+      yaml.set("sessions." + key + ".created", session.created());
+      yaml.set("sessions." + key + ".seen", this.seen.get(key));
+      if (session.device() != null) {
+        yaml.set("sessions." + key + ".browser", session.device().browser());
+        yaml.set("sessions." + key + ".os", session.device().os());
+      }
+    });
     try {
       AtomicFiles.write(this.file, yaml.saveToString().getBytes(StandardCharsets.UTF_8));
     } catch (final IOException e) {

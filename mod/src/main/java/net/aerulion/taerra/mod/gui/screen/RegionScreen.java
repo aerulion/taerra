@@ -118,9 +118,8 @@ public final class RegionScreen extends Screen {
         CycleButton.<String>builder(
                 fog -> Component.translatable("taerra.region.fog." + fog), this.fog)
             .withValues("hide", "veil", "none")
-            .withTooltip(
-                fog ->
-                    Tooltip.create(Component.translatable("taerra.region.fog." + fog + ".tooltip")))
+            .withTooltip(fog ->
+                Tooltip.create(Component.translatable("taerra.region.fog." + fog + ".tooltip")))
             .create(
                 0,
                 0,

@@ -18,9 +18,8 @@ enum ChunkFormat {
     for (int i = formats.length - 2; i >= 0; i--) {
       final @NotNull ChunkFormat next = formats[i + 1];
       final @NotNull Map<String, String> renames = new HashMap<>(next.renamesToCurrent);
-      next.blockRenames.forEach(
-          (name, renamed) ->
-              renames.put(name, next.renamesToCurrent.getOrDefault(renamed, renamed)));
+      next.blockRenames.forEach((name, renamed) ->
+          renames.put(name, next.renamesToCurrent.getOrDefault(renamed, renamed)));
       formats[i].renamesToCurrent = Map.copyOf(renames);
     }
   }

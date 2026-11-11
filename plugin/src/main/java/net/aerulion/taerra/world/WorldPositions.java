@@ -37,17 +37,16 @@ public final class WorldPositions {
       final @NotNull World world, final int x, final @Nullable Integer y, final int z) {
     return world
         .getChunkAtAsync(x >> 4, z >> 4)
-        .thenApply(
-            _ -> {
-              if (y != null) {
-                final int feet = Math.clamp(y, world.getMinHeight(), world.getMaxHeight());
-                if (!world.getBlockAt(x, feet, z).isSolid()
-                    && !world.getBlockAt(x, feet + 1, z).isSolid()) {
-                  return feet;
-                }
-              }
-              return surfaceY(world, x, z);
-            });
+        .thenApply(_ -> {
+          if (y != null) {
+            final int feet = Math.clamp(y, world.getMinHeight(), world.getMaxHeight());
+            if (!world.getBlockAt(x, feet, z).isSolid()
+                && !world.getBlockAt(x, feet + 1, z).isSolid()) {
+              return feet;
+            }
+          }
+          return surfaceY(world, x, z);
+        });
   }
 
   private static int surfaceY(final @NotNull World world, final int x, final int z) {

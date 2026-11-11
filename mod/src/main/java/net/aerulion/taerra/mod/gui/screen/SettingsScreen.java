@@ -168,18 +168,17 @@ public final class SettingsScreen extends OptionsSubScreen {
                         settings.smallInfo(),
                         settings::setSmallInfo)),
                 Arrays.stream(MinimapInfo.values())
-                    .map(
-                        info ->
-                            OptionInstance.createBoolean(
-                                "taerra.options.info." + info.id(),
-                                Language.getInstance()
-                                        .has("taerra.options.info." + info.id() + ".tooltip")
-                                    ? OptionInstance.cachedConstantTooltip(
-                                        Component.translatable(
-                                            "taerra.options.info." + info.id() + ".tooltip"))
-                                    : OptionInstance.noTooltip(),
-                                settings.minimapInfo(info),
-                                shown -> settings.setMinimapInfo(info, shown))))
+                    .map(info ->
+                        OptionInstance.createBoolean(
+                            "taerra.options.info." + info.id(),
+                            Language.getInstance()
+                                    .has("taerra.options.info." + info.id() + ".tooltip")
+                                ? OptionInstance.cachedConstantTooltip(
+                                    Component.translatable(
+                                        "taerra.options.info." + info.id() + ".tooltip"))
+                                : OptionInstance.noTooltip(),
+                            settings.minimapInfo(info),
+                            shown -> settings.setMinimapInfo(info, shown))))
             .toArray(OptionInstance<?>[]::new));
   }
 

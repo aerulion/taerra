@@ -178,12 +178,11 @@ public final class TileCacheImpl implements TileCache {
 
   @Override
   public void refreshWorld(final String world) {
-    this.cache.forEach(
-        (key, tile) -> {
-          if (key.world().equals(world)) {
-            tile.stale = true;
-          }
-        });
+    this.cache.forEach((key, tile) -> {
+      if (key.world().equals(world)) {
+        tile.stale = true;
+      }
+    });
   }
 
   @Override
@@ -202,59 +201,51 @@ public final class TileCacheImpl implements TileCache {
     this.inFlight++;
     this.client
         .get(key.path(), cached == null ? null : tile.etag)
-        .thenCompose(
-            response -> {
-              final int status = response.statusCode();
-              final byte @Nullable [] png =
-                  status == 200 ? response.body() : status == 304 ? cached : null;
-              if (png == null) {
-                return CompletableFuture.completedFuture(
-                    new Fetched(status, null, List.of(), null));
-              }
-              final @Nullable String etag =
-                  status == 200 ? response.headers().firstValue("ETag").orElse(null) : tile.etag;
-              final @NotNull List<String> wanted =
-                  wanted(response.headers().firstValue(LAYERS_HEADER).orElse(null), revealed);
-              if (status == 304 && wanted.equals(tile.pieces.stream().map(Piece::id).toList())) {
-                return CompletableFuture.completedFuture(
-                    new Fetched(status, null, List.of(), null));
-              }
-              final @NotNull List<CompletableFuture<@Nullable Piece>> pieces =
-                  wanted.stream()
-                      .map(
-                          id ->
-                              this.client
-                                  .get(key.path() + "?layer=" + id, null)
-                                  .handle(
-                                      (layer, error) ->
-                                          error == null && layer.statusCode() == 200
-                                              ? new Piece(id, layer.body())
-                                              : null))
-                      .toList();
-              return CompletableFuture.allOf(pieces.toArray(CompletableFuture[]::new))
-                  .thenApply(
-                      _ ->
-                          new Fetched(
-                              200,
-                              png,
-                              pieces.stream()
-                                  .map(CompletableFuture::join)
-                                  .filter(piece -> piece != null)
-                                  .toList(),
-                              etag));
-            })
-        .handle(
-            (fetched, error) -> {
-              final int status = error == null ? fetched.status() : 0;
-              final byte @Nullable [] png = status == 200 ? fetched.png() : null;
-              final @NotNull List<Piece> pieces = png == null ? List.of() : fetched.pieces();
-              final @Nullable NativeImage image =
-                  png == null ? null : decode(key, png, pieces, gray);
-              final @Nullable String etag = png == null ? null : fetched.etag();
-              Minecraft.getInstance()
-                  .execute(() -> loaded(key, tile, status, png, pieces, image, etag, gray));
-              return null;
-            });
+        .thenCompose(response -> {
+          final int status = response.statusCode();
+          final byte @Nullable [] png =
+              status == 200 ? response.body() : status == 304 ? cached : null;
+          if (png == null) {
+            return CompletableFuture.completedFuture(new Fetched(status, null, List.of(), null));
+          }
+          final @Nullable String etag =
+              status == 200 ? response.headers().firstValue("ETag").orElse(null) : tile.etag;
+          final @NotNull List<String> wanted =
+              wanted(response.headers().firstValue(LAYERS_HEADER).orElse(null), revealed);
+          if (status == 304 && wanted.equals(tile.pieces.stream().map(Piece::id).toList())) {
+            return CompletableFuture.completedFuture(new Fetched(status, null, List.of(), null));
+          }
+          final @NotNull List<CompletableFuture<@Nullable Piece>> pieces =
+              wanted.stream()
+                  .map(id ->
+                      this.client
+                          .get(key.path() + "?layer=" + id, null)
+                          .handle((layer, error) ->
+                              error == null && layer.statusCode() == 200
+                                  ? new Piece(id, layer.body())
+                                  : null))
+                  .toList();
+          return CompletableFuture.allOf(pieces.toArray(CompletableFuture[]::new))
+              .thenApply(_ ->
+                  new Fetched(
+                      200,
+                      png,
+                      pieces.stream()
+                          .map(CompletableFuture::join)
+                          .filter(piece -> piece != null)
+                          .toList(),
+                      etag));
+        })
+        .handle((fetched, error) -> {
+          final int status = error == null ? fetched.status() : 0;
+          final byte @Nullable [] png = status == 200 ? fetched.png() : null;
+          final @NotNull List<Piece> pieces = png == null ? List.of() : fetched.pieces();
+          final @Nullable NativeImage image = png == null ? null : decode(key, png, pieces, gray);
+          final @Nullable String etag = png == null ? null : fetched.etag();
+          Minecraft.getInstance()
+              .execute(() -> loaded(key, tile, status, png, pieces, image, etag, gray));
+          return null;
+        });
   }
 
   private void loaded(
@@ -303,21 +294,19 @@ public final class TileCacheImpl implements TileCache {
     final boolean gray = this.settings.grayMap();
     tile.decoding = true;
     CompletableFuture.supplyAsync(() -> decode(key, png, pieces, gray), Util.backgroundExecutor())
-        .thenAccept(
-            image ->
-                Minecraft.getInstance()
-                    .execute(
-                        () -> {
-                          tile.decoding = false;
-                          if (this.cache.get(key) != tile || tile.png != png || image == null) {
-                            if (image != null) {
-                              image.close();
-                            }
-                            return;
-                          }
-                          upload(key, tile, image, gray);
-                          trim();
-                        }));
+        .thenAccept(image ->
+            Minecraft.getInstance()
+                .execute(() -> {
+                  tile.decoding = false;
+                  if (this.cache.get(key) != tile || tile.png != png || image == null) {
+                    if (image != null) {
+                      image.close();
+                    }
+                    return;
+                  }
+                  upload(key, tile, image, gray);
+                  trim();
+                }));
   }
 
   private void setPng(

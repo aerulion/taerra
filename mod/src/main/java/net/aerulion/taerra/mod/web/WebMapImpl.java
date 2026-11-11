@@ -329,21 +329,19 @@ public final class WebMapImpl implements WebMap {
   public void devices(final @NotNull Consumer<@Nullable List<Device>> then) {
     this.client
         .get("/api/account/sessions", null)
-        .handle(
-            (response, error) -> {
-              @Nullable List<Device> devices = null;
-              if (error == null && response.statusCode() == 200) {
-                try {
-                  devices =
-                      GSON.fromJson(new String(response.body(), StandardCharsets.UTF_8), DEVICES);
-                } catch (final RuntimeException e) {
-                  LOGGER.warn("TAERRA: unreadable device list: {}", e.toString());
-                }
-              }
-              final @Nullable List<Device> found = devices;
-              this.client.execute(() -> then.accept(found));
-              return null;
-            });
+        .handle((response, error) -> {
+          @Nullable List<Device> devices = null;
+          if (error == null && response.statusCode() == 200) {
+            try {
+              devices = GSON.fromJson(new String(response.body(), StandardCharsets.UTF_8), DEVICES);
+            } catch (final RuntimeException e) {
+              LOGGER.warn("TAERRA: unreadable device list: {}", e.toString());
+            }
+          }
+          final @Nullable List<Device> found = devices;
+          this.client.execute(() -> then.accept(found));
+          return null;
+        });
   }
 
   @Override
@@ -641,18 +639,16 @@ public final class WebMapImpl implements WebMap {
     this.loadingConfig = true;
     this.client
         .get("/api/config", null)
-        .handle(
-            (response, error) -> {
-              final MapConfig config =
-                  error == null && response.statusCode() == 200
-                      ? GSON.fromJson(
-                          new String(response.body(), StandardCharsets.UTF_8), MapConfig.class)
-                      : null;
-              final String failure =
-                  error == null ? "HTTP " + response.statusCode() : error.toString();
-              this.client.execute(() -> configLoaded(config, failure));
-              return null;
-            });
+        .handle((response, error) -> {
+          final MapConfig config =
+              error == null && response.statusCode() == 200
+                  ? GSON.fromJson(
+                      new String(response.body(), StandardCharsets.UTF_8), MapConfig.class)
+                  : null;
+          final String failure = error == null ? "HTTP " + response.statusCode() : error.toString();
+          this.client.execute(() -> configLoaded(config, failure));
+          return null;
+        });
   }
 
   private void configLoaded(final @Nullable MapConfig config, final String failure) {
@@ -698,23 +694,20 @@ public final class WebMapImpl implements WebMap {
     this.iconTries.put(key, now);
     this.client
         .get(icon.path() + ".png?v=" + Urls.segment(icon.version()), null)
-        .thenAccept(
-            response -> {
-              final int @Nullable [] read =
-                  response.statusCode() == 200 ? Pixels.read(response.body()) : null;
-              this.client.execute(
-                  () -> {
-                    if (read != null) {
-                      this.iconPixels.put(key, read);
-                      List.copyOf(this.listeners).forEach(WebMapListener::iconsChanged);
-                    }
-                  });
-            })
-        .exceptionally(
-            error -> {
-              LOGGER.warn("TAERRA: the icon {} failed: {}", icon.id(), error.toString());
-              return null;
-            });
+        .thenAccept(response -> {
+          final int @Nullable [] read =
+              response.statusCode() == 200 ? Pixels.read(response.body()) : null;
+          this.client.execute(() -> {
+            if (read != null) {
+              this.iconPixels.put(key, read);
+              List.copyOf(this.listeners).forEach(WebMapListener::iconsChanged);
+            }
+          });
+        })
+        .exceptionally(error -> {
+          LOGGER.warn("TAERRA: the icon {} failed: {}", icon.id(), error.toString());
+          return null;
+        });
     return null;
   }
 
@@ -840,36 +833,34 @@ public final class WebMapImpl implements WebMap {
     this.connecting = true;
     this.client
         .socket(new SocketListener())
-        .whenComplete(
-            (socket, error) ->
-                Minecraft.getInstance()
-                    .execute(
-                        () -> {
-                          this.connecting = false;
-                          if (this.closed) {
-                            if (socket != null) {
-                              socket.abort();
-                            }
-                          } else if (socket != null) {
-                            this.socket = socket;
-                            this.subscribed = null;
-                            this.tiles.refreshAll();
-                            this.picks.refreshAll();
-                            refreshWorlds();
-                            this.staleMarkers.addAll(this.markers.keySet());
-                            this.staleRegions.addAll(this.regions.keySet());
-                            refreshPlayers();
-                            refreshLayers();
-                            refreshIcons();
-                            if (this.settingsOpen) {
-                              send(Map.of("type", "settings", "open", true, "client", "mod"));
-                              List.copyOf(this.listeners)
-                                  .forEach(listener -> listener.settingsChanged(Long.MAX_VALUE));
-                            }
-                          } else {
-                            this.nextConnect = System.currentTimeMillis() + RECONNECT_MILLIS;
-                          }
-                        }));
+        .whenComplete((socket, error) ->
+            Minecraft.getInstance()
+                .execute(() -> {
+                  this.connecting = false;
+                  if (this.closed) {
+                    if (socket != null) {
+                      socket.abort();
+                    }
+                  } else if (socket != null) {
+                    this.socket = socket;
+                    this.subscribed = null;
+                    this.tiles.refreshAll();
+                    this.picks.refreshAll();
+                    refreshWorlds();
+                    this.staleMarkers.addAll(this.markers.keySet());
+                    this.staleRegions.addAll(this.regions.keySet());
+                    refreshPlayers();
+                    refreshLayers();
+                    refreshIcons();
+                    if (this.settingsOpen) {
+                      send(Map.of("type", "settings", "open", true, "client", "mod"));
+                      List.copyOf(this.listeners)
+                          .forEach(listener -> listener.settingsChanged(Long.MAX_VALUE));
+                    }
+                  } else {
+                    this.nextConnect = System.currentTimeMillis() + RECONNECT_MILLIS;
+                  }
+                }));
   }
 
   private void disconnected(final WebSocket socket) {
@@ -963,14 +954,13 @@ public final class WebMapImpl implements WebMap {
       if (last) {
         final @NotNull String message = this.text.toString();
         this.text.setLength(0);
-        WebMapImpl.this.client.execute(
-            () -> {
-              try {
-                receive(JsonParser.parseString(message).getAsJsonObject());
-              } catch (final RuntimeException e) {
-                LOGGER.warn("TAERRA: unreadable socket message: {}", e.toString());
-              }
-            });
+        WebMapImpl.this.client.execute(() -> {
+          try {
+            receive(JsonParser.parseString(message).getAsJsonObject());
+          } catch (final RuntimeException e) {
+            LOGGER.warn("TAERRA: unreadable socket message: {}", e.toString());
+          }
+        });
       }
       socket.request(1);
       return null;

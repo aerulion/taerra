@@ -81,12 +81,11 @@ public final class TaerraClient implements ClientModInitializer {
             this.session.connect(payload);
           }
         });
-    ServerboundPlayChannelEvents.REGISTER.register(
-        (handler, sender, client, channels) -> {
-          if (channels.contains(HandshakePayload.TYPE.id())) {
-            sender.sendPacket(HandshakePayload.version());
-          }
-        });
+    ServerboundPlayChannelEvents.REGISTER.register((handler, sender, client, channels) -> {
+      if (channels.contains(HandshakePayload.TYPE.id())) {
+        sender.sendPacket(HandshakePayload.version());
+      }
+    });
     ClientPlayConnectionEvents.DISCONNECT.register(
         (handler, client) -> client.execute(this::close));
     ClientConfigurationConnectionEvents.INIT.register(

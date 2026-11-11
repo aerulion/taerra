@@ -69,9 +69,8 @@ public final class RegionDiscovery {
                     .runTaskAsynchronously(
                         this.plugin,
                         () ->
-                            visits.forEach(
-                                (uuid, region) ->
-                                    discover(uuid, region, RegionDiscoverEvent.Cause.ENTERED)));
+                            visits.forEach((uuid, region) ->
+                                discover(uuid, region, RegionDiscoverEvent.Cause.ENTERED)));
               }
             },
             INTERVAL_TICKS,

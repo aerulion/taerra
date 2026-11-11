@@ -94,11 +94,10 @@ public final class IconPickerScreen extends Screen {
                 }));
     filter.setValue(this.query);
     tiles.filter(this.query);
-    filter.setResponder(
-        value -> {
-          this.query = value;
-          tiles.filter(value);
-        });
+    filter.setResponder(value -> {
+      this.query = value;
+      tiles.filter(value);
+    });
     this.layout.visitWidgets(this::addRenderableWidget);
     repositionElements();
     setInitialFocus(filter);

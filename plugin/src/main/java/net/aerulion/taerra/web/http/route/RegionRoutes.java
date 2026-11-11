@@ -227,37 +227,31 @@ public final class RegionRoutes implements Routes {
       final @NotNull Context ctx,
       final @NotNull Viewer viewer,
       final @NotNull CompletableFuture<RegionEditor.Result> result) {
-    ctx.future(
-        () ->
-            result.thenAccept(
-                outcome -> {
-                  switch (outcome) {
-                    case RegionEditor.Saved(
-                            final MapRegion region,
-                            final RenderService.Start start) -> {
-                      if (start != null) {
-                        final @Nullable UUID uuid = viewer.uuid();
-                        final @Nullable Player player =
-                            uuid == null ? null : Bukkit.getPlayer(uuid);
-                        this.renderFeedback.report(
-                            player == null ? Audience.empty() : player,
-                            region.world(),
-                            RenderFeedback.region(region.name()),
-                            start);
-                      }
-                      ctx.status(start == null ? 200 : 202)
-                          .json(Map.of("id", region.id().toString()));
-                    }
-                    case RegionEditor.Problem problem ->
-                        ctx.status(
-                                switch (problem) {
-                                  case NOT_FOUND -> 404;
-                                  case BUSY, OVERLAP, NAME_TAKEN -> 409;
-                                  default -> 400;
-                                })
-                            .json(Map.of("problem", problem.name().toLowerCase(Locale.ROOT)));
-                  }
-                }));
+    ctx.future(() ->
+        result.thenAccept(outcome -> {
+          switch (outcome) {
+            case RegionEditor.Saved(final MapRegion region, final RenderService.Start start) -> {
+              if (start != null) {
+                final @Nullable UUID uuid = viewer.uuid();
+                final @Nullable Player player = uuid == null ? null : Bukkit.getPlayer(uuid);
+                this.renderFeedback.report(
+                    player == null ? Audience.empty() : player,
+                    region.world(),
+                    RenderFeedback.region(region.name()),
+                    start);
+              }
+              ctx.status(start == null ? 200 : 202).json(Map.of("id", region.id().toString()));
+            }
+            case RegionEditor.Problem problem ->
+                ctx.status(
+                        switch (problem) {
+                          case NOT_FOUND -> 404;
+                          case BUSY, OVERLAP, NAME_TAKEN -> 409;
+                          default -> 400;
+                        })
+                    .json(Map.of("problem", problem.name().toLowerCase(Locale.ROOT)));
+          }
+        }));
   }
 
   private record SaveRequest(

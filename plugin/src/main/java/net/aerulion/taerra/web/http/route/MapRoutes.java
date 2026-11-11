@@ -125,10 +125,9 @@ public final class MapRoutes implements Routes {
         !stored.isEmpty()
             && stored.stream()
                 .filter(found -> found.kind() != FogView.Kind.CLEAR)
-                .allMatch(
-                    found ->
-                        this.visibility.revealed(
-                            viewer.uuid(), viewer.canSeeThroughFog(), found.region()));
+                .allMatch(found ->
+                    this.visibility.revealed(
+                        viewer.uuid(), viewer.canSeeThroughFog(), found.region()));
     if (clear) {
       ctx.header(LAYERS_HEADER, "");
       respondWithTile(

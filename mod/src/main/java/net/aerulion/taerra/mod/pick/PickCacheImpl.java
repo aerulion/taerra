@@ -84,57 +84,49 @@ public final class PickCacheImpl implements PickCache {
       final @NotNull Set<String> revealed = this.revealed.apply(world);
       this.client
           .get(path, entry == null ? null : entry.etag)
-          .thenCompose(
-              response -> {
-                final @Nullable PickBuffer base =
-                    response.statusCode() == 200 ? PickBuffer.decode(response.body()) : null;
-                final @NotNull List<String> bodies =
-                    base == null
-                        ? List.of()
-                        : bodies(
-                            response.headers().firstValue("X-Taerra-Layers").orElse(null),
-                            revealed);
-                final @NotNull List<CompletableFuture<@Nullable PickBuffer>> layers =
-                    bodies.stream()
-                        .map(
-                            id ->
-                                this.client
-                                    .get(path + "?layer=" + id, null)
-                                    .handle(
-                                        (layer, error) ->
-                                            error == null && layer.statusCode() == 200
-                                                ? PickBuffer.decode(layer.body())
-                                                : null))
-                        .toList();
-                return CompletableFuture.allOf(layers.toArray(CompletableFuture[]::new))
-                    .thenApply(
-                        _ -> {
-                          @Nullable PickBuffer merged = base;
-                          for (final @NotNull CompletableFuture<@Nullable PickBuffer> layer :
-                              layers) {
-                            merged = merged == null ? null : merged.under(layer.join());
-                          }
-                          return new Fetched(
-                              response.statusCode(),
-                              merged,
-                              response.statusCode() == 200
-                                  ? response.headers().firstValue("ETag").orElse(null)
-                                  : null);
-                        });
-              })
-          .handle(
-              (fetched, error) -> {
-                final int status = error == null ? fetched.status() : 0;
-                Minecraft.getInstance()
-                    .execute(
-                        () ->
-                            loaded(
-                                key,
-                                status,
-                                error == null ? fetched.buffer() : null,
-                                error == null ? fetched.etag() : null));
-                return null;
-              });
+          .thenCompose(response -> {
+            final @Nullable PickBuffer base =
+                response.statusCode() == 200 ? PickBuffer.decode(response.body()) : null;
+            final @NotNull List<String> bodies =
+                base == null
+                    ? List.of()
+                    : bodies(
+                        response.headers().firstValue("X-Taerra-Layers").orElse(null), revealed);
+            final @NotNull List<CompletableFuture<@Nullable PickBuffer>> layers =
+                bodies.stream()
+                    .map(id ->
+                        this.client
+                            .get(path + "?layer=" + id, null)
+                            .handle((layer, error) ->
+                                error == null && layer.statusCode() == 200
+                                    ? PickBuffer.decode(layer.body())
+                                    : null))
+                    .toList();
+            return CompletableFuture.allOf(layers.toArray(CompletableFuture[]::new))
+                .thenApply(_ -> {
+                  @Nullable PickBuffer merged = base;
+                  for (final @NotNull CompletableFuture<@Nullable PickBuffer> layer : layers) {
+                    merged = merged == null ? null : merged.under(layer.join());
+                  }
+                  return new Fetched(
+                      response.statusCode(),
+                      merged,
+                      response.statusCode() == 200
+                          ? response.headers().firstValue("ETag").orElse(null)
+                          : null);
+                });
+          })
+          .handle((fetched, error) -> {
+            final int status = error == null ? fetched.status() : 0;
+            Minecraft.getInstance()
+                .execute(() ->
+                    loaded(
+                        key,
+                        status,
+                        error == null ? fetched.buffer() : null,
+                        error == null ? fetched.etag() : null));
+            return null;
+          });
     }
     return entry == null ? null : entry.buffer;
   }
@@ -261,12 +253,11 @@ public final class PickCacheImpl implements PickCache {
 
   @Override
   public void refreshWorld(final String world) {
-    this.buffers.forEach(
-        (key, entry) -> {
-          if (key.startsWith("top:" + world + ":") || key.startsWith("iso:" + world + ":")) {
-            entry.stale = true;
-          }
-        });
+    this.buffers.forEach((key, entry) -> {
+      if (key.startsWith("top:" + world + ":") || key.startsWith("iso:" + world + ":")) {
+        entry.stale = true;
+      }
+    });
   }
 
   @Override
@@ -369,9 +360,8 @@ public final class PickCacheImpl implements PickCache {
         for (final int[] sample : pending.samples()) {
           final int @Nullable [] cell =
               buffer
-                  .map(
-                      pick ->
-                          pick.cell(sample[2] - pending.originX(), sample[3] - pending.originZ()))
+                  .map(pick ->
+                      pick.cell(sample[2] - pending.originX(), sample[3] - pending.originZ()))
                   .orElse(null);
           this.heights[sample[0]][sample[1]] = cell == null ? Double.NaN : cell[1];
         }

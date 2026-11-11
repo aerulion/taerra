@@ -53,11 +53,9 @@ public final class WaypointEditor {
     if (draft.kind() == Kind.POINT || points == null) {
       return WorldPositions.insideBorder(world, draft.x(), draft.z())
           ? WorldPositions.standingY(world, draft.x(), draft.y(), draft.z())
-              .thenApply(
-                  y ->
-                      Marker.point(
-                              id, key, new Vector(draft.x() + .5, y, draft.z() + .5), draft.name())
-                          .withIcon(draft.icon()))
+              .thenApply(y ->
+                  Marker.point(id, key, new Vector(draft.x() + .5, y, draft.z() + .5), draft.name())
+                      .withIcon(draft.icon()))
           : null;
     }
     if (points.stream()
@@ -76,23 +74,21 @@ public final class WaypointEditor {
     }
     final @NotNull List<CompletableFuture<Vector>> placed =
         points.stream()
-            .map(
-                point ->
-                    WorldPositions.standingY(
-                            world,
-                            (int) Math.floor(point.get(0)),
-                            point.get(1) == null ? null : (int) Math.floor(point.get(1)),
-                            (int) Math.floor(point.get(2)))
-                        .thenApply(y -> new Vector(point.get(0), y, point.get(2))))
+            .map(point ->
+                WorldPositions.standingY(
+                        world,
+                        (int) Math.floor(point.get(0)),
+                        point.get(1) == null ? null : (int) Math.floor(point.get(1)),
+                        (int) Math.floor(point.get(2)))
+                    .thenApply(y -> new Vector(point.get(0), y, point.get(2))))
             .toList();
     return CompletableFuture.allOf(placed.toArray(CompletableFuture[]::new))
-        .thenApply(
-            _ -> {
-              final @NotNull LineMarker line =
-                  Marker.line(
-                      id, key, placed.stream().map(CompletableFuture::join).toList(), draft.name());
-              return draft.smooth() ? line.smoothed() : line;
-            });
+        .thenApply(_ -> {
+          final @NotNull LineMarker line =
+              Marker.line(
+                  id, key, placed.stream().map(CompletableFuture::join).toList(), draft.name());
+          return draft.smooth() ? line.smoothed() : line;
+        });
   }
 
   public @NotNull CompletableFuture<Result> save(
@@ -115,21 +111,20 @@ public final class WaypointEditor {
               if (shaped == null) {
                 return CompletableFuture.completedFuture(Result.INVALID);
               }
-              return shaped.thenApply(
-                  marker -> {
-                    final @NotNull Result stored =
-                        store(
-                            marker
-                                .withColor(Color.fromRGB(draft.rgb()))
-                                .withDescription(Names.description(draft.description())),
-                            draft,
-                            groupId,
-                            author);
-                    if (stored == Result.SAVED && author.uuid() != null) {
-                      this.preferences.rememberWaypointColor(author.uuid(), draft.rgb());
-                    }
-                    return stored;
-                  });
+              return shaped.thenApply(marker -> {
+                final @NotNull Result stored =
+                    store(
+                        marker
+                            .withColor(Color.fromRGB(draft.rgb()))
+                            .withDescription(Names.description(draft.description())),
+                        draft,
+                        groupId,
+                        author);
+                if (stored == Result.SAVED && author.uuid() != null) {
+                  this.preferences.rememberWaypointColor(author.uuid(), draft.rgb());
+                }
+                return stored;
+              });
             })
         .exceptionally(error -> Result.FAILED);
   }

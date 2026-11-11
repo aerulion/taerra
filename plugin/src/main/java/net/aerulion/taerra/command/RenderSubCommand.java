@@ -118,13 +118,11 @@ public final class RenderSubCommand implements TaerraSubCommand {
                     Commands.argument("world", ArgumentTypes.world())
                         .then(
                             Commands.argument("radius", IntegerArgumentType.integer(1))
-                                .executes(
-                                    context -> {
-                                      final @NotNull Location center =
-                                          defaultCenter(context, world(context));
-                                      return radius(
-                                          context, center.getBlockX(), center.getBlockZ());
-                                    }))
+                                .executes(context -> {
+                                  final @NotNull Location center =
+                                      defaultCenter(context, world(context));
+                                  return radius(context, center.getBlockX(), center.getBlockZ());
+                                }))
                         .then(
                             Commands.argument("center_x", IntegerArgumentType.integer())
                                 .then(
@@ -132,14 +130,13 @@ public final class RenderSubCommand implements TaerraSubCommand {
                                         .then(
                                             Commands.argument(
                                                     "radius", IntegerArgumentType.integer(1))
-                                                .executes(
-                                                    context ->
-                                                        radius(
-                                                            context,
-                                                            IntegerArgumentType.getInteger(
-                                                                context, "center_x"),
-                                                            IntegerArgumentType.getInteger(
-                                                                context, "center_z"))))))))
+                                                .executes(context ->
+                                                    radius(
+                                                        context,
+                                                        IntegerArgumentType.getInteger(
+                                                            context, "center_x"),
+                                                        IntegerArgumentType.getInteger(
+                                                            context, "center_z"))))))))
         .then(
             Commands.literal("image")
                 .requires(TaerraPermission.RENDER_IMAGE.commandRequirement())
@@ -149,11 +146,10 @@ public final class RenderSubCommand implements TaerraSubCommand {
                         .then(
                             Commands.argument(
                                     "zoom", IntegerArgumentType.integer(0, TileGeometry.MAX_ZOOM))
-                                .executes(
-                                    context ->
-                                        image(
-                                            context,
-                                            IntegerArgumentType.getInteger(context, "zoom"))))));
+                                .executes(context ->
+                                    image(
+                                        context,
+                                        IntegerArgumentType.getInteger(context, "zoom"))))));
   }
 
   private int full(final @NotNull CommandContext<? extends CommandSourceStack> context) {
@@ -213,14 +209,13 @@ public final class RenderSubCommand implements TaerraSubCommand {
             Messages.value(MapImageExports.LAYERS),
             Messages.world(WorldKeys.id(world)),
             Messages.value("1/" + (1 << zoom))));
-    export.exceptionally(
-        error -> {
-          this.feedback.send(
-              sender,
-              Messages.error(
-                  "image.failed", Messages.value(Throwables.describe(Throwables.unwrap(error)))));
-          return null;
-        });
+    export.exceptionally(error -> {
+      this.feedback.send(
+          sender,
+          Messages.error(
+              "image.failed", Messages.value(Throwables.describe(Throwables.unwrap(error)))));
+      return null;
+    });
     return SUCCESS;
   }
 }

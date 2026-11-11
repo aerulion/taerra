@@ -253,9 +253,8 @@ public record TaerraConfig(
       final @NotNull Map<String, Integer> scales) {
     return new TreeMap<>(scales)
         .entrySet().stream()
-            .map(
-                entry ->
-                    Map.of("layer", entry.getKey(), "scale", LayerScale.format(entry.getValue())))
+            .map(entry ->
+                Map.of("layer", entry.getKey(), "scale", LayerScale.format(entry.getValue())))
             .toList();
   }
 

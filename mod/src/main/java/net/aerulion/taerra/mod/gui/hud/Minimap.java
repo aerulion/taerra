@@ -250,21 +250,19 @@ public final class Minimap implements HudElement {
       case WEATHER -> weather(level, at);
       case TIME ->
           day(level)
-              .map(
-                  ticks -> {
-                    final long time = ticks.getCurrentTicks(level.clockManager()) + 6000;
-                    return (Component)
-                        Component.literal(
-                            "%d:%02d".formatted(time / 1000 % 24, time % 1000 * 60 / 1000));
-                  })
+              .map(ticks -> {
+                final long time = ticks.getCurrentTicks(level.clockManager()) + 6000;
+                return (Component)
+                    Component.literal(
+                        "%d:%02d".formatted(time / 1000 % 24, time % 1000 * 60 / 1000));
+              })
               .orElse(null);
       case DAY ->
           day(level)
-              .map(
-                  ticks ->
-                      (Component)
-                          Component.translatable(
-                              "taerra.minimap.day", ticks.getPeriodCount(level.clockManager())))
+              .map(ticks ->
+                  (Component)
+                      Component.translatable(
+                          "taerra.minimap.day", ticks.getPeriodCount(level.clockManager())))
               .orElse(null);
       case LIGHT ->
           Component.translatable("taerra.minimap.light", level.getBrightness(LightLayer.BLOCK, at));
@@ -301,21 +299,18 @@ public final class Minimap implements HudElement {
   private static @NotNull Component biome(final @NotNull Holder<Biome> biome) {
     return biome
         .unwrapKey()
-        .map(
-            key -> {
-              final @NotNull Identifier id = key.identifier();
-              final @NotNull String path =
-                  id.getPath().substring(id.getPath().lastIndexOf('/') + 1);
-              return (Component)
-                  Component.translatableWithFallback(
-                      Util.makeDescriptionId("biome", id),
-                      Arrays.stream(path.split("_"))
-                          .filter(word -> !word.isEmpty())
-                          .map(
-                              word ->
-                                  word.substring(0, 1).toUpperCase(Locale.ROOT) + word.substring(1))
-                          .collect(Collectors.joining(" ")));
-            })
+        .map(key -> {
+          final @NotNull Identifier id = key.identifier();
+          final @NotNull String path = id.getPath().substring(id.getPath().lastIndexOf('/') + 1);
+          return (Component)
+              Component.translatableWithFallback(
+                  Util.makeDescriptionId("biome", id),
+                  Arrays.stream(path.split("_"))
+                      .filter(word -> !word.isEmpty())
+                      .map(
+                          word -> word.substring(0, 1).toUpperCase(Locale.ROOT) + word.substring(1))
+                      .collect(Collectors.joining(" ")));
+        })
         .orElseGet(Component::empty);
   }
 }

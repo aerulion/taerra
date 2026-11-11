@@ -132,19 +132,18 @@ public final class RenderFeedback {
             Messages.info("render.scanning", Messages.world(worldName), description));
         started
             .scan()
-            .whenComplete(
-                (scan, error) -> {
-                  final @Nullable Component message =
-                      error == null
-                          ? scanned(worldName, scan)
-                          : Messages.error(
-                              "render.failed",
-                              Messages.world(worldName),
-                              Messages.value(Throwables.describe(Throwables.unwrap(error))));
-                  if (message != null) {
-                    send(audience, message);
-                  }
-                });
+            .whenComplete((scan, error) -> {
+              final @Nullable Component message =
+                  error == null
+                      ? scanned(worldName, scan)
+                      : Messages.error(
+                          "render.failed",
+                          Messages.world(worldName),
+                          Messages.value(Throwables.describe(Throwables.unwrap(error))));
+              if (message != null) {
+                send(audience, message);
+              }
+            });
         yield true;
       }
     };

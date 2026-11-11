@@ -46,28 +46,26 @@ public final class Teleports {
                 return CompletableFuture.completedFuture(Outcome.OUTSIDE_BORDER);
               }
               return WorldPositions.clearY(world, x, y, z)
-                  .thenCompose(
-                      feet -> {
-                        final @NotNull Location to =
-                            new Location(
-                                world, x + .5, feet, z + .5, player.getYaw(), player.getPitch());
-                        final @NotNull WebTeleportEvent event = new WebTeleportEvent(player, to);
-                        this.plugin.getServer().getPluginManager().callEvent(event);
-                        if (event.isCancelled()) {
-                          return CompletableFuture.completedFuture(Outcome.REFUSED);
-                        }
-                        return player
-                            .teleportAsync(to, PlayerTeleportEvent.TeleportCause.PLUGIN)
-                            .thenApply(
-                                teleported -> {
-                                  if (teleported && announce) {
-                                    player.sendMessage(
-                                        Messages.webTeleport(
-                                            x + " " + feet + " " + z, WorldKeys.id(world)));
-                                  }
-                                  return teleported ? Outcome.TELEPORTED : Outcome.REFUSED;
-                                });
-                      });
+                  .thenCompose(feet -> {
+                    final @NotNull Location to =
+                        new Location(
+                            world, x + .5, feet, z + .5, player.getYaw(), player.getPitch());
+                    final @NotNull WebTeleportEvent event = new WebTeleportEvent(player, to);
+                    this.plugin.getServer().getPluginManager().callEvent(event);
+                    if (event.isCancelled()) {
+                      return CompletableFuture.completedFuture(Outcome.REFUSED);
+                    }
+                    return player
+                        .teleportAsync(to, PlayerTeleportEvent.TeleportCause.PLUGIN)
+                        .thenApply(teleported -> {
+                          if (teleported && announce) {
+                            player.sendMessage(
+                                Messages.webTeleport(
+                                    x + " " + feet + " " + z, WorldKeys.id(world)));
+                          }
+                          return teleported ? Outcome.TELEPORTED : Outcome.REFUSED;
+                        });
+                  });
             })
         .exceptionally(error -> Outcome.FAILED);
   }

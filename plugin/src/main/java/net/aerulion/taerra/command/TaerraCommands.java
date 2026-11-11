@@ -35,11 +35,10 @@ public final class TaerraCommands {
         nodes.put(subCommand.command().build(), subCommand.aliases());
       }
     }
-    taerraCommand.executes(
-        context -> {
-          sendHelp(plugin, subCommands, context.getSource().getSender());
-          return Command.SINGLE_SUCCESS;
-        });
+    taerraCommand.executes(context -> {
+      sendHelp(plugin, subCommands, context.getSource().getSender());
+      return Command.SINGLE_SUCCESS;
+    });
     nodes.put(taerraCommand.build(), List.of());
     plugin
         .getLifecycleManager()

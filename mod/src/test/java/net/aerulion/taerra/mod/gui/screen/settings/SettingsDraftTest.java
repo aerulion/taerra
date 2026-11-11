@@ -49,7 +49,8 @@ class SettingsDraftTest {
         """
         {"setting:web.name": "%s", "setting:web.port": 8123,
          "world:a:enabled": true, "world:b:enabled": true, "world:c:enabled": false,
-         "order": %s}"""
+         "order": %s}\
+        """
             .formatted(name, order),
         by);
   }

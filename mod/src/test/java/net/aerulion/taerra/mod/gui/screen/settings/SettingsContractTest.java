@@ -32,11 +32,8 @@ class SettingsContractTest {
     if (authors != null) {
       authors
           .entrySet()
-          .forEach(
-              entry ->
-                  by.put(
-                      entry.getKey(),
-                      new ServerSettings.Author(entry.getValue().getAsString(), 0)));
+          .forEach(entry ->
+              by.put(entry.getKey(), new ServerSettings.Author(entry.getValue().getAsString(), 0)));
     }
     return new ServerSettings(1, List.of(), worlds, List.of(), values, by, null);
   }
@@ -109,10 +106,9 @@ class SettingsContractTest {
                 expect
                     .getAsJsonObject("values")
                     .entrySet()
-                    .forEach(
-                        value ->
-                            assertEquals(
-                                value.getValue(), draft.value(value.getKey()), value.getKey()));
+                    .forEach(value ->
+                        assertEquals(
+                            value.getValue(), draft.value(value.getKey()), value.getKey()));
                 if (expect.has("absent")) {
                   expect
                       .getAsJsonArray("absent")

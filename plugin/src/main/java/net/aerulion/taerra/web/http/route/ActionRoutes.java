@@ -85,20 +85,18 @@ public final class ActionRoutes implements Routes {
       return;
     }
     final boolean announce = !this.modHandshake.isMod(ctx.cookie(WebSessions.COOKIE));
-    ctx.future(
-        () ->
-            this.teleports
-                .teleport(uuid, request.world(), request.x(), request.y(), request.z(), announce)
-                .thenAccept(
-                    outcome ->
-                        ctx.status(
-                            switch (outcome) {
-                              case TELEPORTED -> 204;
-                              case OFFLINE -> 409;
-                              case FORBIDDEN, REFUSED -> 403;
-                              case OUTSIDE_BORDER -> 400;
-                              case FAILED -> 500;
-                            })));
+    ctx.future(() ->
+        this.teleports
+            .teleport(uuid, request.world(), request.x(), request.y(), request.z(), announce)
+            .thenAccept(outcome ->
+                ctx.status(
+                    switch (outcome) {
+                      case TELEPORTED -> 204;
+                      case OFFLINE -> 409;
+                      case FORBIDDEN, REFUSED -> 403;
+                      case OUTSIDE_BORDER -> 400;
+                      case FAILED -> 500;
+                    })));
   }
 
   private void handleAreaRequest(final @NotNull Context ctx) {

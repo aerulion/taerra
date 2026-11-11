@@ -54,20 +54,19 @@ public final class ChunkyGeneration implements Predicate<World> {
   private void check() {
     this.skipped
         .entrySet()
-        .removeIf(
-            entry -> {
-              if (this.chunky.isRunning(entry.getKey().getName())) {
-                return false;
-              }
-              final @NotNull Component message =
-                  Messages.renderSuggestion(WorldKeys.id(entry.getKey()), entry.getValue());
-              for (final @NotNull Player player : this.plugin.getServer().getOnlinePlayers()) {
-                if (TaerraPermission.RENDER_WORLD.check(player)) {
-                  player.sendMessage(message);
-                }
-              }
-              this.plugin.getServer().getConsoleSender().sendMessage(message);
-              return true;
-            });
+        .removeIf(entry -> {
+          if (this.chunky.isRunning(entry.getKey().getName())) {
+            return false;
+          }
+          final @NotNull Component message =
+              Messages.renderSuggestion(WorldKeys.id(entry.getKey()), entry.getValue());
+          for (final @NotNull Player player : this.plugin.getServer().getOnlinePlayers()) {
+            if (TaerraPermission.RENDER_WORLD.check(player)) {
+              player.sendMessage(message);
+            }
+          }
+          this.plugin.getServer().getConsoleSender().sendMessage(message);
+          return true;
+        });
   }
 }

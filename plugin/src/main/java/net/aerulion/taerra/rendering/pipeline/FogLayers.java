@@ -177,13 +177,12 @@ public final class FogLayers {
       }
     }
     final @NotNull List<RenderedTile> clear = new ArrayList<>();
-    bodies.forEach(
-        (coordinate, images) -> {
-          final @Nullable BufferedImage base = bases.get(coordinate);
-          if (base != null && !rendered.contains(coordinate)) {
-            clear.add(new RenderedTile(coordinate, FogView.CLEAR, stacked(base, images), null));
-          }
-        });
+    bodies.forEach((coordinate, images) -> {
+      final @Nullable BufferedImage base = bases.get(coordinate);
+      if (base != null && !rendered.contains(coordinate)) {
+        clear.add(new RenderedTile(coordinate, FogView.CLEAR, stacked(base, images), null));
+      }
+    });
     return clear;
   }
 

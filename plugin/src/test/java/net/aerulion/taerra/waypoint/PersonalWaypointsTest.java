@@ -53,22 +53,21 @@ class PersonalWaypointsTest {
 
   static @NotNull List<String> describe(final @NotNull List<Event> events) {
     return events.stream()
-        .map(
-            event -> {
-              final @NotNull WaypointEvent waypoint = (WaypointEvent) event;
-              final @NotNull String kind =
-                  switch (event) {
-                    case WaypointCreateEvent _ -> "create";
-                    case WaypointChangeEvent _ -> "change";
-                    case WaypointDeleteEvent _ -> "delete";
-                    default -> event.getEventName();
-                  };
-              return kind
-                  + " "
-                  + waypoint.waypoint().label()
-                  + " "
-                  + (waypoint.owner() == null ? "shared" : waypoint.owner().getUniqueId());
-            })
+        .map(event -> {
+          final @NotNull WaypointEvent waypoint = (WaypointEvent) event;
+          final @NotNull String kind =
+              switch (event) {
+                case WaypointCreateEvent _ -> "create";
+                case WaypointChangeEvent _ -> "change";
+                case WaypointDeleteEvent _ -> "delete";
+                default -> event.getEventName();
+              };
+          return kind
+              + " "
+              + waypoint.waypoint().label()
+              + " "
+              + (waypoint.owner() == null ? "shared" : waypoint.owner().getUniqueId());
+        })
         .toList();
   }
 

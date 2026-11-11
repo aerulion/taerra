@@ -81,10 +81,9 @@ class ColumnRunSamplerTest {
   void hiddenChunkIsFog() {
     final @NotNull ChunkColumns columns =
         ColumnRunSampler.blockedChunk(
-            new TestChunk(
-                (localX, localZ, y) -> {
-                  throw new AssertionError("read a hidden block");
-                }),
+            new TestChunk((localX, localZ, y) -> {
+              throw new AssertionError("read a hidden block");
+            }),
             new int[] {63, 63, 63, 63, 63, 63, 63, 63, 63},
             new byte[Fog.AROUND * Fog.AROUND],
             -1,
@@ -112,13 +111,12 @@ class ColumnRunSamplerTest {
   @DisplayName("a tower keeps every storey down to its ground, however far below the roof that is")
   void everyStoreyIsKeptAtAnyDepth() {
     final @NotNull ChunkColumns columns =
-        sample(
-            y -> {
-              if (y > 64 && y < 300) {
-                return y % 8 == 0 ? BlockType.TORCH : BlockType.STONE_BRICKS;
-              }
-              return y <= 64 ? BlockType.STONE : BlockType.AIR;
-            });
+        sample(y -> {
+          if (y > 64 && y < 300) {
+            return y % 8 == 0 ? BlockType.TORCH : BlockType.STONE_BRICKS;
+          }
+          return y <= 64 ? BlockType.STONE : BlockType.AIR;
+        });
 
     final int lastRun = columns.runEnd(0) - 1;
     assertEquals(299, columns.runTopY(columns.runStart(0)));
@@ -170,13 +168,12 @@ class ColumnRunSamplerTest {
   @DisplayName("a thin block resting on a column caps it without forming a run")
   void thinBlockBecomesACap() {
     final @NotNull ChunkColumns columns =
-        sample(
-            y -> {
-              if (y == 65) {
-                return BlockType.TORCH;
-              }
-              return y <= 64 ? BlockType.STONE : BlockType.AIR;
-            });
+        sample(y -> {
+          if (y == 65) {
+            return BlockType.TORCH;
+          }
+          return y <= 64 ? BlockType.STONE : BlockType.AIR;
+        });
 
     assertEquals(1, runCount(columns));
     assertEquals(64, columns.runTopY(columns.runStart(0)));
@@ -187,11 +184,8 @@ class ColumnRunSamplerTest {
   @DisplayName("a double plant on the ground still only caps it")
   void doublePlantBecomesACap() {
     final @NotNull ChunkColumns columns =
-        sample(
-            y ->
-                y == 65 || y == 66
-                    ? BlockType.TALL_GRASS
-                    : y <= 64 ? BlockType.STONE : BlockType.AIR);
+        sample(y ->
+            y == 65 || y == 66 ? BlockType.TALL_GRASS : y <= 64 ? BlockType.STONE : BlockType.AIR);
 
     assertEquals(1, runCount(columns));
     assertEquals(64, columns.runTopY(columns.runStart(0)));
@@ -215,11 +209,8 @@ class ColumnRunSamplerTest {
   @DisplayName("a stack of thin blocks taller than a double plant is drawn as blocks")
   void tallThinStackFormsARun() {
     final @NotNull ChunkColumns columns =
-        sample(
-            y ->
-                y >= 65 && y <= 67
-                    ? BlockType.FIRE_CORAL
-                    : y <= 64 ? BlockType.STONE : BlockType.AIR);
+        sample(y ->
+            y >= 65 && y <= 67 ? BlockType.FIRE_CORAL : y <= 64 ? BlockType.STONE : BlockType.AIR);
 
     assertEquals(2, runCount(columns));
     assertEquals(67, columns.runTopY(columns.runStart(0)));
@@ -232,13 +223,12 @@ class ColumnRunSamplerTest {
   void invisibleBlockIsTreatedAsAir() {
 
     final @NotNull ChunkColumns columns =
-        sample(
-            y -> {
-              if (y == 100) {
-                return BlockType.BARRIER;
-              }
-              return y <= 64 ? BlockType.STONE : BlockType.AIR;
-            });
+        sample(y -> {
+          if (y == 100) {
+            return BlockType.BARRIER;
+          }
+          return y <= 64 ? BlockType.STONE : BlockType.AIR;
+        });
 
     assertEquals(1, runCount(columns));
     assertEquals(64, columns.runTopY(columns.runStart(0)));
@@ -259,16 +249,15 @@ class ColumnRunSamplerTest {
   @DisplayName("nether columns start at the cave floor below the bedrock roof")
   void netherSkipsBedrockRoof() {
     final @NotNull ChunkColumns columns =
-        sampleNether(
-            (localX, localZ, y) -> {
-              if (y >= 123 && y <= 127) {
-                return BlockType.BEDROCK;
-              }
-              if (y > 127 || (localX == 0 && y > 70 && y < 123)) {
-                return BlockType.AIR;
-              }
-              return BlockType.NETHERRACK;
-            });
+        sampleNether((localX, localZ, y) -> {
+          if (y >= 123 && y <= 127) {
+            return BlockType.BEDROCK;
+          }
+          if (y > 127 || (localX == 0 && y > 70 && y < 123)) {
+            return BlockType.AIR;
+          }
+          return BlockType.NETHERRACK;
+        });
 
     assertEquals(70, columns.topY(ChunkColumns.columnIndex(0, 0)));
     final int solid = ChunkColumns.columnIndex(1, 0);

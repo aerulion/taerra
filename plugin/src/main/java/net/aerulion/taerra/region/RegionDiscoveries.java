@@ -37,13 +37,12 @@ public final class RegionDiscoveries {
           }
           final @NotNull Map<UUID, Long> kept = new HashMap<>();
           data.discoveries()
-              .forEach(
-                  (id, when) -> {
-                    final @Nullable MapRegion known = this.regions.get(id);
-                    if (known != null && when > known.reset()) {
-                      kept.put(id, when);
-                    }
-                  });
+              .forEach((id, when) -> {
+                final @Nullable MapRegion known = this.regions.get(id);
+                if (known != null && when > known.reset()) {
+                  kept.put(id, when);
+                }
+              });
           kept.put(region.id(), Math.max(System.currentTimeMillis(), region.reset() + 1L));
           added[0] = true;
           return data.withDiscoveries(kept);

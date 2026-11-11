@@ -85,11 +85,10 @@ public final class RegionListScreen extends Screen {
             Component.translatable("taerra.waypoints.filter"));
     filter.setHint(Component.translatable("taerra.waypoints.filter"));
     filter.setValue(this.query);
-    filter.setResponder(
-        value -> {
-          this.query = value;
-          refresh();
-        });
+    filter.setResponder(value -> {
+      this.query = value;
+      refresh();
+    });
     addRenderableWidget(filter);
     addRenderableWidget(
         Button.builder(

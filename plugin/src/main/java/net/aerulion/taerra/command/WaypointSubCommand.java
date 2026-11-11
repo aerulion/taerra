@@ -58,14 +58,12 @@ public final class WaypointSubCommand implements TaerraSubCommand {
             Commands.literal("add")
                 .then(
                     Commands.argument("color", StringArgumentType.string())
-                        .suggests(
-                            (context, builder) -> {
-                              SUGGESTED_COLORS.stream()
-                                  .filter(
-                                      color -> color.startsWith(builder.getRemainingLowerCase()))
-                                  .forEach(builder::suggest);
-                              return builder.buildFuture();
-                            })
+                        .suggests((context, builder) -> {
+                          SUGGESTED_COLORS.stream()
+                              .filter(color -> color.startsWith(builder.getRemainingLowerCase()))
+                              .forEach(builder::suggest);
+                          return builder.buildFuture();
+                        })
                         .then(
                             Commands.argument("name", StringArgumentType.greedyString())
                                 .executes(this::add))))
@@ -73,16 +71,14 @@ public final class WaypointSubCommand implements TaerraSubCommand {
             Commands.literal("remove")
                 .then(
                     Commands.argument("name", StringArgumentType.greedyString())
-                        .suggests(
-                            (context, builder) -> {
-                              this.waypoints.names().stream()
-                                  .filter(
-                                      name ->
-                                          name.toLowerCase(Locale.ROOT)
-                                              .startsWith(builder.getRemainingLowerCase()))
-                                  .forEach(builder::suggest);
-                              return builder.buildFuture();
-                            })
+                        .suggests((context, builder) -> {
+                          this.waypoints.names().stream()
+                              .filter(name ->
+                                  name.toLowerCase(Locale.ROOT)
+                                      .startsWith(builder.getRemainingLowerCase()))
+                              .forEach(builder::suggest);
+                          return builder.buildFuture();
+                        })
                         .executes(this::remove)));
   }
 

@@ -70,11 +70,10 @@ public final class DebugReport {
             .filter(mod -> !"builtin".equals(mod.getMetadata().getType()))
             .filter(mod -> !LISTED_APART.contains(mod.getMetadata().getId()))
             .sorted(Comparator.comparing((ModContainer mod) -> mod.getMetadata().getId()))
-            .map(
-                mod ->
-                    mod.getMetadata().getId()
-                        + " "
-                        + mod.getMetadata().getVersion().getFriendlyString())
+            .map(mod ->
+                mod.getMetadata().getId()
+                    + " "
+                    + mod.getMetadata().getVersion().getFriendlyString())
             .collect(Collectors.joining(", "));
     return mods.isEmpty() ? "none" : mods;
   }

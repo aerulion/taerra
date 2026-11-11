@@ -26,11 +26,10 @@ class PyramidDepthsTest {
         tiles.add(tile);
       }
     }
-    return new PyramidDepths(
-        level ->
-            tiles.stream()
-                .filter(tile -> tile.zoom() == level.zoom() && tile.view() == level.view())
-                .toList());
+    return new PyramidDepths(level ->
+        tiles.stream()
+            .filter(tile -> tile.zoom() == level.zoom() && tile.view() == level.view())
+            .toList());
   }
 
   @Test

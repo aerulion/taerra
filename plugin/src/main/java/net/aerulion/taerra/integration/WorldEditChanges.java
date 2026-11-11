@@ -97,20 +97,19 @@ public final class WorldEditChanges {
       taken = new HashMap<>(this.columns);
       this.columns.clear();
     }
-    taken.forEach(
-        (world, spans) -> {
-          final @NotNull List<Block> blocks = new ArrayList<>(spans.size() * 2);
-          for (final Long2LongMap.@NotNull Entry entry : spans.long2LongEntrySet()) {
-            final int x = ChunkCoordinate.keyX(entry.getLongKey());
-            final int z = ChunkCoordinate.keyZ(entry.getLongKey());
-            final int lowest = (int) (entry.getLongValue() >> 32);
-            final int highest = (int) entry.getLongValue();
-            blocks.add(world.getBlockAt(x, highest, z));
-            if (lowest != highest) {
-              blocks.add(world.getBlockAt(x, lowest, z));
-            }
-          }
-          this.changes.blocksChanged(blocks);
-        });
+    taken.forEach((world, spans) -> {
+      final @NotNull List<Block> blocks = new ArrayList<>(spans.size() * 2);
+      for (final Long2LongMap.@NotNull Entry entry : spans.long2LongEntrySet()) {
+        final int x = ChunkCoordinate.keyX(entry.getLongKey());
+        final int z = ChunkCoordinate.keyZ(entry.getLongKey());
+        final int lowest = (int) (entry.getLongValue() >> 32);
+        final int highest = (int) entry.getLongValue();
+        blocks.add(world.getBlockAt(x, highest, z));
+        if (lowest != highest) {
+          blocks.add(world.getBlockAt(x, lowest, z));
+        }
+      }
+      this.changes.blocksChanged(blocks);
+    });
   }
 }
