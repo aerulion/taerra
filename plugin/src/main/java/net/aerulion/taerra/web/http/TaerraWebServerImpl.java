@@ -138,25 +138,23 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
     Thread.currentThread().setContextClassLoader(this.plugin.getClass().getClassLoader());
     try {
       final @NotNull Javalin app =
-          Javalin.create(
-              config -> {
-                config.jetty.modifyServletContextHandler(
-                    handler -> {
-                      handler.setClassLoader(this.plugin.getClass().getClassLoader());
-                      handler.addFilter(
-                          new StaticFileFilter(this.plugin.getClass().getClassLoader()),
-                          "/*",
-                          EnumSet.of(DispatcherType.REQUEST));
-                    });
-                config.jetty.modifyWebSocketServletFactory(
-                    factory -> factory.setMaxOutgoingFrames(MAX_QUEUED_FRAMES));
-                config.bundledPlugins.enableCors(
-                    cors -> cors.addRule(CorsPluginConfig.CorsRule::anyHost));
+          Javalin.create(config -> {
+            config.jetty.modifyServletContextHandler(handler -> {
+              handler.setClassLoader(this.plugin.getClass().getClassLoader());
+              handler.addFilter(
+                  new StaticFileFilter(this.plugin.getClass().getClassLoader()),
+                  "/*",
+                  EnumSet.of(DispatcherType.REQUEST));
+            });
+            config.jetty.modifyWebSocketServletFactory(
+                factory -> factory.setMaxOutgoingFrames(MAX_QUEUED_FRAMES));
+            config.bundledPlugins.enableCors(
+                cors -> cors.addRule(CorsPluginConfig.CorsRule::anyHost));
 
-                config.routes.before("/api/*", Requests::rejectCrossSite);
-                this.routes.forEach(group -> group.register(config.routes));
-                config.routes.ws("/ws", this.wsHandler::configure);
-              });
+            config.routes.before("/api/*", Requests::rejectCrossSite);
+            this.routes.forEach(group -> group.register(config.routes));
+            config.routes.ws("/ws", this.wsHandler::configure);
+          });
 
       this.app = app;
       if (this.web.nameRejected()) {
@@ -259,18 +257,15 @@ public final class TaerraWebServerImpl implements TaerraWebServer {
   private void publishMarkerChanges() {
     this.markers
         .drainChangedLayers()
-        .forEach(
-            (world, layers) -> {
-              final @NotNull String message =
-                  MapWebSocketHandlerImpl.markersMessage(world.asString());
-              this.wsHandler.broadcastToWorld(
-                  world.asString(),
-                  viewer ->
-                      layers.stream()
-                              .anyMatch(layer -> viewer.canSeeLayer(this.taerraConfig, layer))
-                          ? message
-                          : null);
-            });
+        .forEach((world, layers) -> {
+          final @NotNull String message = MapWebSocketHandlerImpl.markersMessage(world.asString());
+          this.wsHandler.broadcastToWorld(
+              world.asString(),
+              viewer ->
+                  layers.stream().anyMatch(layer -> viewer.canSeeLayer(this.taerraConfig, layer))
+                      ? message
+                      : null);
+        });
     this.markers.drainChangedPlayers().forEach(this.wsHandler::refreshMarkers);
   }
 }

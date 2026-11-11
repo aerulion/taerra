@@ -94,12 +94,11 @@ public final class SkyList {
 
   public @NotNull String visibleTo(final @NotNull Viewer viewer) {
     final @NotNull StringJoiner skies = new StringJoiner(",", "{", "}");
-    this.published.forEach(
-        (world, entry) -> {
-          if (viewer.canSee(this.taerraConfig, world)) {
-            skies.add(entry);
-          }
-        });
+    this.published.forEach((world, entry) -> {
+      if (viewer.canSee(this.taerraConfig, world)) {
+        skies.add(entry);
+      }
+    });
     return skies.toString();
   }
 

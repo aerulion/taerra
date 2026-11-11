@@ -77,23 +77,21 @@ public final class WebClientImpl implements WebClient {
   public <T> void json(
       final String path, final @NotNull Type type, final @NotNull Consumer<@Nullable T> then) {
     get(path, null)
-        .thenAccept(
-            response -> {
-              if (response.statusCode() != 200 && response.statusCode() != 204) {
-                LOGGER.warn("TAERRA: {} answered {}", path, response.statusCode());
-                return;
-              }
-              final T value =
-                  response.statusCode() == 204
-                      ? null
-                      : GSON.fromJson(new String(response.body(), StandardCharsets.UTF_8), type);
-              execute(() -> then.accept(value));
-            })
-        .exceptionally(
-            error -> {
-              LOGGER.warn("TAERRA: {} failed: {}", path, error.toString());
-              return null;
-            });
+        .thenAccept(response -> {
+          if (response.statusCode() != 200 && response.statusCode() != 204) {
+            LOGGER.warn("TAERRA: {} answered {}", path, response.statusCode());
+            return;
+          }
+          final T value =
+              response.statusCode() == 204
+                  ? null
+                  : GSON.fromJson(new String(response.body(), StandardCharsets.UTF_8), type);
+          execute(() -> then.accept(value));
+        })
+        .exceptionally(error -> {
+          LOGGER.warn("TAERRA: {} failed: {}", path, error.toString());
+          return null;
+        });
   }
 
   @Override
@@ -134,13 +132,12 @@ public final class WebClientImpl implements WebClient {
             .build();
     this.http
         .sendAsync(request, BODY)
-        .handle(
-            (response, error) ->
-                error == null
-                    ? new Object[] {
-                      response.statusCode(), new String(response.body(), StandardCharsets.UTF_8)
-                    }
-                    : new Object[] {0, null})
+        .handle((response, error) ->
+            error == null
+                ? new Object[] {
+                  response.statusCode(), new String(response.body(), StandardCharsets.UTF_8)
+                }
+                : new Object[] {0, null})
         .thenAccept(result -> execute(() -> then.accept((Integer) result[0], (String) result[1])));
   }
 
@@ -157,12 +154,11 @@ public final class WebClientImpl implements WebClient {
   @Override
   public void execute(final @NotNull Runnable task) {
     Minecraft.getInstance()
-        .execute(
-            () -> {
-              if (!this.closed) {
-                task.run();
-              }
-            });
+        .execute(() -> {
+          if (!this.closed) {
+            task.run();
+          }
+        });
   }
 
   @Override

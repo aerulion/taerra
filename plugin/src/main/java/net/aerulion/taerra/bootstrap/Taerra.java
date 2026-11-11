@@ -247,24 +247,22 @@ public final class Taerra extends JavaPlugin {
           new MapWebSocketHandlerImpl(this, configuration, webSessions, webSettings);
       webSessions.onChange(webSocketHandler::revalidate);
       webSessions.onDevices(uuid -> webSocketHandler.sendTo(uuid, SocketMessage.DEVICES.json()));
-      webSessions.onLogin(
-          (session, game) ->
-              Events.fire(
-                  this,
-                  new WebLoginEvent(
-                      getServer().getOfflinePlayer(session.uuid()),
-                      game,
-                      session.device() == null ? null : session.device().browser(),
-                      session.device() == null ? null : session.device().os())));
-      webSessions.onLogout(
-          (session, game) ->
-              Events.fire(
-                  this,
-                  new WebLogoutEvent(
-                      getServer().getOfflinePlayer(session.uuid()),
-                      game,
-                      session.device() == null ? null : session.device().browser(),
-                      session.device() == null ? null : session.device().os())));
+      webSessions.onLogin((session, game) ->
+          Events.fire(
+              this,
+              new WebLoginEvent(
+                  getServer().getOfflinePlayer(session.uuid()),
+                  game,
+                  session.device() == null ? null : session.device().browser(),
+                  session.device() == null ? null : session.device().os())));
+      webSessions.onLogout((session, game) ->
+          Events.fire(
+              this,
+              new WebLogoutEvent(
+                  getServer().getOfflinePlayer(session.uuid()),
+                  game,
+                  session.device() == null ? null : session.device().browser(),
+                  session.device() == null ? null : session.device().os())));
       WebGrants.start(this, configuration, webSessions);
       if (getServer().getPluginManager().isPluginEnabled("LuckPerms")) {
         LuckPermsGrants.start(this, configuration, webSessions);
@@ -369,13 +367,11 @@ public final class Taerra extends JavaPlugin {
               renders,
               () -> webSocketHandler.broadcast(SocketMessage.REGIONS.json()));
       final @NotNull Preferences preferences = new Preferences(playerFiles);
-      preferences.onNavigation(
-          (player, target) ->
-              webSocketHandler.sendTo(player, SocketMessage.NAVIGATION.json("target", target)));
-      preferences.onWaypointColor(
-          (player, rgb) ->
-              webSocketHandler.sendTo(
-                  player, SocketMessage.WAYPOINT_COLOR.json("color", HexColors.format(rgb))));
+      preferences.onNavigation((player, target) ->
+          webSocketHandler.sendTo(player, SocketMessage.NAVIGATION.json("target", target)));
+      preferences.onWaypointColor((player, rgb) ->
+          webSocketHandler.sendTo(
+              player, SocketMessage.WAYPOINT_COLOR.json("color", HexColors.format(rgb))));
       final @NotNull TaerraWebServer webServer =
           new TaerraWebServerImpl(
               this,

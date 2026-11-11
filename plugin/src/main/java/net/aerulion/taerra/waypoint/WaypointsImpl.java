@@ -358,9 +358,8 @@ public final class WaypointsImpl implements Waypoints {
 
   private @NotNull List<MarkerLayer> layers() {
     return this.registry.layers().stream()
-        .filter(
-            waypointLayer ->
-                waypointLayer.id().equals(LAYER) || waypointLayer.id().startsWith(GROUP_LAYER))
+        .filter(waypointLayer ->
+            waypointLayer.id().equals(LAYER) || waypointLayer.id().startsWith(GROUP_LAYER))
         .toList();
   }
 

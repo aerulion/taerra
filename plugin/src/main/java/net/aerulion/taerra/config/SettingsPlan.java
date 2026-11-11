@@ -51,13 +51,12 @@ final class SettingsPlan {
       next.put(change.getKey(), value);
     }
     final @NotNull List<ConfigEditor.Conflict> conflicts = new ArrayList<>();
-    next.forEach(
-        (field, value) -> {
-          if (!Objects.equals(current.get(field), value) && revisions.changedSince(field, base)) {
-            conflicts.add(
-                new ConfigEditor.Conflict(field, current.get(field), revisions.author(field)));
-          }
-        });
+    next.forEach((field, value) -> {
+      if (!Objects.equals(current.get(field), value) && revisions.changedSince(field, base)) {
+        conflicts.add(
+            new ConfigEditor.Conflict(field, current.get(field), revisions.author(field)));
+      }
+    });
     if (!conflicts.isEmpty()) {
       return new Conflicted(List.copyOf(conflicts));
     }
@@ -73,13 +72,12 @@ final class SettingsPlan {
             .toList();
     final @NotNull List<String> renderFields = new ArrayList<>(limitFields);
     viewFields.stream()
-        .filter(
-            field ->
-                enabled(next, worldOf(field), server)
-                    && !server
-                        .views(worldOf(field))
-                        .views()
-                        .containsAll(views(next.get(field)).views()))
+        .filter(field ->
+            enabled(next, worldOf(field), server)
+                && !server
+                    .views(worldOf(field))
+                    .views()
+                    .containsAll(views(next.get(field)).views()))
         .forEach(renderFields::add);
     if (renderFields.size() > 1) {
       return new Invalid(renderFields.get(1));

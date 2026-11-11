@@ -97,19 +97,18 @@ public final class MapRegions {
     final @NotNull Map<String, LongSet> hidden = legacy(yaml, "hidden");
     final @NotNull Map<String, LongSet> veils = legacy(yaml, "teased");
     final @NotNull List<MapRegion> migrated = new ArrayList<>();
-    hidden.forEach(
-        (world, chunks) -> {
-          final @NotNull LongSet veiled = new LongOpenHashSet(chunks);
-          veiled.retainAll(veils.getOrDefault(world, new LongOpenHashSet()));
-          final @NotNull LongSet blocked = new LongOpenHashSet(chunks);
-          blocked.removeAll(veiled);
-          for (final @NotNull Set<Long> area : RegionShapes.areas(blocked)) {
-            migrated.add(migrated(migrated.size(), world, RegionFog.HIDE, area));
-          }
-          for (final @NotNull Set<Long> area : RegionShapes.areas(veiled)) {
-            migrated.add(migrated(migrated.size(), world, RegionFog.VEIL, area));
-          }
-        });
+    hidden.forEach((world, chunks) -> {
+      final @NotNull LongSet veiled = new LongOpenHashSet(chunks);
+      veiled.retainAll(veils.getOrDefault(world, new LongOpenHashSet()));
+      final @NotNull LongSet blocked = new LongOpenHashSet(chunks);
+      blocked.removeAll(veiled);
+      for (final @NotNull Set<Long> area : RegionShapes.areas(blocked)) {
+        migrated.add(migrated(migrated.size(), world, RegionFog.HIDE, area));
+      }
+      for (final @NotNull Set<Long> area : RegionShapes.areas(veiled)) {
+        migrated.add(migrated(migrated.size(), world, RegionFog.VEIL, area));
+      }
+    });
     if (!migrated.isEmpty()) {
       this.plugin
           .getLogger()
@@ -274,29 +273,28 @@ public final class MapRegions {
     final @NotNull List<Map<String, Object>> entries = new ArrayList<>();
     this.snapshot.byId().values().stream()
         .sorted(Comparator.comparing(MapRegion::world).thenComparing(MapRegion::id))
-        .forEach(
-            region -> {
-              final @NotNull Map<String, Object> entry = new LinkedHashMap<>();
-              entry.put("id", region.id().toString());
-              entry.put("world", region.world());
-              entry.put("name", region.name());
-              entry.put("color", HexColors.format(region.color()));
-              entry.put("fog", region.fog().id());
-              entry.put("discoverable", region.discoverable());
-              if (region.reset() > 0L) {
-                entry.put("reset", region.reset());
-              }
-              entry.put(
-                  "chunks",
-                  region
-                      .chunks()
-                      .longStream()
-                      .sorted()
-                      .mapToObj(
-                          chunk -> ChunkCoordinate.keyX(chunk) + "," + ChunkCoordinate.keyZ(chunk))
-                      .toList());
-              entries.add(entry);
-            });
+        .forEach(region -> {
+          final @NotNull Map<String, Object> entry = new LinkedHashMap<>();
+          entry.put("id", region.id().toString());
+          entry.put("world", region.world());
+          entry.put("name", region.name());
+          entry.put("color", HexColors.format(region.color()));
+          entry.put("fog", region.fog().id());
+          entry.put("discoverable", region.discoverable());
+          if (region.reset() > 0L) {
+            entry.put("reset", region.reset());
+          }
+          entry.put(
+              "chunks",
+              region
+                  .chunks()
+                  .longStream()
+                  .sorted()
+                  .mapToObj(
+                      chunk -> ChunkCoordinate.keyX(chunk) + "," + ChunkCoordinate.keyZ(chunk))
+                  .toList());
+          entries.add(entry);
+        });
     final @NotNull YamlConfiguration yaml = new YamlConfiguration();
     yaml.set("regions", entries);
     try {
@@ -335,11 +333,10 @@ public final class MapRegions {
           world.put(chunk, region);
         }
       }
-      byWorld.replaceAll(
-          (world, list) ->
-              list.stream()
-                  .sorted(Comparator.comparing(MapRegion::name).thenComparing(MapRegion::id))
-                  .toList());
+      byWorld.replaceAll((world, list) ->
+          list.stream()
+              .sorted(Comparator.comparing(MapRegion::name).thenComparing(MapRegion::id))
+              .toList());
       return new Snapshot(
           Map.copyOf(byId),
           Map.copyOf(byWorld),

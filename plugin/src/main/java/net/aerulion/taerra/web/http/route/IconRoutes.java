@@ -90,13 +90,12 @@ public final class IconRoutes implements Routes {
     ctx.header("Cache-Control", "no-store")
         .json(
             this.icons.all().stream()
-                .map(
-                    icon ->
-                        json(
-                            icon,
-                            uses == null || icon.source() != MarkerIconsImpl.Source.UPLOAD
-                                ? null
-                                : uses.getOrDefault(icon.key(), 0)))
+                .map(icon ->
+                    json(
+                        icon,
+                        uses == null || icon.source() != MarkerIconsImpl.Source.UPLOAD
+                            ? null
+                            : uses.getOrDefault(icon.key(), 0)))
                 .toList());
   }
 

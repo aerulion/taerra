@@ -53,11 +53,10 @@ public final class WorldPicker {
     final @NotNull EditBox search = new EditBox(font, 0, 20, hint);
     search.setHint(hint);
     search.setValue(this.query);
-    search.setResponder(
-        value -> {
-          this.query = value;
-          refresh();
-        });
+    search.setResponder(value -> {
+      this.query = value;
+      refresh();
+    });
     search.visible = this.open;
     this.search = search;
     return search;

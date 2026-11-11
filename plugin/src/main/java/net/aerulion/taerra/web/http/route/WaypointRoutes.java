@@ -66,14 +66,12 @@ public final class WaypointRoutes implements Routes {
         && points.size() >= fewest
         && points.size() <= WaypointTransfer.MAX_SHAPE_POINTS
         && points.stream()
-            .allMatch(
-                point ->
-                    point != null
-                        && point.size() == 3
-                        && point.get(0) != null
-                        && point.get(2) != null
-                        && point.stream()
-                            .allMatch(value -> value == null || Double.isFinite(value)));
+            .allMatch(point ->
+                point != null
+                    && point.size() == 3
+                    && point.get(0) != null
+                    && point.get(2) != null
+                    && point.stream().allMatch(value -> value == null || Double.isFinite(value)));
   }
 
   private void handleWaypointGroupsRequest(final @NotNull Context ctx) {
@@ -86,15 +84,14 @@ public final class WaypointRoutes implements Routes {
         .json(
             this.waypoints.groups().stream()
                 .filter(group -> viewer.canSeeLayer(this.taerraConfig, group.id()))
-                .map(
-                    group ->
-                        Map.of(
-                            "id", group.id(),
-                            "label", group.label(),
-                            "private", this.taerraConfig.layerPrivate(group.id()),
-                            "icon",
-                                Objects.requireNonNullElse(
-                                    this.taerraConfig.layerIcon(group.id()), "")))
+                .map(group ->
+                    Map.of(
+                        "id", group.id(),
+                        "label", group.label(),
+                        "private", this.taerraConfig.layerPrivate(group.id()),
+                        "icon",
+                            Objects.requireNonNullElse(
+                                this.taerraConfig.layerIcon(group.id()), "")))
                 .toList());
   }
 
@@ -161,21 +158,19 @@ public final class WaypointRoutes implements Routes {
             previousPersonal,
             request.personal(),
             point ? icon : null);
-    ctx.future(
-        () ->
-            this.waypointEditor
-                .save(draft, author(viewer))
-                .thenAccept(
-                    saved ->
-                        ctx.status(
-                            switch (saved) {
-                              case SAVED -> 204;
-                              case INVALID -> 400;
-                              case FORBIDDEN -> 403;
-                              case TAKEN -> 409;
-                              case FULL -> 422;
-                              case FAILED -> 500;
-                            })));
+    ctx.future(() ->
+        this.waypointEditor
+            .save(draft, author(viewer))
+            .thenAccept(saved ->
+                ctx.status(
+                    switch (saved) {
+                      case SAVED -> 204;
+                      case INVALID -> 400;
+                      case FORBIDDEN -> 403;
+                      case TAKEN -> 409;
+                      case FULL -> 422;
+                      case FAILED -> 500;
+                    })));
   }
 
   private void handleWaypointDeleteRequest(final @NotNull Context ctx) {
@@ -186,11 +181,10 @@ public final class WaypointRoutes implements Routes {
       return;
     }
     final @NotNull String name = ctx.pathParam("name");
-    ctx.future(
-        () ->
-            this.waypointEditor
-                .delete(name, personal, author(viewer))
-                .thenAccept(deleted -> ctx.status(deleted ? 204 : 404)));
+    ctx.future(() ->
+        this.waypointEditor
+            .delete(name, personal, author(viewer))
+            .thenAccept(deleted -> ctx.status(deleted ? 204 : 404)));
   }
 
   private WaypointEditor.@NotNull Author author(final @NotNull Viewer viewer) {
@@ -237,11 +231,9 @@ public final class WaypointRoutes implements Routes {
             this.plugin,
             () ->
                 this.personalWaypoints.setHidden(viewer.uuid(), request.names(), request.hidden()));
-    ctx.future(
-        () ->
-            result.thenAccept(
-                changed ->
-                    ctx.header("Cache-Control", "no-store").json(Map.of("changed", changed))));
+    ctx.future(() ->
+        result.thenAccept(
+            changed -> ctx.header("Cache-Control", "no-store").json(Map.of("changed", changed))));
   }
 
   private void handlePersonalImportRequest(final @NotNull Context ctx) {
@@ -293,16 +285,14 @@ public final class WaypointRoutes implements Routes {
                       "full", imported.full(),
                       "invalid", invalid);
             });
-    ctx.future(
-        () ->
-            result.thenAccept(
-                counts -> {
-                  if (counts == null) {
-                    ctx.status(500).result("Failed to save");
-                  } else {
-                    ctx.header("Cache-Control", "no-store").json(counts);
-                  }
-                }));
+    ctx.future(() ->
+        result.thenAccept(counts -> {
+          if (counts == null) {
+            ctx.status(500).result("Failed to save");
+          } else {
+            ctx.header("Cache-Control", "no-store").json(counts);
+          }
+        }));
   }
 
   private record HiddenRequest(@Nullable List<String> names, boolean hidden) {}

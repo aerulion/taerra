@@ -518,16 +518,13 @@ class IsoTileRendererTest {
   @DisplayName("a floor under a roof reaching out toward the sun is in its shadow")
   void floorUnderWideRoofIsShadowed() {
     final @NotNull TestWorld roofed =
-        world(
-            (builder, dx, dz) -> {
-              if (dx >= -1 && dx <= 12 && dz >= -12 && dz <= 0) {
-                builder.addRun(GROUND_Y + 3, GROUND_Y + 3, BlockType.TORCH);
-              }
-              builder.addRun(
-                  GROUND_Y,
-                  MIN_WORLD_Y,
-                  dx == 0 && dz == 0 ? BlockType.OAK_PLANKS : BlockType.STONE);
-            });
+        world((builder, dx, dz) -> {
+          if (dx >= -1 && dx <= 12 && dz >= -12 && dz <= 0) {
+            builder.addRun(GROUND_Y + 3, GROUND_Y + 3, BlockType.TORCH);
+          }
+          builder.addRun(
+              GROUND_Y, MIN_WORLD_Y, dx == 0 && dz == 0 ? BlockType.OAK_PLANKS : BlockType.STONE);
+        });
 
     final int[] pixels = renderWithShadows(roofed, GROUND_Y + 1);
     assertTrue(
@@ -540,16 +537,13 @@ class IsoTileRendererTest {
       "a floor under a single block of overhang still catches the sun slanting in from the side")
   void floorUnderSmallOverhangIsLit() {
     final @NotNull TestWorld world =
-        world(
-            (builder, dx, dz) -> {
-              if (dx == 0 && dz == 0) {
-                builder.addRun(GROUND_Y + 3, GROUND_Y + 3, BlockType.TORCH);
-              }
-              builder.addRun(
-                  GROUND_Y,
-                  MIN_WORLD_Y,
-                  dx == 0 && dz == 0 ? BlockType.OAK_PLANKS : BlockType.STONE);
-            });
+        world((builder, dx, dz) -> {
+          if (dx == 0 && dz == 0) {
+            builder.addRun(GROUND_Y + 3, GROUND_Y + 3, BlockType.TORCH);
+          }
+          builder.addRun(
+              GROUND_Y, MIN_WORLD_Y, dx == 0 && dz == 0 ? BlockType.OAK_PLANKS : BlockType.STONE);
+        });
 
     final int[] pixels = renderWithShadows(world, GROUND_Y + 1);
     assertTrue(
@@ -562,15 +556,14 @@ class IsoTileRendererTest {
   @DisplayName("a wall is shadowed block by block, only as far up as the caster reaches")
   void wallIsShadowedPerBlock() {
     final @NotNull TestWorld world =
-        world(
-            (builder, dx, dz) -> {
-              if (dx == 0 && dz == 0) {
-                builder.addRun(GROUND_Y + 16, GROUND_Y + 1, BlockType.OAK_PLANKS);
-              } else if ((dz == -4 || dz == -5) && dx >= -5 && dx <= 15) {
-                builder.addRun(GROUND_Y + 6, GROUND_Y + 1, BlockType.STONE);
-              }
-              builder.addRun(GROUND_Y, MIN_WORLD_Y, BlockType.STONE);
-            });
+        world((builder, dx, dz) -> {
+          if (dx == 0 && dz == 0) {
+            builder.addRun(GROUND_Y + 16, GROUND_Y + 1, BlockType.OAK_PLANKS);
+          } else if ((dz == -4 || dz == -5) && dx >= -5 && dx <= 15) {
+            builder.addRun(GROUND_Y + 6, GROUND_Y + 1, BlockType.STONE);
+          }
+          builder.addRun(GROUND_Y, MIN_WORLD_Y, BlockType.STONE);
+        });
 
     final int[] pixels = renderWithShadows(world, GROUND_Y + 8);
     assertTrue(
@@ -588,21 +581,19 @@ class IsoTileRendererTest {
       "a wall in an inner corner loses the sky the other wall takes, an open wall does not")
   void innerCornerDarkensTheWall() {
     final @NotNull TestWorld corner =
-        world(
-            (builder, dx, dz) -> {
-              if ((dx == 0 && dz <= 0) || (dz == -1 && dx > 0 && dx <= 10)) {
-                builder.addRun(GROUND_Y + 20, GROUND_Y + 1, BlockType.OAK_PLANKS);
-              }
-              builder.addRun(GROUND_Y, MIN_WORLD_Y, BlockType.STONE);
-            });
+        world((builder, dx, dz) -> {
+          if ((dx == 0 && dz <= 0) || (dz == -1 && dx > 0 && dx <= 10)) {
+            builder.addRun(GROUND_Y + 20, GROUND_Y + 1, BlockType.OAK_PLANKS);
+          }
+          builder.addRun(GROUND_Y, MIN_WORLD_Y, BlockType.STONE);
+        });
     final @NotNull TestWorld open =
-        world(
-            (builder, dx, dz) -> {
-              if (dx == 0 && dz <= 0) {
-                builder.addRun(GROUND_Y + 20, GROUND_Y + 1, BlockType.OAK_PLANKS);
-              }
-              builder.addRun(GROUND_Y, MIN_WORLD_Y, BlockType.STONE);
-            });
+        world((builder, dx, dz) -> {
+          if (dx == 0 && dz <= 0) {
+            builder.addRun(GROUND_Y + 20, GROUND_Y + 1, BlockType.OAK_PLANKS);
+          }
+          builder.addRun(GROUND_Y, MIN_WORLD_Y, BlockType.STONE);
+        });
 
     final int cornered =
         Lighting.face(PLANK_SIDE, Lighting.POSITIVE_X, 3, false, Lighting.NO_CONTACT);

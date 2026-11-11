@@ -219,10 +219,8 @@ final class FileTileStore implements TileStore {
             count +=
                 paths
                     .map(path -> path.getFileName().toString())
-                    .filter(
-                        name ->
-                            name.endsWith(Kind.TILE.extension)
-                                || name.endsWith(Kind.PICK.extension))
+                    .filter(name ->
+                        name.endsWith(Kind.TILE.extension) || name.endsWith(Kind.PICK.extension))
                     .count();
           }
         }
@@ -267,18 +265,16 @@ final class FileTileStore implements TileStore {
     Thread.ofPlatform()
         .name("Taerra-Delete")
         .daemon()
-        .start(
-            () -> {
-              try (final @NotNull Stream<Path> paths = Files.walk(trash)) {
-                for (final @NotNull Path path :
-                    (Iterable<Path>) paths.sorted(Comparator.reverseOrder())::iterator) {
-                  Files.deleteIfExists(path);
-                }
-              } catch (final IOException e) {
-                this.logger.warning(
-                    "Failed to delete old tiles in " + trash + ": " + e.getMessage());
-              }
-            });
+        .start(() -> {
+          try (final @NotNull Stream<Path> paths = Files.walk(trash)) {
+            for (final @NotNull Path path :
+                (Iterable<Path>) paths.sorted(Comparator.reverseOrder())::iterator) {
+              Files.deleteIfExists(path);
+            }
+          } catch (final IOException e) {
+            this.logger.warning("Failed to delete old tiles in " + trash + ": " + e.getMessage());
+          }
+        });
   }
 
   @Override

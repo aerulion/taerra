@@ -22,9 +22,8 @@ public final class MarkerTexts {
           withMarkers(
               layer,
               layer.markers().stream()
-                  .map(
-                      marker ->
-                          with(marker, I18n.get("taerra.marker.worldborder"), details(marker)))
+                  .map(marker ->
+                      with(marker, I18n.get("taerra.marker.worldborder"), details(marker)))
                   .toList());
       case "spawn" ->
           withMarkers(
@@ -46,15 +45,14 @@ public final class MarkerTexts {
     return marker.details() == null
         ? null
         : marker.details().stream()
-            .map(
-                row ->
-                    row.size() < 2
-                        ? row
-                        : List.of(
-                            translatedOr("taerra.marker.detail." + row.get(0), row.get(0)),
-                            row.get(0).equals("shape")
-                                ? translatedOr("taerra.marker.shape." + row.get(1), row.get(1))
-                                : row.get(1)))
+            .map(row ->
+                row.size() < 2
+                    ? row
+                    : List.of(
+                        translatedOr("taerra.marker.detail." + row.get(0), row.get(0)),
+                        row.get(0).equals("shape")
+                            ? translatedOr("taerra.marker.shape." + row.get(1), row.get(1))
+                            : row.get(1)))
             .toList();
   }
 

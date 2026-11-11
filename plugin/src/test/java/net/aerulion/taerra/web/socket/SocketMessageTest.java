@@ -23,14 +23,13 @@ class SocketMessageTest {
     try (final Stream<Path> files = Files.walk(Path.of(folder))) {
       return files
           .filter(file -> file.toString().endsWith(suffix))
-          .map(
-              file -> {
-                try {
-                  return Files.readString(file);
-                } catch (final IOException e) {
-                  throw new IllegalStateException(e);
-                }
-              })
+          .map(file -> {
+            try {
+              return Files.readString(file);
+            } catch (final IOException e) {
+              throw new IllegalStateException(e);
+            }
+          })
           .collect(Collectors.joining("\n"));
     }
   }

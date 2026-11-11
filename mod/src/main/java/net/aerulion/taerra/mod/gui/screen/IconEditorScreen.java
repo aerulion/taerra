@@ -117,15 +117,14 @@ public final class IconEditorScreen extends Screen {
       name.setHint(Component.translatable("taerra.waypoint.name"));
       name.setValue(this.name);
       final @NotNull EditBox box = name;
-      name.setResponder(
-          value -> {
-            final @NotNull String clean = NOT_NAME.matcher(value).replaceAll("");
-            if (clean.equals(value)) {
-              this.name = value;
-            } else {
-              box.setValue(clean);
-            }
-          });
+      name.setResponder(value -> {
+        final @NotNull String clean = NOT_NAME.matcher(value).replaceAll("");
+        if (clean.equals(value)) {
+          this.name = value;
+        } else {
+          box.setValue(clean);
+        }
+      });
     }
     final @NotNull LinearLayout editor = contents.addChild(LinearLayout.horizontal().spacing(6));
     final @NotNull Grid grid = editor.addChild(new Grid());

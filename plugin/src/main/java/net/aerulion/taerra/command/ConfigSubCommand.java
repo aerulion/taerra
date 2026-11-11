@@ -141,14 +141,13 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                 Commands.literal("layer")
                     .then(
                         Commands.argument("layer", StringArgumentType.string())
-                            .suggests(
-                                (context, suggestions) -> {
-                                  this.markers.layers().stream()
-                                      .map(MarkerLayer::id)
-                                      .filter(id -> id.startsWith(suggestions.getRemaining()))
-                                      .forEach(suggestions::suggest);
-                                  return suggestions.buildFuture();
-                                })
+                            .suggests((context, suggestions) -> {
+                              this.markers.layers().stream()
+                                  .map(MarkerLayer::id)
+                                  .filter(id -> id.startsWith(suggestions.getRemaining()))
+                                  .forEach(suggestions::suggest);
+                              return suggestions.buildFuture();
+                            })
                             .then(
                                 Commands.literal("private")
                                     .executes(context -> setLayerPrivate(context, true)))
@@ -162,35 +161,30 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                                             .executes(context -> setLayerIcon(context, "")))
                                     .then(
                                         Commands.argument("icon", ArgumentTypes.key())
-                                            .suggests(
-                                                (context, suggestions) -> {
-                                                  for (final MarkerIconsImpl.@NotNull Icon icon :
-                                                      this.icons.all()) {
-                                                    final @NotNull String key =
-                                                        icon.key().asString();
-                                                    if (!key.startsWith(
-                                                        suggestions.getRemaining())) {
-                                                      continue;
-                                                    }
-                                                    if (icon.label() == null) {
-                                                      suggestions.suggest(key);
-                                                    } else {
-                                                      suggestions.suggest(
-                                                          key,
-                                                          MessageComponentSerializer.message()
-                                                              .serialize(
-                                                                  Component.text(icon.label())));
-                                                    }
-                                                  }
-                                                  return suggestions.buildFuture();
-                                                })
-                                            .executes(
-                                                context ->
-                                                    setLayerIcon(
-                                                        context,
-                                                        context
-                                                            .getArgument("icon", Key.class)
-                                                            .asString()))))
+                                            .suggests((context, suggestions) -> {
+                                              for (final MarkerIconsImpl.@NotNull Icon icon :
+                                                  this.icons.all()) {
+                                                final @NotNull String key = icon.key().asString();
+                                                if (!key.startsWith(suggestions.getRemaining())) {
+                                                  continue;
+                                                }
+                                                if (icon.label() == null) {
+                                                  suggestions.suggest(key);
+                                                } else {
+                                                  suggestions.suggest(
+                                                      key,
+                                                      MessageComponentSerializer.message()
+                                                          .serialize(Component.text(icon.label())));
+                                                }
+                                              }
+                                              return suggestions.buildFuture();
+                                            })
+                                            .executes(context ->
+                                                setLayerIcon(
+                                                    context,
+                                                    context
+                                                        .getArgument("icon", Key.class)
+                                                        .asString()))))
                             .then(
                                 Commands.literal("scale")
                                     .then(
@@ -198,46 +192,41 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                                             .executes(context -> setLayerScale(context, "")))
                                     .then(
                                         Commands.argument("scale", StringArgumentType.word())
-                                            .suggests(
-                                                (context, suggestions) -> {
-                                                  for (int scale = LayerScale.MIN;
-                                                      scale <= LayerScale.MAX;
-                                                      scale++) {
-                                                    final @NotNull String text =
-                                                        LayerScale.format(scale);
-                                                    if (text.startsWith(
-                                                        suggestions.getRemaining())) {
-                                                      suggestions.suggest(text);
-                                                    }
-                                                  }
-                                                  return suggestions.buildFuture();
-                                                })
-                                            .executes(
-                                                context ->
-                                                    setLayerScale(
-                                                        context,
-                                                        StringArgumentType.getString(
-                                                            context, "scale")))))));
-    ConfigEditor.SETTINGS.forEach(
-        setting ->
-            builder.then(
-                Commands.literal(setting.key())
-                    .executes(context -> show(context, setting.key()))
-                    .then(
-                        Commands.argument("value", type(setting))
-                            .suggests(
-                                setting.options().isEmpty()
-                                    ? null
-                                    : (context, suggestions) -> {
-                                      setting.options().forEach(suggestions::suggest);
-                                      return suggestions.buildFuture();
-                                    })
-                            .executes(
-                                context ->
-                                    set(
-                                        context,
-                                        setting.key(),
-                                        context.getArgument("value", Object.class))))));
+                                            .suggests((context, suggestions) -> {
+                                              for (int scale = LayerScale.MIN;
+                                                  scale <= LayerScale.MAX;
+                                                  scale++) {
+                                                final @NotNull String text =
+                                                    LayerScale.format(scale);
+                                                if (text.startsWith(suggestions.getRemaining())) {
+                                                  suggestions.suggest(text);
+                                                }
+                                              }
+                                              return suggestions.buildFuture();
+                                            })
+                                            .executes(context ->
+                                                setLayerScale(
+                                                    context,
+                                                    StringArgumentType.getString(
+                                                        context, "scale")))))));
+    ConfigEditor.SETTINGS.forEach(setting ->
+        builder.then(
+            Commands.literal(setting.key())
+                .executes(context -> show(context, setting.key()))
+                .then(
+                    Commands.argument("value", type(setting))
+                        .suggests(
+                            setting.options().isEmpty()
+                                ? null
+                                : (context, suggestions) -> {
+                                  setting.options().forEach(suggestions::suggest);
+                                  return suggestions.buildFuture();
+                                })
+                        .executes(context ->
+                            set(
+                                context,
+                                setting.key(),
+                                context.getArgument("value", Object.class))))));
     return builder;
   }
 
@@ -257,19 +246,17 @@ public final class ConfigSubCommand implements TaerraSubCommand {
     lines.add(listRow("config.private_layers", this.config.privateLayers()));
     ConfigEditor.SETTINGS.stream()
         .map(Setting::key)
-        .forEach(
-            key ->
-                lines.add(
-                    Component.text()
-                        .append(Component.text("  "))
-                        .append(
-                            Component.text(key, Messages.MUTED)
-                                .hoverEvent(Messages.tr("click.suggest").color(Messages.TEXT))
-                                .clickEvent(
-                                    ClickEvent.suggestCommand("/taerra config " + key + " ")))
-                        .append(Component.text("  "))
-                        .append(Messages.value(String.valueOf(this.editor.get(key))))
-                        .build()));
+        .forEach(key ->
+            lines.add(
+                Component.text()
+                    .append(Component.text("  "))
+                    .append(
+                        Component.text(key, Messages.MUTED)
+                            .hoverEvent(Messages.tr("click.suggest").color(Messages.TEXT))
+                            .clickEvent(ClickEvent.suggestCommand("/taerra config " + key + " ")))
+                    .append(Component.text("  "))
+                    .append(Messages.value(String.valueOf(this.editor.get(key))))
+                    .build()));
     feedback(context, Messages.lines(lines));
     return SUCCESS;
   }
@@ -313,29 +300,28 @@ public final class ConfigSubCommand implements TaerraSubCommand {
     final @NotNull StorageSettings before = this.editor.storage();
     this.editor
         .setStorage(key, given, who(context))
-        .thenAccept(
-            outcome ->
-                feedback(
-                    context,
-                    switch (outcome) {
-                      case ConfigEditor.Applied _ ->
-                          this.editor.storage().equals(before)
-                              ? Messages.success(
-                                  "config.set",
-                                  Messages.value(key),
-                                  Messages.value(this.editor.get(key)))
-                              : Messages.success(
-                                  "config.set_storage",
-                                  Messages.value(key),
-                                  Messages.value(this.editor.get(key)),
-                                  Messages.value(this.editor.storage().toString()));
-                      case ConfigEditor.Unreachable(final String _, final String reason) ->
-                          Messages.error("config.storage_failed", Messages.value(reason));
-                      case ConfigEditor.Invalid _ ->
-                          Messages.error("config.storage_invalid", Messages.value(key));
-                      case ConfigEditor.Busy _, ConfigEditor.Conflicted _ ->
-                          Messages.error("config.storage_busy");
-                    }));
+        .thenAccept(outcome ->
+            feedback(
+                context,
+                switch (outcome) {
+                  case ConfigEditor.Applied _ ->
+                      this.editor.storage().equals(before)
+                          ? Messages.success(
+                              "config.set",
+                              Messages.value(key),
+                              Messages.value(this.editor.get(key)))
+                          : Messages.success(
+                              "config.set_storage",
+                              Messages.value(key),
+                              Messages.value(this.editor.get(key)),
+                              Messages.value(this.editor.storage().toString()));
+                  case ConfigEditor.Unreachable(final String _, final String reason) ->
+                      Messages.error("config.storage_failed", Messages.value(reason));
+                  case ConfigEditor.Invalid _ ->
+                      Messages.error("config.storage_invalid", Messages.value(key));
+                  case ConfigEditor.Busy _, ConfigEditor.Conflicted _ ->
+                      Messages.error("config.storage_busy");
+                }));
     return SUCCESS;
   }
 

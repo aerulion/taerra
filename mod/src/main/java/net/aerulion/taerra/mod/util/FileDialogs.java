@@ -57,25 +57,23 @@ public final class FileDialogs {
     filters.get(0).name(name).pattern(pattern);
     final SDL_DialogFileCallback[] callback = new SDL_DialogFileCallback[1];
     callback[0] =
-        SDL_DialogFileCallback.create(
-            (userdata, files, filter) -> {
-              final @NotNull List<Path> chosen = new ArrayList<>();
-              for (long at = files;
-                  files != MemoryUtil.NULL && MemoryUtil.memGetAddress(at) != MemoryUtil.NULL;
-                  at += Pointer.POINTER_SIZE) {
-                chosen.add(Path.of(MemoryUtil.memUTF8(MemoryUtil.memGetAddress(at))));
-              }
-              Minecraft.getInstance()
-                  .execute(
-                      () -> {
-                        MemoryUtil.memFree(name);
-                        MemoryUtil.memFree(pattern);
-                        MemoryUtil.memFree(where);
-                        filters.free();
-                        callback[0].free();
-                        then.accept(chosen);
-                      });
-            });
+        SDL_DialogFileCallback.create((userdata, files, filter) -> {
+          final @NotNull List<Path> chosen = new ArrayList<>();
+          for (long at = files;
+              files != MemoryUtil.NULL && MemoryUtil.memGetAddress(at) != MemoryUtil.NULL;
+              at += Pointer.POINTER_SIZE) {
+            chosen.add(Path.of(MemoryUtil.memUTF8(MemoryUtil.memGetAddress(at))));
+          }
+          Minecraft.getInstance()
+              .execute(() -> {
+                MemoryUtil.memFree(name);
+                MemoryUtil.memFree(pattern);
+                MemoryUtil.memFree(where);
+                filters.free();
+                callback[0].free();
+                then.accept(chosen);
+              });
+        });
     final long window = Minecraft.getInstance().getWindow().handle();
     if (save) {
       SDLDialog.SDL_ShowSaveFileDialog(callback[0], MemoryUtil.NULL, window, filters, where);

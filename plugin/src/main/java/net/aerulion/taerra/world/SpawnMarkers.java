@@ -38,18 +38,16 @@ public final class SpawnMarkers {
   private static @NotNull List<Marker> spawns(final @NotNull TaerraConfig config) {
     return Bukkit.getWorlds().stream()
         .filter(world -> config.worldEnabled(WorldKeys.id(world)))
-        .map(
-            world -> {
-              final @NotNull Location spawn = world.getSpawnLocation();
-              return (Marker)
-                  Marker.point(
-                          WorldKeys.id(world),
-                          world.getKey(),
-                          new Vector(
-                              spawn.getBlockX() + .5, spawn.getBlockY(), spawn.getBlockZ() + .5),
-                          "Spawn")
-                      .withColor(COLOR);
-            })
+        .map(world -> {
+          final @NotNull Location spawn = world.getSpawnLocation();
+          return (Marker)
+              Marker.point(
+                      WorldKeys.id(world),
+                      world.getKey(),
+                      new Vector(spawn.getBlockX() + .5, spawn.getBlockY(), spawn.getBlockZ() + .5),
+                      "Spawn")
+                  .withColor(COLOR);
+        })
         .toList();
   }
 }

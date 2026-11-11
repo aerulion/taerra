@@ -53,11 +53,10 @@ public final class WorldList extends PanelList<WorldList.Row> {
       }
     }
     final @NotNull List<Row> rows = new ArrayList<>();
-    groups.forEach(
-        (environment, members) -> {
-          rows.add(new Heading(members.getFirst().environmentName()));
-          members.forEach(world -> rows.add(new Item(world)));
-        });
+    groups.forEach((environment, members) -> {
+      rows.add(new Heading(members.getFirst().environmentName()));
+      members.forEach(world -> rows.add(new Item(world)));
+    });
     replaceEntries(rows);
     final @Nullable Row shown =
         rows.stream()
@@ -83,13 +82,12 @@ public final class WorldList extends PanelList<WorldList.Row> {
 
   public int preferredWidth(final @NotNull Font font) {
     return children().stream()
-            .mapToInt(
-                row ->
-                    font.width(row.label())
-                        + (row instanceof final @NotNull Item item
-                                && this.skies.apply(item.world.name()) != null
-                            ? SKY_WIDTH
-                            : 0))
+            .mapToInt(row ->
+                font.width(row.label())
+                    + (row instanceof final @NotNull Item item
+                            && this.skies.apply(item.world.name()) != null
+                        ? SKY_WIDTH
+                        : 0))
             .max()
             .orElse(0)
         + 28;

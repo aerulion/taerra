@@ -173,14 +173,13 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
     this.startTimeMillis = System.currentTimeMillis();
     this.config
         .worldViews()
-        .forEach(
-            (world, views) -> {
-              for (final @NotNull MapView view : MapView.values()) {
-                if (!views.shows(view)) {
-                  dropView(world, view);
-                }
-              }
-            });
+        .forEach((world, views) -> {
+          for (final @NotNull MapView view : MapView.values()) {
+            if (!views.shows(view)) {
+              dropView(world, view);
+            }
+          }
+        });
 
     this.scheduler.scheduleWithFixedDelay(
         this::dispatchSafely, 0L, DISPATCH_INTERVAL_MS, TimeUnit.MILLISECONDS);

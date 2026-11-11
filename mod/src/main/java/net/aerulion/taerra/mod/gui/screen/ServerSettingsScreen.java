@@ -220,15 +220,14 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       final @NotNull EditBox box,
       final @NotNull Pattern drop,
       final @NotNull Consumer<String> then) {
-    box.setResponder(
-        value -> {
-          final @NotNull String clean = drop.matcher(value).replaceAll("");
-          if (clean.equals(value)) {
-            then.accept(value);
-          } else {
-            box.setValue(clean);
-          }
-        });
+    box.setResponder(value -> {
+      final @NotNull String clean = drop.matcher(value).replaceAll("");
+      if (clean.equals(value)) {
+        then.accept(value);
+      } else {
+        box.setValue(clean);
+      }
+    });
   }
 
   private static @Nullable Integer coordinate(final @NotNull String text) {
@@ -499,17 +498,16 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
       return;
     }
     this.refreshing = true;
-    this.map.settings(
-        next -> {
-          this.refreshing = false;
-          if (next != null && this.draft.view() != null) {
-            rebase(next);
-          }
-          if (this.refreshAgain) {
-            this.refreshAgain = false;
-            refresh();
-          }
-        });
+    this.map.settings(next -> {
+      this.refreshing = false;
+      if (next != null && this.draft.view() != null) {
+        rebase(next);
+      }
+      if (this.refreshAgain) {
+        this.refreshAgain = false;
+        refresh();
+      }
+    });
   }
 
   private void rebase(final @NotNull ServerSettings next) {
@@ -520,15 +518,14 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     refill();
     if (!changed.isEmpty()) {
       final @NotNull Set<String> names = new LinkedHashSet<>();
-      changed.forEach(
-          field -> {
-            final ServerSettings.@Nullable Author author =
-                next.authors() == null ? null : next.authors().get(field);
-            final @Nullable String name = author == null ? null : author.name();
-            if (name != null) {
-              names.add(name);
-            }
-          });
+      changed.forEach(field -> {
+        final ServerSettings.@Nullable Author author =
+            next.authors() == null ? null : next.authors().get(field);
+        final @Nullable String name = author == null ? null : author.name();
+        if (name != null) {
+          names.add(name);
+        }
+      });
       final @NotNull Component who =
           names.size() == 1
               ? Component.literal(names.iterator().next())
@@ -706,11 +703,10 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
     final long renders =
         limits.size()
             + changes.keySet().stream()
-                .filter(
-                    field ->
-                        isViews(field)
-                            && on(this.draft.value(worldField(worldOf(field), "enabled")))
-                            && addsView(this.draft.saved(field), changes.get(field)))
+                .filter(field ->
+                    isViews(field)
+                        && on(this.draft.value(worldField(worldOf(field), "enabled")))
+                        && addsView(this.draft.saved(field), changes.get(field)))
                 .count();
     return renders > 1 ? Component.translatable("taerra.settings.limit_one") : null;
   }
@@ -772,9 +768,8 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
         changes.keySet().stream().anyMatch(SettingValues::isLimit)
             ? "taerra.settings.saved_limit"
             : changes.keySet().stream()
-                    .anyMatch(
-                        field ->
-                            isViews(field) && addsView(this.draft.saved(field), changes.get(field)))
+                    .anyMatch(field ->
+                        isViews(field) && addsView(this.draft.saved(field), changes.get(field)))
                 ? "taerra.settings.saved_views"
                 : changes.keySet().stream().anyMatch(SettingValues::isStorage)
                     ? "taerra.settings.saved_storage"
@@ -1020,11 +1015,10 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
         graphics.outline(left, top, right - left, bottom - top, GOLD);
       }
       if (fields().stream()
-          .anyMatch(
-              field ->
-                  !same(
-                      ServerSettingsScreen.this.draft.value(field),
-                      ServerSettingsScreen.this.draft.saved(field)))) {
+          .anyMatch(field ->
+              !same(
+                  ServerSettingsScreen.this.draft.value(field),
+                  ServerSettingsScreen.this.draft.saved(field)))) {
         graphics.fill(right - 2, top, right, bottom, ACCENT);
       }
       if (hovered) {
@@ -1281,13 +1275,12 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                   .withStyle(ChatFormatting.DARK_GRAY));
           box.addFormatter(
               (text, _) -> FormattedCharSequence.forward("*".repeat(text.length()), Style.EMPTY));
-          box.setResponder(
-              text ->
-                  set(
-                      this.field,
-                      text.isEmpty()
-                          ? Objects.requireNonNullElse(stored, new JsonPrimitive(""))
-                          : new JsonPrimitive(text)));
+          box.setResponder(text ->
+              set(
+                  this.field,
+                  text.isEmpty()
+                      ? Objects.requireNonNullElse(stored, new JsonPrimitive(""))
+                      : new JsonPrimitive(text)));
           ServerSettingsScreen.this.boxes.put(this.field, box);
           yield box;
         }
@@ -1498,12 +1491,11 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
                   Component.translatable("taerra.settings.players_public"),
                   on(ServerSettingsScreen.this.draft.value(playersField)))
               .displayOnlyValue()
-              .withTooltip(
-                  _ ->
-                      Tooltip.create(
-                          Component.translatable(
-                              "taerra.settings.players_hint",
-                              "taerra.players." + world.id().replace(':', '.'))))
+              .withTooltip(_ ->
+                  Tooltip.create(
+                      Component.translatable(
+                          "taerra.settings.players_hint",
+                          "taerra.players." + world.id().replace(':', '.'))))
               .create(
                   0,
                   0,

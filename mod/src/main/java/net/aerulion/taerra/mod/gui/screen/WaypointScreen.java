@@ -67,15 +67,14 @@ public final class WaypointScreen extends Screen {
   private boolean armed;
 
   private static void cleanName(final @NotNull EditBox box, final @NotNull Consumer<String> then) {
-    box.setResponder(
-        value -> {
-          final @NotNull String clean = NOT_NAME.matcher(value).replaceAll("");
-          if (clean.equals(value)) {
-            then.accept(value);
-          } else {
-            box.setValue(clean);
-          }
-        });
+    box.setResponder(value -> {
+      final @NotNull String clean = NOT_NAME.matcher(value).replaceAll("");
+      if (clean.equals(value)) {
+        then.accept(value);
+      } else {
+        box.setValue(clean);
+      }
+    });
   }
 
   public WaypointScreen(
@@ -107,11 +106,10 @@ public final class WaypointScreen extends Screen {
     this.icon = target.points() == null && target.icon() != null ? target.icon() : "";
     this.colors = new ColorField(WIDTH, this.color, value -> this.color = value);
     if (this.serverGroups) {
-      map.waypointGroups(
-          loaded -> {
-            this.groups = loaded;
-            rebuildWidgets();
-          });
+      map.waypointGroups(loaded -> {
+        this.groups = loaded;
+        rebuildWidgets();
+      });
     }
   }
 

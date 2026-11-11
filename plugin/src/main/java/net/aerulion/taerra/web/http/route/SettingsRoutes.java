@@ -88,35 +88,28 @@ public final class SettingsRoutes implements Routes {
     final WebSessions.@Nullable Session session = this.requests.session(ctx);
     final @NotNull String who =
         session != null ? session.name() : Objects.requireNonNull(viewer.uuid()).toString();
-    ctx.future(
-        () ->
-            this.editor
-                .apply(request.base(), request.changes(), who)
-                .thenAccept(
-                    outcome -> {
-                      switch (outcome) {
-                        case ConfigEditor.Applied(final ConfigEditor.View view) ->
-                            ctx.json(payload(view));
-                        case ConfigEditor.Conflicted(
-                                final var conflicts,
-                                final ConfigEditor.View view) -> {
-                          final @NotNull Map<String, Object> json = payload(view);
-                          json.put("conflicts", conflicts);
-                          ctx.status(409).json(json);
-                        }
-                        case ConfigEditor.Invalid(final String field) ->
-                            ctx.status(400).json(Map.of("invalid", field));
-                        case ConfigEditor.Unreachable(final String field, final String reason) ->
-                            ctx.status(400).json(Map.of("invalid", field, "unreachable", reason));
-                        case ConfigEditor.Busy(
-                                final String field,
-                                final ConfigEditor.View view) -> {
-                          final @NotNull Map<String, Object> json = payload(view);
-                          json.put("busy", field);
-                          ctx.status(409).json(json);
-                        }
-                      }
-                    }));
+    ctx.future(() ->
+        this.editor
+            .apply(request.base(), request.changes(), who)
+            .thenAccept(outcome -> {
+              switch (outcome) {
+                case ConfigEditor.Applied(final ConfigEditor.View view) -> ctx.json(payload(view));
+                case ConfigEditor.Conflicted(final var conflicts, final ConfigEditor.View view) -> {
+                  final @NotNull Map<String, Object> json = payload(view);
+                  json.put("conflicts", conflicts);
+                  ctx.status(409).json(json);
+                }
+                case ConfigEditor.Invalid(final String field) ->
+                    ctx.status(400).json(Map.of("invalid", field));
+                case ConfigEditor.Unreachable(final String field, final String reason) ->
+                    ctx.status(400).json(Map.of("invalid", field, "unreachable", reason));
+                case ConfigEditor.Busy(final String field, final ConfigEditor.View view) -> {
+                  final @NotNull Map<String, Object> json = payload(view);
+                  json.put("busy", field);
+                  ctx.status(409).json(json);
+                }
+              }
+            }));
   }
 
   private record SaveRequest(@Nullable Long base, @Nullable Map<String, Object> changes) {}

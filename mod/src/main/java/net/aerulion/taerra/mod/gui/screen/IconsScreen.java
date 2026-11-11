@@ -130,11 +130,10 @@ public final class IconsScreen extends Screen implements WebMapListener {
             Component.translatable("taerra.waypoints.filter"));
     filter.setHint(Component.translatable("taerra.waypoints.filter"));
     filter.setValue(this.query);
-    filter.setResponder(
-        value -> {
-          this.query = value;
-          refresh(true);
-        });
+    filter.setResponder(value -> {
+      this.query = value;
+      refresh(true);
+    });
     addRenderableWidget(filter);
     final @NotNull Button upload =
         Button.builder(
@@ -423,13 +422,12 @@ public final class IconsScreen extends Screen implements WebMapListener {
             };
         this.name.setMaxLength(MAX_NAME);
         this.name.setValue(String.valueOf(icon.label()));
-        this.name.setResponder(
-            value -> {
-              final @NotNull String clean = NOT_NAME.matcher(value).replaceAll("");
-              if (!clean.equals(value)) {
-                this.name.setValue(clean);
-              }
-            });
+        this.name.setResponder(value -> {
+          final @NotNull String clean = NOT_NAME.matcher(value).replaceAll("");
+          if (!clean.equals(value)) {
+            this.name.setValue(clean);
+          }
+        });
         this.children.add(this.name);
         button(
             WaypointListScreen.EDIT,

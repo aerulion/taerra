@@ -45,11 +45,10 @@ public final class RegionMarkers {
       final long discovered = visibility.discoveredAt(viewer.uuid(), region);
       final @NotNull List<List<Vector>> rings =
           RegionShapes.rings(region.chunks()).stream()
-              .map(
-                  ring ->
-                      ring.stream()
-                          .map(corner -> new Vector(corner[0] << 4, 0, corner[1] << 4))
-                          .toList())
+              .map(ring ->
+                  ring.stream()
+                      .map(corner -> new Vector(corner[0] << 4, 0, corner[1] << 4))
+                      .toList())
               .toList();
       final @NotNull String id = "region:" + region.id() + "/0";
       if (!revealed) {

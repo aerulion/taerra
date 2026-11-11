@@ -73,13 +73,12 @@ public final class PersonalWaypoints implements Listener {
 
   public static @NotNull List<Saved> read(final @NotNull List<Map<?, ?>> entries) {
     return entries.stream()
-        .map(
-            entry -> {
-              final @Nullable Marker marker = WaypointsImpl.read(entry, PREFIX);
-              return marker == null
-                  ? null
-                  : new Saved(marker, Boolean.TRUE.equals(entry.get("hidden")));
-            })
+        .map(entry -> {
+          final @Nullable Marker marker = WaypointsImpl.read(entry, PREFIX);
+          return marker == null
+              ? null
+              : new Saved(marker, Boolean.TRUE.equals(entry.get("hidden")));
+        })
         .filter(Objects::nonNull)
         .toList();
   }
@@ -205,34 +204,31 @@ public final class PersonalWaypoints implements Listener {
     final @NotNull Map<String, Marker> after = new LinkedHashMap<>();
     saved.forEach(now -> after.put(now.marker().id(), now.marker()));
     final @NotNull OfflinePlayer owner = this.plugin.getServer().getOfflinePlayer(player);
-    before.forEach(
-        (id, was) -> {
-          if (!after.containsKey(id)) {
-            Events.fire(this.plugin, new WaypointDeleteEvent(was, owner));
-          }
-        });
-    after.forEach(
-        (id, now) -> {
-          final @Nullable Marker was = before.get(id);
-          if (was == null) {
-            Events.fire(this.plugin, new WaypointCreateEvent(now, owner));
-          } else if (!was.equals(now)) {
-            Events.fire(this.plugin, new WaypointChangeEvent(was, now, owner));
-          }
-        });
+    before.forEach((id, was) -> {
+      if (!after.containsKey(id)) {
+        Events.fire(this.plugin, new WaypointDeleteEvent(was, owner));
+      }
+    });
+    after.forEach((id, now) -> {
+      final @Nullable Marker was = before.get(id);
+      if (was == null) {
+        Events.fire(this.plugin, new WaypointCreateEvent(now, owner));
+      } else if (!was.equals(now)) {
+        Events.fire(this.plugin, new WaypointChangeEvent(was, now, owner));
+      }
+    });
     return true;
   }
 
   public static @NotNull List<Map<String, Object>> entries(final @NotNull List<Saved> saved) {
     return saved.stream()
-        .map(
-            entry -> {
-              final @NotNull Map<String, Object> written = WaypointsImpl.entry(entry.marker());
-              if (entry.hidden()) {
-                written.put("hidden", true);
-              }
-              return written;
-            })
+        .map(entry -> {
+          final @NotNull Map<String, Object> written = WaypointsImpl.entry(entry.marker());
+          if (entry.hidden()) {
+            written.put("hidden", true);
+          }
+          return written;
+        })
         .toList();
   }
 

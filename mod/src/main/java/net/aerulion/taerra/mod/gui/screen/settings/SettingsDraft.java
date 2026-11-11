@@ -173,23 +173,22 @@ public final class SettingsDraft {
 
   public @NotNull JsonObject changes() {
     final @NotNull JsonObject changes = new JsonObject();
-    this.draft.forEach(
-        (field, value) -> {
-          if (field.equals(ORDER)) {
-            if (!same(value, this.base.get(ORDER))) {
-              changes.add(ORDER, value);
-            }
-            return;
-          }
-          if (same(value, this.base.get(field))) {
-            return;
-          }
-          final ServerSettings.@Nullable SettingInfo setting =
-              field.startsWith("setting:") ? setting(field.substring("setting:".length())) : null;
-          if (setting == null || setting.editable()) {
-            changes.add(field, value);
-          }
-        });
+    this.draft.forEach((field, value) -> {
+      if (field.equals(ORDER)) {
+        if (!same(value, this.base.get(ORDER))) {
+          changes.add(ORDER, value);
+        }
+        return;
+      }
+      if (same(value, this.base.get(field))) {
+        return;
+      }
+      final ServerSettings.@Nullable SettingInfo setting =
+          field.startsWith("setting:") ? setting(field.substring("setting:".length())) : null;
+      if (setting == null || setting.editable()) {
+        changes.add(field, value);
+      }
+    });
     return changes;
   }
 

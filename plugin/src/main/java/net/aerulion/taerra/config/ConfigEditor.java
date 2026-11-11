@@ -368,21 +368,18 @@ public final class ConfigEditor {
                   : new Step(
                       storageBusy() ? new Busy(SETTING + "storage.type", viewNow()) : null, target);
             })
-        .thenCompose(
-            step ->
-                step.outcome() != null
-                    ? CompletableFuture.completedFuture(step.outcome())
-                    : prepare(Objects.requireNonNull(step.target()))
-                        .handle(
-                            (prepared, error) ->
-                                MainThread.supply(
-                                    this.plugin,
-                                    () ->
-                                        error != null
-                                            ? new Unreachable(
-                                                SETTING + "storage.type", reason(error))
-                                            : applyNow(base, changes, who, prepared)))
-                        .thenCompose(outcome -> outcome));
+        .thenCompose(step ->
+            step.outcome() != null
+                ? CompletableFuture.completedFuture(step.outcome())
+                : prepare(Objects.requireNonNull(step.target()))
+                    .handle((prepared, error) ->
+                        MainThread.supply(
+                            this.plugin,
+                            () ->
+                                error != null
+                                    ? new Unreachable(SETTING + "storage.type", reason(error))
+                                    : applyNow(base, changes, who, prepared)))
+                    .thenCompose(outcome -> outcome));
   }
 
   private record Step(@Nullable Outcome outcome, @Nullable StorageSettings target) {}
@@ -408,14 +405,13 @@ public final class ConfigEditor {
     Thread.ofPlatform()
         .name("Taerra-Storage")
         .daemon()
-        .start(
-            () -> {
-              try {
-                prepared.complete(this.tileStorage.prepare(target));
-              } catch (final Exception e) {
-                prepared.completeExceptionally(e);
-              }
-            });
+        .start(() -> {
+          try {
+            prepared.complete(this.tileStorage.prepare(target));
+          } catch (final Exception e) {
+            prepared.completeExceptionally(e);
+          }
+        });
     return prepared;
   }
 
@@ -480,37 +476,34 @@ public final class ConfigEditor {
     track(null);
     final @NotNull List<SettingInfo> settings =
         SETTINGS.stream()
-            .map(
-                setting ->
-                    new SettingInfo(
-                        setting.key(),
-                        setting.kind().name().toLowerCase(Locale.ROOT),
-                        setting.editable(),
-                        setting.kind() == Setting.Kind.NUMBER ? setting.min() : null,
-                        setting.kind() == Setting.Kind.NUMBER ? setting.max() : null,
-                        setting.kind() == Setting.Kind.CHOICE ? setting.options() : null))
+            .map(setting ->
+                new SettingInfo(
+                    setting.key(),
+                    setting.kind().name().toLowerCase(Locale.ROOT),
+                    setting.editable(),
+                    setting.kind() == Setting.Kind.NUMBER ? setting.min() : null,
+                    setting.kind() == Setting.Kind.NUMBER ? setting.max() : null,
+                    setting.kind() == Setting.Kind.CHOICE ? setting.options() : null))
             .toList();
     final @NotNull List<WorldInfo> worlds =
         worldIds().stream()
-            .map(
-                id -> {
-                  final @Nullable World world = WorldKeys.resolve(id);
-                  final @Nullable NamespacedKey key = NamespacedKey.fromString(id);
-                  return new WorldInfo(
-                      id,
-                      key == null ? id : WorldKeys.displayName(key),
-                      world == null ? null : world.getEnvironment().name());
-                })
+            .map(id -> {
+              final @Nullable World world = WorldKeys.resolve(id);
+              final @Nullable NamespacedKey key = NamespacedKey.fromString(id);
+              return new WorldInfo(
+                  id,
+                  key == null ? id : WorldKeys.displayName(key),
+                  world == null ? null : world.getEnvironment().name());
+            })
             .toList();
     final @NotNull Map<String, SettingsRevisions.Author> authors = new HashMap<>();
     this.revisions
         .authors()
-        .forEach(
-            (field, author) -> {
-              if (author.name() != null) {
-                authors.put(field, author);
-              }
-            });
+        .forEach((field, author) -> {
+          if (author.name() != null) {
+            authors.put(field, author);
+          }
+        });
     return new View(
         this.revisions.revision(), settings, worlds, layers(), values(), Map.copyOf(authors));
   }
@@ -560,13 +553,12 @@ public final class ConfigEditor {
     }
 
     final @NotNull Set<String> written = new LinkedHashSet<>();
-    next.forEach(
-        (field, value) -> {
-          if (field.startsWith(SETTING)) {
-            write(field.substring(SETTING.length()), value);
-            written.add(field.substring(SETTING.length()));
-          }
-        });
+    next.forEach((field, value) -> {
+      if (field.startsWith(SETTING)) {
+        write(field.substring(SETTING.length()), value);
+        written.add(field.substring(SETTING.length()));
+      }
+    });
     if (!written.isEmpty()) {
       this.plugin.saveConfig();
       this.applied.accept(written);
@@ -625,16 +617,15 @@ public final class ConfigEditor {
       this.layersChanged.run();
     }
 
-    next.forEach(
-        (field, value) ->
-            this.plugin
-                .getLogger()
-                .info(
-                    who
-                        + " set "
-                        + field
-                        + " to "
-                        + (field.equals(SETTING + "storage.database.password") ? MASK : value)));
+    next.forEach((field, value) ->
+        this.plugin
+            .getLogger()
+            .info(
+                who
+                    + " set "
+                    + field
+                    + " to "
+                    + (field.equals(SETTING + "storage.database.password") ? MASK : value)));
     track(who);
     return new Applied(viewNow());
   }

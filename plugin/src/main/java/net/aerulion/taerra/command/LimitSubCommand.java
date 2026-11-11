@@ -90,56 +90,53 @@ public final class LimitSubCommand implements TaerraSubCommand {
                             Commands.argument("center", ArgumentTypes.columnBlockPosition())
                                 .then(
                                     Commands.argument("radius", IntegerArgumentType.integer(1))
-                                        .executes(
-                                            context -> {
-                                              final @NotNull ColumnBlockPosition center =
-                                                  column(context, "center");
-                                              return apply(
-                                                  context,
-                                                  WorldLimit.circle(
-                                                      center.blockX(),
-                                                      center.blockZ(),
-                                                      IntegerArgumentType.getInteger(
-                                                          context, "radius")));
-                                            }))))
+                                        .executes(context -> {
+                                          final @NotNull ColumnBlockPosition center =
+                                              column(context, "center");
+                                          return apply(
+                                              context,
+                                              WorldLimit.circle(
+                                                  center.blockX(),
+                                                  center.blockZ(),
+                                                  IntegerArgumentType.getInteger(
+                                                      context, "radius")));
+                                        }))))
                 .then(
                     Commands.literal("square")
                         .then(
                             Commands.argument("center", ArgumentTypes.columnBlockPosition())
                                 .then(
                                     Commands.argument("radius", IntegerArgumentType.integer(1))
-                                        .executes(
-                                            context -> {
-                                              final @NotNull ColumnBlockPosition center =
-                                                  column(context, "center");
-                                              return apply(
-                                                  context,
-                                                  WorldLimit.square(
-                                                      center.blockX(),
-                                                      center.blockZ(),
-                                                      IntegerArgumentType.getInteger(
-                                                          context, "radius")));
-                                            }))))
+                                        .executes(context -> {
+                                          final @NotNull ColumnBlockPosition center =
+                                              column(context, "center");
+                                          return apply(
+                                              context,
+                                              WorldLimit.square(
+                                                  center.blockX(),
+                                                  center.blockZ(),
+                                                  IntegerArgumentType.getInteger(
+                                                      context, "radius")));
+                                        }))))
                 .then(
                     Commands.literal("rectangle")
                         .then(
                             Commands.argument("from", ArgumentTypes.columnBlockPosition())
                                 .then(
                                     Commands.argument("to", ArgumentTypes.columnBlockPosition())
-                                        .executes(
-                                            context -> {
-                                              final @NotNull ColumnBlockPosition from =
-                                                  column(context, "from");
-                                              final @NotNull ColumnBlockPosition to =
-                                                  column(context, "to");
-                                              return apply(
-                                                  context,
-                                                  WorldLimit.rectangle(
-                                                      from.blockX(),
-                                                      from.blockZ(),
-                                                      to.blockX(),
-                                                      to.blockZ()));
-                                            }))))
+                                        .executes(context -> {
+                                          final @NotNull ColumnBlockPosition from =
+                                              column(context, "from");
+                                          final @NotNull ColumnBlockPosition to =
+                                              column(context, "to");
+                                          return apply(
+                                              context,
+                                              WorldLimit.rectangle(
+                                                  from.blockX(),
+                                                  from.blockZ(),
+                                                  to.blockX(),
+                                                  to.blockZ()));
+                                        }))))
                 .then(Commands.literal("remove").executes(context -> apply(context, null))));
   }
 

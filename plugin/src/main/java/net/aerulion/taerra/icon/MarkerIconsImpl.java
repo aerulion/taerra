@@ -223,10 +223,9 @@ public final class MarkerIconsImpl implements MarkerIcons, Listener {
     if (key.getNamespace().equals(NAMESPACE)
         || key.getNamespace().equals(NamespacedKey.MINECRAFT)
         || Arrays.stream(this.plugin.getServer().getPluginManager().getPlugins())
-            .noneMatch(
-                owner ->
-                    owner.isEnabled()
-                        && owner.getName().toLowerCase(Locale.ROOT).equals(key.getNamespace()))) {
+            .noneMatch(owner ->
+                owner.isEnabled()
+                    && owner.getName().toLowerCase(Locale.ROOT).equals(key.getNamespace()))) {
       throw new IllegalArgumentException("Register icons in your plugin's namespace, not " + key);
     }
     if (key.getKey().contains("/")) {
@@ -400,10 +399,9 @@ public final class MarkerIconsImpl implements MarkerIcons, Listener {
       removed =
           this.icons
               .entrySet()
-              .removeIf(
-                  entry ->
-                      entry.getValue().source() == Source.PLUGIN
-                          && entry.getKey().getNamespace().equals(namespace));
+              .removeIf(entry ->
+                  entry.getValue().source() == Source.PLUGIN
+                      && entry.getKey().getNamespace().equals(namespace));
     }
     if (removed) {
       this.changed.run();
@@ -412,11 +410,10 @@ public final class MarkerIconsImpl implements MarkerIcons, Listener {
 
   private boolean taken(final @NotNull String label, final @Nullable NamespacedKey except) {
     return this.icons.values().stream()
-        .anyMatch(
-            icon ->
-                icon.source() == Source.UPLOAD
-                    && !icon.key().equals(except)
-                    && label.equalsIgnoreCase(icon.label()));
+        .anyMatch(icon ->
+            icon.source() == Source.UPLOAD
+                && !icon.key().equals(except)
+                && label.equalsIgnoreCase(icon.label()));
   }
 
   private @NotNull String id(final @NotNull NamespacedKey key) {

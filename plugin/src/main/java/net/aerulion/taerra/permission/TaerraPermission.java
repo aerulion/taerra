@@ -126,16 +126,15 @@ public enum TaerraPermission {
 
   public static void registerPermissions(final @NotNull Plugin plugin) {
     Arrays.stream(values())
-        .forEach(
-            taerraPermission -> {
-              if (plugin
-                      .getServer()
-                      .getPluginManager()
-                      .getPermission(taerraPermission.permission.getName())
-                  == null) {
-                plugin.getServer().getPluginManager().addPermission(taerraPermission.permission);
-              }
-            });
+        .forEach(taerraPermission -> {
+          if (plugin
+                  .getServer()
+                  .getPluginManager()
+                  .getPermission(taerraPermission.permission.getName())
+              == null) {
+            plugin.getServer().getPluginManager().addPermission(taerraPermission.permission);
+          }
+        });
   }
 
   public @NotNull String node() {

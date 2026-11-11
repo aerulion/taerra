@@ -72,31 +72,29 @@ public final class TownyTowns {
       }
       final @NotNull Color color = color(town);
       final @NotNull Map<String, String> details = details(town);
-      blocks.forEach(
-          (world, keys) -> {
-            for (final @NotNull Set<Long> area : RegionShapes.areas(keys)) {
-              final long first = area.stream().mapToLong(Long::longValue).min().orElseThrow();
-              final @NotNull List<List<Vector>> rings =
-                  RegionShapes.rings(area).stream()
-                      .map(
-                          ring ->
-                              ring.stream()
-                                  .map(corner -> new Vector(corner[0] * size, 0, corner[1] * size))
-                                  .toList())
-                      .toList();
-              markers.add(
-                  Marker.polygon(
-                          WorldKeys.id(world) + "/" + town.getUUID() + "/" + first,
-                          world.getKey(),
-                          rings.getFirst(),
-                          world.getMinHeight(),
-                          world.getMaxHeight(),
-                          town.getName())
-                      .withHoles(rings.subList(1, rings.size()))
-                      .withColor(color)
-                      .withDetails(details));
-            }
-          });
+      blocks.forEach((world, keys) -> {
+        for (final @NotNull Set<Long> area : RegionShapes.areas(keys)) {
+          final long first = area.stream().mapToLong(Long::longValue).min().orElseThrow();
+          final @NotNull List<List<Vector>> rings =
+              RegionShapes.rings(area).stream()
+                  .map(ring ->
+                      ring.stream()
+                          .map(corner -> new Vector(corner[0] * size, 0, corner[1] * size))
+                          .toList())
+                  .toList();
+          markers.add(
+              Marker.polygon(
+                      WorldKeys.id(world) + "/" + town.getUUID() + "/" + first,
+                      world.getKey(),
+                      rings.getFirst(),
+                      world.getMinHeight(),
+                      world.getMaxHeight(),
+                      town.getName())
+                  .withHoles(rings.subList(1, rings.size()))
+                  .withColor(color)
+                  .withDetails(details));
+        }
+      });
       final @Nullable Location spawn =
           privateSpawns || town.isPublic() ? town.getSpawnOrNull() : null;
       if (spawn != null

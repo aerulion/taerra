@@ -44,16 +44,14 @@ public final class LogoutSubCommand implements TaerraSubCommand {
         .then(
             Commands.argument("player", StringArgumentType.word())
                 .requires(TaerraPermission.LOGOUT_OTHERS.commandRequirement())
-                .suggests(
-                    (context, suggestions) -> {
-                      this.sessions.accountNames().keySet().stream()
-                          .filter(
-                              name ->
-                                  name.toLowerCase(Locale.ROOT)
-                                      .startsWith(suggestions.getRemainingLowerCase()))
-                          .forEach(suggestions::suggest);
-                      return suggestions.buildFuture();
-                    })
+                .suggests((context, suggestions) -> {
+                  this.sessions.accountNames().keySet().stream()
+                      .filter(name ->
+                          name.toLowerCase(Locale.ROOT)
+                              .startsWith(suggestions.getRemainingLowerCase()))
+                      .forEach(suggestions::suggest);
+                  return suggestions.buildFuture();
+                })
                 .executes(this::logoutOther));
   }
 

@@ -163,9 +163,8 @@ final class MarkerOverlay {
     entry.rendering = true;
     this.jobs++;
     CompletableFuture.supplyAsync(() -> OverlayRaster.render(scene, key), Util.backgroundExecutor())
-        .whenComplete(
-            (image, error) ->
-                Minecraft.getInstance().execute(() -> rendered(scene, key, entry, image, error)));
+        .whenComplete((image, error) ->
+            Minecraft.getInstance().execute(() -> rendered(scene, key, entry, image, error)));
   }
 
   private void rendered(

@@ -126,11 +126,10 @@ public final class WaypointListScreen extends Screen {
             Component.translatable("taerra.waypoints.filter"));
     filter.setHint(Component.translatable("taerra.waypoints.filter"));
     filter.setValue(this.query);
-    filter.setResponder(
-        value -> {
-          this.query = value;
-          refresh();
-        });
+    filter.setResponder(value -> {
+      this.query = value;
+      refresh();
+    });
     addRenderableWidget(filter);
     final @NotNull List<String> worlds =
         Stream.concat(Stream.of(ALL), this.map.worlds().stream().map(World::name)).toList();
@@ -271,17 +270,16 @@ public final class WaypointListScreen extends Screen {
   }
 
   private void load() {
-    this.map.personalWaypoints(
-        waypoints -> {
-          this.loaded = true;
-          this.waypoints = waypoints == null ? List.of() : waypoints;
-          final @NotNull Set<String> names = new HashSet<>();
-          this.waypoints.forEach(waypoint -> names.add(key(waypoint.name())));
-          this.selected.retainAll(names);
-          this.armed = null;
-          this.armedSelection = false;
-          rebuildWidgets();
-        });
+    this.map.personalWaypoints(waypoints -> {
+      this.loaded = true;
+      this.waypoints = waypoints == null ? List.of() : waypoints;
+      final @NotNull Set<String> names = new HashSet<>();
+      this.waypoints.forEach(waypoint -> names.add(key(waypoint.name())));
+      this.selected.retainAll(names);
+      this.armed = null;
+      this.armedSelection = false;
+      rebuildWidgets();
+    });
   }
 
   private double distance(final @NotNull PersonalWaypoint waypoint) {
@@ -299,12 +297,11 @@ public final class WaypointListScreen extends Screen {
         Comparator.comparing(waypoint -> fold(waypoint.name()));
     return this.waypoints.stream()
         .filter(waypoint -> this.world.equals(ALL) || waypoint.world().equals(this.world))
-        .filter(
-            waypoint ->
-                needle.isEmpty()
-                    || fold(waypoint.name()).contains(needle)
-                    || (waypoint.description() != null
-                        && fold(waypoint.description()).contains(needle)))
+        .filter(waypoint ->
+            needle.isEmpty()
+                || fold(waypoint.name()).contains(needle)
+                || (waypoint.description() != null
+                    && fold(waypoint.description()).contains(needle)))
         .sorted(
             this.byDistance
                 ? Comparator.<PersonalWaypoint>comparingDouble(
@@ -492,12 +489,11 @@ public final class WaypointListScreen extends Screen {
   }
 
   private void pickFile() {
-    FileDialogs.open(
-        path -> {
-          if (path != null) {
-            read(path);
-          }
-        });
+    FileDialogs.open(path -> {
+      if (path != null) {
+        read(path);
+      }
+    });
   }
 
   @Override

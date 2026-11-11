@@ -46,17 +46,16 @@ public final class ColorField {
     hex.setValue(this.color);
     hex.setTextColor(Colors.argb(this.color));
     hex.setTooltip(Tooltip.create(Component.translatable("taerra.waypoint.hex")));
-    hex.setResponder(
-        value -> {
-          final @NotNull String digits = value.startsWith("#") ? value.substring(1) : value;
-          final @NotNull String typed = "#" + digits.toLowerCase(Locale.ROOT);
-          if (Colors.isHex(typed) && !typed.equals(this.color)) {
-            this.color = typed;
-            this.picker.setHex(typed);
-            hex.setTextColor(Colors.argb(typed));
-            this.changed.accept(typed);
-          }
-        });
+    hex.setResponder(value -> {
+      final @NotNull String digits = value.startsWith("#") ? value.substring(1) : value;
+      final @NotNull String typed = "#" + digits.toLowerCase(Locale.ROOT);
+      if (Colors.isHex(typed) && !typed.equals(this.color)) {
+        this.color = typed;
+        this.picker.setHex(typed);
+        hex.setTextColor(Colors.argb(typed));
+        this.changed.accept(typed);
+      }
+    });
     this.hex = hex;
     contents.addChild(this.picker);
   }

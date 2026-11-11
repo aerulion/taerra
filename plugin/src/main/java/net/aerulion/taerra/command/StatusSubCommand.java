@@ -202,38 +202,37 @@ public final class StatusSubCommand implements TaerraSubCommand {
   @Override
   public @NotNull LiteralArgumentBuilder<CommandSourceStack> command() {
     return builder()
-        .executes(
-            context -> {
-              final @NotNull RenderStatusSnapshot snapshot = this.generator.statusSnapshot();
-              final @NotNull List<Component> lines = new ArrayList<>();
-              lines.add(Messages.header(Messages.tr("status.title")));
-              lines.add(renderer(snapshot));
-              if (snapshot.manualRenderSession().active()) {
-                addManualRender(lines, snapshot.manualRenderSession());
-              }
-              final TileStorage.@Nullable Move move = this.tileStorage.move();
-              if (move != null) {
-                lines.add(
-                    Messages.row(
-                        "status.move",
-                        Messages.value(move.to()),
-                        progress(move.percent() / 100.0),
-                        Messages.tr(
-                            "status.tiles_moved",
-                            Messages.value(move.done()),
-                            Messages.value(move.total()))));
-              }
-              lines.add(tiles(snapshot));
-              final @NotNull LiveRenderTiming live = this.generator.liveTiming();
-              if (!live.isEmpty()) {
-                lines.add(updates(live));
-              }
-              if (!snapshot.manualRenderSession().active()) {
-                lines.add(lastRender());
-              }
-              feedback(context, Messages.lines(lines));
-              return SUCCESS;
-            });
+        .executes(context -> {
+          final @NotNull RenderStatusSnapshot snapshot = this.generator.statusSnapshot();
+          final @NotNull List<Component> lines = new ArrayList<>();
+          lines.add(Messages.header(Messages.tr("status.title")));
+          lines.add(renderer(snapshot));
+          if (snapshot.manualRenderSession().active()) {
+            addManualRender(lines, snapshot.manualRenderSession());
+          }
+          final TileStorage.@Nullable Move move = this.tileStorage.move();
+          if (move != null) {
+            lines.add(
+                Messages.row(
+                    "status.move",
+                    Messages.value(move.to()),
+                    progress(move.percent() / 100.0),
+                    Messages.tr(
+                        "status.tiles_moved",
+                        Messages.value(move.done()),
+                        Messages.value(move.total()))));
+          }
+          lines.add(tiles(snapshot));
+          final @NotNull LiveRenderTiming live = this.generator.liveTiming();
+          if (!live.isEmpty()) {
+            lines.add(updates(live));
+          }
+          if (!snapshot.manualRenderSession().active()) {
+            lines.add(lastRender());
+          }
+          feedback(context, Messages.lines(lines));
+          return SUCCESS;
+        });
   }
 
   private @NotNull Component tiles(final @NotNull RenderStatusSnapshot snapshot) {

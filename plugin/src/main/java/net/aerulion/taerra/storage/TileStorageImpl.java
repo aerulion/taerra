@@ -146,78 +146,77 @@ public final class TileStorageImpl implements TileStorage {
     Thread.ofPlatform()
         .name("Taerra-Move")
         .daemon()
-        .start(
-            () -> {
-              final long started = System.currentTimeMillis();
-              final int[] copied = {0};
-              while (!this.closed) {
-                try {
-                  if (!worlds.isEmpty()) {
-                    this.move = new Move(target.type(), 0, from.count(worlds));
-                  }
-                  final long[] done = {0};
-                  from.forEach(
-                      worlds,
-                      (coord, layer, kind, data, modified) -> {
-                        final @Nullable Move moving = this.move;
-                        if (moving != null) {
-                          this.move = new Move(moving.to(), ++done[0], moving.total());
-                        }
-                        synchronized (this.dropped) {
-                          if (!dropped(coord, layer)
-                              && to.writeIfNewer(coord, layer, kind, data, modified)) {
-                            copied[0]++;
-                          }
-                        }
-                      });
-                  // only files are deleted: two database settings can name the same database
-                  if (from instanceof FileTileStore) {
-                    for (final @NotNull String world : worlds) {
-                      for (final @NotNull MapView view : MapView.values()) {
-                        from.deleteView(world, view);
+        .start(() -> {
+          final long started = System.currentTimeMillis();
+          final int[] copied = {0};
+          while (!this.closed) {
+            try {
+              if (!worlds.isEmpty()) {
+                this.move = new Move(target.type(), 0, from.count(worlds));
+              }
+              final long[] done = {0};
+              from.forEach(
+                  worlds,
+                  (coord, layer, kind, data, modified) -> {
+                    final @Nullable Move moving = this.move;
+                    if (moving != null) {
+                      this.move = new Move(moving.to(), ++done[0], moving.total());
+                    }
+                    synchronized (this.dropped) {
+                      if (!dropped(coord, layer)
+                          && to.writeIfNewer(coord, layer, kind, data, modified)) {
+                        copied[0]++;
                       }
                     }
-                  }
-                  break;
-                } catch (final IOException | RuntimeException e) {
-                  if (this.closed) {
-                    return;
-                  }
-                  this.logger.warning(
-                      "Failed to move tiles to "
-                          + target
-                          + " after "
-                          + copied[0]
-                          + ": "
-                          + e.getMessage()
-                          + ". Trying again in a minute, the rest stay readable from "
-                          + before
-                          + " meanwhile");
-                  try {
-                    Thread.sleep(RETRY_MILLIS);
-                  } catch (final InterruptedException interrupted) {
-                    return;
+                  });
+              // only files are deleted: two database settings can name the same database
+              if (from instanceof FileTileStore) {
+                for (final @NotNull String world : worlds) {
+                  for (final @NotNull MapView view : MapView.values()) {
+                    from.deleteView(world, view);
                   }
                 }
               }
-              this.move = null;
+              break;
+            } catch (final IOException | RuntimeException e) {
               if (this.closed) {
                 return;
               }
-              this.previous = null;
-              this.dropped.clear();
-              from.close();
-              if (!worlds.isEmpty()) {
-                this.logger.info(
-                    "Moved "
-                        + copied[0]
-                        + " tiles to "
-                        + target
-                        + " in "
-                        + (System.currentTimeMillis() - started) / 1000
-                        + "s");
+              this.logger.warning(
+                  "Failed to move tiles to "
+                      + target
+                      + " after "
+                      + copied[0]
+                      + ": "
+                      + e.getMessage()
+                      + ". Trying again in a minute, the rest stay readable from "
+                      + before
+                      + " meanwhile");
+              try {
+                Thread.sleep(RETRY_MILLIS);
+              } catch (final InterruptedException interrupted) {
+                return;
               }
-            });
+            }
+          }
+          this.move = null;
+          if (this.closed) {
+            return;
+          }
+          this.previous = null;
+          this.dropped.clear();
+          from.close();
+          if (!worlds.isEmpty()) {
+            this.logger.info(
+                "Moved "
+                    + copied[0]
+                    + " tiles to "
+                    + target
+                    + " in "
+                    + (System.currentTimeMillis() - started) / 1000
+                    + "s");
+          }
+        });
   }
 
   private boolean dropped(final @NotNull TileCoordinate coord, final @NotNull FogView layer) {
@@ -350,9 +349,8 @@ public final class TileStorageImpl implements TileStorage {
       if (previous != null) {
         previous
             .layers(column)
-            .forEach(
-                (z, stored) ->
-                    found.computeIfAbsent(z, _ -> ConcurrentHashMap.newKeySet()).addAll(stored));
+            .forEach((z, stored) ->
+                found.computeIfAbsent(z, _ -> ConcurrentHashMap.newKeySet()).addAll(stored));
       }
       return found;
     } catch (final IOException e) {

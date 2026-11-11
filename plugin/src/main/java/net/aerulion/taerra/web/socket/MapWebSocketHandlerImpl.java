@@ -76,28 +76,26 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
 
   @Override
   public void broadcastToWorld(final @NotNull String worldName, final @NotNull String message) {
-    this.subscribedWorlds.forEach(
-        (ctx, world) -> {
-          if (worldName.equals(world)) {
-            send(ctx, message);
-          }
-        });
+    this.subscribedWorlds.forEach((ctx, world) -> {
+      if (worldName.equals(world)) {
+        send(ctx, message);
+      }
+    });
   }
 
   @Override
   public void broadcastToWorld(
       final @NotNull String worldName, final @NotNull Function<Viewer, String> message) {
-    this.subscribedWorlds.forEach(
-        (ctx, world) -> {
-          final @Nullable Connection connection = this.connections.get(ctx);
-          final @Nullable String text =
-              connection == null || !worldName.equals(world)
-                  ? null
-                  : message.apply(connection.viewer());
-          if (text != null) {
-            send(ctx, text);
-          }
-        });
+    this.subscribedWorlds.forEach((ctx, world) -> {
+      final @Nullable Connection connection = this.connections.get(ctx);
+      final @Nullable String text =
+          connection == null || !worldName.equals(world)
+              ? null
+              : message.apply(connection.viewer());
+      if (text != null) {
+        send(ctx, text);
+      }
+    });
   }
 
   @Override
@@ -107,13 +105,12 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
 
   @Override
   public void broadcast(final @NotNull Function<Viewer, String> message) {
-    this.connections.forEach(
-        (ctx, connection) -> {
-          final @Nullable String text = message.apply(connection.viewer());
-          if (text != null) {
-            send(ctx, text);
-          }
-        });
+    this.connections.forEach((ctx, connection) -> {
+      final @Nullable String text = message.apply(connection.viewer());
+      if (text != null) {
+        send(ctx, text);
+      }
+    });
   }
 
   @Override
@@ -124,16 +121,15 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
   @Override
   public @NotNull List<Editor> settingsEditors() {
     final @NotNull Map<String, Editor> editors = new LinkedHashMap<>();
-    this.settingsClients.forEach(
-        (ctx, client) -> {
-          final @Nullable Connection connection = this.connections.get(ctx);
-          final WebSessions.@Nullable Session session =
-              connection == null ? null : this.sessions.session(connection.token());
-          if (session != null && connection.viewer().uuid() != null) {
-            editors.putIfAbsent(
-                session.uuid() + "/" + client, new Editor(session.uuid(), session.name(), client));
-          }
-        });
+    this.settingsClients.forEach((ctx, client) -> {
+      final @Nullable Connection connection = this.connections.get(ctx);
+      final WebSessions.@Nullable Session session =
+          connection == null ? null : this.sessions.session(connection.token());
+      if (session != null && connection.viewer().uuid() != null) {
+        editors.putIfAbsent(
+            session.uuid() + "/" + client, new Editor(session.uuid(), session.name(), client));
+      }
+    });
     return editors.values().stream()
         .sorted(Comparator.comparing(Editor::name, String.CASE_INSENSITIVE_ORDER))
         .toList();
@@ -149,23 +145,21 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
 
   @Override
   public void refreshMarkers(final @NotNull UUID player) {
-    this.connections.forEach(
-        (ctx, connection) -> {
-          final @Nullable String world = this.subscribedWorlds.get(ctx);
-          if (world != null && player.equals(connection.viewer().uuid())) {
-            send(ctx, markersMessage(world));
-          }
-        });
+    this.connections.forEach((ctx, connection) -> {
+      final @Nullable String world = this.subscribedWorlds.get(ctx);
+      if (world != null && player.equals(connection.viewer().uuid())) {
+        send(ctx, markersMessage(world));
+      }
+    });
   }
 
   @Override
   public void sendTo(final @NotNull UUID player, final @NotNull String json) {
-    this.connections.forEach(
-        (ctx, connection) -> {
-          if (player.equals(connection.viewer().uuid())) {
-            send(ctx, json);
-          }
-        });
+    this.connections.forEach((ctx, connection) -> {
+      if (player.equals(connection.viewer().uuid())) {
+        send(ctx, json);
+      }
+    });
   }
 
   public static @NotNull String markersMessage(final @NotNull String world) {
@@ -194,24 +188,21 @@ public final class MapWebSocketHandlerImpl implements MapWebSocketHandler {
 
   @Override
   public void revalidate() {
-    this.connections.forEach(
-        (ctx, connection) -> {
-          final @NotNull Viewer viewer =
-              connection.token() == null
-                  ? Viewer.ANONYMOUS
-                  : this.sessions.viewer(connection.token());
-          if (!viewer.equals(connection.viewer())) {
-            this.connections.put(ctx, new Connection(connection.token(), viewer));
-            send(ctx, SocketMessage.ACCOUNT.json());
-            if (!viewer.canConfigure() && this.settingsClients.remove(ctx) != null) {
-              publishEditors();
-            }
-          }
-          final @Nullable String world = this.subscribedWorlds.get(ctx);
-          if (world != null && !viewer.canSee(this.config, world)) {
-            this.subscribedWorlds.remove(ctx);
-          }
-        });
+    this.connections.forEach((ctx, connection) -> {
+      final @NotNull Viewer viewer =
+          connection.token() == null ? Viewer.ANONYMOUS : this.sessions.viewer(connection.token());
+      if (!viewer.equals(connection.viewer())) {
+        this.connections.put(ctx, new Connection(connection.token(), viewer));
+        send(ctx, SocketMessage.ACCOUNT.json());
+        if (!viewer.canConfigure() && this.settingsClients.remove(ctx) != null) {
+          publishEditors();
+        }
+      }
+      final @Nullable String world = this.subscribedWorlds.get(ctx);
+      if (world != null && !viewer.canSee(this.config, world)) {
+        this.subscribedWorlds.remove(ctx);
+      }
+    });
   }
 
   private void onConnect(final @NotNull WsContext ctx) {
