@@ -40,7 +40,7 @@ const SECTIONS = [
     ['worlds', []],
     ['limits', []],
     ['views', []],
-    ['map', ['web.name', 'web.public-url', 'join-hint.interval-days']],
+    ['map', ['web.name', 'web.public-url', 'web.session-days', 'join-hint.interval-days']],
     [
         'layers',
         [

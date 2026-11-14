@@ -28,6 +28,7 @@ import net.aerulion.taerra.storage.TileStorage;
 import net.aerulion.taerra.util.MainThread;
 import net.aerulion.taerra.util.Throwables;
 import net.aerulion.taerra.waypoint.Waypoints;
+import net.aerulion.taerra.web.auth.WebSessions;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -44,6 +45,7 @@ public final class ConfigEditor {
           Setting.text("web.host", false),
           Setting.text("web.public-url", false),
           Setting.text("web.name", true),
+          Setting.number("web.session-days", 0, WebSessions.MAX_DAYS, true),
           Setting.number("join-hint.interval-days", 0, Integer.MAX_VALUE, true),
           Setting.number(
               "rendering.render-threads", 0, Runtime.getRuntime().availableProcessors(), true),

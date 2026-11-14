@@ -242,6 +242,7 @@ public final class Taerra extends JavaPlugin {
 
       final @NotNull WebSessions webSessions =
           new WebSessions(new File(getDataFolder(), "sessions.yml"), getLogger());
+      webSessions.days(webSettings::sessionDays);
       webSessions.load();
       final @NotNull MapWebSocketHandler webSocketHandler =
           new MapWebSocketHandlerImpl(this, configuration, webSessions, webSettings);

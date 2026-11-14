@@ -208,7 +208,9 @@ public final class AccountRoutes implements Routes {
             WebSessions.COOKIE,
             login.token(),
             "/",
-            (int) ((login.session().expires() - System.currentTimeMillis()) / 1000),
+            this.web.sessionDays() == 0
+                ? -1
+                : (int) ((login.session().expires() - System.currentTimeMillis()) / 1000),
             Requests.secure(ctx),
             true,
             null,

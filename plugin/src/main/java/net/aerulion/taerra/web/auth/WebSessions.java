@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.IntSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -33,7 +34,10 @@ import org.jetbrains.annotations.Nullable;
 public final class WebSessions {
 
   public static final @NotNull String COOKIE = "taerra_session";
-  public static final @NotNull Duration SESSION_LIFETIME = Duration.ofDays(30);
+  public static final int DEFAULT_DAYS = 30;
+  public static final int MAX_DAYS = 3650;
+  private static final @NotNull Duration GAME_LIFETIME = Duration.ofDays(DEFAULT_DAYS);
+  private static final @NotNull Duration BROWSER_LIFETIME = Duration.ofDays(1);
   public static final @NotNull Duration CODE_LIFETIME = Duration.ofMinutes(5);
   private static final int TOKEN_BYTES = 32;
   private static final @NotNull String PAIR_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -57,6 +61,7 @@ public final class WebSessions {
   private final @NotNull Set<String> unsaved = new HashSet<>();
   private final @NotNull Map<String, Long> seen = new HashMap<>();
   private long seenSaved;
+  private @NotNull IntSupplier days = () -> DEFAULT_DAYS;
   private @NotNull Runnable onChange = () -> {};
   private @NotNull Consumer<UUID> onDevices = uuid -> {};
   private @NotNull BiConsumer<Session, Boolean> onLogin = (session, game) -> {};
@@ -82,6 +87,15 @@ public final class WebSessions {
     final byte @NotNull [] bytes = new byte[TOKEN_BYTES];
     this.random.nextBytes(bytes);
     return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+  }
+
+  public synchronized void days(final @NotNull IntSupplier days) {
+    this.days = days;
+  }
+
+  private long lifetime() {
+    final int days = this.days.getAsInt();
+    return (days > 0 ? Duration.ofDays(days) : BROWSER_LIFETIME).toMillis();
   }
 
   public synchronized void onChange(final @NotNull Runnable listener) {
@@ -125,7 +139,7 @@ public final class WebSessions {
       if (uuid == null || name == null || expires < now) {
         continue;
       }
-      final long created = section.getLong(key + ".created", expires - SESSION_LIFETIME.toMillis());
+      final long created = section.getLong(key + ".created", expires - GAME_LIFETIME.toMillis());
       try {
         this.sessions.put(
             key,
@@ -180,8 +194,7 @@ public final class WebSessions {
     if (pending == null || pending.expires() < now) {
       return null;
     }
-    return login(
-        pending.who(), Math.min(now + SESSION_LIFETIME.toMillis(), pending.until()), device);
+    return login(pending.who(), Math.min(now + lifetime(), pending.until()), device);
   }
 
   private @NotNull Login login(
@@ -274,7 +287,7 @@ public final class WebSessions {
       return new Claim(null);
     }
     this.pairings.remove(entry.getKey());
-    return new Claim(login(who, now + SESSION_LIFETIME.toMillis(), device));
+    return new Claim(login(who, now + lifetime(), device));
   }
 
   public synchronized @NotNull String open(
@@ -283,7 +296,7 @@ public final class WebSessions {
     final @NotNull String key = hash(token);
     final long now = System.currentTimeMillis();
     final @NotNull Session session =
-        new Session(uuid, name, skin, now + SESSION_LIFETIME.toMillis(), now, null);
+        new Session(uuid, name, skin, now + GAME_LIFETIME.toMillis(), now, null);
     this.sessions.put(key, session);
     this.seen.put(key, now);
     this.unsaved.add(key);

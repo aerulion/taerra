@@ -39,6 +39,25 @@ class WebSessionsTest {
   }
 
   @Test
+  @DisplayName("logins last the configured days, and 0 days lasts one day at most")
+  void loginLength() {
+    final @NotNull WebSessions sessions = sessions();
+    final int @NotNull [] days = {7};
+    sessions.days(() -> days[0]);
+    final long now = System.currentTimeMillis();
+    final WebSessions.@Nullable Login week =
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), PHONE);
+    assertNotNull(week);
+    assertEquals(7 * 86_400_000L, week.session().expires() - now, 5_000);
+
+    days[0] = 0;
+    final WebSessions.@Nullable Login browser =
+        sessions.redeem(sessions.createCode(PLAYER, "Steve", SKIN), PHONE);
+    assertNotNull(browser);
+    assertEquals(86_400_000L, browser.session().expires() - now, 5_000);
+  }
+
+  @Test
   @DisplayName("a code logs in once, and the session survives a restart")
   void codeRedeemsOnce() throws Exception {
     final @NotNull WebSessions sessions = sessions();

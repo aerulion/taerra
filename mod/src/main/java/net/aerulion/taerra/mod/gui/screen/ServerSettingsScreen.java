@@ -119,7 +119,9 @@ public final class ServerSettingsScreen extends Screen implements WebMapListener
           new Section("worlds", List.of()),
           new Section("limits", List.of()),
           new Section("views", List.of()),
-          new Section("map", List.of("web.name", "web.public-url", "join-hint.interval-days")),
+          new Section(
+              "map",
+              List.of("web.name", "web.public-url", "web.session-days", "join-hint.interval-days")),
           new Section(
               "layers",
               List.of(

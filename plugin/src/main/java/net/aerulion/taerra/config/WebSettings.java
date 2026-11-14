@@ -1,6 +1,7 @@
 package net.aerulion.taerra.config;
 
 import net.aerulion.taerra.util.Names;
+import net.aerulion.taerra.web.auth.WebSessions;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +36,13 @@ public final class WebSettings {
     }
     final @NotNull String ip = this.plugin.getServer().getIp();
     return "http://" + (ip.isBlank() ? "localhost" : ip) + ":" + port();
+  }
+
+  public int sessionDays() {
+    return Math.clamp(
+        this.plugin.getConfig().getInt("web.session-days", WebSessions.DEFAULT_DAYS),
+        0,
+        WebSessions.MAX_DAYS);
   }
 
   public @NotNull String name() {

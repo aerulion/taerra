@@ -137,7 +137,7 @@ export const de: Copy = {
                 features: [
                     {
                         title: 'Anmelden ohne Passwort',
-                        text: 'Gib den kurzen Code, den die Karte zeigt, nach /taerra login ein, und der Browser meldet sich von selbst für 30 Tage an und reicht die Anmeldung per QR-Code an dein Handy weiter. Codes gelten einmal, und jede Anmeldung wird im Spiel gemeldet.'
+                        text: 'Gib den kurzen Code, den die Karte zeigt, nach /taerra login ein, und der Browser meldet sich von selbst für 30 Tage oder so lange, wie der Server es einstellt, an und reicht die Anmeldung per QR-Code an dein Handy weiter. Codes gelten einmal, und jede Anmeldung wird im Spiel gemeldet.'
                     },
                     {
                         title: 'Wegpunkte, Flächen und Linien',

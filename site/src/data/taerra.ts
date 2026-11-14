@@ -188,7 +188,7 @@ const en = {
                 features: [
                     {
                         title: 'Logins without passwords',
-                        text: 'Type the short code the map shows after /taerra login, and the browser logs itself in for 30 days, then hands the login to your phone as a QR code. Codes work once, and players see every login in game.'
+                        text: 'Type the short code the map shows after /taerra login, and the browser logs itself in for 30 days or as long as the server sets, then hands the login to your phone as a QR code. Codes work once, and players see every login in game.'
                     },
                     {
                         title: 'Waypoints, areas and lines',

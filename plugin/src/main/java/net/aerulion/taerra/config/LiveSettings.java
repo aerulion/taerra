@@ -86,7 +86,7 @@ public final class LiveSettings {
       case "rendering.update-interval" -> Reaction.UPDATE_INTERVAL;
       case "cache.max-tiles" -> Reaction.TILE_CACHE;
       case "cache.max-chunks" -> Reaction.CHUNK_CACHE;
-      case "join-hint.interval-days" -> Reaction.READ_ON_USE;
+      case "join-hint.interval-days", "web.session-days" -> Reaction.READ_ON_USE;
       default -> {
         if (layer(key) != null) {
           yield Reaction.MARKER_LAYER;

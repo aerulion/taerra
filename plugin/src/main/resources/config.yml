@@ -17,6 +17,9 @@ web:
   # previews, when the map is installed as an app, and in the mod's map screen. Empty shows TAERRA
   # alone; /taerra config web.name "" empties it. Up to 32 letters, digits, spaces and - _ . , : ' & ( ) # ! ? +
   name: ""
+  # How many days a browser stays logged in after /taerra login. 0 logs it out when the browser is
+  # closed, and after a day at the latest. Sessions already logged in keep their length.
+  session-days: 30
 
 # A chat hint a few seconds after joining that links the map (at web.public-url, when set) and the
 # mod. Skipped for players who already have the mod, and shown to each player at most once every
