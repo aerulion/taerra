@@ -74,7 +74,7 @@ public final class MapImageExports {
               }
             },
             task -> this.plugin.getServer().getScheduler().runTaskAsynchronously(this.plugin, task))
-        .whenComplete((ignored, error) -> this.exporting.set(false));
+        .whenComplete((_, _) -> this.exporting.set(false));
   }
 
   private void exportAll(

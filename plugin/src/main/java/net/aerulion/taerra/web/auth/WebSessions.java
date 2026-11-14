@@ -63,9 +63,9 @@ public final class WebSessions {
   private long seenSaved;
   private @NotNull IntSupplier days = () -> DEFAULT_DAYS;
   private @NotNull Runnable onChange = () -> {};
-  private @NotNull Consumer<UUID> onDevices = uuid -> {};
-  private @NotNull BiConsumer<Session, Boolean> onLogin = (session, game) -> {};
-  private @NotNull BiConsumer<Session, Boolean> onLogout = (session, game) -> {};
+  private @NotNull Consumer<UUID> onDevices = _ -> {};
+  private @NotNull BiConsumer<Session, Boolean> onLogin = (_, _) -> {};
+  private @NotNull BiConsumer<Session, Boolean> onLogout = (_, _) -> {};
 
   public WebSessions(final @NotNull File file, final @NotNull Logger logger) {
     super();

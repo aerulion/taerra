@@ -123,11 +123,11 @@ public final class RenderFeedback {
       final @NotNull Component description,
       final RenderService.@NotNull Start start) {
     return switch (start) {
-      case RenderService.Refused refused -> {
+      case final RenderService.@NotNull Refused refused -> {
         audience.sendMessage(refusal(refused.reason(), worldName));
         yield false;
       }
-      case RenderService.Started started -> {
+      case final RenderService.@NotNull Started started -> {
         audience.sendMessage(
             Messages.info("render.scanning", Messages.world(worldName), description));
         started

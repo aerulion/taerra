@@ -67,7 +67,7 @@ public final class Teleports {
                         });
                   });
             })
-        .exceptionally(error -> Outcome.FAILED);
+        .exceptionally(_ -> Outcome.FAILED);
   }
 
   public enum Outcome {

@@ -69,7 +69,7 @@ public final class WaypointRoutes implements Routes {
             .allMatch(point ->
                 point != null
                     && point.size() == 3
-                    && point.get(0) != null
+                    && point.getFirst() != null
                     && point.get(2) != null
                     && point.stream().allMatch(value -> value == null || Double.isFinite(value)));
   }

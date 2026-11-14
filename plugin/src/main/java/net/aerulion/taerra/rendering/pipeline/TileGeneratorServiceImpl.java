@@ -394,7 +394,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
       final @NotNull List<RenderedTile> layers;
       long chunkReadNanos = 0L;
       long sampleNanos = 0L;
-      long renderTilesNanos = 0L;
+      long renderTilesNanos;
       int chunksRead = 0;
 
       final long refreshStartedAt = System.nanoTime();
@@ -592,7 +592,7 @@ public final class TileGeneratorServiceImpl implements TileGeneratorService {
         final @NotNull TileCoordinate child = entry.getKey();
         final @NotNull TileCoordinate parent = TileHierarchy.parentOf(child);
         final BufferedImage @NotNull [] children =
-            groupedChildren.computeIfAbsent(parent, key -> new BufferedImage[4]);
+            groupedChildren.computeIfAbsent(parent, _ -> new BufferedImage[4]);
         children[TileHierarchy.childIndex(child)] = entry.getValue();
       }
 

@@ -22,7 +22,7 @@ public final class MapPlayersImpl implements MapPlayers, Listener {
   public void hide(final @NotNull Plugin plugin, final @NotNull UUID player) {
     this.hiddenBy.compute(
         player,
-        (uuid, plugins) -> {
+        (_, plugins) -> {
           final @NotNull Set<String> hiding = plugins == null ? new HashSet<>() : plugins;
           hiding.add(plugin.getName());
           return hiding;
@@ -31,7 +31,7 @@ public final class MapPlayersImpl implements MapPlayers, Listener {
 
   @Override
   public void show(final @NotNull Plugin plugin, final @NotNull UUID player) {
-    this.hiddenBy.computeIfPresent(player, (uuid, plugins) -> without(plugins, plugin.getName()));
+    this.hiddenBy.computeIfPresent(player, (_, plugins) -> without(plugins, plugin.getName()));
   }
 
   @Override
@@ -48,7 +48,7 @@ public final class MapPlayersImpl implements MapPlayers, Listener {
   void forget(final @NotNull Plugin plugin) {
     final @NotNull String name = plugin.getName();
     for (final @NotNull UUID player : Set.copyOf(this.hiddenBy.keySet())) {
-      this.hiddenBy.computeIfPresent(player, (uuid, plugins) -> without(plugins, name));
+      this.hiddenBy.computeIfPresent(player, (_, plugins) -> without(plugins, name));
     }
   }
 

@@ -256,7 +256,7 @@ public final class TileStorageImpl implements TileStorage {
       try {
         this.store.touch(coord, layer);
         return Saved.UNCHANGED;
-      } catch (final IOException e) {
+      } catch (final IOException _) {
       }
     }
     this.store.write(coord, layer, Kind.TILE, encoded);

@@ -3,7 +3,6 @@ package net.aerulion.taerra.listener.world;
 import java.util.ArrayList;
 import java.util.List;
 import net.aerulion.taerra.rendering.queue.WorldChanges;
-import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
@@ -131,12 +130,12 @@ public final class WorldChangeListener implements Listener {
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void onPistonExtend(final @NotNull BlockPistonExtendEvent event) {
-    markMovedBlocks(event.getBlocks(), event.getBlock().getWorld(), event.getDirection());
+    markMovedBlocks(event.getBlocks(), event.getDirection());
   }
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void onPistonRetract(final @NotNull BlockPistonRetractEvent event) {
-    markMovedBlocks(event.getBlocks(), event.getBlock().getWorld(), event.getDirection());
+    markMovedBlocks(event.getBlocks(), event.getDirection());
   }
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -168,9 +167,7 @@ public final class WorldChangeListener implements Listener {
   }
 
   private void markMovedBlocks(
-      final @NotNull List<? extends Block> blocks,
-      final @NotNull World world,
-      final @NotNull BlockFace direction) {
+      final @NotNull List<? extends Block> blocks, final @NotNull BlockFace direction) {
     final @NotNull List<Block> touched = new ArrayList<>(blocks.size() * 2);
     for (final @NotNull Block block : blocks) {
       touched.add(block);

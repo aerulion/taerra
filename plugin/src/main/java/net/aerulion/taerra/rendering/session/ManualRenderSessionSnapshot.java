@@ -29,17 +29,6 @@ public record ManualRenderSessionSnapshot(
     return (this.completedTiles * 100.0) / this.totalTiles;
   }
 
-  public int startedTiles() {
-    return this.completedTiles + this.inFlightTiles;
-  }
-
-  public double startedPercent() {
-    if (this.totalTiles <= 0) {
-      return 0.0;
-    }
-    return (startedTiles() * 100.0) / this.totalTiles;
-  }
-
   public double regionPercent() {
     if (this.totalRegions <= 0) {
       return 0.0;

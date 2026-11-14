@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -232,7 +233,7 @@ public final class TileCacheImpl implements TileCache {
                       png,
                       pieces.stream()
                           .map(CompletableFuture::join)
-                          .filter(piece -> piece != null)
+                          .filter(Objects::nonNull)
                           .toList(),
                       etag));
         })

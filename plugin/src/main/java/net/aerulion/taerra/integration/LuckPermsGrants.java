@@ -84,7 +84,7 @@ public final class LuckPermsGrants {
   }
 
   private void onNodes(final @NotNull NodeMutateEvent event) {
-    if (event.getTarget() instanceof final User user) {
+    if (event.getTarget() instanceof final @NotNull User user) {
       this.changed.add(user.getUniqueId());
     } else {
       this.everyone.set(true);

@@ -49,8 +49,8 @@ public final class MarkerTexts {
                 row.size() < 2
                     ? row
                     : List.of(
-                        translatedOr("taerra.marker.detail." + row.get(0), row.get(0)),
-                        row.get(0).equals("shape")
+                        translatedOr("taerra.marker.detail." + row.getFirst(), row.getFirst()),
+                        row.getFirst().equals("shape")
                             ? translatedOr("taerra.marker.shape." + row.get(1), row.get(1))
                             : row.get(1)))
             .toList();
@@ -67,7 +67,7 @@ public final class MarkerTexts {
             ? Map.of()
             : marker.details().stream()
                 .filter(row -> row.size() >= 2)
-                .collect(Collectors.toMap(row -> row.get(0), row -> row.get(1), (a, _) -> a));
+                .collect(Collectors.toMap(row -> row.getFirst(), row -> row.get(1), (a, _) -> a));
     final String level = facts.get("level");
     if (!CHUNK_LEVELS.contains(level)) {
       return marker;

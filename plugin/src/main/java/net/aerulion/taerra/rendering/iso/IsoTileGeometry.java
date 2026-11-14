@@ -2,7 +2,6 @@ package net.aerulion.taerra.rendering.iso;
 
 import net.aerulion.taerra.model.MapRotation;
 import net.aerulion.taerra.model.MapView;
-import net.aerulion.taerra.model.RegionCoordinate;
 import net.aerulion.taerra.model.TileGeometry;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,8 +16,6 @@ public final class IsoTileGeometry {
   public static final int BASE_BLOCK_WIDTH = 8;
 
   public static final int CHUNK_SIZE = 16;
-
-  private static final int LOCALITY_SEA_LEVEL = 64;
 
   private static final @NotNull IsoProjection BASE_PROJECTION =
       IsoProjection.ofBlockWidth(BASE_BLOCK_WIDTH);
@@ -107,22 +104,6 @@ public final class IsoTileGeometry {
             + BASE_PROJECTION.blockScreenHeight()
             - 1;
     return new ScreenBounds(minX, minY, maxX, maxY);
-  }
-
-  public static long localityKey(
-      final @NotNull MapRotation rotation, final int tileX, final int tileY) {
-    final long centerX = (long) tileX * TILE_SIZE + TILE_SIZE / 2;
-    final long centerY = (long) tileY * TILE_SIZE + TILE_SIZE / 2;
-
-    final long difference = Math.floorDiv(centerX, BASE_PROJECTION.halfWidth());
-    final long sum =
-        Math.floorDiv(
-            centerY + (long) LOCALITY_SEA_LEVEL * BASE_PROJECTION.halfWidth(),
-            BASE_PROJECTION.quarterWidth());
-    final int rotatedX = Math.toIntExact(Math.floorDiv(sum + difference, 2));
-    final int rotatedZ = Math.toIntExact(Math.floorDiv(sum - difference, 2));
-    return RegionCoordinate.locality(
-        rotation.worldX(rotatedX, rotatedZ), rotation.worldZ(rotatedX, rotatedZ));
   }
 
   public static void forEachTileCovering(

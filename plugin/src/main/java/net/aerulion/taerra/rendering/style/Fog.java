@@ -267,12 +267,11 @@ public final class Fog {
           (kind & VEIL) != 0
               ? lerp(VEIL_THIN, VEIL_THICK, smoothstep(VEIL_GAPS, VEIL_BANKS, cloud))
               : 1.0f;
-      this.body = Fog.body(cloud, cellX, cellZ, density);
+      this.body = body(cloud, cellX, cellZ, density);
       final float shadowX = cellX - SHADOW_REACH;
       final float shadowZ = cellZ - SHADOW_REACH;
-      this.shadow = Fog.body(cloud(shadowX, shadowZ), shadowX, shadowZ, density);
-      this.tone =
-          step(this.body, OPACITY_STEPS) < 1.0f ? CLOUD_LIGHT : Fog.tone(cloud, cellX, cellZ);
+      this.shadow = body(cloud(shadowX, shadowZ), shadowX, shadowZ, density);
+      this.tone = step(this.body, OPACITY_STEPS) < 1.0f ? CLOUD_LIGHT : tone(cloud, cellX, cellZ);
     }
   }
 
@@ -485,7 +484,7 @@ public final class Fog {
   }
 
   private static float hash(final int x, final int z, final long seed) {
-    long h = seed ^ ((long) x * 0x632BE59BD9B4E019L) ^ ((long) z * 0x85157AF5L);
+    long h = seed ^ (x * 0x632BE59BD9B4E019L) ^ (z * 0x85157AF5L);
     h = (h ^ (h >>> 33)) * 0xFF51AFD7ED558CCDL;
     h = (h ^ (h >>> 33)) * 0xC4CEB9FE1A85EC53L;
     return (float) ((h ^ (h >>> 33)) >>> 40) / (1 << 24);

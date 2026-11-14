@@ -12,7 +12,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.PlayerFaceExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -150,7 +149,7 @@ public final class PlayerList extends PanelList<PlayerList.Entry> {
       if (!this.player.located()) {
         return false;
       }
-      AbstractWidget.playButtonClickSound(Minecraft.getInstance().getSoundManager());
+      playButtonClickSound(Minecraft.getInstance().getSoundManager());
       PlayerList.this.onPick.accept(this.player);
       return true;
     }

@@ -73,7 +73,7 @@ public final class TaerraClient implements ClientModInitializer {
     PayloadTypeRegistry.serverboundPlay().register(HandshakePayload.TYPE, HandshakePayload.CODEC);
     ClientPlayNetworking.registerGlobalReceiver(
         HandshakePayload.TYPE,
-        (payload, context) -> {
+        (payload, _) -> {
           final @Nullable String discovered = payload.discovered();
           if (discovered != null) {
             DiscoveryToast.show(discovered);
@@ -81,15 +81,13 @@ public final class TaerraClient implements ClientModInitializer {
             this.session.connect(payload);
           }
         });
-    ServerboundPlayChannelEvents.REGISTER.register((handler, sender, client, channels) -> {
+    ServerboundPlayChannelEvents.REGISTER.register((_, sender, _, channels) -> {
       if (channels.contains(HandshakePayload.TYPE.id())) {
         sender.sendPacket(HandshakePayload.version());
       }
     });
-    ClientPlayConnectionEvents.DISCONNECT.register(
-        (handler, client) -> client.execute(this::close));
-    ClientConfigurationConnectionEvents.INIT.register(
-        (handler, client) -> client.execute(this::close));
+    ClientPlayConnectionEvents.DISCONNECT.register((_, client) -> client.execute(this::close));
+    ClientConfigurationConnectionEvents.INIT.register((_, client) -> client.execute(this::close));
     TaerraKeys.register();
     ClientTickEvents.END_CLIENT_TICK.register(this::tick);
     final @NotNull Minimap minimap = new Minimap(this.session, settings);

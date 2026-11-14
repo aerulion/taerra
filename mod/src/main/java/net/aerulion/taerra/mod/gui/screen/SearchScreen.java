@@ -20,7 +20,6 @@ import net.aerulion.taerra.mod.web.model.World;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.PlayerFaceExtractor;
@@ -222,8 +221,8 @@ public final class SearchScreen extends Screen {
     } else if (marker.points() != null && !marker.points().isEmpty()) {
       final @NotNull List<List<Double>> points = marker.points();
       x =
-          (points.stream().mapToDouble(point -> point.getFirst()).min().orElse(0)
-                  + points.stream().mapToDouble(point -> point.getFirst()).max().orElse(0))
+          (points.stream().mapToDouble(List::getFirst).min().orElse(0)
+                  + points.stream().mapToDouble(List::getFirst).max().orElse(0))
               / 2;
       z =
           (points.stream().mapToDouble(List::getLast).min().orElse(0)
@@ -436,7 +435,7 @@ public final class SearchScreen extends Screen {
 
       @Override
       public boolean mouseClicked(final MouseButtonEvent event, final boolean doubleClick) {
-        AbstractWidget.playButtonClickSound(Minecraft.getInstance().getSoundManager());
+        playButtonClickSound(Minecraft.getInstance().getSoundManager());
         pick(this.result);
         return true;
       }

@@ -35,10 +35,10 @@ final class FileTileStore implements TileStore {
     this.logger = logger;
     this.dataDirectory = dataDirectory;
     for (final @NotNull MapView view : MapView.values()) {
-      final @Nullable File @Nullable [] deleted =
+      final @NotNull File @Nullable [] deleted =
           new File(this.dataDirectory, view.directoryName())
               .listFiles(file -> file.getName().endsWith(DELETED));
-      for (final @Nullable File trash : deleted == null ? new File[0] : deleted) {
+      for (final @NotNull File trash : deleted == null ? new File[0] : deleted) {
         if (trash != null) {
           deleteLater(trash.toPath());
         }
@@ -280,10 +280,10 @@ final class FileTileStore implements TileStore {
   @Override
   public @NotNull Map<Integer, Set<FogView>> layers(final @NotNull TileCoordinate column) {
     final @NotNull Map<Integer, Set<FogView>> found = new ConcurrentHashMap<>();
-    final @Nullable String @Nullable [] names =
-        column(column).list((dir, name) -> name.endsWith(".png"));
-    for (final @Nullable String name : names == null ? new String[0] : names) {
-      final int dot = name == null ? -1 : name.indexOf('.');
+    final @NotNull String @Nullable [] names =
+        column(column).list((_, name) -> name.endsWith(".png"));
+    for (final @NotNull String name : names == null ? new String[0] : names) {
+      final int dot = name.indexOf('.');
       if (dot < 0 || dot == name.length() - ".png".length()) {
         continue;
       }
@@ -322,15 +322,15 @@ final class FileTileStore implements TileStore {
   @Override
   public @NotNull List<TileCoordinate> tilesAt(final @NotNull TileCoordinate level) {
     final @NotNull List<TileCoordinate> tiles = new ArrayList<>();
-    final @Nullable File @Nullable [] columns =
+    final @NotNull File @Nullable [] columns =
         column(level).getParentFile().listFiles(File::isDirectory);
-    for (final @Nullable File column : columns == null ? new File[0] : columns) {
+    for (final @NotNull File column : columns == null ? new File[0] : columns) {
       final @Nullable Integer x = parseInt(column.getName());
-      final @Nullable String @Nullable [] names = column.list((dir, name) -> name.endsWith(".png"));
+      final @NotNull String @Nullable [] names = column.list((_, name) -> name.endsWith(".png"));
       if (x == null || names == null) {
         continue;
       }
-      for (final @Nullable String name : names) {
+      for (final @NotNull String name : names) {
         final @Nullable Integer z = parseInt(name.substring(0, name.length() - ".png".length()));
         if (z != null) {
           tiles.add(level.at(level.zoom(), x, z));

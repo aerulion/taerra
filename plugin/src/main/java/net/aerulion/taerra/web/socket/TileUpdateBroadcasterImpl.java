@@ -51,7 +51,7 @@ public final class TileUpdateBroadcasterImpl implements TileUpdateBroadcaster {
 
     this.pendingByWorld.compute(
         coord.world(),
-        (world, pending) -> {
+        (_, pending) -> {
           final @NotNull Set<TileCoordinate> tiles = pending == null ? new HashSet<>() : pending;
           tiles.add(coord);
           return tiles;

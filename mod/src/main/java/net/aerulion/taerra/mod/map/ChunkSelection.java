@@ -114,10 +114,6 @@ public final class ChunkSelection {
     return this.chunks.contains(key);
   }
 
-  public boolean erasing() {
-    return this.stroke != null && this.stroke.erase;
-  }
-
   public @Nullable Change end() {
     final @Nullable Stroke stroke = this.stroke;
     this.stroke = null;
@@ -327,7 +323,7 @@ public final class ChunkSelection {
       long at = start;
       do {
         final @NotNull Deque<Long> next = edges.get(at);
-        final long to = next.poll();
+        final long to = next.remove();
         if (next.isEmpty()) {
           edges.remove(at);
         }

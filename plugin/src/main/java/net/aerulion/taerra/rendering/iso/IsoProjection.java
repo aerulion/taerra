@@ -28,10 +28,6 @@ public final class IsoProjection {
     return new IsoProjection(blockWidth);
   }
 
-  public int blockWidth() {
-    return this.blockWidth;
-  }
-
   public int halfWidth() {
     return this.halfWidth;
   }

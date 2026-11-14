@@ -62,13 +62,6 @@ public sealed interface TaerraSubCommand
     return context.getSource().getSender();
   }
 
-  default @NotNull CommandSender scopedExecutor(
-      final @NotNull CommandContext<? extends CommandSourceStack> context) {
-    return context.getSource().getExecutor() instanceof final @NotNull CommandSender commandSender
-        ? commandSender
-        : sender(context);
-  }
-
   default int playerScope(
       final @NotNull CommandContext<? extends CommandSourceStack> context,
       final @NotNull ThrowingFunction<? super Player, Integer, ? extends CommandSyntaxException>
@@ -85,10 +78,5 @@ public sealed interface TaerraSubCommand
       final @NotNull CommandContext<? extends CommandSourceStack> context,
       final @NotNull ComponentLike message) {
     sender(context).sendMessage(message);
-  }
-
-  default boolean isSelfReferencing(
-      final @NotNull CommandContext<? extends CommandSourceStack> context) {
-    return scopedExecutor(context) == sender(context);
   }
 }

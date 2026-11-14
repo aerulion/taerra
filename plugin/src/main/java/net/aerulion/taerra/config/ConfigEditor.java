@@ -531,16 +531,16 @@ public final class ConfigEditor {
       final TileStorage.@Nullable Prepared prepared) {
     final SettingsPlan.@NotNull Ready ready;
     switch (SettingsPlan.plan(base, changes, values(), this.revisions, server())) {
-      case SettingsPlan.Invalid(final String field) -> {
+      case SettingsPlan.Invalid(final @NotNull String field) -> {
         return new Invalid(field);
       }
-      case SettingsPlan.Conflicted(final List<Conflict> conflicts) -> {
+      case SettingsPlan.Conflicted(final @NotNull List<Conflict> conflicts) -> {
         return new Conflicted(conflicts, viewNow());
       }
-      case SettingsPlan.Busy(final String field) -> {
+      case SettingsPlan.Busy(final @NotNull String field) -> {
         return new Busy(field, viewNow());
       }
-      case final SettingsPlan.Ready planned -> ready = planned;
+      case final SettingsPlan.@NotNull Ready planned -> ready = planned;
     }
     final @NotNull Map<String, Object> next = ready.next();
     if (next.isEmpty()) {
@@ -639,7 +639,7 @@ public final class ConfigEditor {
       values.put(
           SETTING + setting.key(),
           switch (setting.kind()) {
-            case NUMBER -> value instanceof final Number number ? number.intValue() : null;
+            case NUMBER -> value instanceof final @NotNull Number number ? number.intValue() : null;
             case TOGGLE -> Boolean.TRUE.equals(value);
             case TEXT, CHOICE, SECRET -> value == null ? "" : String.valueOf(value);
           });

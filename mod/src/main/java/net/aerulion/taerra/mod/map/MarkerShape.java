@@ -54,7 +54,7 @@ final class MarkerShape {
           @NotNull
           List<double[]> points =
               marker.points().stream()
-                  .map(point -> new double[] {point.get(0), point.get(1), point.get(2)})
+                  .map(point -> new double[] {point.getFirst(), point.get(1), point.get(2)})
                   .toList();
           if (marker.smooth()) {
             points = Spline.through(points);
@@ -112,8 +112,8 @@ final class MarkerShape {
         double minZ = Double.MAX_VALUE;
         double maxZ = -Double.MAX_VALUE;
         for (final @NotNull List<Double> point : marker.points()) {
-          minX = Math.min(minX, point.get(0));
-          maxX = Math.max(maxX, point.get(0));
+          minX = Math.min(minX, point.getFirst());
+          maxX = Math.max(maxX, point.getFirst());
           minZ = Math.min(minZ, point.get(1));
           maxZ = Math.max(maxZ, point.get(1));
         }
@@ -174,7 +174,7 @@ final class MarkerShape {
       }
       if (marker.discovered() != null) {
         lines.add(
-            Component.literal("\u2726 ")
+            Component.literal("✦ ")
                 .append(
                     Component.translatable("taerra.region.discovered", date(marker.discovered())))
                 .withStyle(ChatFormatting.GOLD));
@@ -254,7 +254,7 @@ final class MarkerShape {
       final List<List<double[]>> sides = rings.get(ring);
       final double @NotNull [][] flat =
           outlines.get(ring).stream()
-              .map(point -> projection.toMap(point.get(0), 0, point.get(1)))
+              .map(point -> projection.toMap(point.getFirst(), 0, point.get(1)))
               .toArray(double[][]::new);
       final double winding = Math.signum(Geometry.signedArea(flat));
       for (int i = 0; i < sides.size(); i++) {
@@ -296,7 +296,7 @@ final class MarkerShape {
       final @NotNull List<List<Double>> points,
       final double y) {
     return points.stream()
-        .map(point -> include(projection.toMap(point.get(0), y, point.get(1))))
+        .map(point -> include(projection.toMap(point.getFirst(), y, point.get(1))))
         .toArray(double[][]::new);
   }
 }

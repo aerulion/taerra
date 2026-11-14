@@ -48,7 +48,7 @@ public record Waypoint(
         marker.points() == null
             ? null
             : marker.points().stream()
-                .map(point -> area ? Arrays.asList(point.get(0), null, point.get(1)) : point)
+                .map(point -> area ? Arrays.asList(point.getFirst(), null, point.get(1)) : point)
                 .toList(),
         marker.smooth(),
         marker.description() == null ? "" : marker.description(),

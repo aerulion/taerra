@@ -148,7 +148,7 @@ public final class SettingValues {
   public static @NotNull String shapeOf(final @Nullable JsonElement value) {
     return value != null
             && value.isJsonObject()
-            && value.getAsJsonObject().get("shape") instanceof final JsonPrimitive shape
+            && value.getAsJsonObject().get("shape") instanceof final @NotNull JsonPrimitive shape
             && SHAPES.contains(shape.getAsString())
         ? shape.getAsString()
         : "none";
@@ -191,7 +191,7 @@ public final class SettingValues {
     if (shape.equals("none")) {
       return value != null
           && value.isJsonObject()
-          && value.getAsJsonObject().get("shape") instanceof final JsonPrimitive given
+          && value.getAsJsonObject().get("shape") instanceof final @NotNull JsonPrimitive given
           && !given.getAsString().equals("none");
     }
     final @Nullable Integer minX = bound(value, "minX");

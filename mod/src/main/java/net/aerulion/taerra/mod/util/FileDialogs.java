@@ -57,7 +57,7 @@ public final class FileDialogs {
     filters.get(0).name(name).pattern(pattern);
     final SDL_DialogFileCallback[] callback = new SDL_DialogFileCallback[1];
     callback[0] =
-        SDL_DialogFileCallback.create((userdata, files, filter) -> {
+        SDL_DialogFileCallback.create((_, files, _) -> {
           final @NotNull List<Path> chosen = new ArrayList<>();
           for (long at = files;
               files != MemoryUtil.NULL && MemoryUtil.memGetAddress(at) != MemoryUtil.NULL;

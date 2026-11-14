@@ -64,7 +64,9 @@ public final class MapRegions {
                       MapRegion.PALETTE[Math.floorMod(id.hashCode(), MapRegion.PALETTE.length)]),
                   fog == null ? RegionFog.HIDE : fog,
                   Boolean.TRUE.equals(entry.get("discoverable")),
-                  entry.get("reset") instanceof Number reset ? reset.longValue() : 0L,
+                  entry.get("reset") instanceof final @NotNull Number reset
+                      ? reset.longValue()
+                      : 0L,
                   chunks((List<?>) entry.get("chunks"))));
         } catch (final RuntimeException e) {
           plugin.getLogger().warning("Skipping a malformed region in regions.yml: " + entry);
@@ -333,7 +335,7 @@ public final class MapRegions {
           world.put(chunk, region);
         }
       }
-      byWorld.replaceAll((world, list) ->
+      byWorld.replaceAll((_, list) ->
           list.stream()
               .sorted(Comparator.comparing(MapRegion::name).thenComparing(MapRegion::id))
               .toList());

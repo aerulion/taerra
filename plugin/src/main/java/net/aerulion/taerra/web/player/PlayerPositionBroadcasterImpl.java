@@ -242,7 +242,7 @@ public final class PlayerPositionBroadcasterImpl implements PlayerPositionBroadc
 
     @Override
     public boolean equals(final @Nullable Object other) {
-      return other instanceof Entry entry
+      return other instanceof final @NotNull Entry entry
           && entry.inside == this.inside
           && entry.playersPrivate == this.playersPrivate
           && Objects.equals(entry.region, this.region)

@@ -107,6 +107,7 @@ public sealed interface TileStorage permits TileStorageImpl {
     volatile boolean moved;
 
     Prepared(final @NotNull TileStore store, final @NotNull StorageSettings settings) {
+      super();
       this.store = store;
       this.settings = settings;
     }

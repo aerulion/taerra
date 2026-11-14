@@ -793,8 +793,7 @@ public final class WebMapImpl implements WebMap {
 
   private void refreshAccount() {
     this.client.<Account>json("/api/account", Account.class, account -> this.account = account);
-    this.client.<NavigationTarget>json(
-        "/api/navigation", NavigationTarget.class, this::setNavigation);
+    this.client.json("/api/navigation", NavigationTarget.class, this::setNavigation);
     refreshLayers();
   }
 
@@ -833,7 +832,7 @@ public final class WebMapImpl implements WebMap {
     this.connecting = true;
     this.client
         .socket(new SocketListener())
-        .whenComplete((socket, error) ->
+        .whenComplete((socket, _) ->
             Minecraft.getInstance()
                 .execute(() -> {
                   this.connecting = false;

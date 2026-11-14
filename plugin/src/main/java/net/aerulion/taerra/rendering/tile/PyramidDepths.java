@@ -103,7 +103,7 @@ public final class PyramidDepths {
 
   public void extend(final @NotNull TileCoordinate tile) {
     if (tile.view() == MapView.TOP_DOWN) {
-      this.areas.computeIfPresent(layer(tile), (layer, area) -> union(area, area(tile)));
+      this.areas.computeIfPresent(layer(tile), (_, area) -> union(area, area(tile)));
     }
   }
 

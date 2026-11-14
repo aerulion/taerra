@@ -79,7 +79,7 @@ public final class ManualRenderSession {
   }
 
   public static @NotNull ManualRenderSession idle() {
-    return new ManualRenderSession("none", "-", tile -> 0, false, "idle");
+    return new ManualRenderSession("none", "-", _ -> 0, false, "idle");
   }
 
   public static @NotNull ManualRenderSession scanning(

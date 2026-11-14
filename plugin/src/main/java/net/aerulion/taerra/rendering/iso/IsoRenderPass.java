@@ -110,10 +110,6 @@ final class IsoRenderPass {
     return this.size;
   }
 
-  int views() {
-    return this.overlays.length;
-  }
-
   @NotNull
   ScreenBounds tileBounds() {
     return this.tileBounds;

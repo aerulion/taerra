@@ -3,6 +3,7 @@ package net.aerulion.taerra.web.http.route;
 import io.javalin.config.RoutesConfig;
 import io.javalin.http.Context;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import net.aerulion.taerra.config.ConfigEditor;
@@ -93,17 +94,24 @@ public final class SettingsRoutes implements Routes {
             .apply(request.base(), request.changes(), who)
             .thenAccept(outcome -> {
               switch (outcome) {
-                case ConfigEditor.Applied(final ConfigEditor.View view) -> ctx.json(payload(view));
-                case ConfigEditor.Conflicted(final var conflicts, final ConfigEditor.View view) -> {
+                case ConfigEditor.Applied(final ConfigEditor.@NotNull View view) ->
+                    ctx.json(payload(view));
+                case ConfigEditor.Conflicted(
+                        final @NotNull List<ConfigEditor.Conflict> conflicts,
+                        final ConfigEditor.@NotNull View view) -> {
                   final @NotNull Map<String, Object> json = payload(view);
                   json.put("conflicts", conflicts);
                   ctx.status(409).json(json);
                 }
-                case ConfigEditor.Invalid(final String field) ->
+                case ConfigEditor.Invalid(final @NotNull String field) ->
                     ctx.status(400).json(Map.of("invalid", field));
-                case ConfigEditor.Unreachable(final String field, final String reason) ->
+                case ConfigEditor.Unreachable(
+                        final @NotNull String field,
+                        final @NotNull String reason) ->
                     ctx.status(400).json(Map.of("invalid", field, "unreachable", reason));
-                case ConfigEditor.Busy(final String field, final ConfigEditor.View view) -> {
+                case ConfigEditor.Busy(
+                        final @NotNull String field,
+                        final ConfigEditor.@NotNull View view) -> {
                   final @NotNull Map<String, Object> json = payload(view);
                   json.put("busy", field);
                   ctx.status(409).json(json);

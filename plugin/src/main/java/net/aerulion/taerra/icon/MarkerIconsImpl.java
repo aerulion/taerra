@@ -254,7 +254,7 @@ public final class MarkerIconsImpl implements MarkerIcons, Listener {
     final boolean removed;
     synchronized (this) {
       removed =
-          this.icons.get(key) instanceof final Icon icon
+          this.icons.get(key) instanceof final @NotNull Icon icon
               && icon.source() == Source.PLUGIN
               && this.icons.remove(key) != null;
     }
@@ -377,7 +377,8 @@ public final class MarkerIconsImpl implements MarkerIcons, Listener {
 
   public boolean delete(final @NotNull NamespacedKey key) {
     synchronized (this) {
-      if (!(this.icons.get(key) instanceof final Icon icon) || icon.source() != Source.UPLOAD) {
+      if (!(this.icons.get(key) instanceof final @NotNull Icon icon)
+          || icon.source() != Source.UPLOAD) {
         return false;
       }
       this.icons.remove(key);

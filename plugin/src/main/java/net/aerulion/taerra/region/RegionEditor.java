@@ -164,7 +164,7 @@ public final class RegionEditor {
     }
     final @NotNull RenderService.Start start =
         this.renders.regions(world, rendered, applyAndNotify);
-    return start instanceof RenderService.Refused(final RenderService.Refusal reason)
+    return start instanceof RenderService.Refused(final RenderService.@NotNull Refusal reason)
         ? reason == RenderService.Refusal.BUSY ? Problem.BUSY : Problem.WORLD_DISABLED
         : new Saved(region, start);
   }

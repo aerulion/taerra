@@ -128,7 +128,7 @@ public final class TestPlugins {
                   case "getUniqueId" -> uuid;
                   case "toString" -> uuid.toString();
                   case "equals" ->
-                      args[0] instanceof final OfflinePlayer other
+                      args[0] instanceof final @NotNull OfflinePlayer other
                           && uuid.equals(other.getUniqueId());
                   case "hashCode" -> uuid.hashCode();
                   default -> throw new UnsupportedOperationException(method.getName());

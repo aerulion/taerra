@@ -86,6 +86,6 @@ public final class Colormaps {
 
   private static int evaluate(final double @NotNull [] c, final double x, final double y) {
     final double value = c[0] + c[1] * y + c[2] * y * y + c[3] * x + c[4] * x * y + c[5] * x * x;
-    return (int) Math.clamp(Math.round(value), 0, 255);
+    return Math.clamp(Math.round(value), 0, 255);
   }
 }

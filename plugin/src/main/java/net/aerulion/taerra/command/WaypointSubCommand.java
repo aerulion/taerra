@@ -58,7 +58,7 @@ public final class WaypointSubCommand implements TaerraSubCommand {
             Commands.literal("add")
                 .then(
                     Commands.argument("color", StringArgumentType.string())
-                        .suggests((context, builder) -> {
+                        .suggests((_, builder) -> {
                           SUGGESTED_COLORS.stream()
                               .filter(color -> color.startsWith(builder.getRemainingLowerCase()))
                               .forEach(builder::suggest);
@@ -71,7 +71,7 @@ public final class WaypointSubCommand implements TaerraSubCommand {
             Commands.literal("remove")
                 .then(
                     Commands.argument("name", StringArgumentType.greedyString())
-                        .suggests((context, builder) -> {
+                        .suggests((_, builder) -> {
                           this.waypoints.names().stream()
                               .filter(name ->
                                   name.toLowerCase(Locale.ROOT)

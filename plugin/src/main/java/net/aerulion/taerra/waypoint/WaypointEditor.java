@@ -59,13 +59,13 @@ public final class WaypointEditor {
           : null;
     }
     if (points.stream()
-        .anyMatch(point -> !WorldPositions.nearBorder(world, point.get(0), point.get(2)))) {
+        .anyMatch(point -> !WorldPositions.nearBorder(world, point.getFirst(), point.get(2)))) {
       return null;
     }
     if (draft.kind() == Kind.AREA) {
       final @NotNull List<Vector> outline =
           Waypoints.outline(
-              points.stream().map(point -> new Vector(point.get(0), 0, point.get(2))).toList());
+              points.stream().map(point -> new Vector(point.getFirst(), 0, point.get(2))).toList());
       return outline.size() < 3
           ? null
           : CompletableFuture.completedFuture(
@@ -77,10 +77,10 @@ public final class WaypointEditor {
             .map(point ->
                 WorldPositions.standingY(
                         world,
-                        (int) Math.floor(point.get(0)),
+                        (int) Math.floor(point.getFirst()),
                         point.get(1) == null ? null : (int) Math.floor(point.get(1)),
                         (int) Math.floor(point.get(2)))
-                    .thenApply(y -> new Vector(point.get(0), y, point.get(2))))
+                    .thenApply(y -> new Vector(point.getFirst(), y, point.get(2))))
             .toList();
     return CompletableFuture.allOf(placed.toArray(CompletableFuture[]::new))
         .thenApply(_ -> {
@@ -126,7 +126,7 @@ public final class WaypointEditor {
                 return stored;
               });
             })
-        .exceptionally(error -> Result.FAILED);
+        .exceptionally(_ -> Result.FAILED);
   }
 
   public @NotNull CompletableFuture<Boolean> delete(

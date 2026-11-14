@@ -84,7 +84,7 @@ public final class MapSessionImpl implements MapSession {
       return;
     }
     final String token =
-        json.get("token") instanceof final JsonPrimitive value && value.isString()
+        json.get("token") instanceof final @NotNull JsonPrimitive value && value.isString()
             ? value.getAsString()
             : null;
     this.map = new WebMapImpl(new WebClientImpl(base, token), this.settings);

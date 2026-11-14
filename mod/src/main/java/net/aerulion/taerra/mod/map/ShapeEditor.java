@@ -115,7 +115,9 @@ public final class ShapeEditor {
         kind == Kind.REGION ? new ChunkSelection(REGION_CHUNKS, this::taken) : new ChunkSelection();
     this.path.clear();
     if (editing != null && editing.points() != null) {
-      editing.points().forEach(point -> this.path.add(new double[] {point.get(0), point.get(2)}));
+      editing
+          .points()
+          .forEach(point -> this.path.add(new double[] {point.getFirst(), point.get(2)}));
     }
     this.smooth = editing != null && editing.smooth();
     this.color = editing == null ? Waypoint.DEFAULT_COLOR : editing.color();
@@ -540,7 +542,7 @@ public final class ShapeEditor {
     final @Nullable List<List<Double>> points = this.editing == null ? null : this.editing.points();
     if (points != null) {
       for (final @NotNull List<Double> point : points) {
-        if (point.get(0) == x && point.get(2) == z) {
+        if (point.getFirst() == x && point.get(2) == z) {
           return point.get(1);
         }
       }

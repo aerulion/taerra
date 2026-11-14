@@ -230,7 +230,9 @@ public final class RegionRoutes implements Routes {
     ctx.future(() ->
         result.thenAccept(outcome -> {
           switch (outcome) {
-            case RegionEditor.Saved(final MapRegion region, final RenderService.Start start) -> {
+            case RegionEditor.Saved(
+                    final @NotNull MapRegion region,
+                    final RenderService.@Nullable Start start) -> {
               if (start != null) {
                 final @Nullable UUID uuid = viewer.uuid();
                 final @Nullable Player player = uuid == null ? null : Bukkit.getPlayer(uuid);
@@ -242,7 +244,7 @@ public final class RegionRoutes implements Routes {
               }
               ctx.status(start == null ? 200 : 202).json(Map.of("id", region.id().toString()));
             }
-            case RegionEditor.Problem problem ->
+            case final RegionEditor.@NotNull Problem problem ->
                 ctx.status(
                         switch (problem) {
                           case NOT_FOUND -> 404;

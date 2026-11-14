@@ -17,8 +17,8 @@ public final class Preferences {
   private static final int MAX_LAYER_ID = 128;
 
   private final @NotNull PlayerFiles files;
-  private @NotNull BiConsumer<UUID, Integer> waypointColorChanged = (player, rgb) -> {};
-  private @NotNull BiConsumer<UUID, Navigation> navigationChanged = (player, target) -> {};
+  private @NotNull BiConsumer<UUID, Integer> waypointColorChanged = (_, _) -> {};
+  private @NotNull BiConsumer<UUID, Navigation> navigationChanged = (_, _) -> {};
 
   public Preferences(final @NotNull PlayerFiles files) {
     super();

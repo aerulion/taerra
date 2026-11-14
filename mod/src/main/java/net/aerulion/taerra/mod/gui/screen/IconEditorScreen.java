@@ -219,7 +219,7 @@ public final class IconEditorScreen extends Screen {
 
   private @Nullable GuiEventListener focusedLeaf() {
     @Nullable GuiEventListener focused = getFocused();
-    while (focused instanceof final ContainerEventHandler container
+    while (focused instanceof final @NotNull ContainerEventHandler container
         && container.getFocused() != null) {
       focused = container.getFocused();
     }

@@ -42,7 +42,7 @@ public final class JoinHint implements Listener {
   @EventHandler
   public void onJoin(final @NotNull PlayerJoinEvent event) {
     final @NotNull Player player = event.getPlayer();
-    player.getScheduler().runDelayed(this.plugin, task -> show(player), null, DELAY_TICKS);
+    player.getScheduler().runDelayed(this.plugin, _ -> show(player), null, DELAY_TICKS);
   }
 
   private void show(final @NotNull Player player) {

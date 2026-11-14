@@ -94,7 +94,7 @@ public final class PickBuffer {
     final int @NotNull [] cellDepth = new int[cells];
     final int @NotNull [] cellHeight = new int[cells];
     final int wrap = (1 << 8 * width) - 1;
-    int previousDepth = 0;
+    int previousDepth;
     int previousHeight = 0;
     for (int cell = 0; cell < cells; cell++) {
       final int depthValue = readValue(body, maskBytes + cell * width, width);

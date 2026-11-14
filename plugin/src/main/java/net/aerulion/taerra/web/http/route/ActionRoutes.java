@@ -144,7 +144,7 @@ public final class ActionRoutes implements Routes {
                   ? 202
                   : 409;
             });
-    ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
+    ctx.future(() -> result.thenAccept(ctx::status));
   }
 
   private void handleRenderRequest(final @NotNull Context ctx) {
@@ -195,7 +195,7 @@ public final class ActionRoutes implements Routes {
               audience.sendMessage(RenderFeedback.canceled(stop));
               return stop.idle() ? 409 : 204;
             });
-    ctx.future(() -> result.thenAccept(status -> ctx.status(status)));
+    ctx.future(() -> result.thenAccept(ctx::status));
   }
 
   private record RenderRequest(@Nullable String action, @Nullable String world) {}

@@ -163,7 +163,7 @@ final class SettingsPlan {
       final @NotNull Map<String, Object> next,
       final @NotNull String world,
       final @NotNull Server server) {
-    return next.get(worldField(world, "enabled")) instanceof final Boolean on
+    return next.get(worldField(world, "enabled")) instanceof final @NotNull Boolean on
         ? on
         : server.worldEnabled(world);
   }

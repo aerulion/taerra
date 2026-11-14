@@ -13,7 +13,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -53,7 +52,7 @@ public final class WorldList extends PanelList<WorldList.Row> {
       }
     }
     final @NotNull List<Row> rows = new ArrayList<>();
-    groups.forEach((environment, members) -> {
+    groups.forEach((_, members) -> {
       rows.add(new Heading(members.getFirst().environmentName()));
       members.forEach(world -> rows.add(new Item(world)));
     });
@@ -207,7 +206,7 @@ public final class WorldList extends PanelList<WorldList.Row> {
 
     @Override
     public boolean mouseClicked(final MouseButtonEvent event, final boolean doubleClick) {
-      AbstractWidget.playButtonClickSound(Minecraft.getInstance().getSoundManager());
+      playButtonClickSound(Minecraft.getInstance().getSoundManager());
       WorldList.this.onPick.accept(this.world);
       return true;
     }

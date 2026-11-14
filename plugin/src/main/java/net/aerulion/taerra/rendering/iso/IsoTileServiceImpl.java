@@ -43,7 +43,6 @@ public final class IsoTileServiceImpl implements IsoTileService {
   private final @NotNull ChunkColumnsCache columns;
   private final @NotNull IsoTileRenderer renderer;
   private final @NotNull MapRegions regions;
-  private final int shadowDistance = MapStyle.ISO_SHADOW_DISTANCE;
 
   private final @NotNull LongAdder renderedBaseTiles = new LongAdder();
   private final @NotNull LongAdder renderNanos = new LongAdder();
@@ -79,7 +78,9 @@ public final class IsoTileServiceImpl implements IsoTileService {
           Math.max(
               world.getMinHeight(),
               Math.min(lowestTopAround(world, chunkX, chunkZ, ChunkColumns.minTopOf(known)), blockY)
-                  - Math.max(SunShadow.isoDrop(this.shadowDistance), IsoTileRendererImpl.SKY_REACH)
+                  - Math.max(
+                      SunShadow.isoDrop(MapStyle.ISO_SHADOW_DISTANCE),
+                      IsoTileRendererImpl.SKY_REACH)
                   - 1);
       maxTopY = Math.max(ChunkColumns.maxTopOf(known), blockY);
     }
@@ -384,7 +385,7 @@ public final class IsoTileServiceImpl implements IsoTileService {
         IsoTileRendererImpl.SKY_REACH,
         Math.max(
             back * side > 0 ? 2 * IsoTileRendererImpl.SKY_REACH + 1 : 0,
-            shadow * side > 0 ? this.shadowDistance : 0));
+            shadow * side > 0 ? MapStyle.ISO_SHADOW_DISTANCE : 0));
   }
 
   @Override
@@ -434,7 +435,8 @@ public final class IsoTileServiceImpl implements IsoTileService {
     return Math.max(
         world.getMinHeight(),
         lowestTopAround(world, chunkX, chunkZ, ChunkColumns.minTopOf(known))
-            - Math.max(SunShadow.isoDrop(this.shadowDistance), IsoTileRendererImpl.SKY_REACH)
+            - Math.max(
+                SunShadow.isoDrop(MapStyle.ISO_SHADOW_DISTANCE), IsoTileRendererImpl.SKY_REACH)
             - 1);
   }
 

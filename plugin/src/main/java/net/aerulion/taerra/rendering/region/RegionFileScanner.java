@@ -38,11 +38,6 @@ public final class RegionFileScanner {
   }
 
   public static @NotNull RegionScanResult scanWorld(
-      final @NotNull World world, final @NotNull RegionScanListener progressListener) {
-    return scanWorld(world, _ -> true, _ -> true, progressListener);
-  }
-
-  public static @NotNull RegionScanResult scanWorld(
       final @NotNull World world,
       final @NotNull Predicate<? super RegionCoordinate> regionFilter,
       final @NotNull Predicate<? super TileCoordinate> tileFilter,
@@ -58,18 +53,15 @@ public final class RegionFileScanner {
     }
 
     final @NotNull List<RegionFileEntry> regionFiles = new ArrayList<>();
-    final @Nullable File @Nullable [] files =
-        regionPath.toFile().listFiles((dir, name) -> REGION_FILE_PATTERN.matcher(name).matches());
+    final @NotNull File @Nullable [] files =
+        regionPath.toFile().listFiles((_, name) -> REGION_FILE_PATTERN.matcher(name).matches());
     if (files == null || files.length == 0) {
       LOGGER.info(
           "Nothing to render in " + WorldKeys.id(world) + ", no region files in " + regionPath);
       return new RegionScanResult(List.of(), 0, 0, 0);
     }
 
-    for (final @Nullable File file : files) {
-      if (file == null) {
-        continue;
-      }
+    for (final @NotNull File file : files) {
       final @NotNull Matcher matcher = REGION_FILE_PATTERN.matcher(file.getName());
       if (!matcher.matches()) {
         continue;
@@ -127,7 +119,7 @@ public final class RegionFileScanner {
         new LinkedHashMap<>();
     for (final @NotNull TileCoordinate tileCoordinate : orderedTiles) {
       tilesByRegion
-          .computeIfAbsent(RegionCoordinate.fromZoom0Tile(tileCoordinate), key -> new ArrayList<>())
+          .computeIfAbsent(RegionCoordinate.fromZoom0Tile(tileCoordinate), _ -> new ArrayList<>())
           .add(tileCoordinate);
     }
 

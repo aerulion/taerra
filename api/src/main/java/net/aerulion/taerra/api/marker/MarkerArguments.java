@@ -18,7 +18,7 @@ final class MarkerArguments {
   }
 
   static @NotNull List<Vector> copy(
-      final @NotNull List<Vector> points, final int minimum, final @NotNull String what) {
+      final @NotNull List<? extends Vector> points, final int minimum, final @NotNull String what) {
     if (points.size() < minimum) {
       throw new IllegalArgumentException(
           what + " needs at least " + minimum + " points, got " + points.size());

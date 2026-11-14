@@ -45,13 +45,13 @@ public final class PlayerFiles {
   }
 
   private void importLegacy(final @NotNull File legacy) {
-    final @Nullable File @Nullable [] files = legacy.listFiles((_, name) -> name.endsWith(".yml"));
+    final @NotNull File @Nullable [] files = legacy.listFiles((_, name) -> name.endsWith(".yml"));
     if (files == null) {
       return;
     }
     this.directory.mkdirs();
     int moved = 0;
-    for (final @Nullable File file : files) {
+    for (final @NotNull File file : files) {
       final @NotNull File target = new File(this.directory, file.getName());
       if (target.exists()) {
         this.plugin
@@ -66,9 +66,9 @@ public final class PlayerFiles {
         this.plugin.getLogger().log(Level.WARNING, "Failed to move " + file, e);
       }
     }
-    final @Nullable File @Nullable [] leftovers =
+    final @NotNull File @Nullable [] leftovers =
         legacy.listFiles((_, name) -> name.matches(".+\\.yml\\.\\d+\\.tmp"));
-    for (final @Nullable File leftover : leftovers == null ? new File[0] : leftovers) {
+    for (final @NotNull File leftover : leftovers == null ? new File[0] : leftovers) {
       leftover.delete();
     }
     legacy.delete();

@@ -105,7 +105,7 @@ public final class Minimap implements HudElement {
   }
 
   private float infoScale() {
-    final int gui = (int) Minecraft.getInstance().getWindow().getGuiScale();
+    final int gui = Minecraft.getInstance().getWindow().getGuiScale();
     return this.settings.smallInfo() && gui > 1 ? (gui - 1) / (float) gui : 1;
   }
 

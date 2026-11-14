@@ -141,7 +141,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                 Commands.literal("layer")
                     .then(
                         Commands.argument("layer", StringArgumentType.string())
-                            .suggests((context, suggestions) -> {
+                            .suggests((_, suggestions) -> {
                               this.markers.layers().stream()
                                   .map(MarkerLayer::id)
                                   .filter(id -> id.startsWith(suggestions.getRemaining()))
@@ -161,7 +161,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                                             .executes(context -> setLayerIcon(context, "")))
                                     .then(
                                         Commands.argument("icon", ArgumentTypes.key())
-                                            .suggests((context, suggestions) -> {
+                                            .suggests((_, suggestions) -> {
                                               for (final MarkerIconsImpl.@NotNull Icon icon :
                                                   this.icons.all()) {
                                                 final @NotNull String key = icon.key().asString();
@@ -192,7 +192,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                                             .executes(context -> setLayerScale(context, "")))
                                     .then(
                                         Commands.argument("scale", StringArgumentType.word())
-                                            .suggests((context, suggestions) -> {
+                                            .suggests((_, suggestions) -> {
                                               for (int scale = LayerScale.MIN;
                                                   scale <= LayerScale.MAX;
                                                   scale++) {
@@ -218,7 +218,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                         .suggests(
                             setting.options().isEmpty()
                                 ? null
-                                : (context, suggestions) -> {
+                                : (_, suggestions) -> {
                                   setting.options().forEach(suggestions::suggest);
                                   return suggestions.buildFuture();
                                 })
@@ -315,7 +315,7 @@ public final class ConfigSubCommand implements TaerraSubCommand {
                               Messages.value(key),
                               Messages.value(this.editor.get(key)),
                               Messages.value(this.editor.storage().toString()));
-                  case ConfigEditor.Unreachable(final String _, final String reason) ->
+                  case ConfigEditor.Unreachable(final String _, final @NotNull String reason) ->
                       Messages.error("config.storage_failed", Messages.value(reason));
                   case ConfigEditor.Invalid _ ->
                       Messages.error("config.storage_invalid", Messages.value(key));

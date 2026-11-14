@@ -137,7 +137,7 @@ public final class WaypointListScreen extends Screen {
       this.world = ALL;
     }
     addRenderableWidget(
-        new CycleButton.Builder<String>(this::worldLabel, () -> this.world)
+        new CycleButton.Builder<>(this::worldLabel, () -> this.world)
             .withValues(worlds)
             .displayOnlyValue()
             .create(
@@ -513,7 +513,7 @@ public final class WaypointListScreen extends Screen {
       if (root.isJsonArray()) {
         waypoints = root.getAsJsonArray();
       } else if (root.isJsonObject()
-          && root.getAsJsonObject().get("waypoints") instanceof final JsonArray array) {
+          && root.getAsJsonObject().get("waypoints") instanceof final @NotNull JsonArray array) {
         waypoints = array;
       }
     } catch (final IOException | RuntimeException e) {

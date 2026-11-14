@@ -1488,7 +1488,7 @@ public final class MapScreen extends Screen {
                   new Navigation.Target(
                       marker.label(),
                       world,
-                      marker.position().get(0),
+                      marker.position().getFirst(),
                       marker.position().get(1),
                       marker.position().get(2),
                       0xFF000000 | Colors.argb(marker.color()),
