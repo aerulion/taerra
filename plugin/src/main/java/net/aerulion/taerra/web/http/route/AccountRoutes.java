@@ -11,6 +11,7 @@ import net.aerulion.taerra.chat.Messages;
 import net.aerulion.taerra.config.WebSettings;
 import net.aerulion.taerra.player.Preferences;
 import net.aerulion.taerra.util.HexColors;
+import net.aerulion.taerra.util.MainThread;
 import net.aerulion.taerra.web.auth.Device;
 import net.aerulion.taerra.web.auth.Viewer;
 import net.aerulion.taerra.web.auth.WebSessions;
@@ -51,6 +52,7 @@ public final class AccountRoutes implements Routes {
   public void register(final @NotNull RoutesConfig routes) {
     routes.get("/api/account", this::handleAccountRequest);
     routes.get("/api/account/avatar.png", this::handleAccountAvatarRequest);
+    routes.post("/api/account/language", this::handleLanguageRequest);
     routes.get("/api/account/sessions", this::handleDevicesRequest);
     routes.delete("/api/account/sessions/{id}", this::handleDeviceLogoutRequest);
     routes.post("/api/login", this::handleLoginRequest);
@@ -61,7 +63,9 @@ public final class AccountRoutes implements Routes {
   }
 
   private @NotNull Map<String, Object> account(
-      final WebSessions.@NotNull Session session, final @NotNull Viewer viewer) {
+      final WebSessions.@NotNull Session session,
+      final @NotNull Viewer viewer,
+      final @Nullable String gameLanguage) {
     final @NotNull Map<String, Object> account =
         new LinkedHashMap<>(
             Map.ofEntries(
@@ -83,7 +87,41 @@ public final class AccountRoutes implements Routes {
     if (color != null) {
       account.put("waypointColor", HexColors.format(color));
     }
+    final @Nullable String language = this.preferences.language(session.uuid());
+    if (language != null) {
+      account.put("language", language);
+    } else if (gameLanguage != null) {
+      account.put("gameLanguage", gameLanguage);
+    }
     return account;
+  }
+
+  private void respond(
+      final @NotNull Context ctx,
+      final WebSessions.@NotNull Session session,
+      final @NotNull Viewer viewer) {
+    if (this.preferences.language(session.uuid()) != null) {
+      ctx.json(account(session, viewer, null));
+      return;
+    }
+    ctx.future(() ->
+        MainThread.supply(
+                this.plugin,
+                () -> {
+                  final @Nullable Player player = Bukkit.getPlayer(session.uuid());
+                  return player == null ? null : player.locale().getLanguage();
+                })
+            .thenAccept(game -> ctx.json(account(session, viewer, game))));
+  }
+
+  private void handleLanguageRequest(final @NotNull Context ctx) {
+    final WebSessions.@Nullable Session session =
+        this.sessions.session(ctx.cookie(WebSessions.COOKIE));
+    if (session == null) {
+      ctx.status(401).result("Not logged in");
+      return;
+    }
+    ctx.status(this.preferences.changeLanguage(session.uuid(), ctx.body().strip()) ? 204 : 400);
   }
 
   private void handleAccountRequest(final @NotNull Context ctx) {
@@ -94,7 +132,7 @@ public final class AccountRoutes implements Routes {
       ctx.status(204);
       return;
     }
-    ctx.json(account(session, this.requests.viewer(ctx)));
+    respond(ctx, session, this.requests.viewer(ctx));
   }
 
   private void handleAccountAvatarRequest(final @NotNull Context ctx) {
@@ -224,8 +262,8 @@ public final class AccountRoutes implements Routes {
                 player.sendMessage(Messages.webLogin());
               }
             });
-    ctx.header("Cache-Control", "no-store")
-        .json(account(login.session(), this.sessions.viewer(login.token())));
+    ctx.header("Cache-Control", "no-store");
+    respond(ctx, login.session(), this.sessions.viewer(login.token()));
   }
 
   private void handleLogoutRequest(final @NotNull Context ctx) {

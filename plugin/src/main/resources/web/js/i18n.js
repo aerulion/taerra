@@ -1,6 +1,7 @@
 export const MAC = /Mac|iPhone|iPad/.test(navigator.platform);
 
 export const LANGUAGES = {en: 'English', de: 'Deutsch'};
+const STORED_KEY = 'taerra.language';
 
 function browserLanguage() {
     for (const tag of navigator.languages ?? [navigator.language]) {
@@ -12,7 +13,25 @@ function browserLanguage() {
     return 'en';
 }
 
-export const defaultLanguage = browserLanguage();
+function storedLanguage() {
+    try {
+        const code = localStorage.getItem(STORED_KEY);
+        return Object.hasOwn(LANGUAGES, code) ? code : null;
+    } catch {
+        return null;
+    }
+}
+
+function storeLanguage(code) {
+    try {
+        localStorage.setItem(STORED_KEY, code);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+export const defaultLanguage = storedLanguage() ?? browserLanguage();
 
 export function hashLanguage(params) {
     const code = params.get('lang');
@@ -64,7 +83,20 @@ export function translatePage() {
 
 export function setLanguage(code) {
     const params = new URLSearchParams(location.hash.slice(1));
-    params.set('lang', code);
+    if (storeLanguage(code)) {
+        params.delete('lang');
+    } else {
+        params.set('lang', code);
+    }
     history.replaceState(null, '', `#${params}`);
     location.reload();
+}
+
+export function adoptLanguage(code) {
+    if (!Object.hasOwn(LANGUAGES, code ?? '') || code === defaultLanguage || !storeLanguage(code)) {
+        return;
+    }
+    if (!new URLSearchParams(location.hash.slice(1)).has('lang')) {
+        location.reload();
+    }
 }

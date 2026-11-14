@@ -159,6 +159,9 @@ public final class PlayerFiles {
         if (data.waypointColor() != null) {
           yaml.set("waypoint-color", HexColors.format(data.waypointColor()));
         }
+        if (data.language() != null) {
+          yaml.set("language", data.language());
+        }
         AtomicFiles.write(file, yaml.saveToString().getBytes(StandardCharsets.UTF_8));
       }
     } catch (final IOException e) {
@@ -199,7 +202,8 @@ public final class PlayerFiles {
         discoveries,
         Navigation.read(yaml.getConfigurationSection("navigation")),
         layers,
-        color.isPresent() ? color.getAsInt() : null);
+        color.isPresent() ? color.getAsInt() : null,
+        Preferences.language(yaml.getString("language")));
   }
 
   private @NotNull File file(final @NotNull UUID player) {

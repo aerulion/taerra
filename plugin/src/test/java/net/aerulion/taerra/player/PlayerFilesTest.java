@@ -64,7 +64,8 @@ class PlayerFilesTest {
 
   @Test
   @DisplayName(
-      "navigation, layer choices and the last waypoint color are read back after a restart")
+      "navigation, layer choices, the last waypoint color and the language are read back after a"
+          + " restart")
   void keepsPreferences() {
     final @NotNull Plugin plugin = TestPlugins.in(this.folder.toFile());
     final @NotNull Preferences preferences = new Preferences(new PlayerFiles(plugin));
@@ -72,6 +73,8 @@ class PlayerFilesTest {
         new Navigation("Home", "minecraft:overworld", 1.5, null, -3.5, "#3AB3DA", null);
     preferences.navigate(ALEX, home);
     preferences.rememberWaypointColor(ALEX, 0xB02E26);
+    assertTrue(preferences.changeLanguage(ALEX, "de"));
+    assertFalse(preferences.changeLanguage(ALEX, "../de"));
     preferences.changeLayers(
         ALEX, List.of("chunks", "waypoints.Shops"), List.of("players"), List.of());
     final @NotNull Map<String, Boolean> layers = Map.of("players", false, "waypoints.Shops", true);
@@ -83,5 +86,6 @@ class PlayerFilesTest {
     assertEquals(home, data.navigation());
     assertEquals(layers, data.layers());
     assertEquals(0xB02E26, data.waypointColor());
+    assertEquals("de", data.language());
   }
 }

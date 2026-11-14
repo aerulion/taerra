@@ -4,17 +4,7 @@ import {iconEditor} from './iconeditor.js';
 import {iconChooser, iconStore} from './icons.js';
 import {iconManager} from './iconmanager.js';
 import {waypointManager} from './manager.js';
-import {
-    defaultLanguage,
-    hashLanguage,
-    language,
-    LANGUAGES,
-    MAC,
-    numbers,
-    setLanguage,
-    t,
-    translatePage
-} from './i18n.js';
+import {defaultLanguage, hashLanguage, language, LANGUAGES, MAC, numbers, t, translatePage} from './i18n.js';
 import {mapManager} from './map.js';
 import {navigationManager} from './navigation.js';
 import {setupOffline} from './offline.js';
@@ -415,7 +405,7 @@ function setupLanguage() {
     const select = $('language-select');
     select.replaceChildren(...Object.entries(LANGUAGES).map(([code, name]) => new Option(name, code)));
     select.value = language;
-    select.addEventListener('change', () => setLanguage(select.value));
+    select.addEventListener('change', () => void accountManager.chooseLanguage(select.value));
 }
 
 function setupDialogs() {

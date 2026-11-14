@@ -12,10 +12,11 @@ public record PlayerData(
     @NotNull Map<UUID, Long> discoveries,
     @Nullable Navigation navigation,
     @NotNull Map<String, Boolean> layers,
-    @Nullable Integer waypointColor) {
+    @Nullable Integer waypointColor,
+    @Nullable String language) {
 
   public static final @NotNull PlayerData EMPTY =
-      new PlayerData(List.of(), Map.of(), null, Map.of(), null);
+      new PlayerData(List.of(), Map.of(), null, Map.of(), null, null);
 
   public PlayerData {
     waypoints = List.copyOf(waypoints);
@@ -25,27 +26,62 @@ public record PlayerData(
 
   public @NotNull PlayerData withWaypoints(final @NotNull List<PersonalWaypoints.Saved> waypoints) {
     return new PlayerData(
-        waypoints, this.discoveries, this.navigation, this.layers, this.waypointColor);
+        waypoints,
+        this.discoveries,
+        this.navigation,
+        this.layers,
+        this.waypointColor,
+        this.language);
   }
 
   public @NotNull PlayerData withDiscoveries(final @NotNull Map<UUID, Long> discoveries) {
     return new PlayerData(
-        this.waypoints, discoveries, this.navigation, this.layers, this.waypointColor);
+        this.waypoints,
+        discoveries,
+        this.navigation,
+        this.layers,
+        this.waypointColor,
+        this.language);
   }
 
   public @NotNull PlayerData withNavigation(final @Nullable Navigation navigation) {
     return new PlayerData(
-        this.waypoints, this.discoveries, navigation, this.layers, this.waypointColor);
+        this.waypoints,
+        this.discoveries,
+        navigation,
+        this.layers,
+        this.waypointColor,
+        this.language);
   }
 
   public @NotNull PlayerData withLayers(final @NotNull Map<String, Boolean> layers) {
     return new PlayerData(
-        this.waypoints, this.discoveries, this.navigation, layers, this.waypointColor);
+        this.waypoints,
+        this.discoveries,
+        this.navigation,
+        layers,
+        this.waypointColor,
+        this.language);
   }
 
   public @NotNull PlayerData withWaypointColor(final @Nullable Integer waypointColor) {
     return new PlayerData(
-        this.waypoints, this.discoveries, this.navigation, this.layers, waypointColor);
+        this.waypoints,
+        this.discoveries,
+        this.navigation,
+        this.layers,
+        waypointColor,
+        this.language);
+  }
+
+  public @NotNull PlayerData withLanguage(final @Nullable String language) {
+    return new PlayerData(
+        this.waypoints,
+        this.discoveries,
+        this.navigation,
+        this.layers,
+        this.waypointColor,
+        language);
   }
 
   public boolean isEmpty() {
@@ -53,6 +89,7 @@ public record PlayerData(
         && this.discoveries.isEmpty()
         && this.navigation == null
         && this.layers.isEmpty()
-        && this.waypointColor == null;
+        && this.waypointColor == null
+        && this.language == null;
   }
 }

@@ -1,6 +1,6 @@
 import qrcode from '../vendor/qrcode/qrcode.js';
 import {copyText} from './clipboard.js';
-import {language, t} from './i18n.js';
+import {adoptLanguage, language, setLanguage, t} from './i18n.js';
 import {pixelPath} from './map.js';
 import {armed, disarm, element, iconButton} from './ui.js';
 import {wsManager} from './websocket.js';
@@ -32,7 +32,11 @@ let linkTimer = 0;
 let copiedTimer = 0;
 
 function show(account) {
+    const before = current;
     current = account;
+    if (account && !before) {
+        adoptLanguage(account.language ?? account.gameLanguage);
+    }
     if (account) {
         stopPairing();
         if ($('devices').open) {
@@ -416,6 +420,13 @@ function rememberWaypointColor(hex) {
     }
 }
 
+async function chooseLanguage(code) {
+    if (current) {
+        await fetch('api/account/language', {method: 'POST', body: code}).catch(() => {});
+    }
+    setLanguage(code);
+}
+
 function canEditIcons() {
     return current?.icons === true;
 }
@@ -459,6 +470,7 @@ export const accountManager = {
     canEditIcons,
     waypointColor,
     rememberWaypointColor,
+    chooseLanguage,
     canCreatePrivateGroups,
     canRenderWorld,
     canRenderArea,

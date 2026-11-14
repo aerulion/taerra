@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,6 +23,12 @@ public final class Preferences {
   public Preferences(final @NotNull PlayerFiles files) {
     super();
     this.files = files;
+  }
+
+  private static final @NotNull Pattern LANGUAGE = Pattern.compile("[a-z]{2,8}");
+
+  static @Nullable String language(final @Nullable String code) {
+    return code != null && LANGUAGE.matcher(code).matches() ? code : null;
   }
 
   private static boolean valid(final @NotNull Collection<String> ids) {
@@ -57,6 +64,20 @@ public final class Preferences {
     }
     this.files.update(player, data -> data.withWaypointColor(rgb));
     this.waypointColorChanged.accept(player, rgb);
+  }
+
+  public @Nullable String language(final @NotNull UUID player) {
+    return this.files.get(player).language();
+  }
+
+  public boolean changeLanguage(final @NotNull UUID player, final @NotNull String code) {
+    final @Nullable String language = language(code);
+    if (language == null) {
+      return false;
+    }
+    this.files.update(
+        player, data -> language.equals(data.language()) ? data : data.withLanguage(language));
+    return true;
   }
 
   public @NotNull Map<String, Boolean> layers(final @NotNull UUID player) {
